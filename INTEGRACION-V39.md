@@ -1,6 +1,6 @@
 # Rediseño Hunter System V39
 
-Integración visual sobre la aplicación nativa V38.50, conservando el motor y los registros. Branch: `redesign/v39-eclipse-aurora-ceniza-amanecer`.
+Integración visual sobre la aplicación nativa V38.50, conservando el motor y los registros. El rediseño fue fusionado a `main` (PR #1).
 
 ## Elementos ya integrados en Kotlin
 
@@ -17,15 +17,16 @@ Integración visual sobre la aplicación nativa V38.50, conservando el motor y l
 
 Las 12 miniaturas físicas del ZIP de referencia no están disponibles en este repositorio hasta que se importen con la utilidad o con el ZIP pequeño renombrado en Codespaces. El paquete `Hunter-V39-12-Miniaturas-Compatibles.zip` contiene únicamente las imágenes renombradas con los IDs reales.
 
-1. Subir `Hunter-V39-12-Miniaturas-Compatibles.zip` a la raíz del Codespace, en esta rama.
+1. Subir `Hunter-V39-12-Miniaturas-Compatibles.zip` a la raíz del Codespace, en la rama `main`.
 2. Desde la terminal en la raíz del repositorio:
 
 ```bash
-git switch redesign/v39-eclipse-aurora-ceniza-amanecer
+git switch main
+git pull --ff-only origin main
 unzip -oq "Hunter-V39-12-Miniaturas-Compatibles.zip" -d .
 git add app/src/main/assets/v39-miniatures
 git commit -m "assets(v39): incluir 12 portadas especificas"
-git push origin redesign/v39-eclipse-aurora-ceniza-amanecer
+git push origin main
 ```
 
 Los 12 archivos cubren 12/1200 IDs; los restantes 1188 siguen mostrando sus propias demostraciones SVG. El ZIP de referencia no permite entregar 1200 miniaturas originales únicas.
