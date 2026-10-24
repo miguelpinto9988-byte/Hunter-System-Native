@@ -111,7 +111,7 @@ private fun MonarchNavItem(destination:MonarchDestination,selected:Boolean,verti
             HText(destination.title,size=12,bold=selected,color=tint,maxLines=1)
         }
     }else{
-        Column(item.fillMaxHeight().padding(vertical=8.dp),
+        Column(item.fillMaxWidth().fillMaxHeight().padding(vertical=8.dp),
             horizontalAlignment=Alignment.CenterHorizontally,
             verticalArrangement=Arrangement.spacedBy(4.dp)){
             MonarchGlyph(destination.id,Modifier.size(24.dp),color=tint)
