@@ -27,20 +27,44 @@ val Barlow=FontFamily(Font(R.font.barlow),Font(R.font.barlow_semibold,FontWeight
 fun parseColor(value:String):Color{if(value.startsWith("#"))return Color(android.graphics.Color.parseColor(value));val n=Regex("[-+]?[0-9]*\\.?[0-9]+").findAll(value).map{it.value.toFloat()}.toList();if(n.size<3)return Color.White;val h=((n[0]%360)+360)%360/60;val s=n[1]/100;val l=n[2]/100;val c=(1-abs(2*l-1))*s;val x=c*(1-abs(h%2-1));val m=l-c/2;val rgb=when(h.toInt()){0->floatArrayOf(c,x,0f);1->floatArrayOf(x,c,0f);2->floatArrayOf(0f,c,x);3->floatArrayOf(0f,x,c);4->floatArrayOf(x,0f,c);else->floatArrayOf(c,0f,x)};return Color(rgb[0]+m,rgb[1]+m,rgb[2]+m,if(n.size>3)n[3] else 1f)}
 data class HunterColors(val data:JSONObject){fun color(key:String)=parseColor(data.s("--$key","#ffffff"));val bg=color("bg");val panel=color("panel");val surface=color("surface");val input=color("input");val line=color("line");val text=color("text");val muted=color("muted");val accent=color("accent");val secondary=color("secondary33");val selected=color("selected33");fun hex(key:String)="#%06x".format(color(key).toArgb()and 0xffffff)}
 val LocalHunter=staticCompositionLocalOf{HunterColors(JSONObject())}
-/** Valores históricos se convierten a uno de los cuatro temas V39; no alteran datos del usuario. */
+/** Mantiene los temas antiguos y añade paletas del concepto V41. */
 fun resolveV39Theme(value:String?,gender:String=""):String=when(value?.lowercase()){
- "eclipse","aurora","ceniza","amanecer"->value.lowercase()
+ "eclipse","aurora","ceniza","amanecer","nebula","hielo","esmeralda","rojo","menta","lavanda"->value.lowercase()
  "auto"->if(gender=="female")"aurora" else "eclipse"
- "pink","coral","red"->"aurora"
+ "pink","coral"->"aurora"
  "amber","gold"->"amanecer"
- "violet","emerald","teal"->"ceniza"
+ "violet"->"nebula"
+ "emerald","teal"->"esmeralda"
+ "red"->"rojo"
  else->"eclipse"
+}
+
+/** Los cuatro temas históricos provienen del catálogo. Los extra cambian solo presentación. */
+fun v41Colors(design:JSONObject,theme:String):JSONObject{
+ val base=if(theme in listOf("eclipse","aurora","ceniza","amanecer"))theme else "eclipse"
+ val values=JSONObject(design.o(base).toString())
+ val preset=when(theme){
+  "nebula"->listOf("#0C0B1E","#1B1838","#29244B","#17142F","#5D5689","#F1EBFF","#BDB2DE","#9567FF","#B6A0FF","#393366")
+  "hielo"->listOf("#061724","#112939","#193B50","#0F2434","#356A83","#EAFAFF","#A9D0E5","#54CAFF","#A0EEFF","#204A65")
+  "esmeralda"->listOf("#061914","#123026","#1A4335","#102A22","#376E5C","#EDFFF7","#B4DACC","#25D9A0","#8EF8C9","#1A5546")
+  "rojo"->listOf("#200C13","#381723","#522333","#2D131C","#845362","#FFF0F3","#E6BBC6","#F35E79","#FF9AA9","#632C42")
+  "menta"->listOf("#071D20","#14323A","#204450","#102931","#3B7078","#EDFEFC","#ABD9D9","#4DD6C3","#A2F5EE","#21565C")
+  "lavanda"->listOf("#141022","#251C41","#372B57","#1D1733","#71608D","#F8F1FF","#D5C7EA","#B6A0FF","#DDD1FF","#4A3B70")
+  else->null
+ }
+ if(preset!=null){
+  val keys=listOf("--bg","--panel","--surface","--input","--line","--text","--muted","--accent","--secondary33","--selected33")
+  keys.forEachIndexed{i,k->values.put(k,preset[i])}
+  values.put("--glow",preset[9]);values.put("--tone33",preset[2])
+  values.put("--cyan",preset[7]);values.put("--violet",preset[8])
+ }
+ return values
 }
 @Composable fun HunterTheme(store:NativeStore,content: @Composable () -> Unit){
  store.revision.intValue
  val p=store.profile
  val theme=resolveV39Theme(p?.s("theme"),p?.s("gender")?:"")
- val colors=HunterColors(store.catalog.design.o("colors").o(theme))
+ val colors=HunterColors(v41Colors(store.catalog.design.o("colors"),theme))
  CompositionLocalProvider(LocalHunter provides colors){
   MaterialTheme(
    colorScheme=darkColorScheme(primary=colors.accent,onPrimary=colors.bg,surface=colors.panel,
