@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.*
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.graphics.graphicsLayer
@@ -58,7 +59,9 @@ fun HunterRoot(ui:NativeUi){
                     if(store.readError!=null){
                         MonarchRecoveryScreen(ui,store.readError!!)
                     }else{
+                        val saveableScreens=rememberSaveableStateHolder()
                         MonarchScreenTransition(ui.tab,Modifier.fillMaxSize()){route->
+                            saveableScreens.SaveableStateProvider(route){
                             when(route){
                                 "home"->HomeScreen(ui)
                                 "plan"->PlanScreen(ui)
@@ -67,6 +70,7 @@ fun HunterRoot(ui:NativeUi){
                                 "book"->ExercisesScreen(ui)
                                 "stats"->ProgressScreen(ui)
                                 else->ProfileScreen(ui)
+                            }
                             }
                         }
                     }
