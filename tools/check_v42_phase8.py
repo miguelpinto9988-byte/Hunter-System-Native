@@ -37,9 +37,9 @@ check("companionVisible" in companion and "companionMotion" in companion, "Prese
 check("MonarchCompanionMood(s.profile)" in coach, "Panel guía sin acompañante activo")
 check('ui33/companion-${companionKey(ui.store.profile)}.webp' in dashboard, "Dashboard no usa avatar escogido")
 check("accentHex(accentId,t.accent)" in themes and "themeAccent" in design, "Acento no aplicado")
-check('versionName = "42.7-monarca-fase8"' in gradle, "Versión incorrecta")
+check(any(x in gradle for x in ['versionName = "42.7-monarca-fase8"','versionName = "42.8-monarca-fase9"']), "Versión inferior a fase 08")
 check("Auditoria Monarca V42 fase 08" in ci, "CI no incluye auditoría 08")
-check("Hunter-System-V42-Monarca-Fase08-APK" in ci, "Nombre artefacto incorrecto")
+check(any(x in ci for x in ["Hunter-System-V42-Monarca-Fase08-APK","Hunter-System-V42-Monarca-Fase09-APK"]), "Nombre artefacto incorrecto")
 print(json.dumps({"fase":8,"version":"42.7-monarca-fase8",
     "ejercicios":len(catalog),"videos_mp4":342,
     "personajes":5,"temas":9,"acentos":9,
