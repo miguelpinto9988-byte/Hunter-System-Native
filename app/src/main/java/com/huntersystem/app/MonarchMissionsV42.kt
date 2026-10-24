@@ -76,17 +76,17 @@ fun MonarchMissionsScreen(ui:NativeUi) {
     val revision=store.revision.intValue
     var selected by rememberSaveable { mutableStateOf(today()) }
     // Fuerza la relectura sin sustituir los datos del motor por estado UI.
-    key(revision) {
-        SceneColumn(ui) {
-            TopTabs(ui)
-            MonarchMissionsTitle(store)
-            TrainingMode(ui)
+    SceneColumn(ui) {
+        TopTabs(ui)
+        MonarchMissionsTitle(store)
+        TrainingMode(ui)
+        key(revision) {
             MonarchMissionsWeek(ui, selected) { selected = it }
-            MonarchMissionContent(ui, selected)
-            MonarchMissionsProgress(ui)
-            MonarchMissionsActions(ui)
-            MonarchMissionsCalendar(ui)
         }
+        MonarchMissionContent(ui, selected)
+        key(revision) { MonarchMissionsProgress(ui) }
+        MonarchMissionsActions(ui)
+        key(revision) { MonarchMissionsCalendar(ui) }
     }
 }
 
