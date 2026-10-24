@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.*
@@ -36,7 +37,16 @@ class NativeUi(val store:NativeStore){
 }
 fun rankKey(level:Int)=listOf("E","D","C","B","A","S")[((level-1)/5).coerceIn(0,5)]
 @Composable fun Header(ui:NativeUi){val s=ui.store;val rank=rankKey(s.stats().i("level",1));Row(Modifier.fillMaxWidth().padding(bottom=12.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)){HText("✦",Modifier.width(30.dp),size=27,color=LocalHunter.current.accent,bold=true);Column(Modifier.weight(1f)){Heading("HUNTER SYSTEM",size=28);Eyebrow("SISTEMA DE SOMBRAS")};HText(rank,size=22,bold=true,color=LocalHunter.current.accent,modifier=Modifier.clickable{ui.open("evolution")});Avatar(s.state.s("avatar"),s.profile?.s("name")?:"C",Modifier.size(36.dp).clickable{ui.go("profile")})}}
-@Composable fun SceneColumn(ui:NativeUi,content:@Composable ColumnScope.()->Unit){Column(Modifier.fillMaxSize().verticalScroll(remember(ui.tab,ui.library){ScrollState(0)}).padding(horizontal=18.dp,vertical=20.dp),verticalArrangement=Arrangement.spacedBy(20.dp)){Header(ui);content();Spacer(Modifier.height(25.dp))}}
+@Composable fun SceneColumn(ui:NativeUi,content:@Composable ColumnScope.()->Unit){
+ val scroll=rememberSaveable(ui.tab,ui.library,saver=ScrollState.Saver){ScrollState(0)}
+ Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter){
+  Column(Modifier.widthIn(max=960.dp).fillMaxWidth().fillMaxHeight()
+    .verticalScroll(scroll).padding(horizontal=18.dp,vertical=20.dp),
+    verticalArrangement=Arrangement.spacedBy(20.dp)){
+    Header(ui);content();Spacer(Modifier.height(25.dp))
+  }
+ }
+}
 @Composable fun TopTabs(ui:NativeUi){Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(5.dp)){for((id,title)in listOf("home" to "Panel","plan" to "Misiones","objectives" to "Objetivos"))HChip(title,ui.tab==id,Modifier.weight(1f)){ui.go(id)}}}
 @Composable fun HomeScreen(ui:NativeUi){val store=ui.store;val stats=store.stats();SceneColumn(ui){TopTabs(ui);MonarchHero(ui,stats);Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)){for((value,label)in listOf(stats.i("streak") to "Días de racha",stats.i("exerciseCount") to "Misiones",stats.i("reps") to "Repeticiones"))MonarchStatTile(value.toString(),label,Modifier.weight(1f))};MissionCompanion(ui);MissionLaunch(ui)
  HPanel{Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Heading("Explora tu entrenamiento",Modifier.weight(1f),size=25);HText("456 rutinas",size=14,color=LocalHunter.current.muted)};val rows=listOf(listOf("Fuerza y músculo" to "Controla cada repetición","Activa tu energía" to "Con y sin saltos"),listOf("Movilidad" to "Recupera el movimiento","Sesiones mixtas" to "Fuerza + cardio"));for(row in rows)Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){for((title,sub)in row)HPanel(Modifier.weight(1f),onClick={ui.go("routines");ui.library="offline"},padding=12,decor=false){Heading(title,size=23);HText(sub,size=14,color=LocalHunter.current.muted);HText("↗",color=LocalHunter.current.accent)}}}
