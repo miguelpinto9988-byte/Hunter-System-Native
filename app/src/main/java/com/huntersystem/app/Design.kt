@@ -39,7 +39,7 @@ private fun v39VisualTokens(name:String, source:JSONObject):JSONObject {
   "amanecer"->arrayOf("#1F1510","#35261C","#4C3525","#8B6B45","#FFF2DE","#D8BB99","#F6B84F")
   else->arrayOf("#080F1D","#121E34","#1D2B46","#415577","#EDF2FF","#ADBDD9","#397DFF")
  }
- for((key,index) in listOf("bg","panel","surface","line","text","muted","accent").withIndex()){
+ for((index,key) in listOf("bg","panel","surface","line","text","muted","accent").withIndex()){
   result.put("--$key",entries[index])
  }
  result.put("--input",entries[2])
