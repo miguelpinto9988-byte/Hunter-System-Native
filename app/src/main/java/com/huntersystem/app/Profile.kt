@@ -15,8 +15,12 @@ private val fieldLabels=mapOf("name" to "Nombre de cazador","age" to "Edad","hei
 private val healthFields=setOf("pain","acute","special","recommendations","approved","translated","redFlags")
 @Composable fun ProfileScreen(ui:NativeUi){val s=ui.store;val old=s.profile;val form=s.catalog.profileForm.objects();val fields=form.flatMap{it.a("fields").objects()}
  val values=remember(old==null){mutableStateMapOf<String,String>().apply{
-  val defaults=mapOf("gender" to "unspecified","theme" to "eclipse","difficulty" to "basic","goalGroup" to "habit","goal" to "general","frequency" to "2","equipment" to "body","restSeconds" to "30","dailyMissions" to "3","blockMode22" to "exercise","collection33" to "hunter","scene33" to "auto","trainingMode" to "challenges","companionCharacter" to "knight","trainingScale" to "1","pain" to "none")
+  val defaults=mapOf("gender" to "unspecified","theme" to "eclipse","difficulty" to "basic","goalGroup" to "habit","goal" to "general","frequency" to "2","equipment" to "body","restSeconds" to "30","dailyMissions" to "3","blockMode22" to "exercise","collection33" to "hunter","scene33" to "auto","trainingMode" to "challenges","companionCharacter" to "knight","companionVisible" to "true","companionMotion" to "normal","companionSize" to "regular","companionTone" to "balanced","themeAccent" to "default","trainingScale" to "1","pain" to "none")
   putAll(defaults)
+  // La selección visual es persistente aunque el formulario JSON heredado no tenga estos campos.
+  if(old!=null)for(name in listOf("companionVisible","companionMotion","companionSize","companionTone","themeAccent")){
+   old.opt(name)?.takeUnless{it==JSONObject.NULL}?.let{put(name,it.toString())}
+  }
   for(f in fields){val name=f.s("name");val value=f.s("value");val type=f.s("type");val key=if(name in listOf("materials46","capabilities46"))"$name|$value" else name
    val raw:Any?=when{old==null->null;name.startsWith("r_")->old.o("restrictions").opt(name.removePrefix("r_"));name.startsWith("gym_")->old.a("gymEquipment23").strings().contains(name.removePrefix("gym_"));name in listOf("materials46","capabilities46")->old.a(name).strings().contains(value);name in healthFields->old.o("health").opt(name);name=="theme"->resolveV39Theme(old.s("theme"),old.s("gender"));name=="collection33"->s.state.o("appearance33").s("collection","hunter");name=="scene33"->s.state.o("appearance33").s("scene","auto");else->old.opt(name)}
    if(type=="radio"){if(raw!=null&&raw!=JSONObject.NULL)put(name,raw.toString()) else if(f.b("checked"))put(name,value)}else if(raw!=null&&raw!=JSONObject.NULL)put(key,raw.toString()) else if(type=="checkbox")put(key,f.b("checked").toString()) else if(!containsKey(name))put(name,value.ifBlank{f.a("options").objects().firstOrNull()?.s("value")?:""})
@@ -55,8 +59,16 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
     val key=if(name in listOf("materials46","capabilities46"))"$name|${f.s("value")}" else name
     val label=fieldLabels[name]?:f.s("label").substringBefore("Seleccionado").trim()
     when{
-     name=="companionCharacter"->{if(!done.add(name))continue;Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(8.dp)){for((id,character,title2)in listOf(Triple("knight","igris","IGRIS"),Triple("warrior","iron","IRON"),Triple("bear","tank","TANK"),Triple("insect","beru","BERU"),Triple("scientist","dokja","DOKJA KIM")))Column(Modifier.width(92.dp).clip(RoundedCornerShape(8.dp)).background(if(values[name]==id)LocalHunter.current.selected else LocalHunter.current.input).border(1.dp,if(values[name]==id)LocalHunter.current.accent else LocalHunter.current.line,RoundedCornerShape(8.dp)).clickable{values[name]=id}.padding(8.dp),horizontalAlignment=Alignment.CenterHorizontally){AssetImage("ui33/companion-$character.webp",Modifier.height(110.dp).fillMaxWidth());HText(title2,size=13,bold=true)}}}
-     name=="theme"->{if(!done.add(name))continue;MonarchThemePicker(values[name]?:"eclipse"){values[name]=it}}
+     name=="companionCharacter"->{
+      if(!done.add(name))continue
+      MonarchCompanionPicker(values[name]?:"knight"){values[name]=it}
+      MonarchCompanionOptions(values){k,v->values[k]=v}
+     }
+     name=="theme"->{
+      if(!done.add(name))continue
+      MonarchThemePicker(values[name]?:"eclipse"){values[name]=it}
+      MonarchAccentPicker(values["themeAccent"]?:"default"){values["themeAccent"]=it}
+     }
      type=="radio"->{if(!done.add(name))continue;val opts=sec.a("fields").objects().filter{it.s("name")==name}.map{it.s("value") to when(it.s("value")){"challenges"->"Desafíos diarios";"routines"->"Rutinas completas";else->it.s("label")}};Chips(opts,values[name]?:""){values[name]=it}}
      type=="checkbox"->HCheck(label,values[key]=="true"){values[key]=(values[key]!="true").toString()}
      type=="select"->HSelect(label,values[name]?:"",f.a("options").objects().map{it.s("value") to it.s("label")}){v->values[name]=v;if(name=="goalGroup")manualGoalGroup=true;if(name=="difficulty")values["restSeconds"]=mapOf("basic" to "30","intermediate" to "60","advanced" to "90")[v]?:"30"}
@@ -83,7 +95,7 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
   }
   HButton("Guardar perfil",Modifier.fillMaxWidth(),primary=true){saveProfile()}
   HPanel{Heading("Copia de seguridad",size=29);HText("Guarda tu perfil, calendario y registros en un archivo.",size=16,color=LocalHunter.current.muted);HButton("Exportar copia de seguridad"){ui.export()};HButton("Restaurar copia"){ui.import()}}
-  HPanel{Heading("Entrenadores y contenido",size=29);HCheck("Actualizar entrenadores automáticamente",s.state.b("creatorAuto",true)){s.state.put("creatorAuto",!s.state.b("creatorAuto",true));s.save();CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true))};HButton("Actualizar ahora"){ui.open("creator-refresh")};HButton("Recordatorios del sistema"){ui.open("reminders")};HButton("Fuentes y publicaciones"){ui.open("sources")};HText("Hunter System · 42.1 · Monarca A+",size=14,color=LocalHunter.current.muted)}
+  HPanel{Heading("Entrenadores y contenido",size=29);HCheck("Actualizar entrenadores automáticamente",s.state.b("creatorAuto",true)){s.state.put("creatorAuto",!s.state.b("creatorAuto",true));s.save();CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true))};HButton("Actualizar ahora"){ui.open("creator-refresh")};HButton("Recordatorios del sistema"){ui.open("reminders")};HButton("Fuentes y publicaciones"){ui.open("sources")};HText("Hunter System · 42.7 · Monarca fase 08",size=14,color=LocalHunter.current.muted)}
  }
 }
 val zoneLabels=linkedMapOf("neck" to "Cuello","shoulder" to "Hombro","elbow" to "Codo","wrist" to "Muñeca o mano","back" to "Espalda","hip" to "Cadera","knee" to "Rodilla","ankle" to "Tobillo o pie","other" to "Otra zona / no sé")
