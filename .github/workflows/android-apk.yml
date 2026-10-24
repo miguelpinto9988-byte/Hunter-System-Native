@@ -8,6 +8,7 @@ on:
       - "*.gradle.kts"
       - "gradle/**"
       - "gradlew"
+      - ".github/workflows/android-apk.yml"
 
 permissions:
   contents: read
@@ -27,11 +28,18 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: SDK API 35
-        run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
+      - name: SDK Android 35
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          SDK_MANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          if [[ ! -x "$SDK_MANAGER" ]]; then
+            echo "::error::No se encontro sdkmanager en $SDK_MANAGER"
+            exit 1
+          fi
+          yes | "$SDK_MANAGER" --licenses >/dev/null || true
+          "$SDK_MANAGER" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Configurar Gradle
         uses: gradle/actions/setup-gradle@v4
