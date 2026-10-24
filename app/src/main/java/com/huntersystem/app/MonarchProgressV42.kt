@@ -236,6 +236,48 @@ private fun MonarchAchievementGrid(ui:NativeUi,stats:JSONObject){
     }
 }
 
+
+/** Vista compacta de los últimos siete días sin duplicar el historial. */
+@Composable
+fun MonarchHomeProgressStrip(ui:NativeUi){
+    val s=ui.store
+    s.revision.intValue
+    val data=remember(s.revision.intValue){MonarchAnalytics.calculate(s,7)}
+    val c=LocalHunter.current
+    HPanel(onClick={ui.go("stats")},padding=15){
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
+            verticalAlignment=Alignment.CenterVertically){
+            Column{
+                Eyebrow("EVOLUCIÓN EN 7 DÍAS")
+                Heading("Tus últimos avances",size=22)
+            }
+            HText("DETALLES ↗",size=12,color=c.accent,bold=true)
+        }
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(5.dp),
+            verticalAlignment=Alignment.CenterVertically){
+            for((i,b)in data.buckets.withIndex()){
+                val maxSets=max(1,data.buckets.maxOf{it.sets})
+                Column(Modifier.weight(1f),horizontalAlignment=Alignment.CenterHorizontally,
+                    verticalArrangement=Arrangement.spacedBy(5.dp)){
+                    Box(Modifier.fillMaxWidth().height(36.dp),
+                        contentAlignment=Alignment.BottomCenter){
+                        Box(Modifier.fillMaxWidth(.7f)
+                            .height((3f+b.sets.toFloat()/maxSets*31f).dp)
+                            .clip(RoundedCornerShape(5.dp))
+                            .background(if(b.sets>0)c.accent else c.input)
+                            .semantics{contentDescription="${b.title}: ${b.sets} series"})
+                    }
+                    HText(b.title,size=10,color=c.muted,maxLines=1)
+                }
+            }
+        }
+        HText("${data.completed} sesiones completadas · ${data.loggedSets} series registradas",
+            size=14,color=c.muted)
+        if(data.completed==0&&data.loggedSets==0)
+            HText("Aún no hay sesiones registradas esta semana.",size=13,color=c.muted)
+    }
+}
+
 @Composable
 fun MonarchProgressScreen(ui:NativeUi){
     val s=ui.store
