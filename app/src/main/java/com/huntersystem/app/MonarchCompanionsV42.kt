@@ -184,12 +184,15 @@ fun MonarchFloatingCompanion(ui:NativeUi, modifier:Modifier=Modifier){
         else MonarchCompanions.motion(p?.s("companionMotion"))
     val cycleMs=when(motion){"calm"->3100;"fast"->1200;else->2200}
     val amplitude=if(motion=="off")0f else if(motion=="fast")7f else 5f
-    val transition=rememberInfiniteTransition(label="monarch-companion")
-    val dy by transition.animateFloat(
-        0f,-amplitude,infiniteRepeatable(
-            tween(cycleMs,easing=FastOutSlowInEasing),RepeatMode.Reverse),
-        label="float-${character.asset}"
-    )
+    val dy=if(LocalMonarchMotion.current.reduced || amplitude==0f) 0f else {
+        val transition=rememberInfiniteTransition(label="monarch-companion")
+        val floatOffset by transition.animateFloat(
+            0f,-amplitude,infiniteRepeatable(
+                tween(cycleMs,easing=FastOutSlowInEasing),RepeatMode.Reverse),
+            label="float-${character.asset}"
+        )
+        floatOffset
+    }
     AssetImage("ui33/companion-${character.asset}.webp",
         modifier.width(width.dp).height(height.dp)
             .graphicsLayer { translationY=dy }
