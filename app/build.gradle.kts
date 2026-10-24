@@ -2,7 +2,7 @@ import java.net.URI
 plugins { id("com.android.application"); id("org.jetbrains.kotlin.android"); id("org.jetbrains.kotlin.plugin.compose") }
 android {
  namespace = "com.huntersystem.app"; compileSdk = 35
- defaultConfig { applicationId = "com.huntersystem.app"; minSdk = 26; targetSdk = 35; versionCode = 107; versionName = "39.2-native" }
+ defaultConfig { applicationId = "com.huntersystem.app"; minSdk = 26; targetSdk = 35; versionCode = 108; versionName = "42.0-monarca-fase1" }
  signingConfigs { create("release") { val path = System.getenv("HUNTER_KEYSTORE"); if (path != null) { storeFile = file(path); storePassword = System.getenv("HUNTER_STORE_PASSWORD"); keyAlias = "hunter-system-release"; keyPassword = System.getenv("HUNTER_STORE_PASSWORD"); storeType = "PKCS12" } } }
  buildTypes { getByName("release") { isMinifyEnabled = false; signingConfig = signingConfigs.getByName("release") } }
  compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }

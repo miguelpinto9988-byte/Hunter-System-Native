@@ -37,12 +37,13 @@ private fun v39VisualTokens(name:String, source:JSONObject):JSONObject {
   "aurora"->arrayOf("#140919","#27112F","#3E1B4D","#795386","#FFF1FF","#C7A9D3","#F63AB8")
   "ceniza"->arrayOf("#0D1017","#1A202B","#303A49","#617085","#EDF1FA","#B9C7DE","#B9C7DE")
   "amanecer"->arrayOf("#1F1510","#35261C","#4C3525","#8B6B45","#FFF2DE","#D8BB99","#F6B84F")
-  else->arrayOf("#080F1D","#121E34","#1D2B46","#415577","#EDF2FF","#ADBDD9","#397DFF")
+  else->arrayOf("#080D19","#111C31","#18263F","#36506C","#E8F1FF","#B4C6DB","#25C8FF")
  }
  for((index,key) in listOf("bg","panel","surface","line","text","muted","accent").withIndex()){
   result.put("--$key",entries[index])
  }
  result.put("--input",entries[2])
+ if(name=="eclipse"){ result.put("--secondary33","#7F5CFF"); result.put("--selected33","#183352") }
  return result
 }
 
@@ -70,7 +71,7 @@ fun resolveV39Theme(value:String?,gender:String=""):String=when(value?.lowercase
  }
 }
 @Composable fun HText(text:String,modifier:Modifier=Modifier,size:Int=18,color:Color=LocalHunter.current.text,bold:Boolean=false,maxLines:Int=Int.MAX_VALUE){Text(text,modifier,color=color,fontFamily=Barlow,fontSize=size.sp,lineHeight=(size*1.4).sp,fontWeight=if(bold)FontWeight.SemiBold else FontWeight.Normal,maxLines=maxLines)}
-@Composable fun Heading(text:String,modifier:Modifier=Modifier,size:Int=36){Text(text,modifier,fontFamily=FontFamily.Serif,fontWeight=FontWeight.Bold,fontSize=size.sp,lineHeight=(size*1.12).sp,color=LocalHunter.current.text)}
+@Composable fun Heading(text:String,modifier:Modifier=Modifier,size:Int=36){Text(text,modifier,fontFamily=Barlow,fontWeight=FontWeight.Bold,fontSize=size.sp,lineHeight=(size*1.12).sp,color=LocalHunter.current.text)}
 @Composable fun Eyebrow(text:String,modifier:Modifier=Modifier){Text(text,modifier,fontFamily=Barlow,fontSize=12.sp,lineHeight=16.sp,letterSpacing=1.6.sp,fontWeight=FontWeight.SemiBold,color=LocalHunter.current.accent)}
 @Composable fun HPanel(modifier:Modifier=Modifier,onClick:(()->Unit)?=null,decor:Boolean=true,padding:Int=24,content:@Composable ColumnScope.()->Unit){
  val c=LocalHunter.current
@@ -86,7 +87,7 @@ fun resolveV39Theme(value:String?,gender:String=""):String=when(value?.lowercase
 @Composable fun HButton(text:String,modifier:Modifier=Modifier,primary:Boolean=false,enabled:Boolean=true,onClick:()->Unit){
  val c=LocalHunter.current
  val shape=RoundedCornerShape(11.dp)
- Box(modifier.defaultMinSize(minHeight=46.dp).clip(shape)
+ Box(modifier.defaultMinSize(minHeight=48.dp).clip(shape)
     .background(if(primary)Brush.horizontalGradient(listOf(c.accent,c.secondary)) else Brush.verticalGradient(listOf(c.surface,c.input)))
     .border(1.dp,if(primary)c.accent else c.line,shape)
     .clickable(enabled=enabled,onClick=onClick)
