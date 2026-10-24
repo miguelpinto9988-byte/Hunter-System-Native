@@ -1,0 +1,41 @@
+{
+  "apk": "Hunter-System-38.50-Kotlin-Firmada.apk",
+  "package": "com.huntersystem.app",
+  "version_name": "38.50-native",
+  "version_code": 104,
+  "min_sdk": 26,
+  "target_sdk": 35,
+  "bytes": 170884002,
+  "sha256": "3b9d56bdde7315fcd6ee967681b050213fd7ba97dcdfd154bedbfbe85f5710a8",
+  "certificate_sha256": "a2d96e083b1bd56bb226d007008a45a991610d847ccc75c01ca76d105f0833ad",
+  "signature_matches_supplied_key": true,
+  "signature_v2": true,
+  "signature_v3": false,
+  "zipalign_16k_check": true,
+  "original_resource_files_verified": 4010,
+  "web_runtime_assets": [],
+  "tests": [
+    {
+      "class": "com.huntersystem.app.ComposeSmokeTest",
+      "tests": 3,
+      "failures": 0,
+      "seconds": 19.711
+    },
+    {
+      "class": "com.huntersystem.app.NativeStoreTest",
+      "tests": 10,
+      "failures": 0,
+      "seconds": 27.285
+    },
+    {
+      "class": "com.huntersystem.app.ParityTest",
+      "tests": 4,
+      "failures": 0,
+      "seconds": 7.637
+    }
+  ],
+  "lint_errors": [],
+  "lint_warnings": 8,
+  "physical_device_tested": false,
+  "pixel_perfect_visual_parity_verified": false
+}

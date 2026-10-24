@@ -1,0 +1,522 @@
+{
+  "version": 33,
+  "artwork": "Generated 2D illustrations; fan-inspired, independent app.",
+  "files": [
+    {
+      "path": "ui33/hunter-male-e.webp",
+      "width": 170,
+      "height": 506,
+      "transparent": true,
+      "sha256": "766ab21600fcf0215044a4549afb283ebe8ed739b18d0463a194c04bd6a65f76",
+      "source": "hunter-edc.png",
+      "cell": {
+        "row": 0,
+        "col": 0
+      }
+    },
+    {
+      "path": "ui33/hunter-female-e.webp",
+      "width": 230,
+      "height": 493,
+      "transparent": true,
+      "sha256": "de72e92170db4387a0a7820406d71e3dd0f8e6a907431df894e97799c6612919",
+      "source": "hunter-edc.png",
+      "cell": {
+        "row": 1,
+        "col": 0
+      }
+    },
+    {
+      "path": "ui33/reader-e.webp",
+      "width": 167,
+      "height": 512,
+      "transparent": true,
+      "sha256": "999df8736edbecf1ecf96fdf90fa496d2ec20063a75c4a291680192b40d86721",
+      "source": "readers-edc.png",
+      "cell": {
+        "row": 0,
+        "col": 0
+      }
+    },
+    {
+      "path": "ui33/regressor-e.webp",
+      "width": 197,
+      "height": 511,
+      "transparent": true,
+      "sha256": "1e73c02cfb61711af1d52012de6c0a43998244a89067f4d8a10f077ffda7fb3a",
+      "source": "readers-edc.png",
+      "cell": {
+        "row": 1,
+        "col": 0
+      }
+    },
+    {
+      "path": "ui33/scene-e-0.webp",
+      "width": 512,
+      "height": 512,
+      "transparent": false,
+      "sha256": "8ec0075a846de25480d9e45dcae90397038dbd5fd893cfe9b2f283a6c30d2dfa",
+      "source": "environments-edc.png",
+      "cell": {
+        "row": 0,
+        "col": 0
+      }
+    },
+    {
+      "path": "ui33/scene-e-1.webp",
+      "width": 512,
+      "height": 512,
+      "transparent": false,
+      "sha256": "b17162254eb1a078582e96716ca9bd843860736010fb0fe5a178f547f83c1110",
+      "source": "environments-edc.png",
+      "cell": {
+        "row": 1,
+        "col": 0
+      }
+    },
+    {
+      "path": "ui33/hunter-male-d.webp",
+      "width": 363,
+      "height": 501,
+      "transparent": true,
+      "sha256": "39ad537cb1096fbb8cda21dc383682d85854448212fa2cc0bde648165fe0575b",
+      "source": "hunter-edc.png",
+      "cell": {
+        "row": 0,
+        "col": 1
+      }
+    },
+    {
+      "path": "ui33/hunter-female-d.webp",
+      "width": 198,
+      "height": 500,
+      "transparent": true,
+      "sha256": "6d9cd16068c638c2e0b45fd6dd0b5d3791f7c09978f8f2ab139bb7d52de47433",
+      "source": "hunter-edc.png",
+      "cell": {
+        "row": 1,
+        "col": 1
+      }
+    },
+    {
+      "path": "ui33/reader-d.webp",
+      "width": 447,
+      "height": 512,
+      "transparent": true,
+      "sha256": "e053102385f9601cb9ab6e34fa55b7ea9d5bc08e9280df1083aabb8faa0e6729",
+      "source": "readers-edc.png",
+      "cell": {
+        "row": 0,
+        "col": 1
+      }
+    },
+    {
+      "path": "ui33/regressor-d.webp",
+      "width": 502,
+      "height": 511,
+      "transparent": true,
+      "sha256": "b0a070412300785c34ee9a8954265729f87a3055ed707340b077e304b52249f8",
+      "source": "readers-edc.png",
+      "cell": {
+        "row": 1,
+        "col": 1
+      }
+    },
+    {
+      "path": "ui33/scene-d-0.webp",
+      "width": 512,
+      "height": 512,
+      "transparent": false,
+      "sha256": "5cece244dc314074a91d3c540654b585b663853607d8e01e5301869077d6d3de",
+      "source": "environments-edc.png",
+      "cell": {
+        "row": 0,
+        "col": 1
+      }
+    },
+    {
+      "path": "ui33/scene-d-1.webp",
+      "width": 512,
+      "height": 512,
+      "transparent": false,
+      "sha256": "408705267b5281676ab18ba606ef5dec1fcfd4fea3e4124707806d5d8d3a0785",
+      "source": "environments-edc.png",
+      "cell": {
+        "row": 1,
+        "col": 1
+      }
+    },
+    {
+      "path": "ui33/hunter-male-c.webp",
+      "width": 354,
+      "height": 506,
+      "transparent": true,
+      "sha256": "184245b553ee285000785577f3069154554eeea9b16c4510f7e2843269190e71",
+      "source": "hunter-edc.png",
+      "cell": {
+        "row": 0,
+        "col": 2
+      }
+    },
+    {
+      "path": "ui33/hunter-female-c.webp",
+      "width": 353,
+      "height": 499,
+      "transparent": true,
+      "sha256": "45e417e6729f537bcb0dc9a0fbe1c0b9019323bed6c4cc06fec5a65b496b8a01",
+      "source": "hunter-edc.png",
+      "cell": {
+        "row": 1,
+        "col": 2
+      }
+    },
+    {
+      "path": "ui33/reader-c.webp",
+      "width": 481,
+      "height": 512,
+      "transparent": true,
+      "sha256": "c8f8f06b7d381b521501ce4fc7950b8162001f1543bf20e0f19f8cea89a7470b",
+      "source": "readers-edc.png",
+      "cell": {
+        "row": 0,
+        "col": 2
+      }
+    },
+    {
+      "path": "ui33/regressor-c.webp",
+      "width": 489,
+      "height": 510,
+      "transparent": true,
+      "sha256": "feb4457b1f8a64443e7acb7ebee31b0312a6bf11909ff976fda3ae7955c88aaf",
+      "source": "readers-edc.png",
+      "cell": {
+        "row": 1,
+        "col": 2
+      }
+    },
+    {
+      "path": "ui33/scene-c-0.webp",
+      "width": 512,
+      "height": 512,
+      "transparent": false,
+      "sha256": "f3434331fbc0012017efbda00c822671fb12b2a8a3729d20aff6aa29e94d9209",
+      "source": "environments-edc.png",
+      "cell": {
+        "row": 0,
+        "col": 2
+      }
+    },
+    {
+      "path": "ui33/scene-c-1.webp",
+      "width": 512,
+      "height": 512,
+      "transparent": false,
+      "sha256": "53358d2d0dfdea7736508f250619fec151abcb85c90cb01897e1dc01b313964b",
+      "source": "environments-edc.png",
+      "cell": {
+        "row": 1,
+        "col": 2
+      }
+    },
+    {
+      "path": "ui33/hunter-male-b.webp",
+      "width": 421,
+      "height": 533,
+      "transparent": true,
+      "sha256": "c9add993c4d2bdf05d64f8f7a31a025f78ddf371cd3b5c98fcdc3fec666d22b5",
+      "source": "hunter-bas.png",
+      "cell": {
+        "row": 0,
+        "col": 0,
+        "top": 0,
+        "height": 545
+      }
+    },
+    {
+      "path": "ui33/hunter-female-b.webp",
+      "width": 372,
+      "height": 478,
+      "transparent": true,
+      "sha256": "023aaca8ec8fe042900969e19fbc4e6e710956493af88d55f222a5236bdb7a9a",
+      "source": "hunter-bas.png",
+      "cell": {
+        "row": 1,
+        "col": 0,
+        "top": 545,
+        "height": 479
+      }
+    },
+    {
+      "path": "ui33/reader-b.webp",
+      "width": 472,
+      "height": 506,
+      "transparent": true,
+      "sha256": "4184e9bf0f8a531ee62a9703feb4c8a3d6faa89a85deb5ae59a38ae72433bf41",
+      "source": "readers-bas.png",
+      "cell": {
+        "row": 0,
+        "col": 0
+      }
+    },
+    {
+      "path": "ui33/regressor-b.webp",
+      "width": 502,
+      "height": 507,
+      "transparent": true,
+      "sha256": "ee553c26caf3b1968e5655b1115fb195772198744fc07c73014ddcc6b386e456",
+      "source": "readers-bas.png",
+      "cell": {
+        "row": 1,
+        "col": 0
+      }
+    },
+    {
+      "path": "ui33/scene-b-0.webp",
+      "width": 512,
+      "height": 512,
+      "transparent": false,
+      "sha256": "6708ec0deb68219cae792195b20b3e596f7818a62442ca9bd17ca6576c47e205",
+      "source": "environments-bas.png",
+      "cell": {
+        "row": 0,
+        "col": 0
+      }
+    },
+    {
+      "path": "ui33/scene-b-1.webp",
+      "width": 512,
+      "height": 512,
+      "transparent": false,
+      "sha256": "c39d80bd9aa31961ac76c1aa822b39aa4c3def5274b561017776c68644821385",
+      "source": "environments-bas.png",
+      "cell": {
+        "row": 1,
+        "col": 0
+      }
+    },
+    {
+      "path": "ui33/hunter-male-a.webp",
+      "width": 485,
+      "height": 533,
+      "transparent": true,
+      "sha256": "5c9ed32fcd09fec67de92145b725733cb392f138d4b9576fdf100f7b80f5c6fd",
+      "source": "hunter-bas.png",
+      "cell": {
+        "row": 0,
+        "col": 1,
+        "top": 0,
+        "height": 545
+      }
+    },
+    {
+      "path": "ui33/hunter-female-a.webp",
+      "width": 491,
+      "height": 478,
+      "transparent": true,
+      "sha256": "298c9592fbd75302eb61bd0f45bc081c91f5c165681e5b379e7ac9dc9ed3a5ad",
+      "source": "hunter-bas.png",
+      "cell": {
+        "row": 1,
+        "col": 1,
+        "top": 545,
+        "height": 479
+      }
+    },
+    {
+      "path": "ui33/reader-a.webp",
+      "width": 507,
+      "height": 508,
+      "transparent": true,
+      "sha256": "0e1184cd83f90e404d400200923289cbaa1b89fb0647dbaf2af06462a43323d4",
+      "source": "readers-bas.png",
+      "cell": {
+        "row": 0,
+        "col": 1
+      }
+    },
+    {
+      "path": "ui33/regressor-a.webp",
+      "width": 512,
+      "height": 508,
+      "transparent": true,
+      "sha256": "89607133789fba90b8522e1c3ddd912eaa361e1b88157a229deabfd0676f0b85",
+      "source": "readers-bas.png",
+      "cell": {
+        "row": 1,
+        "col": 1
+      }
+    },
+    {
+      "path": "ui33/scene-a-0.webp",
+      "width": 512,
+      "height": 512,
+      "transparent": false,
+      "sha256": "ca48fe230dcba8867d0286c0b76bce440f32487714d2066b7d6357b9a21c7ff4",
+      "source": "environments-bas.png",
+      "cell": {
+        "row": 0,
+        "col": 1
+      }
+    },
+    {
+      "path": "ui33/scene-a-1.webp",
+      "width": 512,
+      "height": 512,
+      "transparent": false,
+      "sha256": "b2be431618dd1b4b84b1a07ef950d144c7832f74a5c5c5d818ee2d161a7c21b3",
+      "source": "environments-bas.png",
+      "cell": {
+        "row": 1,
+        "col": 1
+      }
+    },
+    {
+      "path": "ui33/hunter-male-s.webp",
+      "width": 505,
+      "height": 537,
+      "transparent": true,
+      "sha256": "6db49c070bbc9aa843b7ddb1e73e43ad6df0a4be6a1c95be31df17a751d95310",
+      "source": "hunter-bas.png",
+      "cell": {
+        "row": 0,
+        "col": 2,
+        "top": 0,
+        "height": 545
+      }
+    },
+    {
+      "path": "ui33/hunter-female-s.webp",
+      "width": 476,
+      "height": 477,
+      "transparent": true,
+      "sha256": "de576e347ab7cc496a4f5f36bf34cbb67fd4c4ce6a2d5f3433a8f17f121e3ccb",
+      "source": "hunter-bas.png",
+      "cell": {
+        "row": 1,
+        "col": 2,
+        "top": 545,
+        "height": 479
+      }
+    },
+    {
+      "path": "ui33/reader-s.webp",
+      "width": 506,
+      "height": 512,
+      "transparent": true,
+      "sha256": "7ec7891836f3ba2ac0768751e0d6d9e3a30bb6cea3c1756ada20c646e158dce2",
+      "source": "readers-bas.png",
+      "cell": {
+        "row": 0,
+        "col": 2
+      }
+    },
+    {
+      "path": "ui33/regressor-s.webp",
+      "width": 512,
+      "height": 512,
+      "transparent": true,
+      "sha256": "2b6609a12d3bb4219b436070674940be09a1b023265171d238ab6198ba0dc131",
+      "source": "readers-bas.png",
+      "cell": {
+        "row": 1,
+        "col": 2
+      }
+    },
+    {
+      "path": "ui33/scene-s-0.webp",
+      "width": 512,
+      "height": 512,
+      "transparent": false,
+      "sha256": "33f5040dd6ec365a09c11c2c2a2f1628644a1cc6323676aabf3ccc90adce4a87",
+      "source": "environments-bas.png",
+      "cell": {
+        "row": 0,
+        "col": 2
+      }
+    },
+    {
+      "path": "ui33/scene-s-1.webp",
+      "width": 512,
+      "height": 512,
+      "transparent": false,
+      "sha256": "a67d548b409a16b2000c02dce780723240788572b1bec1ab486b5cefd2c3e4c6",
+      "source": "environments-bas.png",
+      "cell": {
+        "row": 1,
+        "col": 2
+      }
+    },
+    {
+      "path": "ui33/companion-igris.webp",
+      "width": 497,
+      "height": 507,
+      "transparent": true,
+      "sha256": "f02d8774c72a23361139b87839a3cc4aaafca36baa01b2fe054b1d4672c432c9",
+      "source": "companions.png",
+      "cell": {
+        "row": 0,
+        "col": 0
+      }
+    },
+    {
+      "path": "ui33/companion-iron.webp",
+      "width": 487,
+      "height": 504,
+      "transparent": true,
+      "sha256": "1b72df19b6266705ed6093a48cac8ceb37637d945c542ebcb8957ed15a45c0d2",
+      "source": "companions.png",
+      "cell": {
+        "row": 0,
+        "col": 1
+      }
+    },
+    {
+      "path": "ui33/companion-tank.webp",
+      "width": 465,
+      "height": 481,
+      "transparent": true,
+      "sha256": "b6901a40777ea2e1f38e67eaac4273417ed2d4561cc586a588d097db6dd79f25",
+      "source": "companions.png",
+      "cell": {
+        "row": 0,
+        "col": 2
+      }
+    },
+    {
+      "path": "ui33/companion-beru.webp",
+      "width": 495,
+      "height": 500,
+      "transparent": true,
+      "sha256": "c4615994e93d8d9be7b354d4f7c5e66d1f445d0681f582540e2b3afcb661f7d9",
+      "source": "companions.png",
+      "cell": {
+        "row": 1,
+        "col": 0
+      }
+    },
+    {
+      "path": "ui33/companion-dokja.webp",
+      "width": 505,
+      "height": 504,
+      "transparent": true,
+      "sha256": "fa817b3e73cb7fffa4040e416f6ae0fbcb058f35a98d346c11985cdc727d0eee",
+      "source": "companions.png",
+      "cell": {
+        "row": 1,
+        "col": 1
+      }
+    },
+    {
+      "path": "ui33/companion-portal.webp",
+      "width": 466,
+      "height": 501,
+      "transparent": true,
+      "sha256": "ad58550dfa5162a7f2d6ff345bd8b081dfdb0fd647d6993be10d93851b832a14",
+      "source": "companions.png",
+      "cell": {
+        "row": 1,
+        "col": 2
+      }
+    }
+  ]
+}

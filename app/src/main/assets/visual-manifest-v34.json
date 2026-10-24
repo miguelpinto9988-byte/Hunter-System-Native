@@ -1,0 +1,195 @@
+{
+  "version": 34,
+  "method": "Redibujado HD desde el recorte de la etapa anterior; WebP sin pérdida, sin reescalar. No modifica las demostraciones de ejercicios.",
+  "files": [
+    {
+      "path": "ui34/reader-e.webp",
+      "width": 506,
+      "height": 1506,
+      "transparent": true,
+      "source": "design/production34/reader-e.png",
+      "sourceWidth": 1024,
+      "sourceHeight": 1536,
+      "crop": {
+        "left": 263,
+        "top": 2,
+        "width": 506,
+        "height": 1506
+      },
+      "previous": {
+        "width": 167,
+        "height": 512
+      },
+      "sha256": "5cf13094071344bae944517452bec7d2608bb71c16be2d18b0aba7ac180f3191",
+      "bytes": 391694
+    },
+    {
+      "path": "ui34/reader-d.webp",
+      "width": 1024,
+      "height": 1510,
+      "transparent": true,
+      "source": "design/production34/reader-d.png",
+      "sourceWidth": 1024,
+      "sourceHeight": 1536,
+      "crop": {
+        "left": 0,
+        "top": 0,
+        "width": 1024,
+        "height": 1510
+      },
+      "previous": {
+        "width": 447,
+        "height": 512
+      },
+      "sha256": "bb20d7a629eeb67e0505a43a0520b1a75480a8434186397396f2c7dee75fa179",
+      "bytes": 948684
+    },
+    {
+      "path": "ui34/reader-c.webp",
+      "width": 1024,
+      "height": 1536,
+      "transparent": true,
+      "source": "design/production34/reader-c.png",
+      "sourceWidth": 1024,
+      "sourceHeight": 1536,
+      "crop": {
+        "left": 0,
+        "top": 0,
+        "width": 1024,
+        "height": 1536
+      },
+      "previous": {
+        "width": 481,
+        "height": 512
+      },
+      "sha256": "66b6a801afa35b2677b4d6bb2c43f21cf71236ca10f9c62210a9930acc137f13",
+      "bytes": 1141646
+    },
+    {
+      "path": "ui34/reader-b.webp",
+      "width": 1024,
+      "height": 1506,
+      "transparent": true,
+      "source": "design/production34/reader-b.png",
+      "sourceWidth": 1024,
+      "sourceHeight": 1536,
+      "crop": {
+        "left": 0,
+        "top": 0,
+        "width": 1024,
+        "height": 1506
+      },
+      "previous": {
+        "width": 472,
+        "height": 506
+      },
+      "sha256": "2fd38a3506bfbfb3db1b76666a278eb636293dcfc2f7d94593f7949ed32a810c",
+      "bytes": 873574
+    },
+    {
+      "path": "ui34/reader-a.webp",
+      "width": 1024,
+      "height": 1532,
+      "transparent": true,
+      "source": "design/production34/reader-a.png",
+      "sourceWidth": 1024,
+      "sourceHeight": 1536,
+      "crop": {
+        "left": 0,
+        "top": 0,
+        "width": 1024,
+        "height": 1532
+      },
+      "previous": {
+        "width": 507,
+        "height": 508
+      },
+      "sha256": "886dcda7392d78bc8a565a041ebd48c5dbadab391d688ae12d3789343254510a",
+      "bytes": 1257860
+    },
+    {
+      "path": "ui34/reader-s.webp",
+      "width": 1024,
+      "height": 1513,
+      "transparent": true,
+      "source": "design/production34/reader-s.png",
+      "sourceWidth": 1024,
+      "sourceHeight": 1536,
+      "crop": {
+        "left": 0,
+        "top": 0,
+        "width": 1024,
+        "height": 1513
+      },
+      "previous": {
+        "width": 506,
+        "height": 512
+      },
+      "sha256": "42520835c2f8de0793a322c46ae297ac7be80fac210dde6e769c17d350d42497",
+      "bytes": 1775944
+    },
+    {
+      "path": "ui34/hunter-male-e.webp",
+      "width": 600,
+      "height": 1733,
+      "transparent": true,
+      "source": "design/production34/hunter-male-e.png",
+      "sourceWidth": 881,
+      "sourceHeight": 1784,
+      "crop": {
+        "left": 141,
+        "top": 3,
+        "width": 600,
+        "height": 1733
+      },
+      "previous": {
+        "width": 170,
+        "height": 506
+      },
+      "sha256": "03af6ea3cee9177ac2f49bbfce42718a932de0198f10c8e7fe355eee7bdb3930",
+      "bytes": 638968
+    },
+    {
+      "path": "ui34/hunter-female-e.webp",
+      "width": 727,
+      "height": 1514,
+      "transparent": true,
+      "source": "design/production34/hunter-female-e.png",
+      "sourceWidth": 1024,
+      "sourceHeight": 1536,
+      "crop": {
+        "left": 152,
+        "top": 4,
+        "width": 727,
+        "height": 1514
+      },
+      "previous": {
+        "width": 230,
+        "height": 493
+      },
+      "sha256": "053849aa19eb91038c53130793c08f630b8e3f1396854e5baec1f430141716e6",
+      "bytes": 543006
+    },
+    {
+      "path": "ui34/regressor-e.webp",
+      "width": 605,
+      "height": 1533,
+      "transparent": true,
+      "source": "design/production34/regressor-e.png",
+      "sourceWidth": 1024,
+      "sourceHeight": 1536,
+      "crop": {
+        "left": 238,
+        "top": 0,
+        "width": 605,
+        "height": 1533
+      },
+      "previous": {
+        "width": 197,
+        "height": 511
+      },
+      "sha256": "10dff773675435a20db896c50c088028e7cb70a24dc20fe792ce5312d5d7c5fe",
+      "bytes": 419358
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "updated": "2026-10-21",
+  "scope": "Referencias de programación general para adultos; no validan clínicamente el motor ni cubren cada lesión.",
+  "sources": [
+    {
+      "publisher": "ACSM",
+      "title": "Resistance Training Guidelines Update 2026",
+      "url": "https://acsm.org/resistance-training-guidelines-update-2026/",
+      "usedFor": "Distinguir fuerza, potencia y adaptación individual al objetivo."
+    },
+    {
+      "publisher": "NSCA",
+      "title": "Plyometric Exercises",
+      "url": "https://www.nsca.com/education/articles/kinetic-select/plyometric-exercises/",
+      "usedFor": "Pocos movimientos, calidad de ejecución y control de la carga de saltos."
+    }
+  ],
+  "implementationChoices": [
+    "Una clasificación explícita por ID para los 1200 ejercicios.",
+    "Introducción básica limitada al salto bajo bilateral con capacidad de aterrizaje confirmada.",
+    "Como máximo un movimiento de potencia/impacto por sesión automática, dos series y dosis acotada.",
+    "Al menos 48 horas entre sesiones automáticas con potencia/impacto y como máximo tres en siete días.",
+    "Las dosis concretas son límites del software, no una prescripción clínica validada.",
+    "No se eliminan restricciones de noImpact, lesiones, dolor, edad, material o capacidades."
+  ]
+}

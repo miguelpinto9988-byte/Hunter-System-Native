@@ -1,0 +1,54 @@
+{
+  "version": "38.46",
+  "sources": [
+    {
+      "id": "aaos-shoulder",
+      "title": "AAOS · Rotator Cuff and Shoulder Conditioning Program",
+      "url": "https://www.orthoinfo.org/recovery/rotator-cuff-and-shoulder-conditioning-program/",
+      "scope": "Referencia escrita para algunos movimientos de rotación y estiramiento del hombro; no valida el catálogo completo."
+    },
+    {
+      "id": "aaos-hip",
+      "title": "AAOS · Hip Conditioning Program",
+      "url": "https://www.orthoinfo.org/recovery/hip-conditioning-program/",
+      "scope": "Contexto educativo sobre control de cadera y condiciones de ejecución."
+    },
+    {
+      "id": "aaos-foot",
+      "title": "AAOS · Foot and Ankle Conditioning Program",
+      "url": "https://www.orthoinfo.org/recovery/foot-and-ankle-conditioning-program/",
+      "scope": "Referencia escrita de inversión, eversión, flexión plantar, toalla y estiramiento de pantorrilla."
+    },
+    {
+      "id": "ace-pullup",
+      "title": "ACE · Pull-ups",
+      "url": "https://www.acefitness.org/resources/everyone/exercise-library/191/pull-ups/",
+      "scope": "Referencia técnica de la dominada pronada. Requiere capacidades de suspensión y tracción confirmadas."
+    },
+    {
+      "id": "ace-tgu",
+      "title": "ACE · Half Turkish Get-up",
+      "url": "https://www.acefitness.org/resources/everyone/exercise-library/381/half-turkish-get-up/",
+      "scope": "Referencia para la incorporación parcial; el turco completo tiene una secuencia creada para esta aplicación."
+    },
+    {
+      "id": "nsca-landing",
+      "title": "NSCA · Jump Landing",
+      "url": "https://www.nsca.com/education/videos/bridge-series/bridge-jump-landing-for-females/",
+      "scope": "Contexto general sobre aprendizaje del aterrizaje. No es una revisión individual de todos los saltos ni una transcripción del vídeo."
+    },
+    {
+      "id": "nhs-neural",
+      "title": "NHS Bexley · Upper limb neurodynamic exercises",
+      "url": "https://msk-bexley.nhs.uk/conditions/back-pain/upper-limb-neurodynamic-exercises",
+      "scope": "Referencia educativa de deslizamientos del miembro superior. Los cuatro ejercicios neurales solo se habilitan con indicación profesional específica declarada; no son tratamiento automático."
+    },
+    {
+      "id": "authored",
+      "title": "Modelos vectoriales y reglas del catálogo 38.46",
+      "url": null,
+      "scope": "Secuencias e ilustraciones elaboradas en el código del proyecto. Las comprobaciones de articulaciones y continuidad no equivalen a una validación clínica independiente."
+    }
+  ],
+  "limits": "Las ilustraciones son educativas. La app no observa la técnica del usuario ni diagnostica lesiones. No se incluyen copias de libros ni vídeos."
+}

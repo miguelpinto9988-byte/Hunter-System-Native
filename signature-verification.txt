@@ -1,0 +1,17 @@
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v3.1 scheme (APK Signature Scheme v3.1): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Verified for SourceStamp: false
+Number of signers: 1
+Signer #1 certificate DN: CN=Hunter System Android Signing
+Signer #1 certificate SHA-256 digest: a2d96e083b1bd56bb226d007008a45a991610d847ccc75c01ca76d105f0833ad
+Signer #1 certificate SHA-1 digest: cfc516fbe8cb962e12b5ef83d99f5eab14185de1
+Signer #1 certificate MD5 digest: b1d0f862df6ba7ede9050da3ea78c121
+Signer #1 key algorithm: RSA
+Signer #1 key size (bits): 4096
+Signer #1 public key SHA-256 digest: 548f78f72e6d66fb5d34665b51a2101b52fc7aff44584f3e955678d67a0d85e3
+Signer #1 public key SHA-1 digest: da078490d65705749e9aaabf004448ffc8b79737
+Signer #1 public key MD5 digest: 109a8fd4b7183223066bdf744da510f3

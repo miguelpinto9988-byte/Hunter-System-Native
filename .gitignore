@@ -1,1 +1,23 @@
-/Hunter-System-38.50-Kotlin-Fuente.zip
+.gradle/
+build/
+app/build/
+local.properties
+*.p12
+*.jks
+*.keystore
+contrasena.txt
+qa/
+
+# Hunter System: archivos locales y privados
+*.zip
+*.apk
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+.env*
+local.properties
+contrasena.txt
+.gradle/
+**/build/
