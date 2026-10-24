@@ -51,16 +51,31 @@ object HunterDesignSystem {
         HunterThemeSpec("ceniza","Ceniza","#0D1017","#1A202B","#303A49","#617085","#EDF1FA","#B9C7DE","#C9D2E6","#8298B3","#33445C"),
         HunterThemeSpec("amanecer","Amanecer","#1F1510","#35261C","#4C3525","#8B6B45","#FFF2DE","#D8BB99","#F6B84F","#FFD988","#654629")
     )
+    /** Acentos de alto contraste sobre las superficies oscuras de todos los temas. */
+    data class Accent(val id:String,val label:String,val hex:String)
+    val accents=listOf(
+        Accent("default","Original",""),
+        Accent("cyan","Cian","#25C8FF"),
+        Accent("ice","Hielo","#82DBFA"),
+        Accent("blue","Azul","#619AFF"),
+        Accent("violet","Violeta","#CEA4FF"),
+        Accent("pink","Rosa","#FF83C6"),
+        Accent("coral","Coral","#FF9B91"),
+        Accent("gold","Dorado","#F6B84F"),
+        Accent("mint","Menta","#78E6B2")
+    )
+    fun accentHex(id:String?,fallback:String):String =
+        accents.firstOrNull{it.id==id}?.hex?.takeIf{it.isNotEmpty()}?:fallback
     val ids = themes.map { it.id }.toSet()
     fun theme(id: String?): HunterThemeSpec = themes.firstOrNull { it.id == id } ?: themes.first()
 
-    fun tokens(id: String, source: JSONObject): JSONObject {
+    fun tokens(id: String, source: JSONObject, accentId:String="default"): JSONObject {
         val t = theme(id)
         return JSONObject(source.toString()).apply {
             put("--bg",t.bg);put("--panel",t.panel);put("--surface",t.surface)
             put("--input",t.surface);put("--line",t.border)
             put("--text",t.text);put("--muted",t.muted)
-            put("--accent",t.accent);put("--secondary33",t.secondary)
+            put("--accent",accentHex(accentId,t.accent));put("--secondary33",t.secondary)
             put("--selected33",t.selected)
         }
     }
@@ -156,5 +171,38 @@ fun MonarchStatTile(number: String, caption: String, modifier: Modifier=Modifier
     HPanel(modifier,padding=12) {
         HText(number,size=29,bold=true,color=LocalHunter.current.accent,maxLines=1)
         HText(caption,size=12,color=LocalHunter.current.muted,maxLines=2)
+    }
+}
+
+/** Previsualización local, sin aplicar el tema ni modificar las misiones hasta guardar. */
+@Composable
+fun MonarchAccentPicker(current:String,onChange:(String)->Unit){
+    val c=LocalHunter.current
+    Column(verticalArrangement=Arrangement.spacedBy(10.dp)){
+        Eyebrow("COLOR DE ENERGÍA")
+        HText("Personaliza botones, barras y elementos destacados.",
+            size=14,color=c.muted)
+        for(row in HunterDesignSystem.accents.chunked(3)){
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                for(accent in row){
+                    val active=accent.id==current
+                    val color=parseColor(accent.hex.ifBlank{HunterDesignSystem.themes.first().accent})
+                    Row(Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
+                        .background(c.input)
+                        .border(if(active)2.dp else 1.dp,
+                            if(active)c.accent else c.line,RoundedCornerShape(12.dp))
+                        .selectable(active,role=Role.RadioButton,
+                            onClick={onChange(accent.id)})
+                        .padding(vertical=10.dp,horizontal=8.dp),
+                        horizontalArrangement=Arrangement.spacedBy(7.dp),
+                        verticalAlignment=Alignment.CenterVertically){
+                        Box(Modifier.size(18.dp).clip(CircleShape).background(color))
+                        HText(accent.label,size=12,bold=active,maxLines=1)
+                    }
+                }
+            }
+        }
+        HText("Los colores se aplican al guardar Perfil; ningún avance cambia.",
+            size=13,color=c.muted)
     }
 }
