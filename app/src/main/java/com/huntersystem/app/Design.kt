@@ -2,6 +2,8 @@ package com.huntersystem.app
 
 import android.graphics.BitmapFactory
 import android.util.Base64
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,6 +18,7 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.*
 import androidx.compose.ui.text.input.KeyboardType
@@ -31,25 +34,11 @@ val LocalHunter=staticCompositionLocalOf{HunterColors(JSONObject())}
  * Se preservan los demás tokens y las funciones del catálogo existente.
  * Los colores de actividades permanecen en V39WeekPicker (no dependen del tema).
  */
-private fun v39VisualTokens(name:String, source:JSONObject):JSONObject {
- val result=JSONObject(source.toString())
- val entries=when(name){
-  "aurora"->arrayOf("#140919","#27112F","#3E1B4D","#795386","#FFF1FF","#C7A9D3","#F63AB8")
-  "ceniza"->arrayOf("#0D1017","#1A202B","#303A49","#617085","#EDF1FA","#B9C7DE","#B9C7DE")
-  "amanecer"->arrayOf("#1F1510","#35261C","#4C3525","#8B6B45","#FFF2DE","#D8BB99","#F6B84F")
-  else->arrayOf("#080D19","#111C31","#18263F","#36506C","#E8F1FF","#B4C6DB","#25C8FF")
- }
- for((index,key) in listOf("bg","panel","surface","line","text","muted","accent").withIndex()){
-  result.put("--$key",entries[index])
- }
- result.put("--input",entries[2])
- if(name=="eclipse"){ result.put("--secondary33","#7F5CFF"); result.put("--selected33","#183352") }
- return result
-}
+private fun v39VisualTokens(name:String,source:JSONObject):JSONObject = HunterDesignSystem.tokens(name,source)
 
 /** Valores históricos se convierten a uno de los cuatro temas V39; no alteran datos del usuario. */
 fun resolveV39Theme(value:String?,gender:String=""):String=when(value?.lowercase()){
- "eclipse","aurora","ceniza","amanecer"->value.lowercase()
+ "eclipse","umbral","abismo","runa","hielo","lavanda","aurora","ceniza","amanecer"->value.lowercase()
  "auto"->if(gender=="female")"aurora" else "eclipse"
  "pink","coral","red"->"aurora"
  "amber","gold"->"amanecer"
@@ -75,31 +64,55 @@ fun resolveV39Theme(value:String?,gender:String=""):String=when(value?.lowercase
 @Composable fun Eyebrow(text:String,modifier:Modifier=Modifier){Text(text,modifier,fontFamily=Barlow,fontSize=12.sp,lineHeight=16.sp,letterSpacing=1.6.sp,fontWeight=FontWeight.SemiBold,color=LocalHunter.current.accent)}
 @Composable fun HPanel(modifier:Modifier=Modifier,onClick:(()->Unit)?=null,decor:Boolean=true,padding:Int=24,content:@Composable ColumnScope.()->Unit){
  val c=LocalHunter.current
- val shape=RoundedCornerShape(17.dp)
+ val shape=RoundedCornerShape(HunterDesignSystem.Dimensions.cornerCard)
+ val stroke=Brush.linearGradient(listOf(c.accent.copy(alpha=.50f),c.line,c.line))
  Box(modifier.fillMaxWidth().clip(shape)
     .background(Brush.verticalGradient(listOf(c.surface,c.panel)))
-    .border(1.dp,c.line,shape)
+    .border(1.dp,stroke,shape)
     .then(if(onClick!=null)Modifier.clickable(onClick=onClick) else Modifier)){
+   if(decor)Box(Modifier.fillMaxWidth().height(2.dp).align(Alignment.TopCenter)
+      .background(Brush.horizontalGradient(listOf(c.accent.copy(alpha=.75f),c.secondary.copy(alpha=.32f),Color.Transparent))))
    Column(Modifier.fillMaxWidth().padding(padding.dp),
-     verticalArrangement=Arrangement.spacedBy(12.dp),content=content)
+     verticalArrangement=Arrangement.spacedBy(HunterDesignSystem.Dimensions.spacing),
+     content=content)
  }
 }
 @Composable fun HButton(text:String,modifier:Modifier=Modifier,primary:Boolean=false,enabled:Boolean=true,onClick:()->Unit){
  val c=LocalHunter.current
- val shape=RoundedCornerShape(11.dp)
- Box(modifier.defaultMinSize(minHeight=48.dp).clip(shape)
-    .background(if(primary)Brush.horizontalGradient(listOf(c.accent,c.secondary)) else Brush.verticalGradient(listOf(c.surface,c.input)))
+ val shape=RoundedCornerShape(HunterDesignSystem.Dimensions.cornerButton)
+ val fill by animateColorAsState(if(primary)c.accent else c.surface,
+     animationSpec=tween(HunterDesignSystem.Dimensions.animationMs),label="hunter-action")
+ Box(modifier.defaultMinSize(minHeight=HunterDesignSystem.Dimensions.touchTarget).clip(shape)
+    .background(if(primary)Brush.horizontalGradient(listOf(fill,c.secondary)) else Brush.verticalGradient(listOf(fill,c.input)))
     .border(1.dp,if(primary)c.accent else c.line,shape)
-    .clickable(enabled=enabled,onClick=onClick)
-    .padding(horizontal=15.dp,vertical=10.dp),contentAlignment=Alignment.Center){
-  HText(text,color=if(primary)c.bg else if(enabled)c.text else c.muted,size=17,bold=true)
+    .clickable(enabled=enabled,role=Role.Button,onClick=onClick)
+    .padding(horizontal=16.dp,vertical=11.dp),contentAlignment=Alignment.Center){
+  HText(text,color=if(!enabled)c.muted else if(primary)c.bg else c.text,size=16,bold=true)
  }
 }
-@Composable fun HChip(text:String,selected:Boolean=false,modifier:Modifier=Modifier,onClick:()->Unit){val c=LocalHunter.current;Box(modifier.clip(RoundedCornerShape(12.dp)).background(if(selected)c.selected else c.input).border(1.dp,if(selected)c.accent else c.line,RoundedCornerShape(12.dp)).clickable(onClick=onClick).padding(horizontal=13.dp,vertical=9.dp)){HText(text,size=16,color=if(selected)c.accent else c.muted)}}
-@Composable fun HInput(value:String,onChange:(String)->Unit,label:String="",modifier:Modifier=Modifier,number:Boolean=false,multiline:Boolean=false){val c=LocalHunter.current;Column(modifier,verticalArrangement=Arrangement.spacedBy(5.dp)){if(label.isNotEmpty())HText(label,size=16,color=c.muted);BasicTextField(value,onChange,Modifier.fillMaxWidth().defaultMinSize(minHeight=46.dp).clip(RoundedCornerShape(6.dp)).background(c.input).border(1.dp,c.line,RoundedCornerShape(6.dp)).padding(12.dp),textStyle=TextStyle(fontFamily=Barlow,fontSize=18.sp,color=c.text,lineHeight=25.sp),singleLine=!multiline,keyboardOptions=KeyboardOptions(keyboardType=if(number)KeyboardType.Decimal else KeyboardType.Text),cursorBrush=SolidColor(c.accent))}}
+@Composable fun HChip(text:String,selected:Boolean=false,modifier:Modifier=Modifier,onClick:()->Unit){
+ val c=LocalHunter.current
+ val shape=RoundedCornerShape(14.dp)
+ val fill by animateColorAsState(if(selected)c.selected else c.input,
+    animationSpec=tween(HunterDesignSystem.Dimensions.animationMs),label="hunter-chip")
+ Box(modifier.defaultMinSize(minHeight=HunterDesignSystem.Dimensions.touchTarget)
+   .clip(shape).background(fill)
+   .border(1.dp,if(selected)c.accent else c.line,shape)
+   .clickable(role=Role.Button,onClick=onClick)
+   .padding(horizontal=13.dp,vertical=11.dp),contentAlignment=Alignment.Center){
+   HText(text,size=15,color=if(selected)c.accent else c.text,bold=selected)
+ }
+}
+@Composable fun HInput(value:String,onChange:(String)->Unit,label:String="",modifier:Modifier=Modifier,number:Boolean=false,multiline:Boolean=false){val c=LocalHunter.current;Column(modifier,verticalArrangement=Arrangement.spacedBy(5.dp)){if(label.isNotEmpty())HText(label,size=16,color=c.muted);BasicTextField(value,onChange,Modifier.fillMaxWidth().defaultMinSize(minHeight=HunterDesignSystem.Dimensions.touchTarget).clip(RoundedCornerShape(HunterDesignSystem.Dimensions.cornerField)).background(c.input).border(1.dp,c.line,RoundedCornerShape(HunterDesignSystem.Dimensions.cornerField)).padding(12.dp),textStyle=TextStyle(fontFamily=Barlow,fontSize=18.sp,color=c.text,lineHeight=25.sp),singleLine=!multiline,keyboardOptions=KeyboardOptions(keyboardType=if(number)KeyboardType.Decimal else KeyboardType.Text),cursorBrush=SolidColor(c.accent))}}
 @Composable fun HSelect(label:String,value:String,options:List<Pair<String,String>>,modifier:Modifier=Modifier,onChange:(String)->Unit){var expanded by remember{mutableStateOf(false)};Column(modifier,verticalArrangement=Arrangement.spacedBy(5.dp)){if(label.isNotEmpty())HText(label,size=16,color=LocalHunter.current.muted);Box{HButton((options.firstOrNull{it.first==value}?.second?:value)+"  ▾",Modifier.fillMaxWidth()){expanded=true};DropdownMenu(expanded,{expanded=false}){for((id,name)in options)DropdownMenuItem(text={HText(name,size=17)},onClick={onChange(id);expanded=false})}}}}
 @Composable fun HCheck(label:String,checked:Boolean,modifier:Modifier=Modifier,enabled:Boolean=true,onChange:()->Unit){val c=LocalHunter.current;Row(modifier.fillMaxWidth().clickable(enabled=enabled,onClick=onChange).padding(vertical=4.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)){Box(Modifier.size(23.dp).clip(RoundedCornerShape(4.dp)).background(if(checked)c.accent else c.input).border(1.dp,c.line,RoundedCornerShape(4.dp)),contentAlignment=Alignment.Center){if(checked)HText("✓",size=18,color=c.bg,bold=true)};HText(label,Modifier.weight(1f),size=17,color=if(enabled)c.text else c.muted)}}
-@Composable fun HProgress(fraction:Float,modifier:Modifier=Modifier){val c=LocalHunter.current;Box(modifier.fillMaxWidth().height(7.dp).clip(RoundedCornerShape(5.dp)).background(c.input)){Box(Modifier.fillMaxWidth(fraction.coerceIn(0f,1f)).fillMaxHeight().background(c.accent))}}
+@Composable fun HProgress(fraction:Float,modifier:Modifier=Modifier){
+ val c=LocalHunter.current
+ Box(modifier.fillMaxWidth().height(9.dp).clip(RoundedCornerShape(6.dp)).background(c.input)){
+  Box(Modifier.fillMaxWidth(fraction.coerceIn(0f,1f)).fillMaxHeight()
+     .background(Brush.horizontalGradient(listOf(c.accent,c.secondary))))
+ }
+}
 @Composable fun HNotice(text:String){HPanel(decor=false,padding=15){HText(text,size=16,color=LocalHunter.current.muted)}}
 @Composable fun Chips(options:List<Pair<String,String>>,value:String,onChange:(String)->Unit){Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(7.dp)){for((key,label)in options)HChip(label,value==key){onChange(key)}}}
 @Composable fun AssetImage(path:String,modifier:Modifier=Modifier,scale:ContentScale=ContentScale.Fit,description:String?=null,alignment:Alignment=Alignment.Center){val context=LocalContext.current;val bitmap=remember(path){runCatching{context.assets.open(path).use{BitmapFactory.decodeStream(it)}?.asImageBitmap()}.getOrNull()};if(bitmap!=null)Image(bitmap,description,modifier,contentScale=scale,alignment=alignment)}

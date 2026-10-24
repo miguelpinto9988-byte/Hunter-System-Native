@@ -20,7 +20,7 @@
 |---|---|---|---|---|
 | 00 | Auditoría y protección | Inventario Kotlin, rutas, estados, navegación, activos, persistencia; backup de perfiles, comparación V39.2/V40/V41 | Mapa de dependencias, lista de regresión | Planificada |
 | 01 | Elección artística | Elegida A+ Monarca; piloto de Inicio, paleta y cinco iconos vectoriales; siguiente: validación visual | Identidad aprobada, código de piloto y APK firmada | **Piloto implementado y compilado** |
-| 02 | Sistema de diseño | Tokens semánticos, tipografías, escalas, bordes, espaciados, superficies, contraste, componentes, iconos de flujo | `HunterDesignSystem` y catálogo de componentes | Planificada |
+| 02 | Sistema de diseño | Nueve atmósferas persistentes, tokens semánticos, componentes premium, contraste y selector visual en Perfil | `HunterDesignSystem.kt`, componentes nativos y auditoría de fase | **Implementada para validación** |
 | 03 | Navegación y acceso | Splash, arranque offline, sesión local, navegación inferior, rutas, volver, carga/errores, responsive | Flujo navegable sin pérdida de estado | Planificada |
 | 04 | Inicio / Dashboard | Hero 2.5D, rango/XP, misión principal, racha, métricas y CTA, accesibilidad | Home adaptable móvil/tablet | Planificada |
 | 05 | Misiones | Semana, tipo de día, progreso, estados, notificaciones, registro, confirmaciones | Misiones estables y consumibles | Planificada |
