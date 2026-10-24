@@ -56,6 +56,7 @@ fun HomeScreen(ui:NativeUi) {
   MonarchHero(ui,stats)
   MonarchDashboardMission(ui)
   MonarchDashboardMetrics(ui,stats)
+  MonarchHomeProgressStrip(ui)
   MonarchDashboardWeek(ui)
   MonarchDashboardShortcuts(ui)
   MonarchDashboardCompanion(ui)
