@@ -76,8 +76,10 @@ check("Modifier.clickable(role = Role.Button)" in dashboard,
 check("fun stats():JSONObject" in store and
       "fun fraction(l:JSONObject?)" in store,
       "No debe perderse el dominio de estadísticas y misiones")
-check('versionName = "42.3-monarca-fase4"' in gradle,
-      "La versión 42.3 no se configuró")
+import re
+version_match = re.search(r'versionName\s*=\s*"42\.(\d+)-monarca-fase\d+"', gradle)
+check(version_match is not None and int(version_match.group(1)) >= 3,
+      "La fase 04 requiere versión 42.3 o posterior")
 check("Auditoria Monarca V42 fase 04" in workflow,
       "No se configuró la auditoría 04 en GitHub Actions")
 result = {

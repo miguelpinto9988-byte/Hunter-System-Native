@@ -22,7 +22,32 @@ import kotlin.math.*
  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){HButton("‹"){ui.back()};OriginalSvg("decor/crest.svg",Modifier.width(72.dp).height(22.dp),accent=c.hex("accent"),metal=c.hex("metal26"),ornament=c.hex("ornament26"));HButton("×"){ui.stack.clear()}}
  Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(top=18.dp,bottom=20.dp),verticalArrangement=Arrangement.spacedBy(16.dp)){key(overlay){when(overlay.type){
  "exercise"->ExerciseDetail(ui,overlay.data.s("id"))
- "mission"->{val date=overlay.data.s("date",today());Eyebrow(date);MissionContent(ui,date);if(date==today())HButton("Abrir sesión paso a paso",primary=true){ui.open("session",obj("date" to date))}}
+ "mission"->{val date=overlay.data.s("date",today());Eyebrow(date);MissionContent(ui,date)}
+ "mission-calendar"->{Eyebrow("CALENDARIO DE MISIONES");Heading("Selecciona una fecha",size=28);MonarchMissionsCalendar(ui)}
+ "confirm-finish"->{
+   val date=overlay.data.s("date",today())
+   val log=ui.store.logs.optJSONObject(date)
+   Heading("Confirmar misión",size=30)
+   HNotice("Se registrará esta sesión como completada. Comprueba que marcaste únicamente las actividades realizadas y consignaste el esfuerzo.")
+   HText("Fecha: $date · RPE: ${overlay.data.i("rpe")}/10",size=16)
+   HButton("VOLVER AL REGISTRO",Modifier.fillMaxWidth()){ui.back()}
+   HButton("CONFIRMAR Y GUARDAR",Modifier.fillMaxWidth(),primary=true,
+     enabled=date==today() && log!=null && !log.b("complete") && !log.b("pain")) {
+       ui.attempt {
+         val s=ui.store
+         s.feedback(date,overlay.data.i("rpe"),overlay.data.s("notes"))
+         val current=s.logs.optJSONObject(date) ?: error("No se encontró el registro")
+         current.put("fatigue",overlay.data.b("fatigue"))
+         s.save()
+         s.finish(date)
+         ui.stack.clear()
+         ui.open("saved",obj(
+             "title" to "Misión completada",
+             "body" to "Tu sesión y su progreso se guardaron en este dispositivo."
+         ))
+       }
+     }
+ }
  "record"->SessionRecord(ui,overlay.data.s("date",today()))
  "series"->SeriesEditor(ui,overlay.data)
  "routine"->RoutineDetail(ui,overlay.data.s("id"))
@@ -66,7 +91,14 @@ import kotlin.math.*
  DisposableEffect(date){onDispose{if(!l.b("complete")&&!l.b("pain")){val n=latestRpe.toIntOrNull()?.coerceIn(0,10)?:0;if(l.i("rpe")!=n||l.s("notes")!=latestNotes||l.b("fatigue")!=latestFatigue){l.put("rpe",n);l.put("notes",latestNotes.take(3000));l.put("fatigue",latestFatigue);s.save()}}}}
  Eyebrow("REGISTRO DETALLADO · $date");Heading("Cada serie cuenta.");HNotice("Confirma únicamente lo que hayas realizado. Marcar la misión no añade series ni cantidades a este registro.")
  for((i,x)in l.a("items").objects().withIndex()){val e=s.catalog.byId[x.s("id")]?:continue;HPanel(padding=15){Heading(e.name,size=27);if(x.b("archived"))HNotice(x.s("archiveReason"));HText("${x.i("sets")} × ${x.i("target")} ${if(e.unit=="sec")"s" else "repeticiones"}${if(e.sides)" por lado" else ""}",size=15);for(si in 0 until x.i("sets")){val actual=x.a("actual").optJSONObject(si);Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)){HText("${if(actual?.b("done")==true)"✓" else "○"} Serie ${si+1}",Modifier.weight(1f),size=17);HText(if(actual?.b("done")==true)"${actual.n("value")} ${if(e.unit=="sec")"s" else "rep"} · ${actual.n("kg")} kg" else "Pendiente",size=15,color=LocalHunter.current.muted);if(!closed&&!x.b("archived"))HButton("Registrar"){ui.open("series",obj("date" to date,"itemIndex" to i,"setIndex" to si))}}}}}
- if(!closed){HSelect("Esfuerzo percibido · RPE",rpe,listOf("0" to "Seleccionar esfuerzo")+(1..10).map{it.toString() to "$it / 10"}){rpe=it};HInput(notes,{notes=it},"Notas del día",multiline=true);HCheck("He sentido fatiga",fatigue){fatigue=!fatigue};HButton("Guardar registro parcial",Modifier.fillMaxWidth()){ui.attempt{s.feedback(date,rpe.toIntOrNull()?:0,notes);l.put("fatigue",fatigue);s.save();ui.message("Registro parcial guardado")}};HButton("Completar sesión",Modifier.fillMaxWidth(),primary=true){ui.attempt{s.feedback(date,rpe.toIntOrNull()?:0,notes);l.put("fatigue",fatigue);s.finish(date);ui.message("Misión completada");ui.stack.clear()}};HButton("Detener por molestias",Modifier.fillMaxWidth()){ui.open("pain",obj("date" to date))}}else HNotice(if(l.b("complete"))"✓ Sesión completada. Los registros se conservan." else "Sesión detenida por molestias.")
+ if(!closed){HSelect("Esfuerzo percibido · RPE",rpe,listOf("0" to "Seleccionar esfuerzo")+(1..10).map{it.toString() to "$it / 10"}){rpe=it};HInput(notes,{notes=it},"Notas del día",multiline=true);HCheck("He sentido fatiga",fatigue){fatigue=!fatigue};HButton("Guardar registro parcial",Modifier.fillMaxWidth()){ui.attempt{s.feedback(date,rpe.toIntOrNull()?:0,notes);l.put("fatigue",fatigue);s.save();ui.message("Registro parcial guardado")}};HButton("Completar sesión",Modifier.fillMaxWidth(),primary=true){
+   ui.open("confirm-finish",obj(
+     "date" to date,
+     "rpe" to (rpe.toIntOrNull()?:0),
+     "notes" to notes.take(3000),
+     "fatigue" to fatigue
+   ))
+ };HButton("Detener por molestias",Modifier.fillMaxWidth()){ui.open("pain",obj("date" to date))}}else HNotice(if(l.b("complete"))"✓ Sesión completada. Los registros se conservan." else "Sesión detenida por molestias.")
 }
 @Composable fun SeriesEditor(ui:NativeUi,data:JSONObject){val s=ui.store;val date=data.s("date",today());val l=s.logs.optJSONObject(date)?:return;val itemIndex=data.i("itemIndex");val setIndex=data.i("setIndex");val x=l.a("items").optJSONObject(itemIndex)?:return;val e=s.catalog.byId[x.s("id")]?:return;val a=x.a("actual").optJSONObject(setIndex)?:JSONObject();var amount by remember{mutableStateOf(a.n("value",x.n("target")).let{if(it%1==0.0)it.toInt().toString() else it.toString()})};var load by remember{mutableStateOf(a.n("kg").toString())}
  Heading(e.name,size=32);Eyebrow("SERIE ${setIndex+1} DE ${x.i("sets")}");HInput(amount,{amount=it},if(x.s("unit",e.unit)=="sec")"Segundos realizados" else "Repeticiones realizadas",number=true);if(e.sides)HText("Indica la cantidad por lado.",size=16,color=LocalHunter.current.muted);if(e.equipment!="body")HInput(load,{load=it},"Carga utilizada · kg",number=true)
