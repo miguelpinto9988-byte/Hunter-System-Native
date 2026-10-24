@@ -13,8 +13,8 @@ import kotlin.math.roundToInt
 
 private val fieldLabels=mapOf("name" to "Nombre de cazador","age" to "Edad","height" to "Estatura · cm","weight" to "Peso · kg","gender" to "Género","theme" to "Tema","difficulty" to "Nivel de entrenamiento","goalGroup" to "Objetivo final","finalGoal" to "Mi meta personal","goal" to "Objetivo principal","frequency" to "Sesiones principales por semana","equipment" to "Equipo","load" to "Peso disponible de una mancuerna · kg","restSeconds" to "Descanso entre series","blockMode22" to "Orden de los bloques","dailyMissions" to "Misiones diarias · 1 a 7","pain" to "¿Tienes dolor actualmente?","recommendations" to "Recomendaciones de tu profesional · opcional","collection33" to "Colección visual","scene33" to "Escenario")
 private val healthFields=setOf("pain","acute","special","recommendations","approved","translated","redFlags")
-@Composable fun ProfileScreen(ui:NativeUi){val s=ui.store;val old=s.profile;val original=old?.toString()?:"";val form=s.catalog.profileForm.objects();val fields=form.flatMap{it.a("fields").objects()}
- val values=remember(original){mutableStateMapOf<String,String>().apply{
+@Composable fun ProfileScreen(ui:NativeUi){val s=ui.store;val old=s.profile;val form=s.catalog.profileForm.objects();val fields=form.flatMap{it.a("fields").objects()}
+ val values=remember(old==null){mutableStateMapOf<String,String>().apply{
   val defaults=mapOf("gender" to "unspecified","theme" to "eclipse","difficulty" to "basic","goalGroup" to "habit","goal" to "general","frequency" to "2","equipment" to "body","restSeconds" to "30","dailyMissions" to "3","blockMode22" to "exercise","collection33" to "hunter","scene33" to "auto","trainingMode" to "challenges","companionCharacter" to "knight","trainingScale" to "1","pain" to "none")
   putAll(defaults)
   for(f in fields){val name=f.s("name");val value=f.s("value");val type=f.s("type");val key=if(name in listOf("materials46","capabilities46"))"$name|$value" else name
@@ -22,11 +22,11 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
    if(type=="radio"){if(raw!=null&&raw!=JSONObject.NULL)put(name,raw.toString()) else if(f.b("checked"))put(name,value)}else if(raw!=null&&raw!=JSONObject.NULL)put(key,raw.toString()) else if(type=="checkbox")put(key,f.b("checked").toString()) else if(!containsKey(name))put(name,value.ifBlank{f.a("options").objects().firstOrNull()?.s("value")?:""})
   }
  }}
- val injuries=remember(original){mutableStateListOf<JSONObject>().apply{addAll(old?.a("injuries")?.objects()?.map{it.copyJson()}?:emptyList())}}
- val week=remember(original){mutableStateListOf<String>().apply{addAll(old?.a("weekPlan")?.strings()?.takeIf{it.size==7}?:listOf("rest","train","rest","train","rest","rest","rest"))}}
- val focus=remember(original){mutableStateListOf<String>().apply{addAll(old?.a("weekFocus")?.strings()?.takeIf{it.size==7}?:List(7){"upper"})}}
+ val injuries=remember(old==null){mutableStateListOf<JSONObject>().apply{addAll(old?.a("injuries")?.objects()?.map{it.copyJson()}?:emptyList())}}
+ val week=remember(old==null){mutableStateListOf<String>().apply{addAll(old?.a("weekPlan")?.strings()?.takeIf{it.size==7}?:listOf("rest","train","rest","train","rest","rest","rest"))}}
+ val focus=remember(old==null){mutableStateListOf<String>().apply{addAll(old?.a("weekFocus")?.strings()?.takeIf{it.size==7}?:List(7){"upper"})}}
  var injuryZone by remember{mutableStateOf("knee")};var injuryType by remember{mutableStateOf("joint")};var injuryStage by remember{mutableStateOf("current")}
- var manualGoalGroup by remember(original){mutableStateOf(false)}
+ var manualGoalGroup by remember(old==null){mutableStateOf(false)}
  val expanded=remember{mutableStateMapOf<String,Boolean>()}
  val titleNames=listOf("Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado")
  fun saveProfile(){ui.attempt{
