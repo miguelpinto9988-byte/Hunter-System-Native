@@ -82,7 +82,7 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
   }
   HButton("Guardar perfil",Modifier.fillMaxWidth(),primary=true){saveProfile()}
   HPanel{Heading("Copia de seguridad",size=29);HText("Guarda tu perfil, calendario y registros en un archivo.",size=16,color=LocalHunter.current.muted);HButton("Exportar copia de seguridad"){ui.export()};HButton("Restaurar copia"){ui.import()}}
-  HPanel{Heading("Entrenadores y contenido",size=29);HCheck("Actualizar entrenadores automáticamente",s.state.b("creatorAuto",true)){s.state.put("creatorAuto",!s.state.b("creatorAuto",true));s.save();CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true))};HButton("Actualizar ahora"){ui.open("creator-refresh")};HButton("Recordatorios del sistema"){ui.open("reminders")};HButton("Fuentes y publicaciones"){ui.open("sources")};HText("Hunter System · 38.50",size=14,color=LocalHunter.current.muted)}
+  HPanel{Heading("Entrenadores y contenido",size=29);HCheck("Actualizar entrenadores automáticamente",s.state.b("creatorAuto",true)){s.state.put("creatorAuto",!s.state.b("creatorAuto",true));s.save();CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true))};HButton("Actualizar ahora"){ui.open("creator-refresh")};HButton("Recordatorios del sistema"){ui.open("reminders")};HButton("Fuentes y publicaciones"){ui.open("sources")};HText("Hunter System · 39.0",size=14,color=LocalHunter.current.muted)}
  }
 }
 val zoneLabels=linkedMapOf("neck" to "Cuello","shoulder" to "Hombro","elbow" to "Codo","wrist" to "Muñeca o mano","back" to "Espalda","hip" to "Cadera","knee" to "Rodilla","ankle" to "Tobillo o pie","other" to "Otra zona / no sé")
