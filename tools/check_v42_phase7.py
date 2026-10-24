@@ -23,9 +23,9 @@ verify(overlays.count("MonarchPlaybackControls(")==2,"Ambas vistas requieren con
 verify('ui.open("video",obj("path" to "offline2d/"' in overlays,"No hay acceso a vídeos locales")
 verify("fun SessionRecord(" in overlays and 'ui.open("series"' in overlays,"Se perdió el registro real")
 verify("fun SessionPlayer(" in overlays and "nativeSignature" in overlays,"Se perdió persistencia de sesión")
-verify('versionName = "42.6-monarca-fase7"' in build,"Versión 42.6 incorrecta")
+verify(any(x in build for x in ['versionName = "42.6-monarca-fase7"','versionName = "42.7-monarca-fase8"']),"Versión inferior a fase 07")
 verify("Auditoria Monarca V42 fase 07" in wf,"Auditoría 07 no integrada en CI")
-verify("Hunter-System-V42-Monarca-Fase07-APK" in wf,"Artefacto 07 sin nombre")
+verify(any(x in wf for x in ["Hunter-System-V42-Monarca-Fase07-APK","Hunter-System-V42-Monarca-Fase08-APK"]),"Artefacto desde fase 07 sin nombre")
 verify(not (R/"app/src/main/assets/exercise_thumbnails").exists(),"No incorporar miniaturas")
 print(json.dumps({"fase":7,"version":"42.6-monarca-fase7",
   "ejercicios":len(catalog),"demostraciones_mp4":342,
