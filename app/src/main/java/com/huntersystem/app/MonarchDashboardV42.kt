@@ -224,11 +224,11 @@ fun MonarchDashboardMetrics(ui: NativeUi, stats: JSONObject) {
                     metrics.forEach { MonarchMetricCard(ui, it, Modifier.weight(1f)) }
                 }
             } else {
-                metrics.chunked(2).forEach { row ->
+                metrics.chunked(2).forEachIndexed { index, row ->
+                    if (index > 0) Spacer(Modifier.height(10.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         row.forEach { MonarchMetricCard(ui, it, Modifier.weight(1f)) }
                     }
-                    if (row != metrics.take(2)) Spacer(Modifier.height(10.dp))
                 }
             }
         }
@@ -298,7 +298,7 @@ fun MonarchDashboardWeek(ui: NativeUi) {
                 }
             }
         }
-        HText("Azul: fuerza  ·  Ámbar: cardio  ·  Verde: movilidad",
+        HText("Color del tema: fuerza  ·  Ámbar: cardio  ·  Verde: movilidad",
             size = 12, color = c.muted)
         HButton("CALENDARIO Y REVISIÓN SEMANAL  →", Modifier.fillMaxWidth()) {
             ui.go("plan")
@@ -347,11 +347,11 @@ fun MonarchDashboardShortcuts(ui:NativeUi) {
                     shortcuts.forEach { MonarchShortcutCard(ui, it, Modifier.weight(1f)) }
                 }
             } else {
-                shortcuts.chunked(2).forEach { row ->
+                shortcuts.chunked(2).forEachIndexed { index, row ->
+                    if (index > 0) Spacer(Modifier.height(10.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                         row.forEach { MonarchShortcutCard(ui, it, Modifier.weight(1f)) }
                     }
-                    if (row != shortcuts.take(2)) Spacer(Modifier.height(10.dp))
                 }
             }
         }
