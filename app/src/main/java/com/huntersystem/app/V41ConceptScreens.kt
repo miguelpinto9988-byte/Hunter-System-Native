@@ -148,9 +148,7 @@ import kotlin.math.roundToInt
  val companion="ui33/companion-"+companionKey(p)+".webp"
  SceneColumn(ui){
   V41Banner("RUTINAS","Tu próxima transformación comienza aquí.","◈",companion)
-  V41SectionTabs(listOf("0" to "Básico","1" to "Intermedio","2" to "Avanzado"),level(p).toString()){selected->
-   ui.message("Nivel seleccionado: "+listOf("Básico","Intermedio","Avanzado")[selected.toInt()]+". Puedes cambiar tu nivel en Perfil.")
-  }
+  V41SectionTabs(listOf("0" to "Básico","1" to "Intermedio","2" to "Avanzado"),ui.routineLevel.toString()){selected->ui.routineLevel=selected.toInt()}
   HPanel(onClick={ui.library="offline"},padding=0){
    Box(Modifier.fillMaxWidth().height(172.dp).clip(RoundedCornerShape(21.dp))){
     AssetImage("ui33/hunter-male-e.webp",Modifier.align(Alignment.CenterEnd).fillMaxWidth(.49f).fillMaxHeight(),ContentScale.Fit)
