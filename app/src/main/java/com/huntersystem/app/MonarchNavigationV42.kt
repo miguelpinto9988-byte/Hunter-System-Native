@@ -39,12 +39,15 @@ object MonarchNavigation {
 
 @Composable
 fun MonarchBootScreen(error:String?,retry:()->Unit){
-    val infinite=rememberInfiniteTransition(label="monarch-boot")
-    val pulse by infinite.animateFloat(
-        initialValue=.58f,targetValue=1f,
-        animationSpec=infiniteRepeatable(tween(1300,easing=FastOutSlowInEasing),RepeatMode.Reverse),
-        label="boot-pulse"
-    )
+    val pulse=if(LocalMonarchMotion.current.reduced) 1f else {
+        val infinite=rememberInfiniteTransition(label="monarch-boot")
+        val alpha by infinite.animateFloat(
+            initialValue=.58f,targetValue=1f,
+            animationSpec=infiniteRepeatable(tween(1300,easing=FastOutSlowInEasing),RepeatMode.Reverse),
+            label="boot-pulse"
+        )
+        alpha
+    }
     Box(Modifier.fillMaxSize()
         .background(Brush.verticalGradient(listOf(Color(0xFF080D19),Color(0xFF111C31),Color(0xFF080D19))))
         .systemBarsPadding(),contentAlignment=Alignment.Center){
@@ -92,7 +95,8 @@ private fun MonarchNavItem(destination:MonarchDestination,selected:Boolean,verti
     val c=LocalHunter.current
     val tint by animateColorAsState(
         if(selected)c.accent else c.muted,
-        animationSpec=tween(180),label="nav-tint")
+        animationSpec=if(LocalMonarchMotion.current.reduced)snap() else tween(180),
+        label="nav-tint")
     val shape=RoundedCornerShape(18.dp)
     val item=Modifier
         .clip(shape)
@@ -168,10 +172,13 @@ fun MonarchScreenTransition(
     modifier:Modifier=Modifier,
     content:@Composable (String)->Unit
 ){
+    val motion=LocalMonarchMotion.current
     AnimatedContent(
         targetState=destination,
         modifier=modifier,
         transitionSpec={
+            if(motion.reduced) EnterTransition.None togetherWith ExitTransition.None
+            else {
             val direction=if(MonarchNavigation.index(targetState)>=MonarchNavigation.index(initialState))1 else -1
             (fadeIn(tween(180))+slideInHorizontally(
                 animationSpec=tween(210,easing=FastOutSlowInEasing),
@@ -181,6 +188,7 @@ fun MonarchScreenTransition(
                 animationSpec=tween(160),
                 targetOffsetX={width->-direction*(width/12)}
             ))
+            }
         },label="monarch-route"
     ){page->content(page)}
 }

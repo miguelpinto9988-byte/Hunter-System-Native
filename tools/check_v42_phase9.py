@@ -42,8 +42,8 @@ check("MonarchHomeProgressStrip(ui)" in screens, "Inicio no usa evolución")
 check("MonarchEvolutionScreen(ui)" in evolution, "Evolución no conectada")
 check('"xp" to xp' in store and '"level" to 1+xp/300' in store,
       "Fórmula original de XP no preservada")
-check('versionName = "42.8-monarca-fase9"' in gradle, "Versión 42.8 no aplicada")
-check("Hunter-System-V42-Monarca-Fase09-APK" in workflow, "Artefacto fase 09 no definido")
+check(any(x in gradle for x in ['versionName = "42.8-monarca-fase9"','versionName = "42.9-monarca-fase10"']), "Versión inferior a 42.8")
+check(any(x in workflow for x in ["Hunter-System-V42-Monarca-Fase09-APK","Hunter-System-V42-Monarca-Fase10-APK"]), "Artefacto sin nombre válido")
 check("Auditoria Monarca V42 fase 09" in workflow, "Falta auditoría fase 09 en CI")
 
 print(json.dumps({

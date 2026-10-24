@@ -112,6 +112,7 @@ private fun MonarchSummaryTile(title:String,value:String,subtitle:String,modifie
 @Composable
 private fun MonarchProgressTrend(data:MonarchAnalyticsSnapshot,showSets:Boolean){
     val c=LocalHunter.current
+    val motion=LocalMonarchMotion.current
     val values=data.buckets.map{if(showSets)it.sets else it.sessions}
     val maxValue=max(1,values.maxOrNull()?:1)
     val total=values.sum()
@@ -131,7 +132,7 @@ private fun MonarchProgressTrend(data:MonarchAnalyticsSnapshot,showSets:Boolean)
             for((i,bucket)in data.buckets.withIndex()){
                 val value=values[i]
                 val target=(value.toFloat()/maxValue).coerceIn(0f,1f)
-                val animated by animateFloatAsState(target,tween(600),label="progress-trend-$i")
+                val animated by animateFloatAsState(target,motion.spec(480),label="progress-trend-$i")
                 Column(Modifier.weight(1f),horizontalAlignment=Alignment.CenterHorizontally,
                     verticalArrangement=Arrangement.Bottom){
                     HText(value.toString(),size=11,color=if(value>0)c.accent else c.muted)
@@ -159,6 +160,7 @@ private fun MonarchProgressTrend(data:MonarchAnalyticsSnapshot,showSets:Boolean)
 @Composable
 private fun MonarchKindDistribution(data:MonarchAnalyticsSnapshot){
     val c=LocalHunter.current
+    val motion=LocalMonarchMotion.current
     val groups=listOf(
         Triple("Fuerza y mixto",data.strength,c.accent),
         Triple("Cardio",data.cardio,c.secondary),
@@ -176,7 +178,7 @@ private fun MonarchKindDistribution(data:MonarchAnalyticsSnapshot){
             }
             Box(Modifier.fillMaxWidth().height(8.dp).clip(CircleShape).background(c.input)){
                 val fraction=if(total==0)0f else n.toFloat()/total
-                val animated by animateFloatAsState(fraction,tween(450),label="modality-$label")
+                val animated by animateFloatAsState(fraction,motion.spec(340),label="modality-$label")
                 Box(Modifier.fillMaxWidth(animated.coerceIn(0f,1f)).fillMaxHeight()
                     .clip(CircleShape).background(color))
             }

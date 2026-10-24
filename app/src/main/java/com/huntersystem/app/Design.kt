@@ -4,6 +4,15 @@ import android.graphics.BitmapFactory
 import android.util.Base64
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -62,43 +71,79 @@ fun resolveV39Theme(value:String?,gender:String=""):String=when(value?.lowercase
 @Composable fun HText(text:String,modifier:Modifier=Modifier,size:Int=18,color:Color=LocalHunter.current.text,bold:Boolean=false,maxLines:Int=Int.MAX_VALUE){Text(text,modifier,color=color,fontFamily=Barlow,fontSize=size.sp,lineHeight=(size*1.4).sp,fontWeight=if(bold)FontWeight.SemiBold else FontWeight.Normal,maxLines=maxLines)}
 @Composable fun Heading(text:String,modifier:Modifier=Modifier,size:Int=36){Text(text,modifier,fontFamily=Barlow,fontWeight=FontWeight.Bold,fontSize=size.sp,lineHeight=(size*1.12).sp,color=LocalHunter.current.text)}
 @Composable fun Eyebrow(text:String,modifier:Modifier=Modifier){Text(text,modifier,fontFamily=Barlow,fontSize=12.sp,lineHeight=16.sp,letterSpacing=1.6.sp,fontWeight=FontWeight.SemiBold,color=LocalHunter.current.accent)}
-@Composable fun HPanel(modifier:Modifier=Modifier,onClick:(()->Unit)?=null,decor:Boolean=true,padding:Int=24,content:@Composable ColumnScope.()->Unit){
+/** Tarjetas y acciones con microinteracciones sobre graphicsLayer: no provocan nuevo layout. */
+@Composable fun HPanel(
+ modifier:Modifier=Modifier,onClick:(()->Unit)?=null,decor:Boolean=true,
+ padding:Int=24,content:@Composable ColumnScope.()->Unit
+){
  val c=LocalHunter.current
+ val motion=LocalMonarchMotion.current
+ val interaction=remember{MutableInteractionSource()}
+ val pressed by interaction.collectIsPressedAsState()
+ val scale by animateFloatAsState(if(onClick!=null&&pressed&&!motion.reduced).985f else 1f,
+    animationSpec=motion.spec(125),label="panel-press")
  val shape=RoundedCornerShape(HunterDesignSystem.Dimensions.cornerCard)
  val stroke=Brush.linearGradient(listOf(c.accent.copy(alpha=.50f),c.line,c.line))
- Box(modifier.fillMaxWidth().clip(shape)
-    .background(Brush.verticalGradient(listOf(c.surface,c.panel)))
+ Box(modifier.fillMaxWidth()
+    .then(if(onClick!=null)Modifier.graphicsLayer{scaleX=scale;scaleY=scale} else Modifier)
+    .clip(shape).background(Brush.verticalGradient(listOf(c.surface,c.panel)))
     .border(1.dp,stroke,shape)
-    .then(if(onClick!=null)Modifier.clickable(onClick=onClick) else Modifier)){
+    .then(if(onClick!=null)Modifier.clickable(
+        interactionSource=interaction,indication=LocalIndication.current,
+        role=Role.Button,onClick=onClick) else Modifier)){
    if(decor)Box(Modifier.fillMaxWidth().height(2.dp).align(Alignment.TopCenter)
-      .background(Brush.horizontalGradient(listOf(c.accent.copy(alpha=.75f),c.secondary.copy(alpha=.32f),Color.Transparent))))
+      .background(Brush.horizontalGradient(listOf(c.accent.copy(alpha=.75f),
+        c.secondary.copy(alpha=.32f),Color.Transparent))))
    Column(Modifier.fillMaxWidth().padding(padding.dp),
      verticalArrangement=Arrangement.spacedBy(HunterDesignSystem.Dimensions.spacing),
      content=content)
  }
 }
-@Composable fun HButton(text:String,modifier:Modifier=Modifier,primary:Boolean=false,enabled:Boolean=true,onClick:()->Unit){
+@Composable fun HButton(
+ text:String,modifier:Modifier=Modifier,primary:Boolean=false,
+ enabled:Boolean=true,onClick:()->Unit
+){
  val c=LocalHunter.current
+ val motion=LocalMonarchMotion.current
  val shape=RoundedCornerShape(HunterDesignSystem.Dimensions.cornerButton)
+ val interaction=remember{MutableInteractionSource()}
+ val pressed by interaction.collectIsPressedAsState()
+ val scale by animateFloatAsState(if(enabled&&pressed&&!motion.reduced).964f else 1f,
+    animationSpec=motion.spec(115),label="button-press")
  val fill by animateColorAsState(if(primary)c.accent else c.surface,
-     animationSpec=tween(HunterDesignSystem.Dimensions.animationMs),label="hunter-action")
- Box(modifier.defaultMinSize(minHeight=HunterDesignSystem.Dimensions.touchTarget).clip(shape)
-    .background(if(primary)Brush.horizontalGradient(listOf(fill,c.secondary)) else Brush.verticalGradient(listOf(fill,c.input)))
+     animationSpec=if(motion.reduced)snap() else tween(HunterDesignSystem.Dimensions.animationMs),
+     label="hunter-action")
+ Box(modifier.defaultMinSize(minHeight=HunterDesignSystem.Dimensions.touchTarget)
+    .graphicsLayer{scaleX=scale;scaleY=scale}.clip(shape)
+    .background(if(primary)Brush.horizontalGradient(listOf(fill,c.secondary))
+      else Brush.verticalGradient(listOf(fill,c.input)))
     .border(1.dp,if(primary)c.accent else c.line,shape)
-    .clickable(enabled=enabled,role=Role.Button,onClick=onClick)
+    .clickable(enabled=enabled,interactionSource=interaction,
+      indication=LocalIndication.current,role=Role.Button,onClick=onClick)
     .padding(horizontal=16.dp,vertical=11.dp),contentAlignment=Alignment.Center){
   HText(text,color=if(!enabled)c.muted else if(primary)c.bg else c.text,size=16,bold=true)
  }
 }
-@Composable fun HChip(text:String,selected:Boolean=false,modifier:Modifier=Modifier,onClick:()->Unit){
+@Composable fun HChip(
+ text:String,selected:Boolean=false,modifier:Modifier=Modifier,onClick:()->Unit
+){
  val c=LocalHunter.current
+ val motion=LocalMonarchMotion.current
  val shape=RoundedCornerShape(14.dp)
+ val interaction=remember{MutableInteractionSource()}
+ val pressed by interaction.collectIsPressedAsState()
+ val scale by animateFloatAsState(if(pressed&&!motion.reduced).965f else 1f,
+    animationSpec=motion.spec(115),label="chip-press")
  val fill by animateColorAsState(if(selected)c.selected else c.input,
-    animationSpec=tween(HunterDesignSystem.Dimensions.animationMs),label="hunter-chip")
+    animationSpec=if(motion.reduced)snap() else tween(HunterDesignSystem.Dimensions.animationMs),
+    label="hunter-chip")
  Box(modifier.defaultMinSize(minHeight=HunterDesignSystem.Dimensions.touchTarget)
+   .graphicsLayer{scaleX=scale;scaleY=scale}
    .clip(shape).background(fill)
    .border(1.dp,if(selected)c.accent else c.line,shape)
-   .clickable(role=Role.Button,onClick=onClick)
+   .semantics { this.selected=selected }
+   .clickable(interactionSource=interaction,indication=LocalIndication.current,
+      role=Role.Button,onClick=onClick)
    .padding(horizontal=13.dp,vertical=11.dp),contentAlignment=Alignment.Center){
    HText(text,size=15,color=if(selected)c.accent else c.text,bold=selected)
  }
@@ -108,8 +153,14 @@ fun resolveV39Theme(value:String?,gender:String=""):String=when(value?.lowercase
 @Composable fun HCheck(label:String,checked:Boolean,modifier:Modifier=Modifier,enabled:Boolean=true,onChange:()->Unit){val c=LocalHunter.current;Row(modifier.fillMaxWidth().clickable(enabled=enabled,onClick=onChange).padding(vertical=4.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)){Box(Modifier.size(23.dp).clip(RoundedCornerShape(4.dp)).background(if(checked)c.accent else c.input).border(1.dp,c.line,RoundedCornerShape(4.dp)),contentAlignment=Alignment.Center){if(checked)HText("✓",size=18,color=c.bg,bold=true)};HText(label,Modifier.weight(1f),size=17,color=if(enabled)c.text else c.muted)}}
 @Composable fun HProgress(fraction:Float,modifier:Modifier=Modifier){
  val c=LocalHunter.current
- Box(modifier.fillMaxWidth().height(9.dp).clip(RoundedCornerShape(6.dp)).background(c.input)){
-  Box(Modifier.fillMaxWidth(fraction.coerceIn(0f,1f)).fillMaxHeight()
+ val motion=LocalMonarchMotion.current
+ val target=fraction.coerceIn(0f,1f)
+ val animated by animateFloatAsState(target,animationSpec=motion.spec(330),
+     label="hunter-progress")
+ Box(modifier.fillMaxWidth().height(9.dp)
+    .semantics{progressBarRangeInfo=ProgressBarRangeInfo(target,0f..1f)}
+    .clip(RoundedCornerShape(6.dp)).background(c.input)){
+  Box(Modifier.fillMaxWidth(animated).fillMaxHeight()
      .background(Brush.horizontalGradient(listOf(c.accent,c.secondary))))
  }
 }
