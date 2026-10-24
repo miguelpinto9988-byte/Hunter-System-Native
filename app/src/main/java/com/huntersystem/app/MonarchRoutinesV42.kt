@@ -234,7 +234,7 @@ private fun MonarchRoutineModeCard(title:String,subtitle:String,tag:String,count
     }
 }
 @Composable
-private fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->Unit){
+fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->Unit){
     val s=ui.store
     val scope=rememberCoroutineScope()
     val c=LocalHunter.current
@@ -314,6 +314,8 @@ private fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->U
                         else listOf(levels.toInt())
                     val requestedRevision=s.revision.intValue
                     val logs=s.logs.copyJson()
+                    val avoidImpact=noImpact
+                    val onlyBody=noGear
                     val epoch=++ui.serial
                     val selectedDuration=range
                     busy=true
@@ -332,8 +334,8 @@ private fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->U
                                     r.a("items").objects().all{x->
                                         s.catalog.byId[x.s("id")]?.let{e->
                                             s.rules.compatible(e,p)&&
-                                            (!noImpact||!e.impact&&!e.power)&&
-                                            (!noGear||mode!="offline"||e.equipment=="body"&&!e.gym)
+                                            (!avoidImpact||!e.impact&&!e.power)&&
+                                            (!onlyBody||mode!="offline"||e.equipment=="body"&&!e.gym)
                                         }==true
                                     }
                                 }
@@ -364,7 +366,7 @@ private fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->U
     }
 }
 @Composable
-private fun MonarchRoutineCard(ui:NativeUi,r:JSONObject,p:JSONObject){
+fun MonarchRoutineCard(ui:NativeUi,r:JSONObject,p:JSONObject){
     val s=ui.store
     val c=LocalHunter.current
     val reasons=remember(r,s.revision.intValue){routineReasons(s,r,p)}
