@@ -34,7 +34,7 @@ val LocalHunter=staticCompositionLocalOf{HunterColors(JSONObject())}
  * Se preservan los demás tokens y las funciones del catálogo existente.
  * Los colores de actividades permanecen en V39WeekPicker (no dependen del tema).
  */
-private fun v39VisualTokens(name:String,source:JSONObject):JSONObject = HunterDesignSystem.tokens(name,source)
+private fun v39VisualTokens(name:String,source:JSONObject,accent:String):JSONObject = HunterDesignSystem.tokens(name,source,accent)
 
 /** Valores históricos se convierten a uno de los cuatro temas V39; no alteran datos del usuario. */
 fun resolveV39Theme(value:String?,gender:String=""):String=when(value?.lowercase()){
@@ -49,7 +49,7 @@ fun resolveV39Theme(value:String?,gender:String=""):String=when(value?.lowercase
  store.revision.intValue
  val p=store.profile
  val theme=resolveV39Theme(p?.s("theme"),p?.s("gender")?:"")
- val colors=HunterColors(v39VisualTokens(theme,store.catalog.design.o("colors").o(theme)))
+ val colors=HunterColors(v39VisualTokens(theme,store.catalog.design.o("colors").o(theme),p?.s("themeAccent","default")?:"default"))
  CompositionLocalProvider(LocalHunter provides colors){
   MaterialTheme(
    colorScheme=darkColorScheme(primary=colors.accent,onPrimary=colors.bg,surface=colors.panel,
