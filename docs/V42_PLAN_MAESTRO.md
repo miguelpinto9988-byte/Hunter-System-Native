@@ -1,5 +1,5 @@
 # Hunter System V42 — Índice maestro del rediseño
-> Estado: PLANIFICACIÓN VISUAL. Ninguna pantalla de producción ha sido reemplazada aún.
+> Estado: FASE 01 MONARCA A+ IMPLEMENTADA EN RAMA DE PRUEBA. El resto de pantallas continúa migrándose por fases.
 > Fecha: 2026-10-24
 > Rama de trabajo: `design/v42-plan-y-opciones-20261024`.
 > Punto de partida: V39.2 Kotlin Compose **sin miniaturas** (`20f365978c39ed0d0691242d41ac46eb8fd2fde8`).
@@ -19,7 +19,7 @@
 | Fase | Módulo | Cambios principales | Entregable verificable | Estado |
 |---|---|---|---|---|
 | 00 | Auditoría y protección | Inventario Kotlin, rutas, estados, navegación, activos, persistencia; backup de perfiles, comparación V39.2/V40/V41 | Mapa de dependencias, lista de regresión | Planificada |
-| 01 | Elección artística | Seleccionar A Monarca o B Crónicas, comparar Home/Misiones/Rutinas/Perfil; validar variante clara/oscura | Dirección aprobada y mini guía visual | **Pendiente de selección** |
+| 01 | Elección artística | Elegida A+ Monarca; piloto de Inicio, paleta y cinco iconos vectoriales; siguiente: validación visual | Identidad aprobada, código de piloto y APK firmada | **Piloto implementado y compilado** |
 | 02 | Sistema de diseño | Tokens semánticos, tipografías, escalas, bordes, espaciados, superficies, contraste, componentes, iconos de flujo | `HunterDesignSystem` y catálogo de componentes | Planificada |
 | 03 | Navegación y acceso | Splash, arranque offline, sesión local, navegación inferior, rutas, volver, carga/errores, responsive | Flujo navegable sin pérdida de estado | Planificada |
 | 04 | Inicio / Dashboard | Hero 2.5D, rango/XP, misión principal, racha, métricas y CTA, accesibilidad | Home adaptable móvil/tablet | Planificada |
@@ -72,7 +72,7 @@ La biblioteca puede abrirse desde Rutinas o navegación secundaria; 5 destinos p
 4. Build Android release y tests correspondientes.
 5. Revisión visual del usuario; sólo entonces migrar la siguiente fase.
 6. Rollback sencillo; un cambio de tema no debe invalidar datos.
-**Primera decisión requerida:** seleccionar A o B, o combinación explícita de elementos. Hasta entonces, NO se reemplazan pantallas ni recursos originales.
+**Dirección elegida:** A+ Monarca. Primera integración en `design/v42-fase01-monarca-a-plus` y detalles en `docs/V42_FASE01_MONARCA.md`. Las restantes fases todavía no han reemplazado sus pantallas originales.
 
 ## Criterios de aceptación final
 - Todas las pantallas y overlays migrados; misma capacidad de entrenamiento que antes.
