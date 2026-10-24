@@ -36,7 +36,7 @@ import kotlin.math.roundToInt
  */
 data class MonarchSeriesBucket(val title:String,val sets:Int,val sessions:Int)
 data class MonarchAnalyticsSnapshot(
-    val periodDays:Int, val completed:Int, val trainingDays:Int,
+    val periodDays:Int, val completed:Int, val trainingDays:Int, val plannedCompleted:Int,
     val loggedSets:Int,val loggedExercises:Int,val quickCompletions:Int,
     val strength:Int,val cardio:Int,val mobility:Int,
     val planned:Int,val buckets:List<MonarchSeriesBucket>
@@ -79,15 +79,17 @@ object MonarchAnalytics {
                 slice.count{byDay[it]?.second?.b("complete")==true})
         }
         // Un día del plan solo cuenta si existe un ciclo histórico guardado con ese día.
-        val planned=s.allDays().mapNotNull{d->
+        val plannedDates=s.allDays().mapNotNull{d->
             val date=runCatching{LocalDate.parse(d.s("date"))}.getOrNull()
             if(date!=null&&!date.isBefore(start)&&!date.isAfter(end)&&d.s("kind")!="rest")
                 date else null
-        }.toSet().size
+        }.toSet()
+        val planned=plannedDates.size
+        val plannedCompleted=complete.count{it.first in plannedDates}
         fun kindCount(vararg types:String)=complete.count{it.second.s("kind") in types}
         return MonarchAnalyticsSnapshot(
             periodDays=days,
-            completed=complete.size,
+            completed=complete.size,plannedCompleted=plannedCompleted,
             trainingDays=recorded.count{(_,l)->l.a("items").objects().any{x->
                 x.a("actual").objects().any{a->a.b("done")}}},
             loggedSets=setTotal,loggedExercises=exercises,quickCompletions=confirmed.size,
@@ -292,14 +294,14 @@ fun MonarchProgressScreen(ui:NativeUi){
         HPanel(padding=15,decor=false){
             Eyebrow("PLANIFICACIÓN DEL PERÍODO")
             if(data.planned>0){
-                val count=data.completed.coerceAtMost(data.planned)
+                val count=data.plannedCompleted
                 val fraction=count.toFloat()/data.planned
                 Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
                     Heading("${(fraction*100).roundToInt()} %",size=27)
                     HText("$count / ${data.planned} días",size=16,color=c.accent,bold=true)
                 }
                 HProgress(fraction)
-                HText("Sesiones completadas / días programados registrados en el ciclo. "+
+                HText("Días programados completados / días programados guardados en el ciclo. "+
                     "No incluye días futuros.",size=12,color=c.muted)
             }else HText("Sin días de entrenamiento planificados guardados para este período.",
                 size=14,color=c.muted)
