@@ -15,7 +15,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
 /**
- * Hunter System Monarca fase 07: escenario reutilizable de ejercicios.
+ * Hunter System V42.6 Monarca fase 07: escenario reutilizable de ejercicios.
  * Usa los SVG nativos incluidos con el catálogo: no introduce WebView, miniaturas
  * ni crea nuevas animaciones a partir de los vídeos originales.
  */
