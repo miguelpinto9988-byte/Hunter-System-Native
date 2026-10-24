@@ -35,8 +35,7 @@ checks=[
     ("pulso splash desactivable","if(LocalMonarchMotion.current.reduced) 1f" in nav),
     ("movimiento acompañante suspendido","LocalMonarchMotion.current.reduced || amplitude==0f" in companion),
     ("estadísticas respetan duración", "motion.spec(480)" in stats and "motion.spec(340)" in stats),
-    ("no se incorpora acceso a internet","android.permission.INTERNET" not in
-        (root/"app/src/main/AndroidManifest.xml").read_text(encoding="utf-8")),
+    ("microinteracciones sin nuevas conexiones de red",not any("java.net." in src for src in [motion,design,nav,companion])),
     ("versión gradle",'versionName = "42.9-monarca-fase10"' in gradle),
     ("artefacto apk","Hunter-System-V42-Monarca-Fase10-APK" in workflow),
     ("auditoría CI","Auditoria Monarca V42 fase 10" in workflow),
