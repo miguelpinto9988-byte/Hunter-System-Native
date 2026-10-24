@@ -27,6 +27,25 @@ val Barlow=FontFamily(Font(R.font.barlow),Font(R.font.barlow_semibold,FontWeight
 fun parseColor(value:String):Color{if(value.startsWith("#"))return Color(android.graphics.Color.parseColor(value));val n=Regex("[-+]?[0-9]*\\.?[0-9]+").findAll(value).map{it.value.toFloat()}.toList();if(n.size<3)return Color.White;val h=((n[0]%360)+360)%360/60;val s=n[1]/100;val l=n[2]/100;val c=(1-abs(2*l-1))*s;val x=c*(1-abs(h%2-1));val m=l-c/2;val rgb=when(h.toInt()){0->floatArrayOf(c,x,0f);1->floatArrayOf(x,c,0f);2->floatArrayOf(0f,c,x);3->floatArrayOf(0f,x,c);4->floatArrayOf(x,0f,c);else->floatArrayOf(c,0f,x)};return Color(rgb[0]+m,rgb[1]+m,rgb[2]+m,if(n.size>3)n[3] else 1f)}
 data class HunterColors(val data:JSONObject){fun color(key:String)=parseColor(data.s("--$key","#ffffff"));val bg=color("bg");val panel=color("panel");val surface=color("surface");val input=color("input");val line=color("line");val text=color("text");val muted=color("muted");val accent=color("accent");val secondary=color("secondary33");val selected=color("selected33");fun hex(key:String)="#%06x".format(color(key).toArgb()and 0xffffff)}
 val LocalHunter=staticCompositionLocalOf{HunterColors(JSONObject())}
+/** Paletas oficiales del rediseño V39, independientes de temas históricos.
+ * Se preservan los demás tokens y las funciones del catálogo existente.
+ * Los colores de actividades permanecen en V39WeekPicker (no dependen del tema).
+ */
+private fun v39VisualTokens(name:String, source:JSONObject):JSONObject {
+ val result=JSONObject(source.toString())
+ val entries=when(name){
+  "aurora"->arrayOf("#140919","#27112F","#3E1B4D","#795386","#FFF1FF","#C7A9D3","#F63AB8")
+  "ceniza"->arrayOf("#0D1017","#1A202B","#303A49","#617085","#EDF1FA","#B9C7DE","#B9C7DE")
+  "amanecer"->arrayOf("#1F1510","#35261C","#4C3525","#8B6B45","#FFF2DE","#D8BB99","#F6B84F")
+  else->arrayOf("#080F1D","#121E34","#1D2B46","#415577","#EDF2FF","#ADBDD9","#397DFF")
+ }
+ for((key,index) in listOf("bg","panel","surface","line","text","muted","accent").withIndex()){
+  result.put("--$key",entries[index])
+ }
+ result.put("--input",entries[2])
+ return result
+}
+
 /** Valores históricos se convierten a uno de los cuatro temas V39; no alteran datos del usuario. */
 fun resolveV39Theme(value:String?,gender:String=""):String=when(value?.lowercase()){
  "eclipse","aurora","ceniza","amanecer"->value.lowercase()
@@ -40,7 +59,7 @@ fun resolveV39Theme(value:String?,gender:String=""):String=when(value?.lowercase
  store.revision.intValue
  val p=store.profile
  val theme=resolveV39Theme(p?.s("theme"),p?.s("gender")?:"")
- val colors=HunterColors(store.catalog.design.o("colors").o(theme))
+ val colors=HunterColors(v39VisualTokens(theme,store.catalog.design.o("colors").o(theme)))
  CompositionLocalProvider(LocalHunter provides colors){
   MaterialTheme(
    colorScheme=darkColorScheme(primary=colors.accent,onPrimary=colors.bg,surface=colors.panel,
