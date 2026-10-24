@@ -364,7 +364,7 @@ fun MonarchDashboardCompanion(ui: NativeUi) {
     HPanel(onClick = { ui.open("coach") }, padding = 17) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            MonarchGlyph("profile", Modifier.size(32.dp), color = c.accent)
+            AssetImage("ui33/companion-${companionKey(ui.store.profile)}.webp", Modifier.width(56.dp).height(78.dp))
             Column(Modifier.weight(1f)) {
                 Eyebrow("ACOMPAÑANTE ACTIVO")
                 Heading(companionName(ui.store.profile), size = 23)

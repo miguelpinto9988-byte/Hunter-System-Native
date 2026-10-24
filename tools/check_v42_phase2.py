@@ -29,7 +29,7 @@ profile = (src / "Profile.kt").read_text(encoding="utf-8")
 design = (src / "Design.kt").read_text(encoding="utf-8")
 screens = (src / "Screens.kt").read_text(encoding="utf-8")
 require("MonarchThemePicker(values" in profile, "No hay selector nativo en Perfil")
-require("HunterDesignSystem.tokens(name,source)" in design, "No se usan tokens semanticos")
+require("HunterDesignSystem.tokens(name,source)" in design or "HunterDesignSystem.tokens(name,source,accent)" in design, "No se usan tokens semanticos")
 dashboard = src / "MonarchDashboardV42.kt"
 require("MonarchStatTile(value.toString()" in screens or
         (dashboard.is_file() and "MonarchDashboardMetrics(ui,stats)" in screens and
