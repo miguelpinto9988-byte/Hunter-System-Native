@@ -60,7 +60,7 @@ fun HunterRoot(ui:NativeUi){
                         MonarchRecoveryScreen(ui,store.readError!!)
                     }else{
                         val saveableScreens=rememberSaveableStateHolder()
-                        MonarchScreenTransition(ui.tab,Modifier.fillMaxSize()){route->
+                        MonarchScreenTransition(if(hasProfile)ui.tab else "profile",Modifier.fillMaxSize()){route->
                             saveableScreens.SaveableStateProvider(route){
                             when(route){
                                 "home"->HomeScreen(ui)
