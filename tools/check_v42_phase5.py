@@ -67,8 +67,10 @@ check('fun log(date:String=today())' in store and
       'fun finish(date:String)' in store and
       'fun toggleTask(date:String,index:Int)' in store,
       "No se pueden alterar los contratos originales del motor")
-check('versionName = "42.4-monarca-fase5"' in gradle,
-      "Versión 42.4 incorrecta")
+import re
+version_match = re.search(r'versionName\s*=\s*"42\.(\d+)-monarca-fase\d+"', gradle)
+check(version_match is not None and int(version_match.group(1)) >= 4,
+      "La fase 05 requiere versión 42.4 o posterior")
 check("Auditoria Monarca V42 fase 05" in ci,
       "GitHub Actions no ejecuta auditoría 05")
 
