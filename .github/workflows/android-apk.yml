@@ -73,3 +73,27 @@ jobs:
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 14
+      - name: Crear APK ligera de vista previa (sin clips MP4 adicionales)
+        env:
+          HUNTER_STORE_PASSWORD: ${{ secrets.HUNTER_STORE_PASSWORD }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          BUILD_TOOLS="$SDK_ROOT/build-tools/35.0.0"
+          mkdir -p app/build/outputs/apk/preview
+          cp app/build/outputs/apk/release/app-release.apk "$RUNNER_TEMP/hunter-lite-unpacked.apk"
+          zip -d "$RUNNER_TEMP/hunter-lite-unpacked.apk" 'assets/offline2d/*.mp4' > /dev/null
+          "$BUILD_TOOLS/zipalign" -f 4 "$RUNNER_TEMP/hunter-lite-unpacked.apk" "$RUNNER_TEMP/hunter-lite-aligned.apk"
+          "$BUILD_TOOLS/apksigner" sign --ks "$RUNNER_TEMP/hunter-system-release.p12" --ks-type PKCS12 --ks-key-alias hunter-system-release --ks-pass env:HUNTER_STORE_PASSWORD --key-pass env:HUNTER_STORE_PASSWORD --out app/build/outputs/apk/preview/Hunter-System-41.0-Vista-Previa.apk "$RUNNER_TEMP/hunter-lite-aligned.apk"
+          "$BUILD_TOOLS/apksigner" verify --verbose app/build/outputs/apk/preview/Hunter-System-41.0-Vista-Previa.apk
+          du -h app/build/outputs/apk/preview/Hunter-System-41.0-Vista-Previa.apk
+
+      - name: Publicar APK ligera
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hunter-System-41.0-preview-ligera
+          path: app/build/outputs/apk/preview/Hunter-System-41.0-Vista-Previa.apk
+          if-no-files-found: error
+          retention-days: 14
+
