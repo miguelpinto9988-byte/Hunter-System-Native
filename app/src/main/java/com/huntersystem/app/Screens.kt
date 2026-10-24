@@ -48,11 +48,21 @@ fun rankKey(level:Int)=listOf("E","D","C","B","A","S")[((level-1)/5).coerceIn(0,
  }
 }
 @Composable fun TopTabs(ui:NativeUi){Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(5.dp)){for((id,title)in listOf("home" to "Panel","plan" to "Misiones","objectives" to "Objetivos"))HChip(title,ui.tab==id,Modifier.weight(1f)){ui.go(id)}}}
-@Composable fun HomeScreen(ui:NativeUi){val store=ui.store;val stats=store.stats();SceneColumn(ui){TopTabs(ui);MonarchHero(ui,stats);Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)){for((value,label)in listOf(stats.i("streak") to "Días de racha",stats.i("exerciseCount") to "Misiones",stats.i("reps") to "Repeticiones"))MonarchStatTile(value.toString(),label,Modifier.weight(1f))};MissionCompanion(ui);MissionLaunch(ui)
- HPanel{Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Heading("Explora tu entrenamiento",Modifier.weight(1f),size=25);HText("456 rutinas",size=14,color=LocalHunter.current.muted)};val rows=listOf(listOf("Fuerza y músculo" to "Controla cada repetición","Activa tu energía" to "Con y sin saltos"),listOf("Movilidad" to "Recupera el movimiento","Sesiones mixtas" to "Fuerza + cardio"));for(row in rows)Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){for((title,sub)in row)HPanel(Modifier.weight(1f),onClick={ui.go("routines");ui.library="offline"},padding=12,decor=false){Heading(title,size=23);HText(sub,size=14,color=LocalHunter.current.muted);HText("↗",color=LocalHunter.current.accent)}}}
- AcademyTile(ui);GoalsPanel(ui);CyclePanel(ui);HPanel(onClick={ui.open("reminders")}){Heading("Recordatorios del sistema",size=28);HText("Elige cuándo quieres entrenar  →",color=LocalHunter.current.muted)};WeeklyPanel(ui)
- HPanel{Eyebrow("TU OBJETIVO → TU PLAN");val p=store.profile?:JSONObject();val g=store.catalog.editorial.o("goalGroups").o(p.s("goalGroup","habit"));Heading(g.s("name","Constancia y bienestar"),size=29);val plan=store.catalog.editorial.o("goalPlans").o(p.s("finalTarget","general"));HText(plan.s("why"));HText("${listOf("Básico","Intermedio","Avanzado")[level(p)]} · ${p.a("weekPlan").strings().count{it!="rest"}} días elegidos · ${(p.n("trainingScale",1.0)*100).roundToInt()} % de dosis",size=16,color=LocalHunter.current.muted);HText(store.rules.gate(p).reason,size=15,color=LocalHunter.current.muted)}
-}}
+@Composable
+fun HomeScreen(ui:NativeUi) {
+ val stats=ui.store.stats()
+ SceneColumn(ui) {
+  MonarchDashboardWelcome(ui)
+  MonarchHero(ui,stats)
+  MonarchDashboardMission(ui)
+  MonarchDashboardMetrics(ui,stats)
+  MonarchDashboardWeek(ui)
+  MonarchDashboardShortcuts(ui)
+  MonarchDashboardCompanion(ui)
+  MonarchDashboardGoals(ui)
+  MonarchDashboardGoalPlan(ui)
+ }
+}
 @Composable fun Hero(ui:NativeUi,stats:JSONObject){val s=ui.store;val p=s.profile?:JSONObject();val c=LocalHunter.current;val rank=rankKey(stats.i("level",1)).lowercase();val appearance=s.state.o("appearance33");var collection=appearance.s("collection","hunter");if(collection=="alternate")collection=listOf("hunter","reader","regressor")[(LocalDate.now().toEpochDay()%3).toInt()];val char=if(collection=="hunter")"hunter-"+if(p.s("gender")=="female")"female" else "male" else collection;val path="${char}-$rank.webp";val art=remember(path){if(runCatching{s.context.assets.open("ui34/$path").close()}.isSuccess)"ui34/$path" else "ui33/$path"};val scene=when(appearance.s("scene","auto")){"sanctuary"->0;"journey"->1;else->((LocalDate.now().toEpochDay()-LocalDate.of(2026,1,1).toEpochDay())%2).toInt()}
  Box(Modifier.fillMaxWidth().height(420.dp)){Box(Modifier.fillMaxWidth().height(350.dp).align(Alignment.BottomCenter).clip(RoundedCornerShape(9.dp)).border(1.dp,c.line,RoundedCornerShape(9.dp))){AssetImage("ui33/scene-$rank-$scene.webp",Modifier.fillMaxSize(),ContentScale.Crop);Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(c.input,c.input.copy(alpha=.85f),c.input.copy(alpha=.25f)))))};AssetImage(art,Modifier.align(Alignment.TopEnd).offset(x=3.dp).fillMaxWidth(.58f).fillMaxHeight(),ContentScale.Crop,alignment=Alignment.TopCenter)
  Column(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(350.dp).padding(22.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Eyebrow("SISTEMA EN LÍNEA");Eyebrow("RANGO ${rank.uppercase()}")};HText("${p.s("name","Cazador")} · ${s.catalog.editorial.o("goalPlans").o(p.s("finalTarget","general")).s("name","Tu siguiente nivel")}",Modifier.fillMaxWidth(.64f),size=14);Heading("SUPERA\nTUS LÍMITES.",size=46);HText("Una misión a la vez. Tu próximo nivel empieza hoy.",Modifier.fillMaxWidth(.60f),size=16,color=c.muted);Spacer(Modifier.weight(1f));Column(Modifier.fillMaxWidth(.65f),verticalArrangement=Arrangement.spacedBy(5.dp)){HText("NIVEL ${stats.i("level",1).toString().padStart(2,'0')}",bold=true,size=16);HText("RANGO ${rank.uppercase()} · ${s.catalog.design.a("ranks").objects().firstOrNull{it.s("key")==rank.uppercase()}?.s("name")?.uppercase()}",size=12);HProgress((stats.i("xp")%300)/300f);HText("${stats.i("xp")%300} / 300 XP",size=13,color=c.muted)}};HText("${rank.uppercase()}  EVOLUCIÓN ⟶",Modifier.align(Alignment.BottomEnd).padding(15.dp).clickable{ui.open("evolution")},size=12,color=c.accent)
