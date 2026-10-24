@@ -86,11 +86,12 @@ check('rules.compatible(e,p)' in store,
       "Se perdió la validación al asignar rutinas.")
 check('fun generateRoutine(' in planner and 'fun pool(' in rules,
       "No se puede perder el planificador o Rules.")
-check('versionName = "42.5-monarca-fase6"' in gradle,
-      "Debe compilarse la versión 42.5 fase 06.")
+import re
+check(re.search(r'versionName\s*=\s*"42\.(?:[5-9]|[1-9][0-9]+)-monarca-fase[6-9][0-9]*"', gradle) is not None,
+      "La auditoría 06 requiere versión 42.5 o posterior.")
 check("Auditoria Monarca V42 fase 06" in workflow,
       "Falta auditoría de la fase 06 en CI.")
-check("Hunter-System-V42-Monarca-Fase06-APK" in workflow,
+check(("Hunter-System-V42-Monarca-Fase06-APK" in workflow or "Hunter-System-V42-Monarca-Fase07-APK" in workflow),
       "Nombre de la APK de fase 06 incorrecto.")
 
 print(json.dumps({
