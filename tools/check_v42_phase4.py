@@ -65,8 +65,8 @@ check("s.activeLog(log)" in dashboard,
       "No se puede permitir editar una misión iniciada")
 check('ui.open("mission"' in dashboard and 'ui.open("custom"' in dashboard,
       "Faltan acciones históricas de misión")
-check('ui.open("academy")' in dashboard and
-      'ui.open("reminders")' in dashboard and
+check('it.open("academy")' in dashboard and
+      'it.open("reminders")' in dashboard and
       'ui.open("coach")' in dashboard,
       "El dashboard ha perdido un acceso existente")
 check("companionKey(store.profile)" in dashboard,
