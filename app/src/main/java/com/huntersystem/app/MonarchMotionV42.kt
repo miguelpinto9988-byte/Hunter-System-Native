@@ -5,7 +5,6 @@ import android.provider.Settings
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.layout.Modifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -70,7 +69,7 @@ fun MonarchMotionOptions(){
         Eyebrow("ACCESIBILIDAD Y RENDIMIENTO")
         Heading("Fluidez y movimiento",size=26)
         HCheck("Reducir animaciones y transiciones",motion.userReduced){
-            motion.setReduced()
+            motion.setReduced(!motion.userReduced)
         }
         HText("La opción se aplica de inmediato, sin modificar el perfil, " +
             "las rutinas ni las estadísticas. Los botones conservan " +
