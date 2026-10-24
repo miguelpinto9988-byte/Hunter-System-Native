@@ -7,6 +7,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.unit.*
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.window.*
 import androidx.lifecycle.*
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -16,8 +18,8 @@ import org.json.JSONArray
 import java.time.LocalDate
 import kotlin.math.*
 
-@Composable fun OverlayRoot(ui:NativeUi,overlay:Overlay){val c=LocalHunter.current;Dialog(onDismissRequest={ui.back()},properties=DialogProperties(usePlatformDefaultWidth=false,decorFitsSystemWindows=true)){Column(Modifier.fillMaxWidth().fillMaxHeight(.96f).padding(horizontal=10.dp,vertical=8.dp).background(c.panel,RoundedCornerShape(12.dp)).border(1.dp,c.line,RoundedCornerShape(12.dp)).padding(15.dp)){
- Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){HButton("‹"){ui.back()};OriginalSvg("decor/crest.svg",Modifier.width(72.dp).height(22.dp),accent=c.hex("accent"),metal=c.hex("metal26"),ornament=c.hex("ornament26"));HButton("×"){ui.stack.clear()}}
+@Composable fun OverlayRoot(ui:NativeUi,overlay:Overlay){val c=LocalHunter.current;Dialog(onDismissRequest={ui.back()},properties=DialogProperties(usePlatformDefaultWidth=false,decorFitsSystemWindows=true)){Column(Modifier.fillMaxWidth().fillMaxHeight(.97f).padding(horizontal=8.dp,vertical=6.dp).background(Brush.verticalGradient(listOf(c.surface,c.panel,c.bg)),RoundedCornerShape(23.dp)).border(1.dp,c.accent.copy(alpha=.42f),RoundedCornerShape(23.dp)).padding(15.dp)){
+ Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){HButton("‹"){ui.back()};Column(horizontalAlignment=Alignment.CenterHorizontally){Eyebrow("✦  HUNTER SYSTEM");HText("SISTEMA DE SOMBRAS",size=10,color=c.muted)};HButton("×"){ui.stack.clear()}}
  Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(top=18.dp,bottom=20.dp),verticalArrangement=Arrangement.spacedBy(16.dp)){key(overlay){when(overlay.type){
  "exercise"->ExerciseDetail(ui,overlay.data.s("id"))
  "mission"->{val date=overlay.data.s("date",today());Eyebrow(date);MissionContent(ui,date);if(date==today())HButton("Abrir sesión paso a paso",primary=true){ui.open("session",obj("date" to date))}}
@@ -49,7 +51,7 @@ import kotlin.math.*
  }}}
 @Composable fun ExerciseDetail(ui:NativeUi,id:String){val s=ui.store;val e=s.catalog.byId[id]?:return;val c=LocalHunter.current;var playing by remember(id){mutableStateOf(s.profile?.b("animate",true)?:true)};var mirror by remember(id){mutableStateOf(false)};var speed by remember(id){mutableFloatStateOf(s.state.n("demoSpeed",1.0).toFloat())};var seek by remember(id){mutableFloatStateOf(0f)}
  Eyebrow("${e.group} · ${e.category}");Heading(e.name,size=35);HText("${if(e.unit=="sec")"Por tiempo" else "Por repeticiones"}${if(e.sides)" · Cantidad por lado" else ""} · ${if(e.impact)"Con saltos" else "Sin saltos"}",size=16,color=c.muted)
- OriginalSvg(e.demo,Modifier.fillMaxWidth().height(390.dp),play=playing,speed=speed,mirror=mirror,progress=seek)
+ Box(Modifier.fillMaxWidth().height(352.dp).clip(RoundedCornerShape(21.dp)).background(Brush.verticalGradient(listOf(c.surface,c.panel))).border(1.dp,c.accent.copy(alpha=.38f),RoundedCornerShape(21.dp)).padding(8.dp)){OriginalSvg(e.demo,Modifier.fillMaxSize(),play=playing,speed=speed,mirror=mirror,progress=seek)}
  Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){HButton(if(playing)"Ⅱ Pausar" else "▶ Reproducir",Modifier.weight(1f),primary=true){playing=!playing};HButton("⇄ Espejo",Modifier.weight(1f)){mirror=!mirror}}
  Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)){HSelect("Velocidad",speed.toString(),listOf("0.5" to "0,5×","1.0" to "1×","1.5" to "1,5×","2.0" to "2×"),Modifier.weight(1f)){speed=it.toFloat();s.state.put("demoSpeed",speed.toDouble());s.save()};HButton("Reiniciar",Modifier.weight(1f)){playing=false;seek=0f}}
  HText("Ver posiciones",size=14,color=c.muted);Slider(seek,{seek=it;playing=false})
