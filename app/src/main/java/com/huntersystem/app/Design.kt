@@ -31,25 +31,11 @@ val LocalHunter=staticCompositionLocalOf{HunterColors(JSONObject())}
  * Se preservan los demás tokens y las funciones del catálogo existente.
  * Los colores de actividades permanecen en V39WeekPicker (no dependen del tema).
  */
-private fun v39VisualTokens(name:String, source:JSONObject):JSONObject {
- val result=JSONObject(source.toString())
- val entries=when(name){
-  "aurora"->arrayOf("#140919","#27112F","#3E1B4D","#795386","#FFF1FF","#C7A9D3","#F63AB8")
-  "ceniza"->arrayOf("#0D1017","#1A202B","#303A49","#617085","#EDF1FA","#B9C7DE","#B9C7DE")
-  "amanecer"->arrayOf("#1F1510","#35261C","#4C3525","#8B6B45","#FFF2DE","#D8BB99","#F6B84F")
-  else->arrayOf("#080D19","#111C31","#18263F","#36506C","#E8F1FF","#B4C6DB","#25C8FF")
- }
- for((index,key) in listOf("bg","panel","surface","line","text","muted","accent").withIndex()){
-  result.put("--$key",entries[index])
- }
- result.put("--input",entries[2])
- if(name=="eclipse"){ result.put("--secondary33","#7F5CFF"); result.put("--selected33","#183352") }
- return result
-}
+private fun v39VisualTokens(name:String,source:JSONObject):JSONObject = HunterDesignSystem.tokens(name,source)
 
 /** Valores históricos se convierten a uno de los cuatro temas V39; no alteran datos del usuario. */
 fun resolveV39Theme(value:String?,gender:String=""):String=when(value?.lowercase()){
- "eclipse","aurora","ceniza","amanecer"->value.lowercase()
+ "eclipse","umbral","abismo","runa","hielo","lavanda","aurora","ceniza","amanecer"->value.lowercase()
  "auto"->if(gender=="female")"aurora" else "eclipse"
  "pink","coral","red"->"aurora"
  "amber","gold"->"amanecer"
