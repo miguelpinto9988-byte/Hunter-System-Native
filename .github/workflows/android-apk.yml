@@ -1,4 +1,4 @@
-# Hunter System V42.2 · Fase 03 · revisión del arranque y navegación
+# Hunter System V42.3 · Fase 04 · dashboard adaptable y misiones · QA integrado
 name: Compilar Hunter System Android APK
 
 on:
@@ -71,6 +71,9 @@ jobs:
       - name: Auditoria Monarca V42 fase 03
         run: python3 tools/check_v42_phase3.py
 
+      - name: Auditoria Monarca V42 fase 04
+        run: python3 tools/check_v42_phase4.py
+
       - name: Compilar APK release firmada
         env:
           HUNTER_KEYSTORE: ${{ runner.temp }}/hunter-system-release.p12
@@ -82,7 +85,7 @@ jobs:
       - name: Publicar APK instalable
         uses: actions/upload-artifact@v4
         with:
-          name: Hunter-System-V42-Monarca-Fase03-APK
+          name: Hunter-System-V42-Monarca-Fase04-APK
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 14

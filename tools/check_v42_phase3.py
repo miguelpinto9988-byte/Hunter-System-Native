@@ -2,6 +2,7 @@
 """Auditoría estática de navegación y acceso Monarca V42 fase 03."""
 from pathlib import Path
 import json
+import re
 
 root = Path(__file__).resolve().parents[1]
 src = root / "app/src/main/java/com/huntersystem/app"
@@ -47,8 +48,9 @@ check("MonarchRecoveryScreen(ui,store.readError!!)" in main,
 check("rememberSaveable(ui.tab,ui.library,saver=ScrollState.Saver)" in screens,
       "Las pantallas no conservan el scroll")
 check("widthIn(max=960.dp)" in screens, "No está limitado el contenido en tablets")
-check('versionName = "42.2-monarca-fase3"' in gradle,
-      "Versión de compilación incorrecta")
+version_match = re.search(r'versionName\s*=\s*"42\.(\d+)-monarca-fase\d+"', gradle)
+check(version_match is not None and int(version_match.group(1)) >= 2,
+      "La fase 03 requiere versión 42.2 o posterior")
 check("#080D19" in styles and "windowSplashScreenAnimatedIcon" in splash,
       "Falta integración de splash por versión de Android")
 check("android:allowBackup=\"false\"" in manifest,

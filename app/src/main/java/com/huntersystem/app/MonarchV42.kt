@@ -92,59 +92,8 @@ fun MonarchGlyph(kind: String, modifier: Modifier = Modifier, color: Color = Mon
     }
 }
 
-/** Piloto de pantalla principal con datos reales y acompañante seleccionado en Perfil. */
+/** Mantiene la API del piloto de fase 01, reemplazando su implementación por Fase 04. */
 @Composable
-fun MonarchHero(ui: NativeUi, stats: JSONObject) {
-    val store = ui.store
-    val profile = store.profile ?: JSONObject()
-    val palette = MonarchV42Palette
-    val level = stats.i("level", 1).coerceAtLeast(1)
-    val rank = rankKey(level)
-    val xp = stats.i("xp").coerceAtLeast(0)
-    val day = store.day(today())
-    val progress = (xp % 300) / 300f
-    val characterAsset = "ui33/companion-" + companionKey(store.profile) + ".webp"
-
-    Column(
-        Modifier.fillMaxWidth()
-            .clip(RoundedCornerShape(MonarchV42Metrics.Radius))
-            .background(Brush.verticalGradient(listOf(palette.Night, palette.Obsidian)))
-            .border(1.dp, palette.Border, RoundedCornerShape(MonarchV42Metrics.Radius))
-            .padding(MonarchV42Metrics.Padding),
-        verticalArrangement = Arrangement.spacedBy(13.dp)
-    ) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically) {
-            Eyebrow("◆  SISTEMA DEL CAZADOR")
-            HText("RANGO $rank", size = 14, color = palette.Cyan, bold = true)
-        }
-        Box(Modifier.fillMaxWidth().height(245.dp)) {
-            Box(Modifier.align(Alignment.CenterEnd).size(218.dp)
-                .clip(RoundedCornerShape(100.dp))
-                .background(Brush.radialGradient(listOf(
-                    palette.Violet.copy(alpha = .45f), palette.Cyan.copy(alpha = .17f),
-                    palette.Obsidian.copy(alpha = 0f)))))
-            AssetImage(characterAsset,
-                Modifier.align(Alignment.CenterEnd).width(178.dp).height(235.dp),
-                scale = ContentScale.Fit,
-                description = "Acompañante elegido en Perfil")
-            Column(Modifier.align(Alignment.BottomStart).widthIn(max = 200.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                HText("ASCENSO EN CURSO", size = 12, color = palette.Cyan, bold = true)
-                Heading("NIVEL\n" + level.toString().padStart(2, '0'), size = 42)
-                HText(profile.s("name", "Cazador").take(32), size = 16,
-                    color = palette.Text, bold = true)
-                HText("Una misión a la vez.", size = 14, color = palette.Muted)
-            }
-        }
-        HText("EXPERIENCIA · $xp XP", size = 14, color = palette.Muted, bold = true)
-        HProgress(progress)
-        HText((xp % 300).toString() + " / 300 XP para el siguiente umbral",
-            size = 13, color = palette.Muted)
-        HText("MISIÓN DEL DÍA", size = 13, color = palette.Cyan, bold = true)
-        HText(day.s("title", "Entrenamiento del día"), size = 22,
-            color = palette.Text, bold = true, maxLines = 2)
-        HButton("COMENZAR MISIÓN  →", modifier = Modifier.fillMaxWidth(),
-            primary = true) { ui.open("mission", obj("date" to today())) }
-    }
+fun MonarchHero(ui:NativeUi,stats:JSONObject) {
+    MonarchDashboardHero(ui,stats)
 }

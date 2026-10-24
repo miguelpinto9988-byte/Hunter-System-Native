@@ -30,7 +30,11 @@ design = (src / "Design.kt").read_text(encoding="utf-8")
 screens = (src / "Screens.kt").read_text(encoding="utf-8")
 require("MonarchThemePicker(values" in profile, "No hay selector nativo en Perfil")
 require("HunterDesignSystem.tokens(name,source)" in design, "No se usan tokens semanticos")
-require("MonarchStatTile(value.toString()" in screens, "Las tarjetas de metricas no se migraron")
+dashboard = src / "MonarchDashboardV42.kt"
+require("MonarchStatTile(value.toString()" in screens or
+        (dashboard.is_file() and "MonarchDashboardMetrics(ui,stats)" in screens and
+         "fun MonarchDashboardMetrics(" in dashboard.read_text(encoding="utf-8")),
+        "Las tarjetas de metricas no se migraron")
 require("MonarchHero(ui,stats)" in screens, "Se perdio la portada Monarca")
 require("V39Artwork(" not in screens, "Se recuperaron miniaturas del catalogo")
 out = {"fase": "02", "ejercicios": len(catalog), "demostraciones_mp4": 342,
