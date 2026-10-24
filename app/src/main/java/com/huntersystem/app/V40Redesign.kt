@@ -121,7 +121,7 @@ import java.time.LocalDate
 @Composable fun V40Mission(ui:NativeUi){
  val s=ui.store;val day=s.day(today());val log=s.logs.optJSONObject(today())
  val total=day.a("items").length()+day.a("tasks").length()
- val progress=s.fraction(log).coerceIn(0f,1f)
+ val progress=s.fraction(log).coerceIn(0.0,1.0).toFloat()
  HPanel(padding=19){
   Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Eyebrow("✦  MISIÓN DEL DÍA");HText(((progress*100).toInt()).toString()+"%",size=14,color=LocalHunter.current.accent,bold=true)}
   HText(day.s("title","Misión diaria"),size=27,bold=true,maxLines=2)
