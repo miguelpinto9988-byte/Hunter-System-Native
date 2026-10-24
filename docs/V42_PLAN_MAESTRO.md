@@ -1,5 +1,5 @@
 # Hunter System V42 — Índice maestro del rediseño
-> Estado: FASES 01–04 IMPLEMENTADAS EN RAMAS DE PRUEBA. Falta QA en dispositivos y migrar las restantes pantallas por fases.
+> Estado: FASES 01–05 IMPLEMENTADAS EN RAMAS DE PRUEBA. Falta QA en dispositivos y migrar las restantes pantallas por fases.
 > Fecha: 2026-10-24
 > Rama de trabajo: `design/v42-plan-y-opciones-20261024`.
 > Punto de partida: V39.2 Kotlin Compose **sin miniaturas** (`20f365978c39ed0d0691242d41ac46eb8fd2fde8`).
@@ -23,7 +23,7 @@
 | 02 | Sistema de diseño | Nueve atmósferas persistentes, tokens semánticos, componentes premium, contraste y selector visual en Perfil | `HunterDesignSystem.kt`, componentes nativos y auditoría de fase | **Implementada para validación** |
 | 03 | Navegación y acceso | Splash Android y Compose, arranque offline, barra inferior, rail tablet, rutas, volver, recuperación y scroll | `MonarchNavigationV42.kt`, auditoría y APK 42.2 | **Implementada para validación** |
 | 04 | Inicio / Dashboard | Hero 2.5D, rango/XP, misión real, racha, métricas, accesos, objetivos y tablet | Home adaptable con auditoría 04 y APK 42.3 | **Implementada para validación** |
-| 05 | Misiones | Semana, tipo de día, progreso, estados, notificaciones, registro, confirmaciones | Misiones estables y consumibles | Planificada |
+| 05 | Misiones | Semana, categorías, progreso real, estados, recordatorios y confirmación de registro | Misiones nativas y QA 05, APK V42.4 | **Implementada para validación** |
 | 06 | Rutinas y generadores | Filtros categoría, duración, intensidad, equipamiento, lesiones; tarjetas, secuencias | Rutinas consistentes con su categoría | Planificada |
 | 07 | Ejercicios y reproducción | Fichas **sin miniaturas**, instrucciones; reproductor SVG/MP4, progreso, velocidad, pausa, espejo, tiempo | Flujo sin saltos de temporizador | Planificada |
 | 08 | Perfil y personalización | Avatar, datos, calendario, objetivos, acompañante, vestimenta, temas, accesibilidad | Perfil persistente y recuperable | Planificada |
