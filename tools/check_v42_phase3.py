@@ -37,7 +37,7 @@ for name in ("MonarchBootScreen", "MonarchBottomNavigation",
              "MonarchNavigationRail", "MonarchScreenTransition",
              "MonarchRecoveryScreen"):
     check(f"fun {name}(" in navigation, f"Falta componente {name}")
-check("MonarchScreenTransition(ui.tab" in main, "No está conectado el host de transición")
+check('MonarchScreenTransition(if(hasProfile)ui.tab else "profile"' in main, "No está conectado el host de transición seguro")
 check("rememberSaveableStateHolder()" in main, "Las rutas no conservan su estado guardable")
 check("MonarchNavigationRail(ui)" in main, "No hay rail de navegación en tablet")
 check("MonarchBottomNavigation(ui)" in main, "No hay navegación inferior móvil")
