@@ -85,4 +85,7 @@ fun HunterRoot(ui:NativeUi){
     if(ui.stack.isNotEmpty())OverlayRoot(ui,ui.stack.last())
 }
 @Composable fun BottomNav(ui:NativeUi)=MonarchBottomNavigation(ui)
-@Composable fun FloatingCompanion(ui:NativeUi,modifier:Modifier=Modifier){var dy=0f;if(ui.store.profile?.b("animate",true)==true){val transition=rememberInfiniteTransition(label="companion");val animated by transition.animateFloat(0f,-5f,infiniteRepeatable(tween(2200,easing=FastOutSlowInEasing),RepeatMode.Reverse),label="float");dy=animated};Box(modifier.width(65.dp).height(86.dp).graphicsLayer{translationY=dy}.clickable{ui.open("coach")}){AssetImage("ui33/companion-${companionKey(ui.store.profile)}.webp",Modifier.fillMaxSize())}}
+/** Fachada de navegación: render nativo configurado exclusivamente en Perfil. */
+@Composable fun FloatingCompanion(ui:NativeUi,modifier:Modifier=Modifier) {
+    MonarchFloatingCompanion(ui,modifier)
+}
