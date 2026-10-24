@@ -61,7 +61,7 @@ class MainActivity:ComponentActivity(){
      .clickable{ui.go(id)}.padding(vertical=8.dp),
     horizontalAlignment=Alignment.CenterHorizontally,
     verticalArrangement=Arrangement.spacedBy(2.dp)){
-    HText(symbol,size=22,color=if(selected)c.accent else c.muted,bold=true)
+    MonarchGlyph(id,Modifier.size(24.dp),color=if(selected)c.accent else c.muted)
     HText(title,size=12,color=if(selected)c.accent else c.muted,
       bold=selected)
    }
