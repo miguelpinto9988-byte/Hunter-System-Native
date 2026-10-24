@@ -49,8 +49,6 @@ import kotlin.math.*
  }}}
 @Composable fun ExerciseDetail(ui:NativeUi,id:String){val s=ui.store;val e=s.catalog.byId[id]?:return;val c=LocalHunter.current;var playing by remember(id){mutableStateOf(s.profile?.b("animate",true)?:true)};var mirror by remember(id){mutableStateOf(false)};var speed by remember(id){mutableFloatStateOf(s.state.n("demoSpeed",1.0).toFloat())};var seek by remember(id){mutableFloatStateOf(0f)}
  Eyebrow("${e.group} · ${e.category}");Heading(e.name,size=35);HText("${if(e.unit=="sec")"Por tiempo" else "Por repeticiones"}${if(e.sides)" · Cantidad por lado" else ""} · ${if(e.impact)"Con saltos" else "Sin saltos"}",size=16,color=c.muted)
- V39Artwork(e,Modifier.fillMaxWidth().height(205.dp))
- HText("Miniatura orientativa: consulta las instrucciones y la demostración animada para realizar el ejercicio.",size=13,color=c.muted)
  OriginalSvg(e.demo,Modifier.fillMaxWidth().height(390.dp),play=playing,speed=speed,mirror=mirror,progress=seek)
  Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){HButton(if(playing)"Ⅱ Pausar" else "▶ Reproducir",Modifier.weight(1f),primary=true){playing=!playing};HButton("⇄ Espejo",Modifier.weight(1f)){mirror=!mirror}}
  Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)){HSelect("Velocidad",speed.toString(),listOf("0.5" to "0,5×","1.0" to "1×","1.5" to "1,5×","2.0" to "2×"),Modifier.weight(1f)){speed=it.toFloat();s.state.put("demoSpeed",speed.toDouble());s.save()};HButton("Reiniciar",Modifier.weight(1f)){playing=false;seek=0f}}
@@ -86,7 +84,7 @@ import kotlin.math.*
  LaunchedEffect(running,index){while(running&&remaining>0){delay(1000);remaining--;if(remaining==0){running=false;TimerSound.play(s.context)}}}
  Eyebrow(if(preview)"VISTA PREVIA DE LA SESIÓN" else "SESIÓN GUIADA · $date");Heading(day.s("title",day.s("name")),size=31);HProgress(index.toFloat()/steps.size);HText("Paso ${min(index+1,steps.size)} de ${steps.size}",size=15,color=LocalHunter.current.muted)
  if(index>=steps.size){Heading("Secuencia terminada",size=32);HNotice("El registro se completa únicamente con las series o misiones que confirmes.");if(!preview&&date==today())HButton("Revisar y completar sesión",primary=true){ui.open("record",obj("date" to date))};return}
- val step=steps[index];Heading(step.s("label"),size=28);val e=s.catalog.byId[step.s("id")];if(e!=null){V39Artwork(e,Modifier.fillMaxWidth().height(175.dp));OriginalSvg(e.demo,Modifier.fillMaxWidth().height(330.dp),play=running,speed=speed,mirror=mirror)}
+ val step=steps[index];Heading(step.s("label"),size=28);val e=s.catalog.byId[step.s("id")];if(e!=null)OriginalSvg(e.demo,Modifier.fillMaxWidth().height(330.dp),play=running,speed=speed,mirror=mirror)
  Heading("${remaining/60}:${(remaining%60).toString().padStart(2,'0')}",size=58);if(step.s("kind")=="exercise")HText("Serie ${step.i("setIndex")+1}/${step.i("sets")} · ${step.i("target")} ${if(step.s("unit")=="sec")"segundos" else "repeticiones"}${if(e?.sides==true)" por lado" else ""}",bold=true)
  Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){HButton(if(running)"Ⅱ Pausar" else "▶ Iniciar",Modifier.weight(1f),primary=true){running=!running};HButton("Reiniciar",Modifier.weight(1f)){running=false;remaining=step.i("seconds")}}
  Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){HSelect("Velocidad visual",speed.toString(),listOf("0.5" to "0,5×","1.0" to "1×","1.5" to "1,5×"),Modifier.weight(1f)){speed=it.toFloat()};HButton("⇄ Espejo",Modifier.weight(1f)){mirror=!mirror}}
