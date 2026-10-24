@@ -39,33 +39,7 @@ class MainActivity:ComponentActivity(){
  override fun onSaveInstanceState(outState:Bundle){ui?.let{outState.putString("tab",it.tab)};super.onSaveInstanceState(outState)}
 }
 @Composable fun HunterRoot(ui:NativeUi){val s=ui.store;s.revision.intValue;val c=LocalHunter.current;BackHandler(ui.stack.isNotEmpty()||ui.library.isNotBlank()||ui.tab !in listOf("home","profile")){ui.back()};Scaffold(containerColor=c.bg,bottomBar={if(s.profile!=null)BottomNav(ui)}){padding->Box(Modifier.fillMaxSize().padding(padding)){if(s.readError!=null)Column(Modifier.padding(24.dp),verticalArrangement=Arrangement.spacedBy(18.dp)){Heading("Restaurar guardado");HNotice(s.readError!!);HButton("Elegir copia de seguridad",primary=true){ui.import()}} else when(ui.tab){"home"->HomeScreen(ui);"plan"->PlanScreen(ui);"objectives"->ObjectivesScreen(ui);"routines"->RoutinesScreen(ui);"book"->ExercisesScreen(ui);"stats"->ProgressScreen(ui);else->ProfileScreen(ui)}
- if(s.profile!=null&&ui.tab!="profile")FloatingCompanion(ui,Modifier.align(Alignment.BottomEnd).padding(end=14.dp,bottom=12.dp))
+ if(s.profile!=null&&ui.tab!="profile"&&ui.tab!="home")FloatingCompanion(ui,Modifier.align(Alignment.BottomEnd).padding(end=14.dp,bottom=12.dp))
  }};if(ui.stack.isNotEmpty())OverlayRoot(ui,ui.stack.last())}
-@Composable fun BottomNav(ui:NativeUi){
- val c=LocalHunter.current
- val tabs=listOf(
-  Triple("home","Panel","⌂"),
-  Triple("plan","Misiones","✦"),
-  Triple("routines","Rutinas","◆"),
-  Triple("book","Ejercicios","▤"),
-  Triple("profile","Perfil","◯")
- )
- Row(Modifier.fillMaxWidth().background(c.panel)
-    .border(1.dp,c.line).navigationBarsPadding().height(68.dp),
-    verticalAlignment=Alignment.CenterVertically){
-  for((id,title,symbol)in tabs){
-   val selected=ui.tab==id
-   Column(
-    Modifier.weight(1f).fillMaxHeight()
-     .background(if(selected)c.selected.copy(alpha=.70f) else c.panel)
-     .clickable{ui.go(id)}.padding(vertical=8.dp),
-    horizontalAlignment=Alignment.CenterHorizontally,
-    verticalArrangement=Arrangement.spacedBy(2.dp)){
-    HText(symbol,size=22,color=if(selected)c.accent else c.muted,bold=true)
-    HText(title,size=12,color=if(selected)c.accent else c.muted,
-      bold=selected)
-   }
-  }
- }
-}
+@Composable fun BottomNav(ui:NativeUi){ V40BottomNav(ui) }
 @Composable fun FloatingCompanion(ui:NativeUi,modifier:Modifier=Modifier){var dy=0f;if(ui.store.profile?.b("animate",true)==true){val transition=rememberInfiniteTransition(label="companion");val animated by transition.animateFloat(0f,-5f,infiniteRepeatable(tween(2200,easing=FastOutSlowInEasing),RepeatMode.Reverse),label="float");dy=animated};Box(modifier.width(65.dp).height(86.dp).graphicsLayer{translationY=dy}.clickable{ui.open("coach")}){AssetImage("ui33/companion-${companionKey(ui.store.profile)}.webp",Modifier.fillMaxSize())}}
