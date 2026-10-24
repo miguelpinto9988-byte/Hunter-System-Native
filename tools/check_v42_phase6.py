@@ -82,7 +82,7 @@ check('!avoidImpact||!e.impact&&!e.power' in routines,
       "No se aplica el filtro sin saltos ni potencia tras generar.")
 check('s.rules.compatible(e,p)' in routines,
       "Es obligatorio revalidar los ejercicios generados.")
-check('s.rules.compatible(e,p)' in store,
+check('rules.compatible(e,p)' in store,
       "Se perdió la validación al asignar rutinas.")
 check('fun generateRoutine(' in planner and 'fun pool(' in rules,
       "No se puede perder el planificador o Rules.")
