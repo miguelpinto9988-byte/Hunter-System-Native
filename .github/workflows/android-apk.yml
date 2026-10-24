@@ -1,4 +1,4 @@
-# Hunter System V42.4 · Fase 05 · Misiones Monarca y confirmación segura
+# Hunter System V42.5 · Fase 06 · Rutinas y generadores Monarca
 name: Compilar Hunter System Android APK
 
 on:
@@ -77,6 +77,9 @@ jobs:
       - name: Auditoria Monarca V42 fase 05
         run: python3 tools/check_v42_phase5.py
 
+      - name: Auditoria Monarca V42 fase 06
+        run: python3 tools/check_v42_phase6.py
+
       - name: Compilar APK release firmada
         env:
           HUNTER_KEYSTORE: ${{ runner.temp }}/hunter-system-release.p12
@@ -88,7 +91,7 @@ jobs:
       - name: Publicar APK instalable
         uses: actions/upload-artifact@v4
         with:
-          name: Hunter-System-V42-Monarca-Fase05-APK
+          name: Hunter-System-V42-Monarca-Fase06-APK
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 14
