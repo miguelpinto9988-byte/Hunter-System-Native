@@ -69,7 +69,7 @@ jobs:
       - name: Publicar APK instalable
         uses: actions/upload-artifact@v4
         with:
-          name: Hunter-System-38.50-release-apk
+          name: Hunter-System-41.0-release-apk
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 14
