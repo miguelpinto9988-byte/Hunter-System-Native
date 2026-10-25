@@ -9,9 +9,11 @@ class Exercise(val raw:JSONObject){
 }
 class Catalog(val context:Context?=null,val loader:((String)->String)?=null){
  fun text(path:String)=loader?.invoke(path)?:context!!.assets.open(path).bufferedReader().use{it.readText()}
- val exercises=JSONArray(text("catalog.json")).objects().map(::Exercise)
+ val originalExercises=JSONArray(text("catalog.json")).objects().map(::Exercise)
+ val expansionExercises=runCatching{JSONArray(text("catalog-hunter2000-extra.json")).objects().map(::Exercise)}.getOrElse{emptyList()}
+ val exercises=originalExercises+expansionExercises
  val byId=exercises.associateBy{it.id}
  val materials=JSONObject(text("materials.json"));val capabilities=JSONObject(text("capabilities.json"))
  val routines=JSONArray(text("routines.json")).objects();val editorial=JSONObject(text("editorial.json"));val design=JSONObject(text("design.json"));val defaultState=JSONObject(text("default-state.json"));val profileForm=JSONArray(text("profile-form.json"))
- init{require(exercises.size==1200&&byId.size==1200)}
+ init{require(originalExercises.size==1200&&originalExercises.map{it.id}.toSet().size==1200);require(expansionExercises.isEmpty()||expansionExercises.size==800);require(byId.size==exercises.size)}
 }
