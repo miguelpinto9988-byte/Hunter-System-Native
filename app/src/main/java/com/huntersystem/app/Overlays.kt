@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.window.*
 import androidx.lifecycle.*
@@ -16,9 +17,15 @@ import org.json.JSONArray
 import java.time.LocalDate
 import kotlin.math.*
 
-@Composable fun OverlayRoot(ui:NativeUi,overlay:Overlay){val c=LocalHunter.current;Dialog(onDismissRequest={ui.back()},properties=DialogProperties(usePlatformDefaultWidth=false,decorFitsSystemWindows=true)){Column(Modifier.fillMaxWidth().fillMaxHeight(.96f).padding(horizontal=10.dp,vertical=8.dp).background(c.panel,RoundedCornerShape(12.dp)).border(1.dp,c.line,RoundedCornerShape(12.dp)).padding(15.dp)){
- Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){HButton("‹"){ui.back()};OriginalSvg("decor/crest.svg",Modifier.width(72.dp).height(22.dp),accent=c.hex("accent"),metal=c.hex("metal26"),ornament=c.hex("ornament26"));HButton("×"){ui.stack.clear()}}
- Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(top=18.dp,bottom=20.dp),verticalArrangement=Arrangement.spacedBy(16.dp)){key(overlay){when(overlay.type){
+@Composable fun OverlayRoot(ui:NativeUi,overlay:Overlay){val c=LocalHunter.current;Dialog(onDismissRequest={ui.back()},properties=DialogProperties(usePlatformDefaultWidth=false,decorFitsSystemWindows=true)){
+ Column(Modifier.widthIn(max=820.dp).fillMaxWidth().fillMaxHeight(.97f).imePadding().padding(horizontal=12.dp,vertical=8.dp).clip(RoundedCornerShape(28.dp)).background(c.bg).border(1.dp,c.accent.copy(alpha=.32f),RoundedCornerShape(28.dp)).padding(18.dp)){
+ Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){
+  HIconButton(Sigil.Back,"Volver"){ui.back()}
+  Column(horizontalAlignment=Alignment.CenterHorizontally){HunterIcon(Sigil.Crown,Modifier.size(20.dp));Eyebrow("HUNTER SYSTEM")}
+  HIconButton(Sigil.Close,"Cerrar ventana"){ui.stack.clear()}
+ }
+ Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(remember(overlay){ScrollState(0)}).padding(top=18.dp,bottom=20.dp),verticalArrangement=Arrangement.spacedBy(16.dp)){key(overlay){when(overlay.type){
+ "relic"->RelicViewer()
  "exercise"->ExerciseDetail(ui,overlay.data.s("id"))
  "mission"->{val date=overlay.data.s("date",today());Eyebrow(date);MissionContent(ui,date);if(date==today())HButton("Abrir sesión paso a paso",primary=true){ui.open("session",obj("date" to date))}}
  "record"->SessionRecord(ui,overlay.data.s("date",today()))
@@ -49,7 +56,7 @@ import kotlin.math.*
  }}}
 @Composable fun ExerciseDetail(ui:NativeUi,id:String){val s=ui.store;val e=s.catalog.byId[id]?:return;val c=LocalHunter.current;var playing by remember(id){mutableStateOf(s.profile?.b("animate",true)?:true)};var mirror by remember(id){mutableStateOf(false)};var speed by remember(id){mutableFloatStateOf(s.state.n("demoSpeed",1.0).toFloat())};var seek by remember(id){mutableFloatStateOf(0f)}
  Eyebrow("${e.group} · ${e.category}");Heading(e.name,size=35);HText("${if(e.unit=="sec")"Por tiempo" else "Por repeticiones"}${if(e.sides)" · Cantidad por lado" else ""} · ${if(e.impact)"Con saltos" else "Sin saltos"}",size=16,color=c.muted)
- OriginalSvg(e.demo,Modifier.fillMaxWidth().height(390.dp),play=playing,speed=speed,mirror=mirror,progress=seek)
+ ExerciseStage{OriginalSvg(e.demo,Modifier.fillMaxWidth().height(390.dp),play=playing,speed=speed,mirror=mirror,progress=seek,accent=c.hex("accent"),metal=c.hex("metal26"),ornament=c.hex("ornament26"))}
  Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){HButton(if(playing)"Ⅱ Pausar" else "▶ Reproducir",Modifier.weight(1f),primary=true){playing=!playing};HButton("⇄ Espejo",Modifier.weight(1f)){mirror=!mirror}}
  Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)){HSelect("Velocidad",speed.toString(),listOf("0.5" to "0,5×","1.0" to "1×","1.5" to "1,5×","2.0" to "2×"),Modifier.weight(1f)){speed=it.toFloat();s.state.put("demoSpeed",speed.toDouble());s.save()};HButton("Reiniciar",Modifier.weight(1f)){playing=false;seek=0f}}
  HText("Ver posiciones",size=14,color=c.muted);Slider(seek,{seek=it;playing=false})
@@ -84,8 +91,8 @@ import kotlin.math.*
  LaunchedEffect(running,index){while(running&&remaining>0){delay(1000);remaining--;if(remaining==0){running=false;TimerSound.play(s.context)}}}
  Eyebrow(if(preview)"VISTA PREVIA DE LA SESIÓN" else "SESIÓN GUIADA · $date");Heading(day.s("title",day.s("name")),size=31);HProgress(index.toFloat()/steps.size);HText("Paso ${min(index+1,steps.size)} de ${steps.size}",size=15,color=LocalHunter.current.muted)
  if(index>=steps.size){Heading("Secuencia terminada",size=32);HNotice("El registro se completa únicamente con las series o misiones que confirmes.");if(!preview&&date==today())HButton("Revisar y completar sesión",primary=true){ui.open("record",obj("date" to date))};return}
- val step=steps[index];Heading(step.s("label"),size=28);val e=s.catalog.byId[step.s("id")];if(e!=null)OriginalSvg(e.demo,Modifier.fillMaxWidth().height(330.dp),play=running,speed=speed,mirror=mirror)
- Heading("${remaining/60}:${(remaining%60).toString().padStart(2,'0')}",size=58);if(step.s("kind")=="exercise")HText("Serie ${step.i("setIndex")+1}/${step.i("sets")} · ${step.i("target")} ${if(step.s("unit")=="sec")"segundos" else "repeticiones"}${if(e?.sides==true)" por lado" else ""}",bold=true)
+ val step=steps[index];Heading(step.s("label"),size=28);val e=s.catalog.byId[step.s("id")];if(e!=null)ExerciseStage{OriginalSvg(e.demo,Modifier.fillMaxWidth().height(360.dp),play=running,speed=speed,mirror=mirror,accent=LocalHunter.current.hex("accent"))}
+ HPanel(padding=18){Eyebrow(if(step.s("kind")=="exercise")"TIEMPO DE EJERCICIO" else "RECUPERACIÓN");Heading("${remaining/60}:${(remaining%60).toString().padStart(2,'0')}",size=58);HProgress(if(step.i("seconds")==0)0f else remaining.toFloat()/step.i("seconds"))};if(step.s("kind")=="exercise")HText("Serie ${step.i("setIndex")+1}/${step.i("sets")} · ${step.i("target")} ${if(step.s("unit")=="sec")"segundos" else "repeticiones"}${if(e?.sides==true)" por lado" else ""}",bold=true)
  Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){HButton(if(running)"Ⅱ Pausar" else "▶ Iniciar",Modifier.weight(1f),primary=true){running=!running};HButton("Reiniciar",Modifier.weight(1f)){running=false;remaining=step.i("seconds")}}
  Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){HSelect("Velocidad visual",speed.toString(),listOf("0.5" to "0,5×","1.0" to "1×","1.5" to "1,5×"),Modifier.weight(1f)){speed=it.toFloat()};HButton("⇄ Espejo",Modifier.weight(1f)){mirror=!mirror}}
  if(step.s("kind")=="exercise"&&!preview&&date==today())HButton("Registrar esta serie",Modifier.fillMaxWidth()){running=false;ui.attempt{s.log(date);ui.open("series",obj("date" to date,"itemIndex" to step.i("itemIndex"),"setIndex" to step.i("setIndex")))}}
