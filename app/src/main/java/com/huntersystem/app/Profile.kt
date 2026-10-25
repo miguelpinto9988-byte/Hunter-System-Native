@@ -22,18 +22,25 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
    if(type=="radio"){if(raw!=null&&raw!=JSONObject.NULL)put(name,raw.toString()) else if(f.b("checked"))put(name,value)}else if(raw!=null&&raw!=JSONObject.NULL)put(key,raw.toString()) else if(type=="checkbox")put(key,f.b("checked").toString()) else if(!containsKey(name))put(name,value.ifBlank{f.a("options").objects().firstOrNull()?.s("value")?:""})
   }
  }}
+ val initialValues=remember(old==null){mutableStateMapOf<String,String>().apply{putAll(values)}}
  val injuries=remember(old==null){mutableStateListOf<JSONObject>().apply{addAll(old?.a("injuries")?.objects()?.map{it.copyJson()}?:emptyList())}}
  val week=remember(old==null){mutableStateListOf<String>().apply{addAll(old?.a("weekPlan")?.strings()?.takeIf{it.size==7}?:listOf("rest","train","rest","train","rest","rest","rest"))}}
  val focus=remember(old==null){mutableStateListOf<String>().apply{addAll(old?.a("weekFocus")?.strings()?.takeIf{it.size==7}?:List(7){"upper"})}}
  var injuryZone by remember{mutableStateOf("knee")};var injuryType by remember{mutableStateOf("joint")};var injuryStage by remember{mutableStateOf("current")}
- var manualGoalGroup by remember(old==null){mutableStateOf(false)}
+ var manualGoalGroup by remember(old==null){mutableStateOf(old?.b("manualGoalGroupNative")?:false)}
  val expanded=remember{mutableStateMapOf<String,Boolean>()}
  val titleNames=listOf("Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado")
  fun saveProfile(){ui.attempt{
   val p=old?.copyJson()?:JSONObject();val health=old?.o("health")?.copyJson()?:JSONObject();val restrictions=old?.o("restrictions")?.copyJson()?:JSONObject()
-  for((name,value)in values){if('|' in name||name.startsWith("gym_")||name.endsWith("33"))continue;when{ name.startsWith("r_")->restrictions.put(name.removePrefix("r_"),value=="true");name in healthFields->health.put(name,if(name in listOf("pain","recommendations"))value else value=="true");name in listOf("age","height","weight","load","frequency","restSeconds","dailyMissions","trainingScale")->p.put(name,value.replace(',','.').toDoubleOrNull()?.takeIf{it.isFinite()}?:error("Completa "+(fieldLabels[name]?:"los datos del perfil")));name in listOf("animate","bench","step")->p.put(name,value=="true");else->p.put(name,value)}}
-  p.put("manualGoalGroupNative",manualGoalGroup);p.put("injuries",arr(injuries));p.put("health",health);p.put("restrictions",restrictions);p.put("weekPlan",arr(week));p.put("weekFocus",arr(focus));p.put("gymEquipment23",arr(values.entries.filter{it.key.startsWith("gym_")&&it.value=="true"}.map{it.key.removePrefix("gym_")}));for(name in listOf("materials46","capabilities46"))p.put(name,arr(values.entries.filter{it.key.startsWith("$name|")&&it.value=="true"}.map{it.key.substringAfter('|')}));p.put("limits",injuries.any{it.s("stage")!="past"});val appearance=obj("collection" to values["collection33"],"scene" to values["scene33"])
-  s.saveProfile(p,appearance,ui.pendingAvatar);ui.pendingAvatar=null;ReminderScheduler.schedule(s.context,s.state.o("reminders"));CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true));ui.open("saved",obj("title" to "Configuración guardada","body" to "Tu acompañante aplicó la interpretación local de tus preferencias. Se revisó el plan de la semana actual. Los registros realizados se conservan."))
+  // Preserve existing values and array order when only appearance is edited.
+  // Defaults shown for a legacy profile are not implicit training changes.
+  for((name,value)in values){if('|' in name||name.startsWith("gym_")||name.endsWith("33")||(old!=null&&value==initialValues[name]))continue;when{ name.startsWith("r_")->restrictions.put(name.removePrefix("r_"),value=="true");name in healthFields->health.put(name,if(name in listOf("pain","recommendations"))value else value=="true");name in listOf("age","height","weight","load","frequency","restSeconds","dailyMissions","trainingScale")->p.put(name,value.replace(',','.').toDoubleOrNull()?.takeIf{it.isFinite()}?:error("Completa "+(fieldLabels[name]?:"los datos del perfil")));name in listOf("animate","bench","step")->p.put(name,value=="true");else->p.put(name,value)}}
+  p.put("manualGoalGroupNative",manualGoalGroup);p.put("injuries",arr(injuries));p.put("health",health);p.put("restrictions",restrictions);p.put("weekPlan",arr(week));p.put("weekFocus",arr(focus))
+  if(old==null||values.any{it.key.startsWith("gym_")&&it.value!=initialValues[it.key]})p.put("gymEquipment23",arr(values.entries.filter{it.key.startsWith("gym_")&&it.value=="true"}.map{it.key.removePrefix("gym_")}))
+  for(name in listOf("materials46","capabilities46"))if(old==null||values.any{it.key.startsWith("$name|")&&it.value!=initialValues[it.key]})p.put(name,arr(values.entries.filter{it.key.startsWith("$name|")&&it.value=="true"}.map{it.key.substringAfter('|')}))
+  if(old==null||arr(injuries).toString()!=old.a("injuries").toString())p.put("limits",injuries.any{it.s("stage")!="past"})
+  val appearance=obj("collection" to values["collection33"],"scene" to values["scene33"])
+  s.saveProfile(p,appearance,ui.pendingAvatar);initialValues.clear();initialValues.putAll(values);ui.pendingAvatar=null;ReminderScheduler.schedule(s.context,s.state.o("reminders"));CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true));ui.open("saved",obj("title" to "Configuración guardada","body" to "Tu acompañante aplicó la interpretación local de tus preferencias. Se revisó el plan de la semana actual. Los registros realizados se conservan."))
  }}
  SceneColumn(ui){if(old==null)AccessWelcome();Eyebrow("CAZADOR · CONFIGURACIÓN");Heading(if(old==null)"Crea tu perfil" else "Tu perfil de cazador");HText("Tu objetivo, nivel, equipo y calendario ajustan la selección de ejercicios.",color=LocalHunter.current.muted)
   for((sectionIndex,sec)in form.withIndex())HPanel{

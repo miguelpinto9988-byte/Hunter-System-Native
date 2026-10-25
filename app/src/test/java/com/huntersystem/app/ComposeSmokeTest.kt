@@ -52,11 +52,13 @@ class ComposeSmokeTest {
 
  @Test(timeout=120000) fun themesCompanionsAndVisualPreferencesPersistWithoutChangingMissions(){
   val original=store.day(today()).a("items").toString()
+  val originalTrainingKey=store.planner.profileKey(store.adjusted())
   compose.runOnIdle{ui.go("profile")};compose.waitForIdle()
   compose.onNodeWithContentDescription("Tema Glaciar").performScrollTo().performClick()
   compose.onNodeWithText("Guardar perfil").performScrollTo().performClick()
   compose.waitForIdle()
   org.junit.Assert.assertEquals("ice",store.profile!!.s("theme"))
+  org.junit.Assert.assertEquals("Cambiar el tema conserva los datos de entrenamiento",originalTrainingKey,store.planner.profileKey(store.adjusted()))
   compose.onNodeWithText("Continuar").performClick()
   compose.onNodeWithText("Reducir movimiento").performScrollTo().performClick()
   compose.onNodeWithText("3D").performScrollTo().performClick()
@@ -69,7 +71,12 @@ class ComposeSmokeTest {
   compose.onNodeWithText("Explorar reliquia 3D").performScrollTo().performClick()
   compose.onNodeWithContentDescription("Reliquia tridimensional. Arrastra para girar.").assertExists()
   compose.onNodeWithContentDescription("Cerrar ventana").performClick()
-  compose.runOnIdle{ui.go("home")};compose.waitForIdle();capture("ice-home")
+  compose.onNodeWithContentDescription("Tema Eclipse").performScrollTo().performClick()
+  compose.onNodeWithText("Guardar perfil").performScrollTo().performClick();compose.waitForIdle()
+  org.junit.Assert.assertEquals("eclipse",store.profile!!.s("theme"))
+  org.junit.Assert.assertEquals(original,store.day(today()).a("items").toString())
+  compose.onNodeWithText("Continuar").performClick()
+  compose.runOnIdle{ui.go("home")};compose.waitForIdle();capture("relic-home")
  }
  @Test(timeout=90000) @Config(qualifiers="w1280dp-h800dp-land-mdpi") fun tabletNavigationAndDialogRender(){
   compose.onNodeWithText("Inicio").assertIsDisplayed()
