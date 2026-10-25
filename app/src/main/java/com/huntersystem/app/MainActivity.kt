@@ -13,6 +13,10 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.*
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -34,38 +38,62 @@ class MainActivity:ComponentActivity(){
  private val notifyPermission=registerForActivityResult(ActivityResultContracts.RequestPermission()){granted->if(!granted)toast("Los recordatorios necesitan permiso de notificaciones")}
  private fun toast(message:String){Toast.makeText(this,message,Toast.LENGTH_LONG).show()}
  override fun onCreate(savedInstanceState:Bundle?){super.onCreate(savedInstanceState);setContent{var repository by remember{mutableStateOf<NativeStore?>(null)};var error by remember{mutableStateOf<String?>(null)};LaunchedEffect(Unit){try{val s=withContext(Dispatchers.IO){HunterRepository.get(this@MainActivity).also{if(it.readError==null)it.refreshWeek()}};val controller=NativeUi(s);controller.message={toast(it)};controller.export={createBackup.launch("Hunter-System-Backup-${today()}.json")};controller.import={openBackup.launch(arrayOf("application/json","text/plain","application/octet-stream"))};controller.chooseAvatar={pickAvatar.launch("image/*")};controller.requestNotifications={if(android.os.Build.VERSION.SDK_INT>=33)notifyPermission.launch(Manifest.permission.POST_NOTIFICATIONS)};controller.openUrl={url->runCatching{val uri=Uri.parse(url);require(uri.scheme=="https");startActivity(Intent(Intent.ACTION_VIEW,uri))}.onFailure{toast("No se pudo abrir el enlace")}};savedInstanceState?.getString("tab")?.let{controller.tab=it};ui=controller;repository=s;if(s.readError==null)ReminderScheduler.schedule(this@MainActivity,s.state.o("reminders"));if(s.readError==null)CreatorFeedNative.schedule(this@MainActivity,s.state.b("creatorAuto",true))}catch(e:Exception){error=e.message?:"No se pudo abrir Hunter System"}}
- val s=repository;if(s!=null){HunterTheme(s){HunterRoot(ui!!)}}else Box(Modifier.fillMaxSize().background(androidx.compose.ui.graphics.Color(0xff10171a)),contentAlignment=Alignment.Center){Column(horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(15.dp)){Heading("HUNTER SYSTEM",size=38);HText(error?:"Preparando tu sistema…",color=androidx.compose.ui.graphics.Color(0xffbdd4df));if(error!=null)HButton("Reintentar"){recreate()}}}
+ val s=repository;if(s!=null){HunterTheme(s){HunterRoot(ui!!)}}else EclipseLoading(error){recreate()}
  }}
  override fun onSaveInstanceState(outState:Bundle){ui?.let{outState.putString("tab",it.tab)};super.onSaveInstanceState(outState)}
 }
-@Composable fun HunterRoot(ui:NativeUi){val s=ui.store;s.revision.intValue;val c=LocalHunter.current;BackHandler(ui.stack.isNotEmpty()||ui.library.isNotBlank()||ui.tab !in listOf("home","profile")){ui.back()};Scaffold(containerColor=c.bg,bottomBar={if(s.profile!=null)BottomNav(ui)}){padding->Box(Modifier.fillMaxSize().padding(padding)){if(s.readError!=null)Column(Modifier.padding(24.dp),verticalArrangement=Arrangement.spacedBy(18.dp)){Heading("Restaurar guardado");HNotice(s.readError!!);HButton("Elegir copia de seguridad",primary=true){ui.import()}} else when(ui.tab){"home"->HomeScreen(ui);"plan"->PlanScreen(ui);"objectives"->ObjectivesScreen(ui);"routines"->RoutinesScreen(ui);"book"->ExercisesScreen(ui);"stats"->ProgressScreen(ui);else->ProfileScreen(ui)}
- if(s.profile!=null&&ui.tab!="profile")FloatingCompanion(ui,Modifier.align(Alignment.BottomEnd).padding(end=14.dp,bottom=12.dp))
- }};if(ui.stack.isNotEmpty())OverlayRoot(ui,ui.stack.last())}
+@Composable fun HunterRoot(ui:NativeUi){
+ val s=ui.store;s.revision.intValue;val c=LocalHunter.current
+ BackHandler(ui.stack.isNotEmpty()||ui.library.isNotBlank()||ui.tab !in listOf("home","profile")){ui.back()}
+ val entrance=remember{Animatable(1f)};val motion=LocalMotionEnabled.current
+ LaunchedEffect(ui.tab){if(motion){entrance.snapTo(0f);entrance.animateTo(1f,tween(230,easing=FastOutSlowInEasing))}else entrance.snapTo(1f)}
+ BoxWithConstraints(Modifier.fillMaxSize().background(c.bg)){
+  val wide=maxWidth>=840.dp
+  Scaffold(containerColor=c.bg,contentWindowInsets=WindowInsets.safeDrawing,bottomBar={if(s.profile!=null&&!wide)BottomNav(ui)}){padding->
+   Row(Modifier.fillMaxSize().padding(padding)){
+    if(s.profile!=null&&wide)NavigationRail(ui)
+    Box(Modifier.weight(1f).fillMaxHeight(),contentAlignment=Alignment.TopCenter){
+     Box(Modifier.widthIn(max=900.dp).fillMaxSize().graphicsLayer{alpha=entrance.value;translationY=(1-entrance.value)*10.dp.toPx()}){
+      if(s.readError!=null)Column(Modifier.padding(24.dp),verticalArrangement=Arrangement.spacedBy(18.dp)){Heading("Restaurar guardado");HNotice(s.readError!!);HButton("Elegir copia de seguridad",primary=true){ui.import()}}
+      else when(ui.tab){"home"->HomeScreen(ui);"plan"->PlanScreen(ui);"objectives"->ObjectivesScreen(ui);"routines"->RoutinesScreen(ui);"book"->ExercisesScreen(ui);"stats"->ProgressScreen(ui);else->ProfileScreen(ui)}
+      if(s.profile!=null&&ui.tab!="profile"&&s.state.o("eclipseAppearance").b("floating",true))FloatingCompanion(ui,Modifier.align(Alignment.BottomEnd).padding(end=18.dp,bottom=12.dp))
+     }
+    }
+   }
+  }
+ }
+ if(ui.stack.isNotEmpty())OverlayRoot(ui,ui.stack.last())
+}
+private val navigationItems=listOf(Triple("home","Inicio",Sigil.Home),Triple("plan","Misiones",Sigil.Mission),Triple("routines","Rutinas",Sigil.Routine),Triple("book","Ejercicios",Sigil.Exercise),Triple("profile","Perfil",Sigil.Profile))
 @Composable fun BottomNav(ui:NativeUi){
  val c=LocalHunter.current
- val tabs=listOf(
-  Triple("home","Panel","⌂"),
-  Triple("plan","Misiones","✦"),
-  Triple("routines","Rutinas","◆"),
-  Triple("book","Ejercicios","▤"),
-  Triple("profile","Perfil","◯")
- )
- Row(Modifier.fillMaxWidth().background(c.panel)
-    .border(1.dp,c.line).navigationBarsPadding().height(68.dp),
-    verticalAlignment=Alignment.CenterVertically){
-  for((id,title,symbol)in tabs){
-   val selected=ui.tab==id
-   Column(
-    Modifier.weight(1f).fillMaxHeight()
-     .background(if(selected)c.selected.copy(alpha=.70f) else c.panel)
-     .clickable{ui.go(id)}.padding(vertical=8.dp),
-    horizontalAlignment=Alignment.CenterHorizontally,
-    verticalArrangement=Arrangement.spacedBy(2.dp)){
-    HText(symbol,size=22,color=if(selected)c.accent else c.muted,bold=true)
-    HText(title,size=12,color=if(selected)c.accent else c.muted,
-      bold=selected)
+ Row(Modifier.fillMaxWidth().background(c.panel).navigationBarsPadding().padding(horizontal=7.dp,vertical=8.dp),verticalAlignment=Alignment.CenterVertically){
+  for((id,title,icon)in navigationItems){
+   val selected=ui.tab==id||(id=="home"&&ui.tab in listOf("stats","objectives"))
+   Column(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(if(selected)c.selected else Color.Transparent)
+    .selectable(selected,role=Role.Tab){ui.go(id)}.padding(vertical=10.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(5.dp)){
+    HunterIcon(icon,Modifier.size(23.dp),if(selected)c.accent else c.muted)
+    HText(title,size=11,color=if(selected)c.accent else c.muted,bold=selected,maxLines=1)
    }
   }
  }
 }
-@Composable fun FloatingCompanion(ui:NativeUi,modifier:Modifier=Modifier){var dy=0f;if(ui.store.profile?.b("animate",true)==true){val transition=rememberInfiniteTransition(label="companion");val animated by transition.animateFloat(0f,-5f,infiniteRepeatable(tween(2200,easing=FastOutSlowInEasing),RepeatMode.Reverse),label="float");dy=animated};Box(modifier.width(65.dp).height(86.dp).graphicsLayer{translationY=dy}.clickable{ui.open("coach")}){AssetImage("ui33/companion-${companionKey(ui.store.profile)}.webp",Modifier.fillMaxSize())}}
+@Composable fun NavigationRail(ui:NativeUi){
+ val c=LocalHunter.current
+ Column(Modifier.width(108.dp).fillMaxHeight().background(c.panel).padding(10.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(14.dp)){
+  HunterIcon(Sigil.Crown,Modifier.padding(vertical=22.dp).size(32.dp))
+  for((id,title,icon)in navigationItems){val selected=ui.tab==id||(id=="home"&&ui.tab in listOf("stats","objectives"))
+   Column(Modifier.fillMaxWidth().clip(RoundedCornerShape(18.dp)).background(if(selected)c.selected else Color.Transparent).selectable(selected,role=Role.Tab){ui.go(id)}.padding(vertical=15.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(8.dp)){
+    HunterIcon(icon,color=if(selected)c.accent else c.muted);HText(title,size=12,color=if(selected)c.accent else c.muted)
+   }
+  }
+ }
+}
+@Composable fun FloatingCompanion(ui:NativeUi,modifier:Modifier=Modifier){
+ val c=LocalHunter.current
+ Row(modifier.clip(RoundedCornerShape(22.dp)).background(c.panel).border(1.dp,c.accent.copy(alpha=.5f),RoundedCornerShape(22.dp))
+  .clickable(role=Role.Button){ui.open("coach")}.semantics{contentDescription="Abrir acompañante ${companionName(ui.store.profile)}"}.padding(horizontal=10.dp,vertical=6.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(5.dp)){
+  AssetImage("ui33/companion-${companionKey(ui.store.profile)}.webp",Modifier.size(32.dp,42.dp))
+  HText(companionName(ui.store.profile).substringBefore(" "),size=11,color=c.accent,bold=true)
+ }
+}

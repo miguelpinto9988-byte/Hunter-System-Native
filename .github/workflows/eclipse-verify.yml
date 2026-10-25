@@ -1,0 +1,44 @@
+name: Verificar Eclipse Android
+on:
+  push:
+    branches: ['codex/eclipse-ascension-redesign']
+  pull_request:
+    paths: ['app/**', '.github/workflows/eclipse-verify.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: eclipse-check-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compilar y comprobar Kotlin
+        run: bash gradlew --no-daemon --max-workers=2 :app:assembleDebug :app:compileDebugUnitTestKotlin
+      - name: Pruebas de datos, planificación y pantallas
+        run: bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest
+      - name: Publicar capturas y resultados
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Eclipse-41-Pruebas-y-Capturas
+          path: |
+            app/build/reports/tests/
+            app/build/test-results/
+            qa/
+          retention-days: 14
+      - name: Publicar APK de prueba
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hunter-System-41.0-Eclipse-Debug
+          path: app/build/outputs/apk/debug/*.apk
+          retention-days: 14
