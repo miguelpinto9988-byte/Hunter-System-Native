@@ -66,10 +66,18 @@ jobs:
           chmod +x ./gradlew
           ./gradlew --no-daemon :app:assembleRelease
 
+      - name: Verificar firma de la APK
+        shell: bash
+        run: |
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          "$SDK_ROOT/build-tools/35.0.0/apksigner" verify --verbose --print-certs app/build/outputs/apk/release/app-release.apk > app/build/outputs/apk/release/firma-verificada.txt
+
       - name: Publicar APK instalable
         uses: actions/upload-artifact@v4
         with:
-          name: Hunter-System-38.50-release-apk
-          path: app/build/outputs/apk/release/*.apk
+          name: Hunter-System-41.0-Eclipse-Release
+          path: |
+            app/build/outputs/apk/release/*.apk
+            app/build/outputs/apk/release/firma-verificada.txt
           if-no-files-found: error
           retention-days: 14

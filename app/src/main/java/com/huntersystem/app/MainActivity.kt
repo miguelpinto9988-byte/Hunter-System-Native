@@ -49,14 +49,17 @@ class MainActivity:ComponentActivity(){
  LaunchedEffect(ui.tab){if(motion){entrance.snapTo(0f);entrance.animateTo(1f,tween(230,easing=FastOutSlowInEasing))}else entrance.snapTo(1f)}
  BoxWithConstraints(Modifier.fillMaxSize().background(c.bg)){
   val wide=maxWidth>=840.dp
+  val companionDock=s.profile!=null&&ui.tab!="profile"&&s.state.o("eclipseAppearance").b("floating",true)
   Scaffold(containerColor=c.bg,contentWindowInsets=WindowInsets.safeDrawing,bottomBar={if(s.profile!=null&&!wide)BottomNav(ui)}){padding->
    Row(Modifier.fillMaxSize().padding(padding)){
     if(s.profile!=null&&wide)NavigationRail(ui)
     Box(Modifier.weight(1f).fillMaxHeight(),contentAlignment=Alignment.TopCenter){
      Box(Modifier.widthIn(max=900.dp).fillMaxSize().graphicsLayer{alpha=entrance.value;translationY=(1-entrance.value)*10.dp.toPx()}){
+      Box(Modifier.fillMaxSize().padding(bottom=if(companionDock)68.dp else 0.dp)){
       if(s.readError!=null)Column(Modifier.padding(24.dp),verticalArrangement=Arrangement.spacedBy(18.dp)){Heading("Restaurar guardado");HNotice(s.readError!!);HButton("Elegir copia de seguridad",primary=true){ui.import()}}
       else when(ui.tab){"home"->HomeScreen(ui);"plan"->PlanScreen(ui);"objectives"->ObjectivesScreen(ui);"routines"->RoutinesScreen(ui);"book"->ExercisesScreen(ui);"stats"->ProgressScreen(ui);else->ProfileScreen(ui)}
-      if(s.profile!=null&&ui.tab!="profile"&&s.state.o("eclipseAppearance").b("floating",true))FloatingCompanion(ui,Modifier.align(Alignment.BottomEnd).padding(end=18.dp,bottom=12.dp))
+      }
+      if(companionDock)FloatingCompanion(ui,Modifier.align(Alignment.BottomEnd).padding(end=18.dp,bottom=12.dp))
      }
     }
    }

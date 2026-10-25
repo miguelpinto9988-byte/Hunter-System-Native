@@ -124,7 +124,7 @@ fun buttonLabel(text:String)=text.trim().trim('‹','›','→','↗','⟶','✧
 }
 @Composable fun HInput(value:String,onChange:(String)->Unit,label:String="",modifier:Modifier=Modifier,number:Boolean=false,multiline:Boolean=false){
  val c=LocalHunter.current
- OutlinedTextField(value=value,onValueChange=onChange,modifier=modifier.fillMaxWidth(),label=if(label.isNotBlank()){{HText(label,size=14,color=c.muted)}}else null,
+ OutlinedTextField(value=value,onValueChange=onChange,modifier=modifier.fillMaxWidth(),label=if(label.isNotBlank()){{HText(label,size=14,color=c.muted,maxLines=1)}}else null,
   singleLine=!multiline,minLines=if(multiline)3 else 1,shape=RoundedCornerShape(16.dp),
   textStyle=TextStyle(fontFamily=Barlow,fontSize=17.sp,color=c.text,lineHeight=25.sp),
   keyboardOptions=KeyboardOptions(keyboardType=if(number)KeyboardType.Decimal else KeyboardType.Text),
@@ -165,7 +165,8 @@ private val assetBitmaps=object:android.util.LruCache<String,ImageBitmap>(24*102
  val context=LocalContext.current
  val bitmap by produceState(assetBitmaps.get(path),path){value=withContext(Dispatchers.IO){assetBitmaps.get(path)?:runCatching{
   val bounds=BitmapFactory.Options().apply{inJustDecodeBounds=true};context.assets.open(path).use{BitmapFactory.decodeStream(it,null,bounds)}
-  val options=BitmapFactory.Options().apply{inSampleSize=(maxOf(bounds.outWidth,bounds.outHeight)/1400).coerceAtLeast(1)}
+  var sample=1;while(maxOf(bounds.outWidth,bounds.outHeight)/sample>1600)sample*=2
+  val options=BitmapFactory.Options().apply{inSampleSize=sample}
   context.assets.open(path).use{BitmapFactory.decodeStream(it,null,options)}?.asImageBitmap()?.also{assetBitmaps.put(path,it)}
  }.getOrNull()}}
  if(bitmap!=null)Image(bitmap!!,description,modifier,contentScale=scale,alignment=alignment) else Spacer(modifier)

@@ -79,4 +79,29 @@ class ComposeSmokeTest {
   compose.onNodeWithContentDescription("Cerrar ventana").assertIsDisplayed().performClick()
  }
 
+ fun captureDialog(name:String){
+  val bitmap=compose.onNode(isDialog()).captureToImage().asAndroidBitmap()
+  val qa=File("../qa");qa.mkdirs();File(qa,"native-$name.png").outputStream().use{bitmap.compress(Bitmap.CompressFormat.PNG,100,it)}
+ }
+ @Test(timeout=120000) fun exerciseSessionNotificationsAndCompanionDialogsRender(){
+  compose.runOnIdle{ui.open("exercise",obj("id" to "chair"))};compose.waitForIdle()
+  compose.onNodeWithText("Reproducir").assertExists();captureDialog("exercise-dialog")
+  compose.onNodeWithContentDescription("Cerrar ventana").performClick()
+  compose.runOnIdle{ui.open("coach")};compose.waitForIdle();captureDialog("companion-dialog")
+  compose.onNodeWithContentDescription("Cerrar ventana").performClick()
+  compose.runOnIdle{ui.open("reminders")};compose.waitForIdle();captureDialog("reminders-dialog")
+  compose.onNodeWithContentDescription("Cerrar ventana").performClick()
+  compose.runOnIdle{ui.open("relic")};compose.waitForIdle();captureDialog("relic-dialog")
+  compose.onNodeWithContentDescription("Cerrar ventana").performClick()
+  val routine=store.catalog.routines.first{r->r.a("items").objects().all{x->store.catalog.byId[x.s("id")]?.let{store.rules.compatible(it,store.adjusted())}==true}}
+  compose.runOnIdle{ui.open("session",obj("routineId" to routine.s("id")))};compose.waitForIdle()
+  compose.onNodeWithText("Iniciar").assertExists();captureDialog("session-dialog")
+ }
+ @Test(timeout=120000) fun allThemePreviewsRender(){
+  for(theme in eclipsePalettes){
+   compose.runOnIdle{store.saveProfile(store.profile!!.copyJson().put("theme",theme.id));ui.go("home")};compose.waitForIdle()
+   compose.onNodeWithText("Abrir misión de hoy").assertExists();capture("theme-"+theme.id)
+  }
+ }
+
 }

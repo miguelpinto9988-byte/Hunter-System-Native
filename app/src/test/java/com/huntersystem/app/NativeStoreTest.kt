@@ -33,9 +33,16 @@ class NativeStoreTest {
 
  @Test fun reminderTimesRespectChosenDays(){val r=obj("enabled" to true,"mode" to "daily","time" to "18:00","days" to arr(listOf(1)));val next=ReminderScheduler.next(r,ZonedDateTime.parse("2026-10-23T19:00:00-05:00[America/Lima]"));assertEquals("2026-10-26T18:00-05:00[America/Lima]",next.toString());r.put("mode","interval").put("start","09:00").put("end","20:00").put("interval",3);assertEquals("2026-10-26T18:00-05:00[America/Lima]",ReminderScheduler.next(r,ZonedDateTime.parse("2026-10-26T17:00:00-05:00[America/Lima]")).toString())}
  @Test fun roundsKeepExerciseOrderAndOnlyRestBetweenRounds(){val s=store();val p=s.adjusted().put("blockMode22","rounds");val d=obj("items" to arr(listOf(obj("id" to "chair","sets" to 2,"target" to 6),obj("id" to "row","sets" to 2,"target" to 6))));val steps=s.planner.steps(d,p);assertEquals(listOf("chair","row","chair","row"),steps.filter{it.s("kind")=="exercise"}.map{it.s("id")});assertEquals(1,steps.count{it.s("kind")=="rest"})}
- @Test fun pauseOnlyChangesPendingDaysAndCanResume(){val s=store();val tomorrow=plus(today(),1);s.toggleMission(today(),0);val original=s.day(today()).toString();s.review("pausar");assertEquals(original,s.day(today()).toString());assertEquals(0,s.day(tomorrow).a("items").length());s.review("mantener");assertTrue(s.day(tomorrow).a("items").length()>0);assertEquals(original,s.day(today()).toString())}
+ @Test fun pauseOnlyChangesPendingDaysAndCanResume(){
+  val s=store();val date=today();assertTrue(s.day(date).a("items").length()>0)
+  s.review("pausar");assertEquals(0,s.day(date).a("items").length())
+  s.review("mantener");assertTrue(s.day(date).a("items").length()>0)
+  s.toggleMission(date,0);val recorded=s.day(date).toString()
+  s.review("pausar");assertEquals(recorded,s.day(date).toString())
+ }
 
- @Test fun reductionSurvivesReloadAndExplicitSecondsKeepTheirUnit(){val s=store();val date=plus(today(),1);val before=s.day(date).a("items").getJSONObject(0).i("target");s.review("reducir");val target=s.day(date).a("items").getJSONObject(0).i("target");assertTrue(target<before);val reopened=NativeStore(context);reopened.refreshWeek();assertEquals(target,reopened.day(date).a("items").getJSONObject(0).i("target"));val item=obj("id" to "chair","unit" to "sec","target" to 20);assertEquals(20,s.planner.workSeconds(s.catalog.byId["chair"]!!,item))}
+
+ @Test fun reductionSurvivesReloadAndExplicitSecondsKeepTheirUnit(){val s=store();val date=today();val before=s.day(date).a("items").getJSONObject(0).i("target");s.review("reducir");val target=s.day(date).a("items").getJSONObject(0).i("target");assertTrue(target<before);val reopened=NativeStore(context);reopened.refreshWeek();assertEquals(target,reopened.day(date).a("items").getJSONObject(0).i("target"));val item=obj("id" to "chair","unit" to "sec","target" to 20);assertEquals(20,s.planner.workSeconds(s.catalog.byId["chair"]!!,item))}
 
  @Test fun changedRestrictionsBlockMarkingAnIncompatibleManualMission(){val s=store();val routine=obj("id" to "manual-floor","name" to "Press","category" to "Fuerza","items" to arr(listOf(obj("id" to "press","sets" to 2,"target" to 8,"rest" to 60))));s.assign(routine,today());s.saveProfile(profile().put("restrictions",obj("noFloor" to true)));try{s.toggleMission(today(),0);fail("No debe confirmar un ejercicio incompatible")}catch(_:IllegalArgumentException){};assertFalse(s.logs.o(today()).a("items").getJSONObject(0).b("missionState"));assertEquals(0,s.stats().i("series"))}
 

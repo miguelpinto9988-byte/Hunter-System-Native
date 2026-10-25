@@ -134,7 +134,7 @@ import kotlin.math.*
 }
 @Composable fun AccessWelcome(){
  HPanel(padding=22){
-  Box(Modifier.fillMaxWidth().height(160.dp).clip(RoundedCornerShape(18.dp))){
+  Box(Modifier.fillMaxWidth().height((220 * androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)).dp).clip(RoundedCornerShape(18.dp))){
    AssetImage("eclipse/portal.webp",Modifier.fillMaxSize(),ContentScale.Crop)
    Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(LocalHunter.current.bg,Color.Transparent))))
    Column(Modifier.align(Alignment.CenterStart).padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){HunterIcon(Sigil.Crown,Modifier.size(32.dp));Eyebrow("TU HISTORIA EMPIEZA AQUÍ");Heading("Despierta\ntu potencial.",size=32)}
