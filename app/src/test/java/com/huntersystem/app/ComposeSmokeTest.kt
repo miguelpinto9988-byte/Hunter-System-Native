@@ -2,7 +2,6 @@ package com.huntersystem.app
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.test.core.app.ApplicationProvider
 import org.json.JSONObject
 import org.json.JSONArray
@@ -22,7 +21,7 @@ class ComposeSmokeTest {
  @get:Rule val compose=createAndroidComposeRule<ComponentActivity>()
  lateinit var store:NativeStore
  lateinit var ui:NativeUi
- @Before fun setup(){val c=ApplicationProvider.getApplicationContext<Context>();c.filesDir.listFiles()?.filter{it.name.startsWith("hunter-system-native")}?.forEach{it.delete()};store=NativeStore(c);val profile=JSONArray(javaClass.classLoader!!.getResource("groups-golden.json")!!.readText()).objects()[7].o("p").copyJson().put("name","Cazador").put("animate",false).put("goalGroup","build").put("finalGoal","Aumentar mi fuerza").put("finalTarget","strength").put("weekFocus",arr(listOf("upper","upper","upper","lower","upper","core","upper")));store.saveProfile(profile);ui=NativeUi(store);compose.mainClock.autoAdvance=true;compose.setContent{HunterTheme(store){HunterRoot(ui)}};compose.mainClock.advanceTimeByFrame();compose.waitForIdle()}
+ @Before fun setup(){val c=ApplicationProvider.getApplicationContext<Context>();c.filesDir.listFiles()?.filter{it.name.startsWith("hunter-system-native")}?.forEach{it.delete()};store=NativeStore(c);val profile=JSONArray(javaClass.classLoader!!.getResource("groups-golden.json")!!.readText()).objects()[7].o("p").copyJson().put("name","Cazador").put("weekPlan",arr(List(7){"train"})).put("animate",false).put("goalGroup","build").put("finalGoal","Aumentar mi fuerza").put("finalTarget","strength").put("weekFocus",arr(listOf("upper","upper","upper","lower","upper","core","upper")));store.saveProfile(profile);ui=NativeUi(store);compose.mainClock.autoAdvance=true;compose.setContent{HunterTheme(store){HunterRoot(ui)}};compose.mainClock.advanceTimeByFrame();compose.waitForIdle()}
  fun capture(name:String){compose.runOnIdle{val view=compose.activity.window.decorView;val image=Bitmap.createBitmap(view.width.coerceAtLeast(393),view.height.coerceAtLeast(851),Bitmap.Config.ARGB_8888);view.draw(android.graphics.Canvas(image));val qa=File("../qa");qa.mkdirs();File(qa,"native-$name.png").outputStream().use{image.compress(Bitmap.CompressFormat.PNG,100,it)}}}
  @Test(timeout=120000) fun sixScreensAndExerciseDialogRender(){
   for(tab in listOf("home","plan","routines","book","stats","profile")){
@@ -80,8 +79,14 @@ class ComposeSmokeTest {
  }
 
  fun captureDialog(name:String){
-  val bitmap=compose.onNode(isDialog()).captureToImage().asAndroidBitmap()
-  val qa=File("../qa");qa.mkdirs();File(qa,"native-$name.png").outputStream().use{bitmap.compress(Bitmap.CompressFormat.PNG,100,it)}
+  compose.onNode(isDialog()).assertExists()
+  compose.runOnIdle {
+   val view=requireNotNull(org.robolectric.shadows.ShadowDialog.getLatestDialog().window).decorView
+   check(view.width>0 && view.height>0) { "El diálogo debe estar medido antes de capturarlo" }
+   val bitmap=Bitmap.createBitmap(view.width,view.height,Bitmap.Config.ARGB_8888)
+   view.draw(android.graphics.Canvas(bitmap))
+   val qa=File("../qa");qa.mkdirs();File(qa,"native-$name.png").outputStream().use{bitmap.compress(Bitmap.CompressFormat.PNG,100,it)}
+  }
  }
  @Test(timeout=120000) fun exerciseSessionNotificationsAndCompanionDialogsRender(){
   compose.runOnIdle{ui.open("exercise",obj("id" to "chair"))};compose.waitForIdle()

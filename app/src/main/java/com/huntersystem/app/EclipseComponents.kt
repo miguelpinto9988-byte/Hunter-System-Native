@@ -55,7 +55,7 @@ import kotlin.math.*
   }
   if(mode!="flat")ConstellationField(Modifier.fillMaxSize())
   if(mode=="relic")RelicScene(Modifier.align(Alignment.CenterEnd).fillMaxWidth(.58f).fillMaxHeight(.9f))
-  AssetImage("ui33/companion-$character.webp",Modifier.fillMaxHeight(.94f).fillMaxWidth(if(mode=="relic").65f else .82f).align(if(mode=="relic")Alignment.CenterStart else Alignment.Center)
+  AssetImage("ui33/companion-$character.webp",Modifier.fillMaxHeight(.80f).fillMaxWidth(if(mode=="relic").54f else .68f).align(if(mode=="relic")Alignment.CenterStart else Alignment.Center)
    .graphicsLayer{
     scaleX=size;scaleY=size
     if(mode=="depth"){translationY=sin(phase.value*PI.toFloat()*2)*5.dp.toPx();rotationY=sin(phase.value*PI.toFloat()*2)*5f;cameraDistance=16*density}
