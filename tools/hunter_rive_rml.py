@@ -13,7 +13,7 @@ from pathlib import Path
 from xml.sax.saxutils import quoteattr
 from svgpathtools import parse_path, CubicBezier, QuadraticBezier, Line
 
-def local(element):return element.tag.rsplit("}",1)[-1]
+def local(element):return (element.tag if hasattr(element,"tag") else element).rsplit("}",1)[-1]
 def n(v,default=0.):return float(re.match(r"[-+]?(?:\d+\.?\d*|\.\d+)",str(v)).group()) if re.match(r"[-+]?(?:\d+\.?\d*|\.\d+)",str(v)) else default
 def f(v):return f"{float(v):.5f}".rstrip("0").rstrip(".") or "0"
 def attrs(k):
