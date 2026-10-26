@@ -1,0 +1,54 @@
+name: Verificar Hunter Rive nativo
+on:
+  workflow_dispatch:
+  push:
+    branches: [integration/hunter-v43-compose-2000]
+    paths: [tools/hunter_rive_rml.py, .github/workflows/hunter-rive-pilot.yml]
+permissions:
+  contents: read
+jobs:
+  pilot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar herramientas
+        run: |
+          set -euo pipefail
+          python3 -m pip install "svgpathtools>=1.6,<2"
+          curl -fsSL --retry 3 https://releases.rive.app/cli/install.sh -o "$RUNNER_TEMP/install-rive.sh"
+          bash "$RUNNER_TEMP/install-rive.sh"
+          echo "$HOME/.rive/bin" >> "$GITHUB_PATH"
+      - name: Convertir tres ejercicios con movimiento SVG original
+        run: |
+          set -euo pipefail
+          for id in squat pushup hx_upper_0001; do
+            mkdir -p "$RUNNER_TEMP/hunter/$id"
+            printf 'name: %s\n' "$id" > "$RUNNER_TEMP/hunter/$id/rive.yaml"
+            python3 tools/hunter_rive_rml.py --source "app/src/main/assets/demos30/$id.svg" --output "$RUNNER_TEMP/hunter/$id/scene.rml"
+          done
+      - name: Compilar .riv oficiales
+        run: |
+          set -euo pipefail
+          rive --version
+          mkdir -p "$RUNNER_TEMP/output"
+          for id in squat pushup hx_upper_0001; do
+            rive "$RUNNER_TEMP/hunter/$id" --verify
+            rive "$RUNNER_TEMP/hunter/$id" --once
+            test -s "$RUNNER_TEMP/hunter/$id/build/$id.riv"
+            cp "$RUNNER_TEMP/hunter/$id/build/$id.riv" "$RUNNER_TEMP/output/$id.riv"
+          done
+          python3 - "$RUNNER_TEMP/output" <<'PY'
+          import pathlib,sys
+          files=list(pathlib.Path(sys.argv[1]).glob('*.riv'))
+          assert len(files)==3,(len(files),files)
+          for p in files:
+            header=p.read_bytes()[:4]
+            assert header==b'RIVE',(p,header)
+            print(p.name,p.stat().st_size,'bytes')
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Hunter-Rive-Nativo-Piloto
+          path: ${{ runner.temp }}/output/*.riv
+          if-no-files-found: error
