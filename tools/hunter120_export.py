@@ -97,10 +97,14 @@ def main():
     p.add_argument("--start",type=int,default=0);p.add_argument("--count",type=int,default=100)
     p.add_argument("--size",type=int,default=360);p.add_argument("--frames",type=int,default=120)
     p.add_argument("--manifest-only",action="store_true")
+    p.add_argument("--ids",default="",help="IDs de ejercicios separados por coma, e.g. squat,pushup")
     opt=p.parse_args();assert opt.frames==120
     source=sorted(opt.source.glob("*.svg")) if opt.source.is_dir() else [opt.source]
     assert len(source)==2000 if opt.source.is_dir() else len(source)==1
-    selected=source[opt.start:opt.start+opt.count]
+    wanted=set(x.strip() for x in opt.ids.split(",") if x.strip())
+    selected=[s for s in source if s.stem in wanted] if wanted else source[opt.start:opt.start+opt.count]
+    if wanted and {s.stem for s in selected}!=wanted:
+        raise SystemExit("IDs no encontrados: "+str(sorted(wanted-{s.stem for s in selected})))
     opt.output.mkdir(parents=True,exist_ok=True)
     results=[]
     for idx,s in enumerate(selected):
