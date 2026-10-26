@@ -74,17 +74,17 @@ import kotlin.math.*
  else->HNotice("Selecciona una sección para continuar.")
  }}}
  }}}
-@Composable fun ExerciseDetail(ui:NativeUi,id:String){val s=ui.store;val e=s.catalog.byId[id]?:return;val c=LocalHunter.current;var playing by remember(id){mutableStateOf(s.profile?.b("animate",true)?:true)};var mirror by remember(id){mutableStateOf(false)};var speed by remember(id){mutableFloatStateOf(s.state.n("demoSpeed",1.0).toFloat())};var seek by remember(id){mutableFloatStateOf(0f)}
+@Composable fun ExerciseDetail(ui:NativeUi,id:String){val s=ui.store;val e=s.catalog.byId[id]?:return;val c=LocalHunter.current;var playing by remember(id){mutableStateOf(s.profile?.b("animate",true)?:true)};var mirror by remember(id){mutableStateOf(false)};var speed by remember(id){mutableFloatStateOf(s.state.n("demoSpeed",1.0).toFloat())};var seek by remember(id){mutableFloatStateOf(0f)};var restart by remember(id){mutableIntStateOf(0)}
  Eyebrow("${e.group} · ${e.category}");Heading(e.name,size=35);HText("${if(e.unit=="sec")"Por tiempo" else "Por repeticiones"}${if(e.sides)" · Cantidad por lado" else ""} · ${if(e.impact)"Con saltos" else "Sin saltos"}",size=16,color=c.muted)
- MonarchExerciseStage(e.name,e.demo,playing,speed,mirror,progress=seek,height=360)
- MonarchPlaybackControls(playing,speed,mirror,onToggle={playing=!playing},onRestart={playing=false;seek=0f},onMirror={mirror=!mirror},onSpeed={speed=it;s.state.put("demoSpeed",speed.toDouble());s.save()})
+ MonarchExerciseStage(e.name,e.demo,playing,speed,mirror,progress=seek,height=360,restartToken=restart)
+ MonarchPlaybackControls(playing,speed,mirror,onToggle={playing=!playing},onRestart={restart+=1;playing=true;seek=0f},onMirror={mirror=!mirror},onSpeed={speed=it;s.state.put("demoSpeed",speed.toDouble());s.save()})
  HText("Ver posiciones",size=14,color=c.muted);Slider(seek,{seek=it;playing=false})
  HText("La velocidad visual no cambia el reloj ni las cantidades de la sesión.",size=14,color=c.muted)
  s.catalog.editorial.o("clips").optJSONObject(id)?.let{clip->HButton("Ver clip local"){playing=false;ui.open("video",obj("path" to "offline2d/"+clip.s("file")))}}
  for((key,label)in listOf("setup" to "Preparación","instructions" to "Ejecución","control" to "Control","breath" to "Respiración","tempo" to "Ritmo","muscles" to "Músculos implicados","cue" to "Punto clave")){val text=if(key=="instructions")e.raw.a(key).strings().mapIndexed{i,t->"${i+1}. $t"}.joinToString("\n") else e.raw.s(key);if(text.isNotBlank())HPanel(decor=false,padding=16){Heading(label,size=25);HText(text,size=17)}}
  if(e.sides)HNotice("Realiza la cantidad indicada en cada lado. El registro especifica si corresponde a un lado o a ambos.")
  if(s.profile!=null){val reasons=s.rules.reasons(e,s.adjusted());HPanel(decor=false,padding=16){Heading("Compatibilidad con tu perfil",size=26);HText(if(reasons.isEmpty())"Incluido por los filtros del perfil actual" else reasons.joinToString("\n"){"· $it"},size=16)}}
- HText("Demostración esquemática original. Consulta las instrucciones; la animación no evalúa tu ejecución.",size=14,color=c.muted)
+ HText("Animación Rive derivada de la ilustración original. No representa todavía la anatomía X-Ray definitiva ni evalúa tu ejecución.",size=14,color=c.muted)
 }
 @Composable fun SessionRecord(ui:NativeUi,date:String){val s=ui.store;val l=remember(date){runCatching{s.log(date)}.getOrNull()};if(l==null){HNotice("El registro está disponible en la fecha de hoy.");return};val closed=l.b("complete")||l.b("pain");var rpe by remember(date){mutableStateOf(l.i("rpe").toString())};var notes by remember(date){mutableStateOf(l.s("notes"))};var fatigue by remember(date){mutableStateOf(l.b("fatigue"))};val latestRpe by rememberUpdatedState(rpe);val latestNotes by rememberUpdatedState(notes);val latestFatigue by rememberUpdatedState(fatigue)
  DisposableEffect(date){onDispose{if(!l.b("complete")&&!l.b("pain")){val n=latestRpe.toIntOrNull()?.coerceIn(0,10)?:0;if(l.i("rpe")!=n||l.s("notes")!=latestNotes||l.b("fatigue")!=latestFatigue){l.put("rpe",n);l.put("notes",latestNotes.take(3000));l.put("fatigue",latestFatigue);s.save()}}}}

@@ -16,8 +16,8 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Hunter System V42.6 Monarca fase 07: escenario reutilizable de ejercicios.
- * Prioriza un MP4 local autorizado si existe; conserva los SVG originales
- * como respaldo, sin WebView ni miniaturas. No reemplaza revisión biomecánica.
+ * Renderiza únicamente Rive (.riv) de manera nativa, sin alternativas SVG o MP4.
+ * La conversión del SVG de origen no certifica anatomía ni biomecánica.
  */
 @Composable
 fun MonarchExerciseStage(
@@ -28,7 +28,8 @@ fun MonarchExerciseStage(
     mirror:Boolean,
     progress:Float=0f,
     height:Int=340,
-    showProgress:Boolean=true
+    showProgress:Boolean=true,
+    restartToken:Int=0
 ){
     val c=LocalHunter.current
     val frame=RoundedCornerShape(24.dp)
@@ -38,22 +39,15 @@ fun MonarchExerciseStage(
         .padding(12.dp),verticalArrangement=Arrangement.spacedBy(9.dp)){
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
             verticalAlignment=Alignment.CenterVertically){
-            Eyebrow("DEMOSTRACIÓN 2D · SVG / MP4 VERIFICADO")
+            Eyebrow("DEMOSTRACIÓN NATIVA · RIVE 2D")
             HText(if(isRunning)"● EN MOVIMIENTO" else "Ⅱ PAUSADA",
                 size=12,bold=true,color=if(isRunning)c.accent else c.muted)
         }
         Box(Modifier.fillMaxWidth().height(height.dp)
             .clip(RoundedCornerShape(17.dp)).background(c.input),
             contentAlignment=Alignment.Center){
-            val context=androidx.compose.ui.platform.LocalContext.current
-            val movie=remember(demo){ExerciseVideoAssets.approvedVideo(context,demo)}
-            if(movie!=null){
-                OfflineExerciseVideo(movie,Modifier.fillMaxWidth().fillMaxHeight(),
-                    play=isRunning,speed=speed,mirror=mirror,progress=progress.coerceIn(0f,1f))
-            }else{
-                OriginalSvg(demo,Modifier.fillMaxWidth().fillMaxHeight(),
-                    play=isRunning,speed=speed,mirror=mirror,progress=progress.coerceIn(0f,1f))
-            }
+            HunterRiveExercise(demo,Modifier.fillMaxWidth().fillMaxHeight(),
+                play=isRunning,mirror=mirror,restartToken=restartToken)
         }
         if(showProgress){
             LinearProgressIndicator(progress={progress.coerceIn(0f,1f)},
@@ -62,7 +56,7 @@ fun MonarchExerciseStage(
         }
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
             HText(name,size=14,color=c.text,maxLines=1,modifier=Modifier.weight(1f))
-            HText("${speed}×  ${if(mirror)"ESPEJO" else "NORMAL"}",
+            HText("RIVE 1×  ${if(mirror)"ESPEJO" else "NORMAL"}",
                 size=12,color=c.muted)
         }
     }
@@ -87,9 +81,7 @@ fun MonarchPlaybackControls(
         }
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(9.dp),
             verticalAlignment=Alignment.CenterVertically){
-            HSelect("VELOCIDAD",speed.toString(),
-                listOf("0.5" to "0,5×","1.0" to "1×","1.5" to "1,5×","2.0" to "2×"),
-                Modifier.weight(1f)){onSpeed(it.toFloat())}
+            HText("Rive: reproducción normal 1×",Modifier.weight(1f),size=13)
             HButton(if(mirror)"ESPEJO ✓" else "⇄ ESPEJO",Modifier.weight(1f)){onMirror()}
         }
     }

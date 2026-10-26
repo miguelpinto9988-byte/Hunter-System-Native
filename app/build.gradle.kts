@@ -24,6 +24,7 @@ dependencies {
  implementation("androidx.compose.material3:material3")
  implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
  implementation("com.caverock:androidsvg-aar:1.4")
+ implementation("app.rive:rive-android:11.14.3")
  testImplementation("junit:junit:4.13.2")
  testImplementation("org.json:json:20240303")
  testImplementation("org.robolectric:robolectric:4.14.1")
