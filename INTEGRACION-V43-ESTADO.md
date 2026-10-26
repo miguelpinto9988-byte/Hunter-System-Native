@@ -1,28 +1,27 @@
-# Hunter System V43 — Integración Kotlin + Jetpack Compose
+# Hunter System V43 — Estado verificado de la integración Kotlin + Compose
 
-## Rama de integración
-- Base Android nativa **Monarca 42.9** (código Kotlin, interfaz Jetpack Compose y Canvas).
-- Componentes de **Eclipse 41.0**: iconografía, portal, reliquia 3D geométrica y galería de seis temas; navegación y pantallas Monarca preservadas.
-- Cambios del PR **Hunter 2000**: `Catalog.kt` admite 1200 registros originales más 800 adicionales sin colisiones; `Rules.kt` excluye de la planificación automática las propuestas sin validación.
+## Integración final en la rama
+- Monarca 42.9 + Eclipse 41.0, en Kotlin, Jetpack Compose y Canvas, sin WebView.
+- 1200 fichas originales y 800 adicionales: **2000 ejercicios** con IDs únicos.
+- **2000 SVG físicos** dentro de `app/src/main/assets/demos30/`, de los cuales 800 son recursos nuevos.
+- Fichas adicionales: `app/src/main/assets/catalog-hunter2000-extra.json`.
+- Manifiestos: `hunter2000-manifest.json` y `hunter2000-qa-status.json`.
+- Archivo compactado de procedencia: `.hunter2000/source/hunter2000-assets.tar.xz` (SHA-256: `c661292ab8df9aefa8ce234325b0b7ca3a2dc1da9f32f211399cfc339c5b6e71`).
 
-## Importante: estado del catálogo
-**Esta rama de GitHub por sí sola todavía no contiene los 800 JSON ni los 2000 SVG reemplazados.** Permanece compilable con el catálogo original de 1200 hasta importar el paquete externo. No debe etiquetarse como versión final de 2000 ejercicios antes de subir los recursos y ejecutar las pruebas.
+## Auditoría y APK
+El workflow [#40391971139](https://github.com/miguelpinto9988-byte/Hunter-System-Native/actions/runs/40391971139) terminó correctamente: validó archivos y hashes, creó el commit de 2000 SVG y 800 fichas, superó los tests Kotlin/Compose, compiló una APK release firmada y verificó dentro de la propia APK los 2000 SVG y 800 registros nuevos.
 
-El paquete original suministrado en ChatGPT se llama `Hunter_System_V41_Paquete_Integracion_2000_SVG.zip`. Contiene 2000 SVG y 800 fichas adicionales, marcadas como pendientes de revisión biomecánica y de ilustraciones.
+La APK `Hunter-System-V43-2000-Ejercicios-Preview-APK` está disponible como artifact de ese workflow (retención de 14 días).
 
-Para importarlo después de clonar esta rama:
+## Seguridad y limitaciones
+Las **800 fichas nuevas están pendientes de revisión técnica y biomecánica** (`pendingTechnicalReview=true`, `approvedForAutoplan=false`, `autoProgressionApproved=false`). Se muestran claramente identificadas en el catálogo pero no se asignan automáticamente. Los SVG fueron validados como XML y por hash; **eso no verifica corrección biomecánica ni renderizado real en todos los dispositivos**.
+
+No se han ejecutado pruebas físicas Android en esta revisión. Antes de marcar la distribución como definitiva, validar instalación/actualización, restauración del historial, tiempo de respuesta, animaciones, accesibilidad, notificaciones y firma en dispositivos reales.
+
+## Repetir la validación
 ```bash
-python3 tools/import_hunter2000_assets.py /ruta/Hunter_System_V41_Paquete_Integracion_2000_SVG.zip
-python3 tools/import_hunter2000_assets.py --check
-./gradlew :app:testDebugUnitTest :app:assembleDebug
+python3 tools/check_hunter2000_complete.py
+bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest :app:assembleDebug
 ```
-Posteriormente revisar diferencias, agregar `app/src/main/assets/` al control de versiones, abrir PR y compilar APK firmada desde GitHub Actions.
 
-## Criterios de cierre
-1. Verificar en CI que `Catalog.exercises.size==2000` con paquete instalado, 2000 IDs únicos y 2000 SVG presentes.
-2. No recomendar automáticamente las 800 fichas nuevas hasta QA específica por ejercicio.
-3. Probar pantallas, cambios de tema, restauración del perfil e historiales con catálogo ampliado.
-4. Probar SVG/animaciones, sesión y notificaciones en Android real, incluyendo rendimiento y accesibilidad.
-5. Validar la firma de la APK y compatibilidad con instalaciones anteriores.
-
-La aplicación continúa usando Kotlin/Compose. Los SVG son recursos vectoriales nativos reproducidos por código Android; no se añade HTML, CSS, JavaScript ni WebView.
+Ver [PR #17](https://github.com/miguelpinto9988-byte/Hunter-System-Native/pull/17). La rama `main` permanece sin cambiar.
