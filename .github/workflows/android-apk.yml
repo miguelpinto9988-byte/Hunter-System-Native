@@ -99,6 +99,9 @@ jobs:
       - name: Comprobar estado de recursos Hunter 2000
         run: python3 tools/import_hunter2000_assets.py --check
 
+      - name: Comprobar integridad Rive y ausencia de SVG de ejercicios
+        run: python3 tools/check_hunter2000_complete.py
+
       - name: Pruebas Kotlin y Compose
         run: bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest
 
@@ -109,6 +112,30 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew --no-daemon :app:assembleRelease
+
+      - name: Comprobar 2000 Rive en la APK y cero recursos de ejercicios legados
+        run: |
+          python3 - <<'PY'
+          import zipfile,pathlib,json,hashlib
+          apk=next(pathlib.Path('app/build/outputs/apk/release').glob('*.apk'))
+          manifest=json.loads(pathlib.Path('app/src/main/assets/demos-rive/manifest.json').read_text())
+          with zipfile.ZipFile(apk) as z:
+            names=z.namelist()
+            assets={v for v in names if v.startswith('assets/demos-rive/') and v.endswith('.riv')}
+            expected={'assets/demos-rive/'+name+'.riv' for name in manifest['files']}
+            assert len(assets)==2000 and assets==expected,(len(assets),len(expected))
+            old=[v for v in names if v.startswith('assets/demos30/') and
+              (v.endswith('.svg') or v.endswith('.json'))]
+            assert not old,('Archivos antiguos dentro de la APK',old[:5])
+            for path in assets:
+              v=z.read(path)
+              key=path.rsplit('/',1)[-1].removesuffix('.riv')
+              assert v[:4]==b'RIVE' and len(v)==manifest['files'][key]['bytes']
+              assert hashlib.sha256(v).hexdigest()==manifest['files'][key]['sha256'],path
+            extra=json.loads(z.read('assets/catalog-hunter2000-extra.json'))
+            assert len(extra)==800 and all(not x.get('approvedForAutoplan',True) for x in extra)
+            print('APK comprobada: 2000 Rive auténticos, 0 SVG/JSON ejercicios originales, 800 pendientes de QA')
+          PY
 
       - name: Publicar APK instalable
         uses: actions/upload-artifact@v4
