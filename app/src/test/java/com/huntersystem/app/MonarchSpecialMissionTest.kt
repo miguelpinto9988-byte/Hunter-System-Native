@@ -53,7 +53,7 @@ class MonarchSpecialMissionTest{
  }
  @Test fun completionIsNotInferredFromPartialManualCounts(){
   val m=MonarchMissionCatalog.spec("guardia")
-  val run=obj("id" to m.id,"status" to "active","counts" to obj("squat" to 40,"jumpjack" to 60))
+  val run=obj("id" to m.id,"status" to "active","deadlineAt" to 1000L,"counts" to obj("squat" to 40,"jumpjack" to 60))
   assertTrue(MonarchMissionCatalog.progress(run,m)<1f)
   assertEquals("active",MonarchMissionCatalog.status(run,0))
  }
