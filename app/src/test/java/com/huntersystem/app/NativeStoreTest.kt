@@ -29,7 +29,21 @@ class NativeStoreTest {
  @Test(timeout=30000) fun futurePreviewDoesNotCreateRecords(){val s=store();val before=s.export();for(i in 30L..39L)s.day(plus(today(),i));assertEquals(before,s.export());assertEquals(0,s.logs.length())}
  @Test(timeout=30000) fun routineAssignmentCopiesExactItemsAndProtectsConfirmedWork(){val s=store();val r=obj("id" to "test-exact","name" to "Mi secuencia","category" to "Fuerza","items" to s.day(today()).a("items").copyJson());s.assign(r,today());assertEquals(r.a("items").toString(),s.day(today()).a("items").toString());s.confirmSet(today(),0,0,3.0,0.0);assertEquals(1,s.stats().i("series"));val recorded=s.export();try{s.assign(r,today());fail("Debe conservar el registro")}catch(_:IllegalArgumentException){};assertEquals(recorded,s.export());s.saveProfile(profile().put("trainingScale",.5));assertTrue(s.logs.o(today()).a("items").getJSONObject(0).a("actual").getJSONObject(0).b("done"))}
  @Test(timeout=30000) fun restoreKeepsLegacyFieldsAndRejectsBrokenBackup(){val s=store();s.state.put("legacyUnknown",obj("retained" to true));s.save();val backup=JSONObject(s.export());s.restore(backup);assertTrue(s.state.o("legacyUnknown").b("retained"));val before=s.export();try{s.restore(obj("profile" to JSONObject(),"cycles" to JSONArray(),"logs" to JSONObject()));fail("Perfil incompleto")}catch(_:IllegalArgumentException){};assertEquals(before,s.export());val reloaded=NativeStore(context);assertTrue(reloaded.state.o("legacyUnknown").b("retained"))}
- @Test(timeout=30000) fun svgAndNavigationDrawWithNativeCanvas(){val names=listOf("chair","row","plank","new46-pullup");for(id in names){val v=NativeSvgView(context);v.load("demos30/$id.svg");v.measure(View.MeasureSpec.makeMeasureSpec(360,View.MeasureSpec.EXACTLY),View.MeasureSpec.makeMeasureSpec(500,View.MeasureSpec.EXACTLY));v.layout(0,0,360,500);val a=Bitmap.createBitmap(360,500,Bitmap.Config.ARGB_8888);v.draw(Canvas(a));val pixels=IntArray(360*500);a.getPixels(pixels,0,360,0,0,360,500);assertTrue(id,pixels.count{it!=0}>10000);v.fraction=.5f;val b=Bitmap.createBitmap(360,500,Bitmap.Config.ARGB_8888);v.draw(Canvas(b));val next=IntArray(pixels.size);b.getPixels(next,0,360,0,0,360,500);assertTrue("Se anima $id",pixels.indices.count{pixels[it]!=next[it]}>20);v.release()}}
+ @Test(timeout=30000) fun riveExerciseAssetsContainValidBinaryFiles(){
+  val names=listOf("chair","row","plank","new46-pullup")
+  val manifest=JSONObject(context.assets.open("demos-rive/manifest.json").bufferedReader().use{it.readText()}).getJSONObject("files")
+  val md=java.security.MessageDigest.getInstance("SHA-256")
+  for(id in names){
+   val file="demos-rive/$id.riv"
+   val data=context.assets.open(file).use{it.readBytes()}
+   assertTrue("Binario Rive de $id",data.size>100)
+   assertEquals("RIVE",String(data.copyOfRange(0,4),Charsets.US_ASCII))
+   assertEquals(data.size,manifest.getJSONObject(id).getInt("bytes"))
+   val sha=md.digest(data).joinToString(""){"%02x".format(it)}
+   assertEquals(manifest.getJSONObject(id).getString("sha256"),sha)
+  }
+ }
+
  @Test fun reminderTimesRespectChosenDays(){val r=obj("enabled" to true,"mode" to "daily","time" to "18:00","days" to arr(listOf(1)));val next=ReminderScheduler.next(r,ZonedDateTime.parse("2026-10-23T19:00:00-05:00[America/Lima]"));assertEquals("2026-10-26T18:00-05:00[America/Lima]",next.toString());r.put("mode","interval").put("start","09:00").put("end","20:00").put("interval",3);assertEquals("2026-10-26T18:00-05:00[America/Lima]",ReminderScheduler.next(r,ZonedDateTime.parse("2026-10-26T17:00:00-05:00[America/Lima]")).toString())}
  @Test fun roundsKeepExerciseOrderAndOnlyRestBetweenRounds(){val s=store();val p=s.adjusted().put("blockMode22","rounds");val d=obj("items" to arr(listOf(obj("id" to "chair","sets" to 2,"target" to 6),obj("id" to "row","sets" to 2,"target" to 6))));val steps=s.planner.steps(d,p);assertEquals(listOf("chair","row","chair","row"),steps.filter{it.s("kind")=="exercise"}.map{it.s("id")});assertEquals(1,steps.count{it.s("kind")=="rest"})}
  @Test fun pauseOnlyChangesPendingDaysAndCanResume(){val s=store();val tomorrow=plus(today(),1);s.toggleMission(today(),0);val original=s.day(today()).toString();s.review("pausar");assertEquals(original,s.day(today()).toString());assertEquals(0,s.day(tomorrow).a("items").length());s.review("mantener");assertTrue(s.day(tomorrow).a("items").length()>0);assertEquals(original,s.day(today()).toString())}
