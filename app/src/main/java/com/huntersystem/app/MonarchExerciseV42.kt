@@ -16,8 +16,8 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Hunter System V42.6 Monarca fase 07: escenario reutilizable de ejercicios.
- * Usa los SVG nativos incluidos con el catálogo: no introduce WebView, miniaturas
- * ni crea nuevas animaciones a partir de los vídeos originales.
+ * Prioriza un MP4 local autorizado si existe; conserva los SVG originales
+ * como respaldo, sin WebView ni miniaturas. No reemplaza revisión biomecánica.
  */
 @Composable
 fun MonarchExerciseStage(
@@ -38,15 +38,22 @@ fun MonarchExerciseStage(
         .padding(12.dp),verticalArrangement=Arrangement.spacedBy(9.dp)){
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
             verticalAlignment=Alignment.CenterVertically){
-            Eyebrow("DEMOSTRACIÓN ORIGINAL · 2D")
+            Eyebrow("DEMOSTRACIÓN 2D · SVG / MP4 VERIFICADO")
             HText(if(isRunning)"● EN MOVIMIENTO" else "Ⅱ PAUSADA",
                 size=12,bold=true,color=if(isRunning)c.accent else c.muted)
         }
         Box(Modifier.fillMaxWidth().height(height.dp)
             .clip(RoundedCornerShape(17.dp)).background(c.input),
             contentAlignment=Alignment.Center){
-            OriginalSvg(demo,Modifier.fillMaxWidth().fillMaxHeight(),
-                play=isRunning,speed=speed,mirror=mirror,progress=progress.coerceIn(0f,1f))
+            val context=androidx.compose.ui.platform.LocalContext.current
+            val movie=remember(demo){ExerciseVideoAssets.approvedVideo(context,demo)}
+            if(movie!=null){
+                OfflineExerciseVideo(movie,Modifier.fillMaxWidth().fillMaxHeight(),
+                    play=isRunning,speed=speed,mirror=mirror,progress=progress.coerceIn(0f,1f))
+            }else{
+                OriginalSvg(demo,Modifier.fillMaxWidth().fillMaxHeight(),
+                    play=isRunning,speed=speed,mirror=mirror,progress=progress.coerceIn(0f,1f))
+            }
         }
         if(showProgress){
             LinearProgressIndicator(progress={progress.coerceIn(0f,1f)},
