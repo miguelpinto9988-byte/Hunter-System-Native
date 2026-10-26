@@ -80,7 +80,7 @@ fun MonarchSpecialMissionsPanel(ui:NativeUi) {
   when(status){
    "active"->{
     HText("Registra manualmente solo lo que realizaste. Distribuye el esfuerzo, descansa y detente ante dolor o mareo.",size=14,color=colors.muted)
-    val reached=mission.goals.all{run?.o("counts")?.i(it.exerciseId)?:0>=it.target}
+    val reached=mission.goals.all{(run?.o("counts")?.i(it.exerciseId)?:0)>=it.target}
     HButton("RECLAMAR SELLO MONARCA",Modifier.fillMaxWidth(),primary=true,enabled=reached){
      ui.attempt{store.completeMonarchMission()}
     }
