@@ -15,6 +15,7 @@ checks={
  "temas conjuntos":'"constellation"' in read(src+"HunterDesignSystem.kt") and '"ice"' in read(src+"HunterDesignSystem.kt"),
  "catálogo ampliable":'catalog-hunter2000-extra.json' in read(src+"Catalog.kt"),
  "restricción QA":'approvedForAutoplan' in read(src+"Rules.kt"),
+ "artefacto V43":'Hunter-System-V43-Fusion-Preview-APK' in read(".github/workflows/android-apk.yml"),
  "pruebas de catálogo":(R/"app/src/test/java/com/huntersystem/app/Hunter2000CatalogTest.kt").is_file(),
 }
 errors=[name for name,ok in checks.items() if not ok]
