@@ -36,7 +36,7 @@ jobs:
           x=sorted(Path("app/src/main/assets/demos30").glob("*.svg"))
           assert len(x)==2000, "Migración abortada: inventario incompleto de origen"
           assert len(set(v.stem for v in x))==2000
-          Path("/tmp/hunter_migrate_ids.txt").write_text("\n".join(str(v) for v in x))
+          Path("/tmp/hunter_migrate_ids.txt").write_text("\n".join(str(v) for v in x)+"\n")
           PY
           mkdir -p "$RUNNER_TEMP/rive-output"
           begin=$((BATCH * 100))
