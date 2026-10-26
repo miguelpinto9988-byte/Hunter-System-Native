@@ -1,44 +1,39 @@
-# Hunter System · Android nativo
+# Hunter System — Android Kotlin + Jetpack Compose
 
-Versión 38.50-native, código 104, paquete `com.huntersystem.app`. Kotlin y Jetpack Compose; Android 8.0 (API 26) o posterior. La aplicación usa almacenamiento local y conserva los medios del proyecto V38.49.
+## Integración V43 (vista previa)
 
-## Compilar
+Hunter System es una aplicación Android nativa desarrollada en **Kotlin, Jetpack Compose y Canvas**, sin WebView, HTML/CSS/JS ni dependencias de una web para sus pantallas principales. Identificador `com.huntersystem.app`; Android 8.0+ (API 26), target API 35.
 
-Requisitos: JDK 17, Android SDK Platform 35 y Build Tools 35.0.0. El wrapper descarga Gradle 8.11.1. AGP 8.9.2 y Kotlin/Compose Compiler 2.1.20 están fijados en el proyecto.
+La rama `integration/hunter-v43-compose-2000` fusiona el diseño **Monarca 42.9** y elementos **Eclipse 41.0**: inicio y portal, reliquia geométrica 3D giratoria en Canvas, temas Eclipse, panel de misiones, biblioteca, rutinas, estadísticas locales, acompañantes, guardado y accesibilidad. Conserva el sistema de reglas y planificación y los recursos multimedia originales.
 
-Configura `ANDROID_HOME` o crea `local.properties` con `sdk.dir=/ruta/android-sdk`. Para una compilación firmada, indica la clave adjunta al chat mediante estas variables, sin incorporarla al repositorio:
+## Estado del catálogo 2000
+
+- Catálogo original integrado en la rama: **1200 ejercicios**.
+- Fuente separada: paquete `Hunter_System_V41_Paquete_Integracion_2000_SVG.zip` con **800 fichas nuevas** y **2000 recursos SVG**. El paquete **no forma parte del árbol de esta rama** todavía.
+- El código Kotlin `Catalog.kt` puede cargar las 800 fichas adicionales desde `catalog-hunter2000-extra.json`.
+- `Rules.kt` excluye las nuevas fichas de la planificación automática hasta revisión.
+- Los nuevos ejercicios **requieren QA técnico/biomecánico** y validación visual; su presencia no demuestra que sean seguros para todos los perfiles.
+
+Para importar el paquete a un clon de esta rama:
+```bash
+python3 tools/import_hunter2000_assets.py /ruta/Hunter_System_V41_Paquete_Integracion_2000_SVG.zip
+python3 tools/import_hunter2000_assets.py --check
+bash gradlew :app:testDebugUnitTest :app:assembleDebug
+```
+Tras integrar, revisar el diff e incorporar los cambios de `app/src/main/assets` al control de versiones y lanzar el workflow de release.
+
+## Compilación y CI
+
+Java 17, Gradle 8.11.1, Android SDK 35, AGP 8.9.2, Kotlin Compose 2.1.20.
 
 ```bash
-export HUNTER_KEYSTORE=/ruta/hunter-system-release.p12
-read -r -s -p 'Contraseña de firma: ' HUNTER_STORE_PASSWORD
-export HUNTER_STORE_PASSWORD
-./gradlew :app:assembleRelease
+bash gradlew :app:testDebugUnitTest :app:assembleDebug
 ```
 
-El alias es `hunter-system-release` y el almacén es PKCS12. La APK se genera en `app/build/outputs/apk/release/`. Las credenciales y la clave privada no forman parte de este proyecto.
+GitHub Actions ejecuta verificaciones de V42, test Kotlin/Compose, import-check y, si terminan bien, la compilación firmada y publicación de la APK.
 
-```bash
-./gradlew :app:testDebugUnitTest :app:lintRelease
-```
+## Importante antes de distribuir
 
-## Implementación
+Validar en Android real las imágenes y gestos, estadísticas, copia/restauración, rendimiento, notificaciones, firma y compatibilidad de actualización. No mezclar certificados incompatibles sin migración autorizada. No marcar esta vista previa como versión definitiva de 2000 ejercicios antes de importar recursos y superar QA.
 
-- `Rules.kt` y `Planner.kt`: clasificación 38.49, filtros por equipo y capacidades, restricciones, potencia, selección, dosis, fases y generador independiente de rutinas.
-- `NativeStore.kt`: archivo JSON con escritura atómica, calendario, registros explícitos, estadísticas, protección de sesiones iniciadas e importación/exportación.
-- `Screens.kt`, `Profile.kt`, `Overlays.kt`, `Supplement.kt`, `Design.kt`: seis secciones, perfil, misión, biblioteca, registro, guía, contenidos educativos, apariencia y acompañante en Compose.
-- `NativeMedia.kt`: SVG originales dibujados en Canvas de Android, con interpolación de los valores de animación. Los vídeos usan VideoView.
-- `SystemServices.kt`: avisos locales, sonido original y actualización RSS opcional de los canales de referencia.
-
-La APK no incorpora HTML, JavaScript, CSS ni un WebView. Los recursos de `demos30/`, `ui33/`, `ui34/`, `offline2d/`, `fonts/` y el resto del inventario original se conservan sin modificar. `asset-manifest.json` registra sus SHA-256.
-
-## Datos e instalación
-
-La firma suministrada es diferente a la del APK V38.49. Exporta una copia JSON desde la aplicación anterior antes de sustituirla; Android no permite actualizar el mismo paquete con una firma diferente sin una rotación autorizada. Después de instalar la edición nativa puedes restaurar la copia desde Perfil.
-
-Los campos desconocidos del archivo original se conservan. Las cantidades de estadísticas proceden de series confirmadas: una casilla de misión no inventa repeticiones, tiempo ni kg. Una guía de sesión procedente de la versión web puede comenzar de nuevo si su firma de pasos no coincide; se conservan las series del registro.
-
-## Verificación y límites
-
-`ParityTest` compara el motor Kotlin con resultados del código original: 21 perfiles, 1.200 ejercicios por perfil, tres clases de sesión, 45 misiones y 90 combinaciones de biblioteca. `NativeStoreTest` comprueba persistencia, restauración, vistas futuras sin escritura, asignación exacta, protección del historial, tiempos de avisos, orden de rondas y dibujo animado en Canvas. `ComposeSmokeTest` ejercita la composición de las seis pantallas y el perfil inicial.
-
-Las pruebas de entorno no sustituyen la instalación en un teléfono. Consulta el informe de entrega para los resultados finales. La interfaz se reconstruyó en Compose usando las fuentes, colores, iconos e imágenes originales; no se ha certificado una coincidencia visual píxel a píxel con la aplicación WebView.
+Ver [INTEGRACION-V43-ESTADO.md](INTEGRACION-V43-ESTADO.md) y [PR #17](https://github.com/miguelpinto9988-byte/Hunter-System-Native/pull/17).
