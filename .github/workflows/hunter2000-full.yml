@@ -1,0 +1,94 @@
+name: Validar y compilar Hunter 2000 completo
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - integration/hunter-v43-compose-2000
+    paths:
+      - 'app/src/main/assets/catalog-hunter2000-extra.json'
+      - 'app/src/main/assets/hunter2000-manifest.json'
+      - 'app/src/main/assets/hunter2000-qa-status.json'
+      - 'app/src/main/assets/demos30/**'
+
+permissions:
+  contents: read
+
+jobs:
+  verify-and-build:
+    name: Auditoría de 2000 recursos + APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Obtener código fuente
+        uses: actions/checkout@v4
+
+      - name: Exigir 2000 fichas y 2000 SVG correctos
+        run: python3 tools/check_hunter2000_complete.py
+
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Instalar SDK Android 35
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          SDK_MANAGER="$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager"
+          yes | "$SDK_MANAGER" --licenses >/dev/null || true
+          "$SDK_MANAGER" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Configurar Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Ejecutar pruebas Kotlin y Compose
+        run: bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest
+
+      - name: Preparar firma
+        shell: bash
+        env:
+          HUNTER_KEYSTORE_BASE64: ${{ secrets.HUNTER_KEYSTORE_BASE64 }}
+          HUNTER_STORE_PASSWORD: ${{ secrets.HUNTER_STORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          test -n "$HUNTER_KEYSTORE_BASE64"
+          test -n "$HUNTER_STORE_PASSWORD"
+          printf '%s' "$HUNTER_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/hunter-system-release.p12"
+          keytool -list -keystore "$RUNNER_TEMP/hunter-system-release.p12" -storetype PKCS12 -storepass "$HUNTER_STORE_PASSWORD" > /dev/null
+
+      - name: Compilar release firmada
+        env:
+          HUNTER_KEYSTORE: ${{ runner.temp }}/hunter-system-release.p12
+          HUNTER_STORE_PASSWORD: ${{ secrets.HUNTER_STORE_PASSWORD }}
+        run: bash gradlew --no-daemon --max-workers=2 :app:assembleRelease
+
+      - name: Comprobar contenido de la APK
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import json
+          apk = next(iter(Path('app/build/outputs/apk/release').glob('*.apk')))
+          with ZipFile(apk) as f:
+              ns=set(f.namelist())
+              svg={x for x in ns if x.startswith('assets/demos30/') and x.endswith('.svg')}
+              assert len(svg)==2000, f'La APK contiene {len(svg)} SVG, esperaba 2000'
+              path='assets/catalog-hunter2000-extra.json'
+              assert path in ns, 'La APK carece del catálogo extra'
+              new=json.loads(f.read(path))
+              assert len(new)==800
+              assert all(not x.get('approvedForAutoplan', True) for x in new)
+              print(f'APK verificada: {len(svg)} SVG, 1200+{len(new)} fichas; 800 pendientes de QA')
+          PY
+
+      - name: Publicar APK de 2000 ejercicios
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hunter-System-V43-2000-Ejercicios-Preview-APK
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 14
