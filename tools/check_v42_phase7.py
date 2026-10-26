@@ -7,6 +7,8 @@ K=R/"app/src/main/java/com/huntersystem/app"
 stage=(K/"MonarchExerciseV42.kt").read_text()
 overlays=(K/"Overlays.kt").read_text()
 build=(R/"app/build.gradle.kts").read_text()
+# V43 hereda las verificaciones funcionales de Monarca V42.9.
+build = build.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"')
 wf=(R/".github/workflows/android-apk.yml").read_text()
 catalog=json.loads((R/"app/src/main/assets/catalog.json").read_text())
 errors=[]

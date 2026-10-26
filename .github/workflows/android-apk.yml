@@ -93,6 +93,9 @@ jobs:
       - name: Auditoria Monarca V42 fase 10
         run: python3 tools/check_v42_phase10.py
 
+      - name: Validar integración V43
+        run: python3 tools/check_v43_fusion.py
+
       - name: Comprobar estado de recursos Hunter 2000
         run: python3 tools/import_hunter2000_assets.py --check
 
