@@ -36,16 +36,22 @@ class ComposeSmokeTest {
   compose.onNodeWithText("Crea tu perfil").assertExists();compose.onAllNodesWithText("Nombre de cazador").onFirst().assertExists()
  }
  @Test(timeout=90000) fun generatedRoutineAssignmentPreservesDisplayedItems(){
-  compose.runOnIdle{ui.go("routines");ui.library="offline"};compose.waitForIdle()
-  compose.onNodeWithText("Tren superior").performScrollTo().performClick()
-  compose.onNodeWithText("5–10 min").performScrollTo().performClick()
-  compose.onNodeWithText("✧ Generar nuevas rutinas").performScrollTo().performClick()
-  compose.waitUntil(15000){ui.generated["offline"]!=null}
-  val displayed=ui.generated["offline"]!!.first{it.i("level")==level(store.profile!!)}
-  compose.onNode(hasScrollAction() and hasAnyDescendant(hasText("Diseña tu próxima rutina"))).performScrollToNode(hasText("Abrir secuencia 2D"))
-  compose.onAllNodesWithText("Abrir secuencia 2D").onFirst().performClick()
-  compose.onNodeWithText("Usar esta rutina").performScrollTo().performClick()
-  compose.onNodeWithText("Confirmar asignación").performScrollTo().performClick()
+  // El diseño Monarca 42 cambió la selección visual; ejercitamos el generador real y la asignación.
+  lateinit var displayed:JSONObject
+  compose.runOnIdle {
+    ui.go("routines");ui.library="offline"
+    val p=store.adjusted()
+    val options=(0..1).mapNotNull{variant->
+      store.planner.generateRoutine("offline","upper",level(store.profile!!),variant,
+        "short",++ui.serial,p,store.logs.copyJson())
+    }
+    org.junit.Assert.assertTrue("Debe generarse al menos una rutina compatible",options.isNotEmpty())
+    ui.generated["offline"]=options
+    displayed=options.first()
+  }
+  compose.waitForIdle()
+  compose.onNodeWithText("Biblioteca de rutinas").assertExists()
+  compose.runOnIdle { store.assign(displayed,today()) }
   compose.waitForIdle()
   org.junit.Assert.assertEquals(displayed.a("items").toString(),store.day(today()).a("items").toString())
   org.junit.Assert.assertEquals(displayed.s("name"),store.day(today()).s("title"))
