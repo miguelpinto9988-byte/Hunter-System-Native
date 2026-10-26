@@ -123,11 +123,11 @@ fun NativeStore.syncMonarchWeek(now:Long=System.currentTimeMillis(),zone:ZoneId=
 }
 /** Solo un intento voluntario por semana; se conserva el progreso y el historial. */
 fun NativeStore.startMonarchMission(now:Long=System.currentTimeMillis(),zone:ZoneId=ZoneId.systemDefault()) {
- syncMonarchWeek(now,zone)
  val spec=MonarchMissionCatalog.missionFor(MonarchMissionCatalog.weekStart(now,zone),
   level(adjusted()),zone)
  val reason=MonarchMissionCatalog.eligibleReason(this,spec,now)
  require(reason==null){reason?:"Misión no disponible"}
+ syncMonarchWeek(now,zone)
  state.put("monarchSpecialMission",obj(
   "id" to spec.id,"weekStart" to spec.weekStart,"cycleWeek" to spec.cycleWeek,
   "status" to "active","startedAt" to now,"deadlineAt" to spec.deadlineAt,
