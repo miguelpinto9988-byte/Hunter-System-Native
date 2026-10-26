@@ -71,7 +71,7 @@ class Rules(val catalog:Catalog){
   reject((r.b("noWrist")||"wrist" in affected)&&(hand||floorHand),"Evitar apoyo en manos");reject("knee" in affected&&floor&&knee,"Rodilla en apoyo")
   return out
  }
- fun reasons(e:Exercise,p:JSONObject):List<String>{val g=gate(p);if(!g.ok)return listOf(g.reason);val risk=injuries(p).isNotEmpty()||p.b("limits")||p.o("health").b("special")||p.o("health").s("pain") in listOf("mild","moderate","strong");return (groupReasons(e,p)+materialReasons(e,p)+clinicalReasons(e,p,risk)).distinct()}
+ fun reasons(e:Exercise,p:JSONObject):List<String>{if(e.raw.b("sourceExpansion2k")&&!e.raw.b("approvedForAutoplan"))return listOf("Pendiente de validación biomecánica y de requisitos; excluido de los generadores.");val g=gate(p);if(!g.ok)return listOf(g.reason);val risk=injuries(p).isNotEmpty()||p.b("limits")||p.o("health").b("special")||p.o("health").s("pain") in listOf("mild","moderate","strong");return (groupReasons(e,p)+materialReasons(e,p)+clinicalReasons(e,p,risk)).distinct()}
  fun compatible(e:Exercise,p:JSONObject)=reasons(e,p).isEmpty()
  fun matches(e:Exercise,type:String)=e.type==type||type=="cardio"&&e.meta.b("jumpPower")
  fun inKind(e:Exercise,kind:String)=when(kind){"strength"->e.type in listOf("upper","lower","core");"cardio"->matches(e,"cardio");"recovery"->e.type=="mobility";else->false}
