@@ -1,0 +1,129 @@
+name: Hunter Rive 2000 - migración atómica del catálogo
+on:
+  push:
+    branches: [integration/hunter-v43-compose-2000]
+    paths: [.github/workflows/hunter-rive-2000.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  convert:
+    name: Convertir lote ${{ matrix.batch }} de 20
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        batch: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Instalar compilador Rive y parser vectorial
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libegl1 libgles2 libx11-6 libgbm1
+          python3 -m pip install "svgpathtools==1.8.0"
+          curl -fsSL --retry 3 https://releases.rive.app/cli/install.sh -o "$RUNNER_TEMP/install-rive.sh"
+          bash "$RUNNER_TEMP/install-rive.sh"
+          echo "$HOME/.rive/bin" >> "$GITHUB_PATH"
+      - name: Convertir 100 ejercicios con sus propias curvas de movimiento
+        env:
+          BATCH: ${{ matrix.batch }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          x=sorted(Path("app/src/main/assets/demos30").glob("*.svg"))
+          assert len(x)==2000, "Migración abortada: inventario incompleto de origen"
+          assert len(set(v.stem for v in x))==2000
+          Path("/tmp/hunter_migrate_ids.txt").write_text("\n".join(str(v) for v in x))
+          PY
+          mkdir -p "$RUNNER_TEMP/rive-output"
+          begin=$((BATCH * 100))
+          end=$((begin + 100))
+          n=0
+          while IFS= read -r file; do
+            if [ "$n" -ge "$begin" ] && [ "$n" -lt "$end" ]; then
+              id="$(basename "$file" .svg)"
+              workspace="$RUNNER_TEMP/work/$id"
+              mkdir -p "$workspace"
+              printf 'name: %s\n' "$id" > "$workspace/rive.yaml"
+              python3 tools/hunter_rive_rml.py --source "$file" --output "$workspace/scene.rml" >/dev/null
+              rive "$workspace" --once >/dev/null
+              test -s "$workspace/build/$id.riv"
+              cp "$workspace/build/$id.riv" "$RUNNER_TEMP/rive-output/$id.riv"
+              rm -rf "$workspace"
+            fi
+            n=$((n+1))
+          done < /tmp/hunter_migrate_ids.txt
+          python3 - "$RUNNER_TEMP/rive-output" <<'PY'
+          import pathlib,sys
+          files=list(pathlib.Path(sys.argv[1]).glob("*.riv"))
+          assert len(files)==100,f"Se esperaban 100 .riv, recibidos {len(files)}"
+          for p in files:
+            assert p.read_bytes().startswith(b"RIVE"),(p,"cabecera invalida")
+            assert p.stat().st_size>100,(p,"vacío")
+          print(f"Lote OK: {len(files)} Rive auténticos")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: hunter-rive-batch-${{ matrix.batch }}
+          path: ${{ runner.temp }}/rive-output/*.riv
+          if-no-files-found: error
+          retention-days: 14
+  assemble:
+    name: Publicar los 2000 únicamente si los 20 lotes pasan
+    needs: convert
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: hunter-rive-batch-*
+          path: ${{ runner.temp }}/all-rive
+          merge-multiple: true
+      - name: Auditoría global 2000 Rive, correspondencia 1 a 1 y hashes
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import hashlib,json,pathlib,os
+          origin=pathlib.Path("app/src/main/assets/demos30")
+          final=pathlib.Path(os.environ["RUNNER_TEMP"])/"all-rive"
+          expected={p.stem for p in origin.glob("*.svg")}
+          actual={p.stem for p in final.glob("*.riv")}
+          assert len(expected)==2000,len(expected)
+          assert actual==expected,f"Faltantes: {sorted(expected-actual)[:10]}, inesperados: {sorted(actual-expected)[:10]}"
+          report={}
+          for p in final.glob("*.riv"):
+            data=p.read_bytes()
+            assert data[:4]==b"RIVE" and len(data)>100,p.name
+            report[p.stem]={"bytes":len(data),"sha256":hashlib.sha256(data).hexdigest()}
+          manifest={"format":"Rive","count":len(report),"status":"converted_animated_original_style_unreviewed",
+                    "style_review":"PENDIENTE; la conversión no inventa anatomía X-Ray",
+                    "technical_review":"PENDIENTE para movimientos, sobre todo 800 propuestas",
+                    "files":report}
+          (final/"manifest.json").write_text(json.dumps(manifest,indent=2,sort_keys=True))
+          print("Validación global OK: 2000 Rive distintos e identificados")
+          PY
+      - name: Incorporar los 2000 al repositorio en un solo commit
+        env:
+          BRANCH: integration/hunter-v43-compose-2000
+        run: |
+          set -euo pipefail
+          mkdir -p app/src/main/assets/demos-rive
+          cp "$RUNNER_TEMP/all-rive/"*.riv app/src/main/assets/demos-rive/
+          cp "$RUNNER_TEMP/all-rive/manifest.json" app/src/main/assets/demos-rive/manifest.json
+          git config user.name "hunter-rive[bot]"
+          git config user.email "hunter-rive[bot]@users.noreply.github.com"
+          git add app/src/main/assets/demos-rive
+          git commit -m "Incorporar 2000 binarios Rive animados desde SVG originales (QA pendiente)"
+          git push origin HEAD:"$BRANCH"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Hunter-Rive-2000-Completo-Catalogo-Animado
+          path: ${{ runner.temp }}/all-rive/*
+          if-no-files-found: error
+          retention-days: 14
