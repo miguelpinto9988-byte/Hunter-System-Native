@@ -97,7 +97,7 @@ jobs:
         run: python3 tools/import_hunter2000_assets.py --check
 
       - name: Pruebas Kotlin y Compose
-        run: ./gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest
+        run: bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest
 
       - name: Compilar APK release firmada
         env:
