@@ -39,7 +39,7 @@ object MonarchMissionCatalog {
   // Los intermedios solo reciben Guardia; los avanzados alternan tres exigencias.
   val id=if(level<2)"guardia" else listOf("guardia","fortaleza","trono","fortaleza")[cycle]
   // En ciclos sucesivos rotan los ejercicios complementarios, no las metas mínimas.
-  val variant=Math.floorMod(weeks.toInt(),4)
+  val variant=Math.floorMod(weeks.toInt()+Math.floorDiv(weeks.toInt(),4),4)
   val goals=when(id){
    "guardia"->listOf(
     MonarchMissionGoal("squat",60),
