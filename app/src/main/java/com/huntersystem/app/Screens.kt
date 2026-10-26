@@ -56,6 +56,7 @@ fun HomeScreen(ui:NativeUi) {
   FusionEclipsePortal()
   MonarchHero(ui,stats)
   MonarchDashboardMission(ui)
+  MonarchSpecialMissionsPanel(ui)
   MonarchDashboardMetrics(ui,stats)
   MonarchHomeProgressStrip(ui)
   MonarchDashboardWeek(ui)
