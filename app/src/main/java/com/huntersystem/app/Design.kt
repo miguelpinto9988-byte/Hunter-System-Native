@@ -47,7 +47,7 @@ private fun v39VisualTokens(name:String,source:JSONObject,accent:String):JSONObj
 
 /** Valores históricos se convierten a uno de los cuatro temas V39; no alteran datos del usuario. */
 fun resolveV39Theme(value:String?,gender:String=""):String=when(value?.lowercase()){
- "eclipse","umbral","abismo","runa","hielo","lavanda","aurora","ceniza","amanecer"->value.lowercase()
+ "eclipse","umbral","abismo","runa","hielo","lavanda","aurora","ceniza","amanecer","constellation","ice"->value.lowercase()
  "auto"->if(gender=="female")"aurora" else "eclipse"
  "pink","coral","red"->"aurora"
  "amber","gold"->"amanecer"

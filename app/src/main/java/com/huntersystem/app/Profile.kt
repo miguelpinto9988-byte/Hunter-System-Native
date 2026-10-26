@@ -67,6 +67,7 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
      name=="theme"->{
       if(!done.add(name))continue
       MonarchThemePicker(values[name]?:"eclipse"){values[name]=it}
+      ThemeGallery(values[name]?:"eclipse"){values[name]=it}
       MonarchAccentPicker(values["themeAccent"]?:"default"){values["themeAccent"]=it}
      }
      type=="radio"->{if(!done.add(name))continue;val opts=sec.a("fields").objects().filter{it.s("name")==name}.map{it.s("value") to when(it.s("value")){"challenges"->"Desafíos diarios";"routines"->"Rutinas completas";else->it.s("label")}};Chips(opts,values[name]?:""){values[name]=it}}

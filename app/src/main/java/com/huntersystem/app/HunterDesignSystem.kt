@@ -49,7 +49,9 @@ object HunterDesignSystem {
         HunterThemeSpec("lavanda","Lavanda","#181225","#251A38","#39274F","#6F5985","#F8EEFF","#D6C1E9","#CEA4FF","#F2A8D5","#503767"),
         HunterThemeSpec("aurora","Aurora","#140919","#27112F","#3E1B4D","#795386","#FFF1FF","#C7A9D3","#F63AB8","#FB87DF","#58235E"),
         HunterThemeSpec("ceniza","Ceniza","#0D1017","#1A202B","#303A49","#617085","#EDF1FA","#B9C7DE","#C9D2E6","#8298B3","#33445C"),
-        HunterThemeSpec("amanecer","Amanecer","#1F1510","#35261C","#4C3525","#8B6B45","#FFF2DE","#D8BB99","#F6B84F","#FFD988","#654629")
+        HunterThemeSpec("amanecer","Amanecer","#1F1510","#35261C","#4C3525","#8B6B45","#FFF2DE","#D8BB99","#F6B84F","#FFD988","#654629"),
+        HunterThemeSpec("constellation","Constelación · Eclipse","#0A1220","#142236","#1B2F48","#375A79","#F3F3FA","#B5BED1","#8DCCFF","#D5C1FF","#253B5B"),
+        HunterThemeSpec("ice","Glaciar · Eclipse","#09151E","#102632","#1B3944","#376174","#F3F3FA","#B5BED1","#7EE7EE","#B4CFFF","#224755")
     )
     /** Acentos de alto contraste sobre las superficies oscuras de todos los temas. */
     data class Accent(val id:String,val label:String,val hex:String)

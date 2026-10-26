@@ -53,6 +53,7 @@ fun HomeScreen(ui:NativeUi) {
  val stats=ui.store.stats()
  SceneColumn(ui) {
   MonarchDashboardWelcome(ui)
+  FusionEclipsePortal()
   MonarchHero(ui,stats)
   MonarchDashboardMission(ui)
   MonarchDashboardMetrics(ui,stats)
