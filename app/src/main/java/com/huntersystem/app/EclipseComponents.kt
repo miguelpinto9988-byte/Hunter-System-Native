@@ -106,7 +106,7 @@ import kotlin.math.*
   SectionTitle("Profundidad y movimiento","Elige cómo se ve tu sistema",Sigil.Layers)
   Chips(listOf("flat" to "2D","depth" to "2.5D","relic" to "3D"),visualMode(prefs)){change("mode",it)}
   HText(when(visualMode(prefs)){"flat"->"Ilustraciones planas y composición limpia.";"relic"->"Reliquia geométrica 3D junto a tu personaje ilustrado. Abre el visor para girarla.";else->"Ilustraciones en capas con movimiento suave y profundidad."},size=15,color=LocalHunter.current.muted)
-  if(visualMode(prefs)=="relic")HButton("Explorar reliquia 3D",Modifier.fillMaxWidth(),icon=Sigil.Expand){ui.open("relic")}
+  if(visualMode(prefs)=="relic")HButton("Explorar reliquia 3D",Modifier.fillMaxWidth()){ui.open("relic")}
   HText("Tamaño del acompañante",size=15,bold=true)
   Chips(listOf("0.8" to "Compacto","1.0" to "Normal","1.2" to "Grande"),prefs.n("size",1.0).toString()){change("size",it.toDouble())}
   HText("Velocidad ambiental",size=15,bold=true)
@@ -152,7 +152,7 @@ import kotlin.math.*
     RelicScene(Modifier.size(170.dp));Heading("HUNTER SYSTEM",size=30);Eyebrow("ECLIPSE · ASCENSIÓN")
     HText(error?:"Preparando tu próximo capítulo…",size=16,color=c.muted)
     if(error==null)androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth(),color=c.accent,trackColor=c.panel)
-    else HButton("Reintentar",primary=true,icon=Sigil.Reset,onClick=retry)
+    else HButton("Reintentar",primary=true,onClick=retry)
    }
   }
  }
