@@ -36,7 +36,7 @@ checks=[
     ("filtros con efecto pulsación","chip-press" in design),
     ("barra progreso accesible","progressBarRangeInfo" in design),
     ("transición de rutas reducible","EnterTransition.None togetherWith ExitTransition.None" in nav),
-    ("pulso splash desactivable","if(LocalMonarchMotion.current.reduced) 1f" in nav),
+    ("pulso splash desactivable","LocalMonarchMotion.current.reduced" in read("HunterAnimatedBootArtwork.kt") and "if (!reducedMotion)" in read("HunterAnimatedBootArtwork.kt")),
     ("movimiento acompañante suspendido","LocalMonarchMotion.current.reduced || amplitude==0f" in companion),
     ("estadísticas respetan duración", "motion.spec(480)" in stats and "motion.spec(340)" in stats),
     ("microinteracciones sin nuevas conexiones de red",not any("java.net." in src for src in [motion,design,nav,companion])),
