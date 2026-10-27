@@ -8,7 +8,7 @@ stage=(K/"MonarchExerciseV42.kt").read_text()
 overlays=(K/"Overlays.kt").read_text()
 build=(R/"app/build.gradle.kts").read_text()
 # V43 hereda las verificaciones funcionales de Monarca V42.9.
-build = build.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"')
+build = build.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.1-rive-native-preview"', 'versionName = "42.9-monarca-fase10"'))
 wf=(R/".github/workflows/android-apk.yml").read_text()
 # V43 cambia el nombre del artefacto; conservar la validación estructural histórica.
 wf = wf.replace("Hunter-System-V43-Fusion-Preview-APK", "Hunter-System-V42-Monarca-Fase10-APK")

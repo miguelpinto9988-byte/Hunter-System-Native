@@ -6,7 +6,7 @@ def read(path):return (R/path).read_text(encoding="utf8")
 src="app/src/main/java/com/huntersystem/app/"
 gradle=read("app/build.gradle.kts")
 checks={
- "version V43 preview":'versionName = "43.0-fusion-preview"' in gradle and "versionCode = 118" in gradle,
+ "version V43 preview":'versionName = "43.1-rive-native-preview"' in gradle and "versionCode = 119" in gradle,
  "Kotlin y Compose":'id("org.jetbrains.kotlin.plugin.compose")' in gradle,
  "identidad Eclipse":(R/(src+"EclipseVisuals.kt")).is_file(),
  "componentes Eclipse":(R/(src+"EclipseComponents.kt")).is_file(),
@@ -19,5 +19,5 @@ checks={
  "pruebas de catálogo":(R/"app/src/test/java/com/huntersystem/app/Hunter2000CatalogTest.kt").is_file(),
 }
 errors=[name for name,ok in checks.items() if not ok]
-print(json.dumps({"version":"43.0-fusion-preview","checks":checks,"status":"ERROR" if errors else "OK","errors":errors},ensure_ascii=False,indent=2))
+print(json.dumps({"version":"43.1-rive-native-preview","checks":checks,"status":"ERROR" if errors else "OK","errors":errors},ensure_ascii=False,indent=2))
 if errors:raise SystemExit(1)
