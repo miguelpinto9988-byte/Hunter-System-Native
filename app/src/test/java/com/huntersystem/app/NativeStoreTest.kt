@@ -29,18 +29,18 @@ class NativeStoreTest {
  @Test(timeout=30000) fun futurePreviewDoesNotCreateRecords(){val s=store();val before=s.export();for(i in 30L..39L)s.day(plus(today(),i));assertEquals(before,s.export());assertEquals(0,s.logs.length())}
  @Test(timeout=30000) fun routineAssignmentCopiesExactItemsAndProtectsConfirmedWork(){val s=store();val r=obj("id" to "test-exact","name" to "Mi secuencia","category" to "Fuerza","items" to s.day(today()).a("items").copyJson());s.assign(r,today());assertEquals(r.a("items").toString(),s.day(today()).a("items").toString());s.confirmSet(today(),0,0,3.0,0.0);assertEquals(1,s.stats().i("series"));val recorded=s.export();try{s.assign(r,today());fail("Debe conservar el registro")}catch(_:IllegalArgumentException){};assertEquals(recorded,s.export());s.saveProfile(profile().put("trainingScale",.5));assertTrue(s.logs.o(today()).a("items").getJSONObject(0).a("actual").getJSONObject(0).b("done"))}
  @Test(timeout=30000) fun restoreKeepsLegacyFieldsAndRejectsBrokenBackup(){val s=store();s.state.put("legacyUnknown",obj("retained" to true));s.save();val backup=JSONObject(s.export());s.restore(backup);assertTrue(s.state.o("legacyUnknown").b("retained"));val before=s.export();try{s.restore(obj("profile" to JSONObject(),"cycles" to JSONArray(),"logs" to JSONObject()));fail("Perfil incompleto")}catch(_:IllegalArgumentException){};assertEquals(before,s.export());val reloaded=NativeStore(context);assertTrue(reloaded.state.o("legacyUnknown").b("retained"))}
- @Test(timeout=30000) fun riveExerciseAssetsContainValidBinaryFiles(){
-  val names=listOf("chair","row","plank","new46-pullup")
-  val manifest=JSONObject(context.assets.open("demos-rive/manifest.json").bufferedReader().use{it.readText()}).getJSONObject("files")
+ @Test(timeout=30000) fun svgExerciseAssetsMatchOriginalHashes(){
+  val ids=listOf("chair","row","plank","new46-pullup")
+  val qa=JSONObject(context.assets.open("hunter2000-qa-status.json").bufferedReader().use{it.readText()}).getJSONObject("SHA256_by_asset")
+  val catalog=Catalog(context)
   val md=java.security.MessageDigest.getInstance("SHA-256")
-  for(id in names){
-   val file="demos-rive/$id.riv"
-   val data=context.assets.open(file).use{it.readBytes()}
-   assertTrue("Binario Rive de $id",data.size>100)
-   assertEquals("RIVE",String(data.copyOfRange(0,4),Charsets.US_ASCII))
-   assertEquals(data.size,manifest.getJSONObject(id).getInt("bytes"))
+  for(id in ids){
+   val demo=catalog.byId[id]?.demo ?: error("Falta el ejercicio $id")
+   assertEquals("demos30/$id.svg",demo)
+   val data=context.assets.open(demo).use{it.readBytes()}
+   assertTrue("SVG XML de $id",data.toString(Charsets.UTF_8).contains("<svg"))
    val sha=md.digest(data).joinToString(""){"%02x".format(it)}
-   assertEquals(manifest.getJSONObject(id).getString("sha256"),sha)
+   assertEquals("SHA-256 original de $id",qa.getString(demo),sha)
   }
  }
 
