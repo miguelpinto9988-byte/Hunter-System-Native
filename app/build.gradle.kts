@@ -2,7 +2,7 @@ import java.net.URI
 plugins { id("com.android.application"); id("org.jetbrains.kotlin.android"); id("org.jetbrains.kotlin.plugin.compose") }
 android {
  namespace = "com.huntersystem.app"; compileSdk = 36
- defaultConfig { applicationId = "com.huntersystem.app"; minSdk = 26; targetSdk = 35; versionCode = 119; versionName = "43.1-rive-native-preview" }
+ defaultConfig { applicationId = "com.huntersystem.app"; minSdk = 26; targetSdk = 35; versionCode = 120; versionName = "43.2-svg-preview" }
  signingConfigs { create("release") { val path = System.getenv("HUNTER_KEYSTORE"); if (path != null) { storeFile = file(path); storePassword = System.getenv("HUNTER_STORE_PASSWORD"); keyAlias = "hunter-system-release"; keyPassword = System.getenv("HUNTER_STORE_PASSWORD"); storeType = "PKCS12" } } }
  buildTypes { getByName("release") { isMinifyEnabled = false; signingConfig = signingConfigs.getByName("release") } }
  compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
@@ -24,7 +24,6 @@ dependencies {
  implementation("androidx.compose.material3:material3")
  implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
  implementation("com.caverock:androidsvg-aar:1.4")
- implementation("app.rive:rive-android:11.14.3")
  testImplementation("junit:junit:4.13.2")
  testImplementation("org.json:json:20240303")
  testImplementation("org.robolectric:robolectric:4.14.1")

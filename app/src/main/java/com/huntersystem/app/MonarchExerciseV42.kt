@@ -16,8 +16,8 @@ import androidx.compose.ui.unit.dp
 
 /**
  * Hunter System V42.6 Monarca fase 07: escenario reutilizable de ejercicios.
- * Renderiza únicamente Rive (.riv) de manera nativa, sin alternativas SVG o MP4.
- * La conversión del SVG de origen no certifica anatomía ni biomecánica.
+ * Reproduce los SVG animados originales en Canvas Android, sin motor Rive ni WebView.
+ * Estas demostraciones no sustituyen la revisión biomecánica.
  */
 @Composable
 fun MonarchExerciseStage(
@@ -39,15 +39,17 @@ fun MonarchExerciseStage(
         .padding(12.dp),verticalArrangement=Arrangement.spacedBy(9.dp)){
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
             verticalAlignment=Alignment.CenterVertically){
-            Eyebrow("DEMOSTRACIÓN NATIVA · RIVE 2D")
+            Eyebrow("DEMOSTRACIÓN NATIVA · SVG 2D")
             HText(if(isRunning)"● EN MOVIMIENTO" else "Ⅱ PAUSADA",
                 size=12,bold=true,color=if(isRunning)c.accent else c.muted)
         }
         Box(Modifier.fillMaxWidth().height(height.dp)
             .clip(RoundedCornerShape(17.dp)).background(c.input),
             contentAlignment=Alignment.Center){
-            HunterRiveExercise(demo,Modifier.fillMaxWidth().fillMaxHeight(),
-                play=isRunning,mirror=mirror,restartToken=restartToken)
+            key(demo,restartToken){
+                OriginalSvg(demo,Modifier.fillMaxWidth().fillMaxHeight(),
+                    play=isRunning,speed=speed,mirror=mirror,progress=progress.coerceIn(0f,1f))
+            }
         }
         if(showProgress){
             LinearProgressIndicator(progress={progress.coerceIn(0f,1f)},
@@ -56,7 +58,7 @@ fun MonarchExerciseStage(
         }
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
             HText(name,size=14,color=c.text,maxLines=1,modifier=Modifier.weight(1f))
-            HText("RIVE 1×  ${if(mirror)"ESPEJO" else "NORMAL"}",
+            HText("${speed}×  ${if(mirror)"ESPEJO" else "NORMAL"}",
                 size=12,color=c.muted)
         }
     }
@@ -81,7 +83,9 @@ fun MonarchPlaybackControls(
         }
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(9.dp),
             verticalAlignment=Alignment.CenterVertically){
-            HText("Rive: reproducción normal 1×",Modifier.weight(1f),size=13)
+            HSelect("VELOCIDAD",speed.toString(),
+                listOf("0.5" to "0,5×","1.0" to "1×","1.5" to "1,5×","2.0" to "2×"),
+                Modifier.weight(1f)){onSpeed(it.toFloat())}
             HButton(if(mirror)"ESPEJO ✓" else "⇄ ESPEJO",Modifier.weight(1f)){onMirror()}
         }
     }
