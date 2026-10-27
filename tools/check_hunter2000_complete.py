@@ -1,54 +1,87 @@
 #!/usr/bin/env python3
-"""Auditoría estricta de Hunter2000-Rive, sin confundir conversión con QA anatómica."""
+"""Criterio ESTRICTO de catálogo Hunter 2000, a ejecutar antes de publicar su APK.
+
+Comprueba existencia e integridad, sin afirmar validación biomecánica.
+"""
 from pathlib import Path
-import json, hashlib, re, sys
-ROOT=Path(__file__).resolve().parents[1]
-ASSETS=ROOT/"app/src/main/assets"
-def read(path):
-    file=ASSETS/path
-    if not file.is_file():raise ValueError(f"Recurso ausente: {path}")
-    return json.loads(file.read_text("utf-8"))
+import hashlib, json, re, sys, xml.etree.ElementTree as ET
+
+ROOT = Path(__file__).resolve().parents[1]
+ASSETS = ROOT / "app/src/main/assets"
+EXPECTED = 2000
+NEW = 800
+
+
+def read_json(relative):
+    f = ASSETS / relative
+    if not f.is_file():
+        raise ValueError(f"Archivo requerido ausente: {relative}")
+    return json.loads(f.read_text(encoding="utf-8"))
+
+
 def verify():
-    base=read("catalog.json")
-    extra=read("catalog-hunter2000-extra.json")
-    provenance=read("hunter2000-manifest.json")
-    qa=read("hunter2000-qa-status.json")
-    manifest=read("demos-rive/manifest.json")
-    if len(base)!=1200 or len(extra)!=800:raise ValueError("El catálogo no es 1200 + 800")
-    ids=[x["id"] for x in base+extra]
-    if len(ids)!=2000 or len(set(ids))!=2000:raise ValueError("IDs duplicados/incompletos")
-    if any(not re.fullmatch(r"[A-Za-z0-9_-]{1,100}",x) for x in ids):
-        raise ValueError("ID no válido para un archivo Rive")
-    if len(provenance.get("items",[]))!=2000 or {x["id"] for x in provenance["items"]}!=set(ids):
-        raise ValueError("Proveniencia original incompleta")
-    if qa.get("validated") is not False or qa.get("pendingNew")!=800:
-        raise ValueError("El estado QA debe continuar pendiente")
-    if any(x.get("sourceExpansion2k") is not True or x.get("pendingTechnicalReview") is not True
-           or x.get("approvedForAutoplan") is not False
-           or x.get("autoProgressionApproved") is not False for x in extra):
-        raise ValueError("Se han habilitado los 800 ejercicios sin QA")
-    paths=list((ASSETS/"demos-rive").glob("*.riv"))
-    actual={f.stem for f in paths}
-    if len(paths)!=2000 or actual!=set(ids):raise ValueError(
-        f"Se esperaban 2000 Rive unívocos, reales={len(paths)}; faltan={list(set(ids)-actual)[:6]}"
-    )
-    if manifest.get("count")!=2000 or manifest.get("format")!="Rive":
-        raise ValueError("Manifiesto Rive incorrecto")
-    fields=manifest.get("files",{})
-    if set(fields)!=set(ids):raise ValueError("Manifiesto Rive no corresponde al catálogo")
-    for p in paths:
-        raw=p.read_bytes()
-        if len(raw)<100 or raw[:4]!=b"RIVE":raise ValueError(f"Binario Rive inválido: {p.name}")
-        if hashlib.sha256(raw).hexdigest()!=fields[p.stem].get("sha256"):
-            raise ValueError(f"SHA256 Rive incorrecto: {p.name}")
-        if len(raw)!=fields[p.stem].get("bytes"):
-            raise ValueError(f"Tamaño Rive incorrecto: {p.name}")
-    old=list((ASSETS/"demos30").glob("*.svg"))+list((ASSETS/"demos30").glob("*.json"))
-    if old:raise ValueError(f"Quedan {len(old)} recursos de demostración heredados en la APK")
-    return {"status":"PASS","exercise_count":2000,"rive_verified":2000,
-            "source_svg_in_app":0,"extra_pending_review":800,
-            "appearance":"original_svg_converted_to_rive_NOT_xray","runtime_qa":"PENDIENTE"}
-if __name__=="__main__":
-    try:print(json.dumps(verify(),ensure_ascii=False,indent=2))
-    except Exception as ex:
-        print(json.dumps({"status":"FAIL","reason":str(ex)},ensure_ascii=False));sys.exit(1)
+    original = read_json("catalog.json")
+    extra = read_json("catalog-hunter2000-extra.json")
+    manifest = read_json("hunter2000-manifest.json")
+    qa = read_json("hunter2000-qa-status.json")
+    if len(original) != 1200 or len(extra) != NEW:
+        raise ValueError(f"Conteos inesperados: original={len(original)}, nuevo={len(extra)}")
+    records = original + extra
+    ids = [e["id"] for e in records]
+    if len(ids) != EXPECTED or len(set(ids)) != EXPECTED:
+        raise ValueError("No hay exactamente 2000 identificadores únicos")
+    if any(
+        e.get("sourceExpansion2k") is not True or
+        e.get("pendingTechnicalReview") is not True or
+        e.get("approvedForAutoplan") is not False or
+        e.get("autoProgressionApproved") is not False
+        for e in extra
+    ):
+        raise ValueError("Alguna de las 800 fichas está incorrectamente autorizada")
+    if qa.get("validated") is not False or qa.get("pendingNew") != 800:
+        raise ValueError("Estado de QA inconsistente; no declarar ejercicios aprobados")
+    entries = manifest.get("items", [])
+    if len(entries) != EXPECTED or len({x["id"] for x in entries}) != EXPECTED:
+        raise ValueError("Manifiesto incompleto")
+    if set(ids) != {x["id"] for x in entries}:
+        raise ValueError("Manifiesto y catálogo no contienen los mismos IDs")
+    checksums = qa.get("SHA256_by_asset", {})
+    if len(checksums) != EXPECTED:
+        raise ValueError("No existen 2000 hashes SVG")
+    for index, record in enumerate(records):
+        rel = record.get("demoPath30", "")
+        if (not isinstance(rel, str) or
+            not re.fullmatch(r"demos30/[a-zA-Z0-9_\-]+\.svg", rel)):
+            raise ValueError(f"Ruta SVG incorrecta: {record['id']}: {rel}")
+        path = ASSETS / rel
+        if not path.is_file():
+            raise ValueError(f"SVG ausente ({index+1}): {rel}")
+        data = path.read_bytes()
+        if hashlib.sha256(data).hexdigest() != checksums.get(rel):
+            raise ValueError(f"SHA-256 inválido: {rel}")
+        if re.search(rb'<!\s*(DOCTYPE|ENTITY)|<\s*(script|foreignObject)\b', data, re.I):
+            raise ValueError(f"Contenido no permitido: {rel}")
+        try:
+            xml = ET.fromstring(data)
+        except ET.ParseError as ex:
+            raise ValueError(f"SVG XML inválido: {rel}: {ex}") from ex
+        if xml.tag.rsplit("}", 1)[-1] != "svg":
+            raise ValueError(f"No es un SVG: {rel}")
+    total_svg = len(list((ASSETS / "demos30").glob("*.svg")))
+    if total_svg != EXPECTED:
+        raise ValueError(f"El directorio tiene {total_svg} SVG, se requieren 2000")
+    if (ASSETS / "demos-rive").exists():
+        raise ValueError("El directorio de recursos Rive debe estar ausente")
+    return {
+        "status": "PASS", "catalog_total": EXPECTED, "original": 1200,
+        "pending_new": NEW, "svg_verified": EXPECTED,
+        "safety": "800 nuevos excluidos de planificación; QA técnica pendiente"
+    }
+
+
+if __name__ == "__main__":
+    try:
+        print(json.dumps(verify(), ensure_ascii=False, indent=2))
+    except Exception as exc:
+        print(json.dumps({"status": "FAIL", "reason": str(exc)}, ensure_ascii=False))
+        sys.exit(1)
