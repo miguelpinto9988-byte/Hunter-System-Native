@@ -17,6 +17,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,50 +39,35 @@ object MonarchNavigation {
     const val tabletWidthDp=840
 }
 
+/**
+ * Pantalla de carga 100% nativa. Sustituye la composición de arranque Monarca V42
+ * por la ilustración animada aprobada; conserva la vía de recuperación al fallar.
+ * La barra que aparece dentro del arte es decorativa, no un porcentaje falso.
+ */
 @Composable
 fun MonarchBootScreen(error:String?,retry:()->Unit){
-    val pulse=if(LocalMonarchMotion.current.reduced) 1f else {
-        val infinite=rememberInfiniteTransition(label="monarch-boot")
-        val alpha by infinite.animateFloat(
-            initialValue=.58f,targetValue=1f,
-            animationSpec=infiniteRepeatable(tween(1300,easing=FastOutSlowInEasing),RepeatMode.Reverse),
-            label="boot-pulse"
-        )
-        alpha
-    }
-    Box(Modifier.fillMaxSize()
-        .background(Brush.verticalGradient(listOf(Color(0xFF080D19),Color(0xFF111C31),Color(0xFF080D19))))
-        .systemBarsPadding(),contentAlignment=Alignment.Center){
-        Column(Modifier.fillMaxWidth().padding(horizontal=32.dp),
-            horizontalAlignment=Alignment.CenterHorizontally,
-            verticalArrangement=Arrangement.spacedBy(16.dp)){
-            Box(Modifier.size(112.dp).clip(CircleShape)
-                .background(Brush.radialGradient(listOf(
-                    Color(0xFF25C8FF).copy(alpha=.18f*pulse),
-                    Color(0xFF7F5CFF).copy(alpha=.06f*pulse),
-                    Color.Transparent))),
-                contentAlignment=Alignment.Center){
-                MonarchGlyph("plan",Modifier.size(65.dp),
-                    color=Color(0xFF25C8FF).copy(alpha=pulse))
+    Box(Modifier.fillMaxSize().background(Color(0xFF06091A))){
+        HunterAnimatedBootArtwork(
+            Modifier.fillMaxSize().semantics {
+                contentDescription = "Hunter System, Sistema Monarca. " +
+                    if(error == null) "Preparando datos locales" else "Error al iniciar"
+                if(error == null) progressBarRangeInfo = ProgressBarRangeInfo.Indeterminate
             }
-            Text("HUNTER SYSTEM",color=Color(0xFFE8F1FF),
-                fontFamily=Barlow,fontWeight=FontWeight.Bold,fontSize=32.sp,letterSpacing=1.sp)
-            Text("SISTEMA MONARCA  •  V42",color=Color(0xFF25C8FF),
-                fontFamily=Barlow,fontWeight=FontWeight.SemiBold,fontSize=13.sp)
-            Spacer(Modifier.height(14.dp))
-            if(error==null){
-                LinearProgressIndicator(
-                    modifier=Modifier.fillMaxWidth(.65f).height(4.dp)
-                        .clip(RoundedCornerShape(4.dp)),
-                    color=Color(0xFF25C8FF),
-                    trackColor=Color(0xFF24324B)
-                )
-                Text("Preparando tus datos locales…",color=Color(0xFFB4C6DB),
-                    fontFamily=Barlow,fontSize=16.sp)
-            }else{
+        )
+        if(error != null) {
+            Column(
+                Modifier.align(Alignment.BottomCenter)
+                    .systemBarsPadding().padding(horizontal=26.dp,bottom=30.dp)
+                    .fillMaxWidth().clip(RoundedCornerShape(18.dp))
+                    .background(Color(0xF2111627))
+                    .border(1.dp,Color(0xFF2C98CE),RoundedCornerShape(18.dp))
+                    .padding(20.dp),
+                horizontalAlignment=Alignment.CenterHorizontally,
+                verticalArrangement=Arrangement.spacedBy(12.dp)
+            ){
                 Text("NO SE PUDO INICIAR",color=Color(0xFFF3B0B8),
                     fontFamily=Barlow,fontWeight=FontWeight.SemiBold,fontSize=17.sp)
-                Text(error,color=Color(0xFFE8F1FF),fontFamily=Barlow,fontSize=16.sp)
+                Text(error,color=Color(0xFFE8F1FF),fontFamily=Barlow,fontSize=15.sp)
                 Button(onClick=retry,colors=ButtonDefaults.buttonColors(
                     containerColor=Color(0xFF25C8FF),contentColor=Color(0xFF080D19))){
                     Text("Reintentar",fontFamily=Barlow,fontWeight=FontWeight.SemiBold)
