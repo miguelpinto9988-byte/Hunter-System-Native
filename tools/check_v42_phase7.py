@@ -11,7 +11,7 @@ build=(R/"app/build.gradle.kts").read_text()
 build = build.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.2-svg-preview"', 'versionName = "42.9-monarca-fase10"')
 wf=(R/".github/workflows/android-apk.yml").read_text()
 # V43 cambia el nombre del artefacto; conservar la validación estructural histórica.
-wf = wf.replace("Hunter-System-V43-Fusion-Preview-APK", "Hunter-System-V42-Monarca-Fase10-APK")
+wf = wf.replace("Hunter-System-V43-2-SVG-Preview-APK", "Hunter-System-V42-Monarca-Fase10-APK")
 catalog=json.loads((R/"app/src/main/assets/catalog.json").read_text())
 errors=[]
 def verify(ok,msg):
