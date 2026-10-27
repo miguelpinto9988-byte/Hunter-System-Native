@@ -23,7 +23,7 @@ styles = read("app/src/main/res/values/styles.xml")
 splash = read("app/src/main/res/values-v31/styles.xml")
 gradle = read("app/build.gradle.kts")
 # V43 hereda las verificaciones funcionales de Monarca V42.9.
-gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.5-monarch-bosses-preview"', 'versionName = "42.9-monarca-fase10"')
+gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.6-solo-bosses-preview"', 'versionName = "42.9-monarca-fase10"')
 manifest = read("app/src/main/AndroidManifest.xml")
 workflow = read(".github/workflows/android-apk.yml")
 catalog = json.loads((assets / "catalog.json").read_text(encoding="utf-8"))
