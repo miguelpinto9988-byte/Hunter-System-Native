@@ -1,6 +1,15 @@
 package com.huntersystem.app
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.Text
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,19 +46,23 @@ fun MonarchSpecialMissionsPanel(ui:NativeUi) {
  val h=(ms/3600000L)%24
  val m=(ms/60000L)%60
  val deadlineText=d.toString()+" d  "+h.toString()+" h  "+m.toString()+" min"
- HPanel(padding=18){
+ var detailsExpanded by rememberSaveable(current.weekStart){mutableStateOf(false)}
+ HPanel(padding=16){
+  MonarchBossMissionArtwork(mission.id, mission.title, current.cycleWeek, status)
   Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
    verticalAlignment=Alignment.CenterVertically){
    Eyebrow("EVENTO SEMANAL · MISIÓN MONARCA")
    HText("✦ "+seals+" sellos",size=14,color=colors.accent,bold=true)
   }
-  Heading(mission.title,size=27)
   HText("Ciclo Monarca · semana "+current.cycleWeek+" de 4",size=14,bold=true,color=colors.accent)
   HText(mission.story,size=15,color=colors.muted)
   HText("CIERRE AUTOMÁTICO EL DOMINGO · TIEMPO RESTANTE",size=13,color=colors.muted,bold=true)
   Heading(deadlineText,size=24)
-  HText("Metas acumuladas para toda la semana, no para una sola sesión. Nueva combinación cada domingo.",size=15,color=colors.muted)
   if(weekly&&run!=null)HProgress(MonarchMissionCatalog.progress(run,mission))
+  HButton(if(detailsExpanded) "OCULTAR OBJETIVOS DEL JEFE  ↑" else "ABRIR MISIÓN MONARCA  ↓",
+    Modifier.fillMaxWidth(),primary=!detailsExpanded){ detailsExpanded=!detailsExpanded }
+  if(detailsExpanded){
+  HText("Metas acumuladas durante la semana, no para una sola sesión. El registro es manual y la participación voluntaria.",size=15,color=colors.muted)
   mission.goals.forEach{goal->
    val exercise=store.catalog.byId[goal.exerciseId]
    val count=if(weekly&&run!=null)run.o("counts").i(goal.exerciseId) else 0
@@ -102,5 +115,46 @@ fun MonarchSpecialMissionsPanel(ui:NativeUi) {
     }
    }
   }
+  }
+ }
+}
+
+@Composable
+private fun MonarchBossMissionArtwork(id:String,title:String,week:Int,status:String){
+ val boss=when(id){
+  "guardia"->"CABALLERO CARMESÍ · GUARDIÁN DEL UMBRAL"
+  "fortaleza"->"REY DE LAS SOMBRAS · FORTALEZA"
+  else->"SOBERANO DEMONÍACO · TRONO"
+ }
+ val accent=when(id){
+  "guardia"->Color(0xFFFF809A)
+  "fortaleza"->Color(0xFFA999FF)
+  else->Color(0xFFC6B2FF)
+ }
+ val shape=RoundedCornerShape(16.dp)
+ Box(Modifier.fillMaxWidth().height(188.dp).clip(shape).background(Color(0xFF090E23))){
+  OriginalSvg("monarch-boss/"+id+".svg",Modifier.fillMaxSize())
+  Box(Modifier.fillMaxSize().background(
+   Brush.horizontalGradient(listOf(Color(0xE8080D1B),Color(0xA40A1027),Color(0x00080D1B)))
+  ))
+  Column(Modifier.align(Alignment.CenterStart).fillMaxWidth(.72f).padding(14.dp),
+   verticalArrangement=Arrangement.spacedBy(6.dp)){
+   Text("JEFE SEMANAL  ·  CICLO "+week+"/4",color=accent,
+    fontFamily=Barlow,fontSize=11.sp,fontWeight=FontWeight.Bold)
+   Text(title,color=Color(0xFFF5F7FF),fontFamily=Barlow,fontSize=25.sp,
+    lineHeight=27.sp,fontWeight=FontWeight.Bold)
+   Text(boss,color=Color(0xFFCED8F3),fontFamily=Barlow,
+    fontSize=11.sp,lineHeight=14.sp,maxLines=2)
+  }
+  Text(when(status){
+    "active"->"EN CURSO"
+    "completed"->"COMPLETADA"
+    "expired"->"FINALIZADA"
+    "stopped"->"DETENIDA"
+    else->"DISPONIBLE"
+   },
+   modifier=Modifier.align(Alignment.BottomEnd).padding(12.dp)
+    .clip(RoundedCornerShape(9.dp)).background(Color(0xDD0A1027)).padding(horizontal=9.dp,vertical=5.dp),
+   fontFamily=Barlow,fontSize=10.sp,fontWeight=FontWeight.Bold,color=accent)
  }
 }
