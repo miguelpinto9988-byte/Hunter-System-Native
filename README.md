@@ -1,42 +1,29 @@
-# Hunter System V43 — Android nativo con 2000 ejercicios
+# Hunter System V43 — Android nativo, catálogo Hunter 2000 en Rive
 
-Esta rama integra **Monarca 42.9 + Eclipse 41.0 + Hunter 2000** sobre **Kotlin, Jetpack Compose y Canvas Android**. No usa WebView para sus pantallas ni depende de HTML, CSS o JavaScript. Compatible desde Android 8.0 (API 26); target API 35.
+Rama de integración: `integration/hunter-v43-compose-2000`. PR [#17](https://github.com/miguelpinto9988-byte/Hunter-System-Native/pull/17), **en borrador**. La rama `main` no se modifica durante la evaluación.
 
-## Recursos integrados en GitHub
+Monarca 42.9 + Eclipse 41.0, en Kotlin, Jetpack Compose y Canvas Android, sin WebView para las pantallas. `applicationId=com.huntersystem.app`, `minSdk=26`, `compileSdk=36`, `targetSdk=35`; vista previa de V43 (`versionCode=118`).
 
-- **1200 ejercicios originales + 800 fichas adicionales = 2000 IDs.**
-- **2000 archivos SVG** en `app/src/main/assets/demos30/`, incluidos los 800 nuevos.
-- `app/src/main/assets/catalog-hunter2000-extra.json` contiene las fichas adicionales.
-- `hunter2000-manifest.json` y `hunter2000-qa-status.json` documentan los SVG y sus hashes.
-- La fuente compacta verificable se conserva en `.hunter2000/source/hunter2000-assets.tar.xz`.
-- Hash SHA-256 del archivo compactado: `c661292ab8df9aefa8ce234325b0b7ca3a2dc1da9f32f211399cfc339c5b6e71`.
+## Estado real de los recursos de ejercicios
 
-**Estado de seguridad:** las 800 fichas adicionales permanecen con `pendingTechnicalReview=true`, `approvedForAutoplan=false` y `autoProgressionApproved=false`; pueden figurar en el catálogo, pero `Rules.kt` las excluye de la planificación automática. No se ha hecho una validación técnica/biomecánica individual ni una prueba de todos los movimientos en dispositivos físicos.
+- Catálogo: **1.200 ejercicios originales + 800 adicionales = 2.000 IDs únicos**.
+- Demostraciones empaquetadas: **2.000 archivos `.riv`** en `app/src/main/assets/demos-rive/`, acompañados de `manifest.json` con tamaño y SHA-256. Las rutas se generan en `Catalog.kt` y se reproducen mediante `HunterRiveExercise.kt`.
+- El paquete Android **no incluye los 2.000 SVG de demostración ni sus JSON de animación antiguos** en `assets/demos30/`. Los SVG decorativos y vídeos editoriales no son el reproductor de ejercicios.
+- El SVG fuente permanece archivado fuera de los assets Android en `.hunter2000/source/hunter2000-assets.tar.xz`, como procedencia del material convertido.
+- **La conversión a Rive no equivale a anatomía X-Ray 2D ni a validación visual o biomecánica**. Las 800 fichas nuevas continúan con `pendingTechnicalReview=true`, `approvedForAutoplan=false` y `autoProgressionApproved=false`, excluidas de la planificación automática.
 
-## Verificación obligatoria
+## Verificación técnica
 
 ```bash
 python3 tools/check_hunter2000_complete.py
-bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest
-bash gradlew --no-daemon --max-workers=2 :app:assembleDebug
+python3 tools/generate_rive_qa_queue.py
+bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest :app:assembleRelease
 ```
 
-La auditoría estricta falla si falta cualquiera de las 800 fichas, si hay IDs duplicados, si una ruta SVG falta, si alguno de los 2000 hashes es incorrecto o si se habilitan fichas nuevas sin QA.
+El workflow `.github/workflows/android-apk.yml` ejecuta las auditorías, pruebas Kotlin/Compose, compilación release firmada y verificación dentro de la APK de los 2.000 Rive y ausencia de demos SVG/JSON antiguas. Ejecución confirmada para el código Rive: [Actions #40423131633](https://github.com/miguelpinto9988-byte/Hunter-System-Native/actions/runs/40423131633).
 
-GitHub Actions:
-- `hunter2000-import.yml`: expandió los recursos, los confirmó en la rama e inicia tests y compilación de APK release.
-- `hunter2000-full.yml`: verificación independiente que comprueba además que **la APK contiene físicamente los 2000 SVG y el catálogo de 800 registros**.
-- `android-apk.yml`: compilación Android normal de la rama.
+El generador de matriz QA produce un CSV de **2.000 filas marcadas PENDIENTE**, no resultados de pruebas. Véase [plan de QA](docs/QA-ANDROID-RIVE-V43.md) y [migración Rive](docs/HUNTER-RIVE-2000-MIGRACION.md).
 
-## Integración visual
+## Antes de distribuir
 
-Se conserva la navegación, misiones, rutinas, progreso, perfiles y animaciones nativas de Monarca. Eclipse aporta iconos, temas, portal de inicio y reliquia geométrica 3D mediante Compose y Canvas. Los SVG son archivos vectoriales renderizados mediante código Android, no contenido WebView.
-
-## Antes de distribuir como versión final
-
-1. Confirmar ejecución exitosa de test, build y verificación del contenido APK con los 2000 recursos.
-2. Comprobar instalación y actualización de APK en un dispositivo real y la firma usada anteriormente.
-3. Evaluar rendimiento, accesibilidad, copias de seguridad y comportamiento de notificaciones.
-4. Revisar la técnica y la representación visual de cada ejercicio añadido antes de habilitarlo para planificación automática.
-
-Ver [PR #17](https://github.com/miguelpinto9988-byte/Hunter-System-Native/pull/17) y [documentación de integración](INTEGRACION-V43-ESTADO.md).
+Revisar instalación y actualización firmada en Android físico, restauración de datos, carga y reproducción real de animaciones, rendimiento, accesibilidad, notificaciones y técnica de las 800 fichas adicionales. Mantener el PR en borrador y sin habilitar las 800 para autoplaneamiento hasta completar sus revisiones.

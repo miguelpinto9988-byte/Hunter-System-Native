@@ -1,9 +1,9 @@
-# Hunter System 2.000 SVG — etapa de integración
-**Estado: rama preparatoria, SIN APK compilada.**
-Se introducen dos ajustes en Kotlin:
-1. Catálogo: carga opcional de 800 fichas desde `app/src/main/assets/catalog-hunter2000-extra.json`, conservando 1.200 ID existentes e identificadores de historial.
-2. Motor de reglas: las fichas `sourceExpansion2k=true` con `approvedForAutoplan=false` **no entran en las misiones ni rutinas generadas**, manteniendo las restricciones existentes.
+# Registro histórico — integración previa de Hunter 2000
 
-Los recursos binarios **no forman parte de esta rama**. Se preparó fuera del repositorio un ZIP descargable en ChatGPT con los 2.000 SVG y 800 fichas: `Hunter_System_V41_Paquete_Integracion_2000_SVG.zip`.
-Para aplicar: descargar ZIP, copiar `app/src/main/assets/` sobre el repositorio y asegurarse de que estén los 2.000 `demos30/*.svg` más `catalog-hunter2000-extra.json`. **No activar** las 800 propuestas sin revisar técnica, material y animaciones.
-Requiere Gradle Android SDK 35 + firma original y pruebas reales de dispositivo. No afirmar que hay APK nueva hasta comprobar build e instalación.
+**Documento sustituido.** Este archivo documentaba una fase inicial en la que todavía faltaban recursos y compilación. **Ya no describe el estado actual del repositorio.**
+
+La fase vigente integra **2.000 archivos Rive (.riv)** en lugar de 2.000 SVG de demostración, y la compilación firmada con cotejo de recursos dentro de la APK consta como exitosa en [Actions #40423131633](https://github.com/miguelpinto9988-byte/Hunter-System-Native/actions/runs/40423131633).
+
+Consultar [README.md](README.md), [estado de integración V43](INTEGRACION-V43-ESTADO.md), [migración Rive](docs/HUNTER-RIVE-2000-MIGRACION.md) y [plan de QA](docs/QA-ANDROID-RIVE-V43.md).
+
+Quedan pendientes las pruebas de reproducción en dispositivos físicos y la validación biomecánica de las 800 fichas adicionales. El PR #17 sigue en borrador.

@@ -102,6 +102,9 @@ jobs:
       - name: Comprobar integridad Rive y ausencia de SVG de ejercicios
         run: python3 tools/check_hunter2000_complete.py
 
+      - name: Crear matriz de inspeccion Rive (todas las filas pendientes)
+        run: python3 tools/generate_rive_qa_queue.py --output "$RUNNER_TEMP/hunter-rive-2000-qa-pendiente.csv"
+
       - name: Pruebas Kotlin y Compose
         run: bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest
 
@@ -136,6 +139,14 @@ jobs:
             assert len(extra)==800 and all(not x.get('approvedForAutoplan',True) for x in extra)
             print('APK comprobada: 2000 Rive auténticos, 0 SVG/JSON ejercicios originales, 800 pendientes de QA')
           PY
+
+      - name: Publicar matriz de QA pendiente (no es certificacion)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hunter-System-V43-Rive-2000-QA-Pendiente
+          path: ${{ runner.temp }}/hunter-rive-2000-qa-pendiente.csv
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Publicar APK instalable
         uses: actions/upload-artifact@v4

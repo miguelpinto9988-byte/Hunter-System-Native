@@ -1,27 +1,22 @@
-# Hunter System V43 — Estado verificado de la integración Kotlin + Compose
+# Hunter System V43 — estado técnico de integración (Rive)
 
-## Integración final en la rama
-- Monarca 42.9 + Eclipse 41.0, en Kotlin, Jetpack Compose y Canvas, sin WebView.
-- 1200 fichas originales y 800 adicionales: **2000 ejercicios** con IDs únicos.
-- **2000 SVG físicos** dentro de `app/src/main/assets/demos30/`, de los cuales 800 son recursos nuevos.
-- Fichas adicionales: `app/src/main/assets/catalog-hunter2000-extra.json`.
-- Manifiestos: `hunter2000-manifest.json` y `hunter2000-qa-status.json`.
-- Archivo compactado de procedencia: `.hunter2000/source/hunter2000-assets.tar.xz` (SHA-256: `c661292ab8df9aefa8ce234325b0b7ca3a2dc1da9f32f211399cfc339c5b6e71`).
+## Comprobado en el repositorio
 
-## Auditoría y APK
-El workflow [#40391971139](https://github.com/miguelpinto9988-byte/Hunter-System-Native/actions/runs/40391971139) terminó correctamente: validó archivos y hashes, creó el commit de 2000 SVG y 800 fichas, superó los tests Kotlin/Compose, compiló una APK release firmada y verificó dentro de la propia APK los 2000 SVG y 800 registros nuevos.
+- La rama `integration/hunter-v43-compose-2000` integra Monarca 42.9 y Eclipse 41.0 en Kotlin/Jetpack Compose, sin WebView para las pantallas.
+- Catálogo de **2.000 ejercicios**: 1.200 originales y 800 adicionales.
+- Demostraciones de ejercicios migradas a **2.000 archivos `.riv`** en `app/src/main/assets/demos-rive/`, con manifiesto de hashes y tamaños.
+- `Catalog.kt` construye rutas Rive; `HunterRiveExercise.kt` usa el runtime Rive Android. Los SVG/JSON de demostración heredados ya no se incluyen en los assets Android.
+- Los archivos SVG de origen están archivados fuera de los assets, no se ejecutan como fallback. Otros recursos editoriales no forman parte de las demostraciones de ejercicios.
+- Las 800 fichas nuevas continúan identificadas como pendientes y excluidas del plan automático.
 
-La APK `Hunter-System-V43-2000-Ejercicios-Preview-APK` está disponible como artifact de ese workflow (retención de 14 días).
+## Evidencia de CI
 
-## Seguridad y limitaciones
-Las **800 fichas nuevas están pendientes de revisión técnica y biomecánica** (`pendingTechnicalReview=true`, `approvedForAutoplan=false`, `autoProgressionApproved=false`). Se muestran claramente identificadas en el catálogo pero no se asignan automáticamente. Los SVG fueron validados como XML y por hash; **eso no verifica corrección biomecánica ni renderizado real en todos los dispositivos**.
+- [Actions #40420713057](https://github.com/miguelpinto9988-byte/Hunter-System-Native/actions/runs/40420713057): generación y verificación global de los 2.000 binarios Rive.
+- [Actions #40423131633](https://github.com/miguelpinto9988-byte/Hunter-System-Native/actions/runs/40423131633): pruebas Kotlin/Compose, compilación release firmada, cotejo del manifiesto y revisión de los 2.000 Rive dentro de la APK.
+- Los archivos de hash comprueban integridad binaria; **no prueban** fidelidad visual, fluidez en teléfono, certificación anatómica ni ejecución física de cada animación.
 
-No se han ejecutado pruebas físicas Android en esta revisión. Antes de marcar la distribución como definitiva, validar instalación/actualización, restauración del historial, tiempo de respuesta, animaciones, accesibilidad, notificaciones y firma en dispositivos reales.
+## Siguiente fase: QA en Android físico
 
-## Repetir la validación
-```bash
-python3 tools/check_hunter2000_complete.py
-bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest :app:assembleDebug
-```
+El script `tools/generate_rive_qa_queue.py` produce una matriz determinista de 2.000 entradas, **todas pendientes**, para documentar pruebas visuales, movimiento, reproducción en Android y evaluación biomecánica. Seguir [docs/QA-ANDROID-RIVE-V43.md](docs/QA-ANDROID-RIVE-V43.md). No completar casillas sin observación real.
 
-Ver [PR #17](https://github.com/miguelpinto9988-byte/Hunter-System-Native/pull/17). La rama `main` permanece sin cambiar.
+**Restricciones vigentes:** mantener [PR #17](https://github.com/miguelpinto9988-byte/Hunter-System-Native/pull/17) como borrador, no fusionar a `main`, no activar autoplaneamiento de las 800 fichas no revisadas y no presentar la APK preview como producto validado en dispositivos.
