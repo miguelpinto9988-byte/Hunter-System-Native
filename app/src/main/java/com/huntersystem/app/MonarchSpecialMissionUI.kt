@@ -122,9 +122,9 @@ fun MonarchSpecialMissionsPanel(ui:NativeUi) {
 @Composable
 private fun MonarchBossMissionArtwork(id:String,title:String,week:Int,status:String){
  val boss=when(id){
-  "guardia"->"IGRIS · CABALLERO CARMESÍ"
-  "fortaleza"->"BERU · REY HORMIGA"
-  else->"BARAN · REY DEMONIO"
+  "guardia"->"IGRIS · CABALLERO DE ARMADURA ROJA"
+  "fortaleza"->"REY HORMIGA DE JEJU · FUTURO BERU"
+  else->"BARAN · MONARCA DE LAS LLAMAS BLANCAS"
  }
  val accent=when(id){
   "guardia"->Color(0xFFFF809A)
@@ -143,7 +143,7 @@ private fun MonarchBossMissionArtwork(id:String,title:String,week:Int,status:Str
     fontFamily=Barlow,fontSize=11.sp,fontWeight=FontWeight.Bold)
    Text(title,color=Color(0xFFF5F7FF),fontFamily=Barlow,fontSize=25.sp,
     lineHeight=27.sp,fontWeight=FontWeight.Bold)
-   Text("JEFE INSPIRADO EN "+boss,color=Color(0xFFCED8F3),fontFamily=Barlow,
+   Text("JEFE DE SOLO LEVELING · "+boss,color=Color(0xFFCED8F3),fontFamily=Barlow,
     fontSize=11.sp,lineHeight=14.sp,maxLines=2)
   }
   Text(when(status){
