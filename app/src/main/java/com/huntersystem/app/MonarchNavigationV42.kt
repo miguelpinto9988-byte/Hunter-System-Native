@@ -57,7 +57,7 @@ fun MonarchBootScreen(error:String?,retry:()->Unit){
         if(error != null) {
             Column(
                 Modifier.align(Alignment.BottomCenter)
-                    .systemBarsPadding().padding(horizontal=26.dp,bottom=30.dp)
+                    .systemBarsPadding().padding(start=26.dp,end=26.dp,bottom=30.dp)
                     .fillMaxWidth().clip(RoundedCornerShape(18.dp))
                     .background(Color(0xF2111627))
                     .border(1.dp,Color(0xFF2C98CE),RoundedCornerShape(18.dp))
