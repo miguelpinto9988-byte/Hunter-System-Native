@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 550" width="1000" height="550" role="img" aria-label="Jefe de fantasía oscura del evento trono">
+<defs>
+ <linearGradient id="night" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#050a1c"/><stop offset=".48" stop-color="#111032"/><stop offset="1" stop-color="#050713"/></linearGradient>
+ <radialGradient id="aura" cx="76%" cy="46%" r="48%"><stop offset="0" stop-color="#575aff" stop-opacity=".94"/><stop offset=".48" stop-color="#9e69ef" stop-opacity=".30"/><stop offset="1" stop-color="#00071b" stop-opacity="0"/></radialGradient>
+ <linearGradient id="metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#445573"/><stop offset=".42" stop-color="#09152d"/><stop offset="1" stop-color="#04101f"/></linearGradient>
+ <linearGradient id="robe" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#9e69ef"/><stop offset=".4" stop-color="#12132e"/><stop offset="1" stop-color="#050515"/></linearGradient>
+ <linearGradient id="veil" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#060b1b" stop-opacity=".96"/><stop offset=".42" stop-color="#070d20" stop-opacity=".48"/><stop offset="1" stop-color="#080a1b" stop-opacity=".08"/></linearGradient>
+</defs>
+<rect width="1000" height="550" fill="url(#night)"/>
+<rect width="1000" height="550" fill="url(#aura)"/>
+<g opacity=".64" stroke="#9e69ef" stroke-width="2" fill="none">
+ <circle cx="744" cy="241" r="215" opacity=".68"/>
+ <circle cx="744" cy="241" r="160" opacity=".29"/>
+ <path d="M744 10V56 M744 420V470 M515 242H561 M925 242H984 M580 78L614 111 M900 78L871 111 M586 396L617 367 M900 395L869 367"/>
+ <circle cx="950.0" cy="241.0" r="3.8" fill="#9e69ef" stroke="none"/><circle cx="922.4" cy="344.0" r="3.8" fill="#9e69ef" stroke="none"/><circle cx="847.0" cy="419.4" r="3.8" fill="#9e69ef" stroke="none"/><circle cx="744.0" cy="447.0" r="3.8" fill="#9e69ef" stroke="none"/><circle cx="641.0" cy="419.4" r="3.8" fill="#9e69ef" stroke="none"/><circle cx="565.6" cy="344.0" r="3.8" fill="#9e69ef" stroke="none"/><circle cx="538.0" cy="241.0" r="3.8" fill="#9e69ef" stroke="none"/><circle cx="565.6" cy="138.0" r="3.8" fill="#9e69ef" stroke="none"/><circle cx="641.0" cy="62.6" r="3.8" fill="#9e69ef" stroke="none"/><circle cx="744.0" cy="35.0" r="3.8" fill="#9e69ef" stroke="none"/><circle cx="847.0" cy="62.6" r="3.8" fill="#9e69ef" stroke="none"/><circle cx="922.4" cy="138.0" r="3.8" fill="#9e69ef" stroke="none"/>
+</g>
+<g fill="#050819" opacity=".92">
+<path d="M2 550V260l18 -40 18 40V550Z"/><path d="M64 550V307l18 -47 18 47V550Z"/><path d="M126 550V354l18 -54 18 54V550Z"/><path d="M188 550V291l18 -61 18 61V550Z"/><path d="M250 550V338l18 -68 18 68V550Z"/><path d="M312 550V275l18 -75 18 75V550Z"/><path d="M374 550V322l18 -82 18 82V550Z"/><path d="M436 550V369l18 -89 18 89V550Z"/><path d="M498 550V306l18 -96 18 96V550Z"/><path d="M560 550V353l18 -103 18 103V550Z"/><path d="M622 550V290l18 -40 18 40V550Z"/><path d="M684 550V337l18 -47 18 47V550Z"/><path d="M746 550V274l18 -54 18 54V550Z"/><path d="M808 550V321l18 -61 18 61V550Z"/><path d="M870 550V368l18 -68 18 68V550Z"/><path d="M932 550V305l18 -75 18 75V550Z"/><path d="M994 550V352l18 -82 18 82V550Z"/><path d="M1056 550V289l18 -89 18 89V550Z"/>
+</g>
+<path d="M0 487Q150 461 238 478T450 468T730 470T1000 472V550H0Z" fill="#070b1b"/>
+<g stroke="#9e69ef" stroke-width="1" opacity=".42" fill="none"><path d="M0 485L1000 485 M0 507L1000 500 M0 532L1000 516"/><path d="M520 550L709 481 M940 550L802 480"/></g>
+<g fill="#575aff" opacity=".7"><circle cx="88" cy="20" r="0.8"/><circle cx="167" cy="67" r="1.6"/><circle cx="246" cy="114" r="2.4000000000000004"/><circle cx="325" cy="161" r="0.8"/><circle cx="404" cy="208" r="1.6"/><circle cx="483" cy="255" r="2.4000000000000004"/><circle cx="562" cy="302" r="0.8"/><circle cx="641" cy="349" r="1.6"/><circle cx="720" cy="396" r="2.4000000000000004"/><circle cx="799" cy="443" r="0.8"/><circle cx="878" cy="20" r="1.6"/><circle cx="957" cy="67" r="2.4000000000000004"/><circle cx="42" cy="114" r="0.8"/><circle cx="121" cy="161" r="1.6"/><circle cx="200" cy="208" r="2.4000000000000004"/><circle cx="279" cy="255" r="0.8"/><circle cx="358" cy="302" r="1.6"/><circle cx="437" cy="349" r="2.4000000000000004"/><circle cx="516" cy="396" r="0.8"/><circle cx="595" cy="443" r="1.6"/><circle cx="674" cy="20" r="2.4000000000000004"/><circle cx="753" cy="67" r="0.8"/><circle cx="832" cy="114" r="1.6"/><circle cx="911" cy="161" r="2.4000000000000004"/><circle cx="990" cy="208" r="0.8"/><circle cx="75" cy="255" r="1.6"/><circle cx="154" cy="302" r="2.4000000000000004"/><circle cx="233" cy="349" r="0.8"/><circle cx="312" cy="396" r="1.6"/><circle cx="391" cy="443" r="2.4000000000000004"/><circle cx="470" cy="20" r="0.8"/><circle cx="549" cy="67" r="1.6"/><circle cx="628" cy="114" r="2.4000000000000004"/><circle cx="707" cy="161" r="0.8"/><circle cx="786" cy="208" r="1.6"/></g>
+<g id="boss-trono" transform="translate(725 32)">
+<path d="M-169 139Q-304 229-286 479L-178 408L-98 493L-28 435L70 480L194 404Q257 241 140 133L73 89Z" fill="#100823" stroke="#8b51e9" stroke-width="8"/>
+<path d="M-86 161L-145 267L-102 463L-31 485L-6 321L24 320L52 480L108 469L146 270L79 151Z" fill="#0c112e" stroke="#5141c2" stroke-width="7"/>
+<path d="M-94 141L-208 156L-200 234L-97 238L-64 174Z M66 142L205 136L217 232L94 244Z" fill="url(#metal)" stroke="#9e71ff" stroke-width="8"/>
+<path d="M-90 137L-69 42L-37-11L-52-99L-10-67L0-159L24-68L76-108L54-10L97 51L90 145Z" fill="#111333" stroke="#bb87ff" stroke-width="9"/>
+<path d="M-68 40L-128-124L-72-82L-42-14 M61 35L142-132L83-82L44-13" fill="none" stroke="#a489fa" stroke-width="20"/>
+<path d="M-60 76L-18 70L-10 96L-55 105Z M8 76L65 70L59 105L17 96Z" fill="#c2b5ff" stroke="#f0dcff" stroke-width="6"/>
+<path d="M-44 146L-7 180L50 151L33 216L-7 256L-51 214Z" fill="#55358d" stroke="#ad88ff" stroke-width="7"/>
+<path d="M-39 266L-86 312L-28 326L5 304L41 329L91 310L43 265Z" fill="#24213f" stroke="#a87aff" stroke-width="6"/>
+<path d="M185 100L202 479" stroke="#c6a8ff" stroke-width="20"/><path d="M160 126L203 44L249 125L207 113Z" fill="#e6dcff" stroke="#8f76ff" stroke-width="7"/>
+<path d="M-224 139L-309 14L-228 75 M195 139L301-5L239 78" fill="none" stroke="#7d54dd" stroke-width="12"/></g>
+<rect width="1000" height="550" fill="url(#veil)"/>
+<path d="M0 463C181 401 291 459 379 357" fill="none" stroke="#9e69ef" stroke-width="2" opacity=".30"/>
+</svg>
