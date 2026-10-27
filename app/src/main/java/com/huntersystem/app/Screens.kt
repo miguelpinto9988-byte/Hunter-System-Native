@@ -53,9 +53,10 @@ fun HomeScreen(ui:NativeUi) {
  val stats=ui.store.stats()
  SceneColumn(ui) {
   MonarchDashboardWelcome(ui)
+  // La misión especial ocupa el antiguo espacio del portal Eclipse.
+  MonarchSpecialMissionsPanel(ui)
   MonarchHero(ui,stats)
   MonarchDashboardMission(ui)
-  MonarchSpecialMissionsPanel(ui)
   MonarchDashboardMetrics(ui,stats)
   MonarchHomeProgressStrip(ui)
   MonarchDashboardWeek(ui)
