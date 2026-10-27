@@ -7,6 +7,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -33,9 +34,12 @@ fun HunterRiveExercise(
         return
     }
     key(path,restartToken){
-        val worker=rememberRiveWorkerOrNull()
+        val workerError=remember { mutableStateOf<Throwable?>(null) }
+        val worker=rememberRiveWorkerOrNull(workerError)
         if(worker==null){
-            Box(modifier,contentAlignment=Alignment.Center){Text("Motor Rive no disponible")}
+            Box(modifier,contentAlignment=Alignment.Center){
+                Text("Motor Rive no disponible: ${workerError.value?.javaClass?.simpleName ?: "inicialización pendiente"}")
+            }
         }else{
             // Each artboard is released with the corresponding RiveFile by rememberRiveFile().
             val data=remember(path){

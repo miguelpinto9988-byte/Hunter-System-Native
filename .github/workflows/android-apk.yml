@@ -127,6 +127,11 @@ jobs:
             assets={v for v in names if v.startswith('assets/demos-rive/') and v.endswith('.riv')}
             expected={'assets/demos-rive/'+name+'.riv' for name in manifest['files']}
             assert len(assets)==2000 and assets==expected,(len(assets),len(expected))
+            # Verificar también el motor C++ de Rive en las cuatro ABI que distribuimos.
+            for abi in ('arm64-v8a', 'armeabi-v7a', 'x86', 'x86_64'):
+              library=f'lib/{abi}/librive-android.so'
+              assert library in names, f'Motor nativo Rive ausente: {abi}'
+              assert z.read(library)[:4]==b'\x7fELF', f'Biblioteca Rive inválida: {abi}'
             old=[v for v in names if v.startswith('assets/demos30/') and
               (v.endswith('.svg') or v.endswith('.json'))]
             assert not old,('Archivos antiguos dentro de la APK',old[:5])
@@ -137,7 +142,7 @@ jobs:
               assert hashlib.sha256(v).hexdigest()==manifest['files'][key]['sha256'],path
             extra=json.loads(z.read('assets/catalog-hunter2000-extra.json'))
             assert len(extra)==800 and all(not x.get('approvedForAutoplan',True) for x in extra)
-            print('APK comprobada: 2000 Rive auténticos, 0 SVG/JSON ejercicios originales, 800 pendientes de QA')
+            print('APK comprobada: motor Rive en 4 ABI, 2000 Rive auténticos, 0 SVG/JSON ejercicios originales, 800 pendientes de QA')
           PY
 
       - name: Publicar matriz de QA pendiente (no es certificacion)
