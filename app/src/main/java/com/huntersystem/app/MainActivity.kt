@@ -55,7 +55,7 @@ fun HunterRoot(ui:NativeUi){
         Scaffold(containerColor=colors.bg,bottomBar={
             if(hasProfile&&store.readError==null&&!tablet)MonarchBottomNavigation(ui)
         }){insets->
-            Row(Modifier.fillMaxSize().padding(insets)){
+            Row(Modifier.fillMaxSize().padding(insets).hunterSceneBackdrop(if(store.readError!=null) "recovery" else if(hasProfile) ui.tab else "profile")){
                 if(hasProfile&&store.readError==null&&tablet)MonarchNavigationRail(ui)
                 Box(Modifier.weight(1f).fillMaxHeight()){
                     if(store.readError!=null){
