@@ -15,10 +15,10 @@ main = (K / "MainActivity.kt").read_text()
 coach = (K / "Supplement.kt").read_text()
 gradle = (ROOT / "app/build.gradle.kts").read_text()
 # V43 hereda las verificaciones funcionales de Monarca V42.9.
-gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.4-shadow-realms-preview"', 'versionName = "42.9-monarca-fase10"')
+gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.5-monarch-bosses-preview"', 'versionName = "42.9-monarca-fase10"')
 ci = (ROOT / ".github/workflows/android-apk.yml").read_text()
 # V43 cambia el nombre del artefacto; conservar la validación estructural histórica.
-ci = ci.replace("Hunter-System-V43-4-Shadow-Realms-APK", "Hunter-System-V42-Monarca-Fase10-APK")
+ci = ci.replace("Hunter-System-V43-5-Monarch-Bosses-APK", "Hunter-System-V42-Monarca-Fase10-APK")
 errors = []
 
 def check(value, msg):
