@@ -1,29 +1,22 @@
-# Hunter System V43 — Android nativo, catálogo Hunter 2000 en Rive
+# Hunter System V43.2 — Android nativo, catálogo de 2000 SVG
 
-Rama de integración: `integration/hunter-v43-compose-2000`. PR [#17](https://github.com/miguelpinto9988-byte/Hunter-System-Native/pull/17), **en borrador**. La rama `main` no se modifica durante la evaluación.
+Rama de integración: `integration/hunter-v43-compose-2000`. [PR #17](https://github.com/miguelpinto9988-byte/Hunter-System-Native/pull/17), **en borrador**. `main` no cambia.
 
-Monarca 42.9 + Eclipse 41.0, en Kotlin, Jetpack Compose y Canvas Android, sin WebView para las pantallas. `applicationId=com.huntersystem.app`, `minSdk=26`, `compileSdk=36`, `targetSdk=35`; vista previa de V43 (`versionCode=118`).
+Monarca 42.9 + Eclipse 41.0, realizados en Kotlin y Jetpack Compose. La compilación de pruebas usa `versionCode=120` y `versionName=43.2-svg-preview` (`applicationId=com.huntersystem.app`).
 
-## Estado real de los recursos de ejercicios
+## Recursos de ejercicio
+- **2000 fichas**: 1200 originales y 800 adicionales, con identificadores únicos.
+- **2000 SVG animados originales** restaurados desde el repositorio anterior a la migración, alojados en `app/src/main/assets/demos30/`. Se conservan también sus ficheros JSON complementarios originales.
+- Cada ficha obtiene la ruta SVG desde `demoPath30` en `Catalog.kt`. `MonarchExerciseStage` reproduce el SVG en Canvas Android con `OriginalSvg` y proporciona pausa, reproducción, espejo, velocidad y reinicio, sin usar WebView.
+- El motor Rive y los 2000 `.riv` se han retirado del código y recursos empaquetados. El workflow verifica **0 archivos .riv** y **0 bibliotecas nativas de Rive** dentro de la APK.
+- Las **800 fichas nuevas** continúan `pendingTechnicalReview=true`, `approvedForAutoplan=false` y `autoProgressionApproved=false`; quedan excluidas de planificación automática.
 
-- Catálogo: **1.200 ejercicios originales + 800 adicionales = 2.000 IDs únicos**.
-- Demostraciones empaquetadas: **2.000 archivos `.riv`** en `app/src/main/assets/demos-rive/`, acompañados de `manifest.json` con tamaño y SHA-256. Las rutas se generan en `Catalog.kt` y se reproducen mediante `HunterRiveExercise.kt`.
-- El paquete Android **no incluye los 2.000 SVG de demostración ni sus JSON de animación antiguos** en `assets/demos30/`. Los SVG decorativos y vídeos editoriales no son el reproductor de ejercicios.
-- El SVG fuente permanece archivado fuera de los assets Android en `.hunter2000/source/hunter2000-assets.tar.xz`, como procedencia del material convertido.
-- **La conversión a Rive no equivale a anatomía X-Ray 2D ni a validación visual o biomecánica**. Las 800 fichas nuevas continúan con `pendingTechnicalReview=true`, `approvedForAutoplan=false` y `autoProgressionApproved=false`, excluidas de la planificación automática.
-
-## Verificación técnica
-
-```bash
+## Auditoría y compilación
+```sh
 python3 tools/check_hunter2000_complete.py
-python3 tools/generate_rive_qa_queue.py
+python3 tools/generate_svg_qa_queue.py
 bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest :app:assembleRelease
 ```
+`.github/workflows/android-apk.yml` realiza las auditorías, pruebas Kotlin/Compose y compilación firmada. Verifica los 2000 SHA-256 de los SVG que realmente se empaquetan en la APK. Esta verificación **no acredita** fidelidad visual en Android, rendimiento ni validación biomecánica.
 
-El workflow `.github/workflows/android-apk.yml` ejecuta las auditorías, pruebas Kotlin/Compose, compilación release firmada y verificación dentro de la APK de los 2.000 Rive y ausencia de demos SVG/JSON antiguas. Ejecución confirmada para el código Rive: [Actions #40423131633](https://github.com/miguelpinto9988-byte/Hunter-System-Native/actions/runs/40423131633).
-
-El generador de matriz QA produce un CSV de **2.000 filas marcadas PENDIENTE**, no resultados de pruebas. Véase [plan de QA](docs/QA-ANDROID-RIVE-V43.md) y [migración Rive](docs/HUNTER-RIVE-2000-MIGRACION.md).
-
-## Antes de distribuir
-
-Revisar instalación y actualización firmada en Android físico, restauración de datos, carga y reproducción real de animaciones, rendimiento, accesibilidad, notificaciones y técnica de las 800 fichas adicionales. Mantener el PR en borrador y sin habilitar las 800 para autoplaneamiento hasta completar sus revisiones.
+La validación visual en teléfono físico y la evaluación técnica de las 800 fichas siguen pendientes. Consultar [QA SVG](docs/QA-ANDROID-SVG-V43.md). No fusionar el PR hasta documentarlas.

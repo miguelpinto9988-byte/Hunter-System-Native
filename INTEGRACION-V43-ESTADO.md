@@ -1,22 +1,9 @@
-# Hunter System V43 — estado técnico de integración (Rive)
+# Hunter System V43.2 — Estado de integración SVG
 
-## Comprobado en el repositorio
-
-- La rama `integration/hunter-v43-compose-2000` integra Monarca 42.9 y Eclipse 41.0 en Kotlin/Jetpack Compose, sin WebView para las pantallas.
-- Catálogo de **2.000 ejercicios**: 1.200 originales y 800 adicionales.
-- Demostraciones de ejercicios migradas a **2.000 archivos `.riv`** en `app/src/main/assets/demos-rive/`, con manifiesto de hashes y tamaños.
-- `Catalog.kt` construye rutas Rive; `HunterRiveExercise.kt` usa el runtime Rive Android. Los SVG/JSON de demostración heredados ya no se incluyen en los assets Android.
-- Los archivos SVG de origen están archivados fuera de los assets, no se ejecutan como fallback. Otros recursos editoriales no forman parte de las demostraciones de ejercicios.
-- Las 800 fichas nuevas continúan identificadas como pendientes y excluidas del plan automático.
-
-## Evidencia de CI
-
-- [Actions #40420713057](https://github.com/miguelpinto9988-byte/Hunter-System-Native/actions/runs/40420713057): generación y verificación global de los 2.000 binarios Rive.
-- [Actions #40423131633](https://github.com/miguelpinto9988-byte/Hunter-System-Native/actions/runs/40423131633): pruebas Kotlin/Compose, compilación release firmada, cotejo del manifiesto y revisión de los 2.000 Rive dentro de la APK.
-- Los archivos de hash comprueban integridad binaria; **no prueban** fidelidad visual, fluidez en teléfono, certificación anatómica ni ejecución física de cada animación.
-
-## Siguiente fase: QA en Android físico
-
-El script `tools/generate_rive_qa_queue.py` produce una matriz determinista de 2.000 entradas, **todas pendientes**, para documentar pruebas visuales, movimiento, reproducción en Android y evaluación biomecánica. Seguir [docs/QA-ANDROID-RIVE-V43.md](docs/QA-ANDROID-RIVE-V43.md). No completar casillas sin observación real.
-
-**Restricciones vigentes:** mantener [PR #17](https://github.com/miguelpinto9988-byte/Hunter-System-Native/pull/17) como borrador, no fusionar a `main`, no activar autoplaneamiento de las 800 fichas no revisadas y no presentar la APK preview como producto validado en dispositivos.
+- La rama de desarrollo integra Monarca 42.9 y Eclipse 41.0 en Kotlin / Jetpack Compose.
+- Catálogo: 1200 + 800 = 2000 ejercicios, rutas de demostración originales `demoPath30`.
+- Las 2000 demostraciones SVG han sido recuperadas de un commit previo y vuelven a reproducirse mediante `OriginalSvg` (Android Canvas / AndroidSVG).
+- Se ha retirado la dependencia Rive, el componente `HunterRiveExercise` y el directorio `demos-rive`; las auditorías verifican que no estén en la APK.
+- Las 800 fichas adicionales permanecen excluidas de planificación automática y pendientes de QA.
+- La batería de CI comprueba XML, SHA-256 y presencia de assets, pero se requieren pruebas visuales, rendimiento y evaluación biomecánica en Android real.
+- Protocolo: [QA-ANDROID-SVG-V43.md](docs/QA-ANDROID-SVG-V43.md). PR #17 sigue en borrador. No modificar `main` mientras haya puertas de QA abiertas.
