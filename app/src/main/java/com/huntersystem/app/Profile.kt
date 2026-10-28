@@ -54,7 +54,7 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
    if(sectionIndex in listOf(4,5))continue // Combined into a compact training section.
    if(sectionIndex==1)HPanel{ThemeGallery(values["theme"]?:"eclipse"){values["theme"]=it}}
    HPanel{
-   val title=if(sectionIndex==form.lastIndex)"Lesiones y salud" else sec.s("title")
+   val title=when(sectionIndex){3->"Personaliza tu semana";form.lastIndex->"Lesiones y salud";else->sec.s("title")}
    if(sectionIndex==form.lastIndex){Row(Modifier.fillMaxWidth().clickable{expanded["health"]=expanded["health"]!=true},horizontalArrangement=Arrangement.SpaceBetween){Heading(title,size=30);HText(if(expanded["health"]==true)"−" else "+",size=28)};HText(if(injuries.isEmpty())"Sin lesiones registradas · tocar para editar" else "${injuries.size} zonas registradas · tocar para editar",size=15,color=LocalHunter.current.muted);if(expanded["health"]!=true)return@HPanel}else Heading(title,size=30)
    if(sectionIndex==0){Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(14.dp)){Avatar(ui.pendingAvatar?:s.state.s("avatar"),values["name"]?:"C",Modifier.size(72.dp));Column(verticalArrangement=Arrangement.spacedBy(6.dp)){HButton("Elegir fotografía"){ui.chooseAvatar()};HText("Se guarda en este dispositivo",size=14,color=LocalHunter.current.muted)}}}
    val done=mutableSetOf<String>()
@@ -80,28 +80,12 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
    }
 
    if(sectionIndex==3){
-    Heading("Tu semana de entrenamiento",size=25)
-    V39WeekPicker(week,focus,onChanged={
-     if(old!=null){
-      val current=s.profile
-      if(current!=null)ui.attempt{
-       s.saveProfile(current.copyJson().put("weekPlan",arr(week)).put("weekFocus",arr(focus)))
-      }
-     }
-    })
     HSelect("Descanso entre series",values["restSeconds"]?:"30",
      listOf("30" to "30 segundos","60" to "60 segundos","90" to "90 segundos")){values["restSeconds"]=it}
-    if(values["trainingMode"]!="routines")HSelect("Misiones diarias",values["dailyMissions"]?:"3",
-     (1..7).map{it.toString() to it.toString()}){values["dailyMissions"]=it}
-    HButton("Ajustes del plan (opcional) ▾",Modifier.fillMaxWidth()){
-     expanded["plan-extra"]=expanded["plan-extra"]!=true
-    }
-    if(expanded["plan-extra"]==true){
-     HSelect("Orden de ejercicios",values["blockMode22"]?:"exercise",
-      listOf("exercise" to "Todas las series de un ejercicio","rounds" to "Una serie por ejercicio, en rondas")){values["blockMode22"]=it}
-     HText("Intensidad adaptada · "+(((values["trainingScale"]?.toFloatOrNull()?:1f)*100).roundToInt()).toString()+"%",size=16)
-     Slider(values["trainingScale"]?.toFloatOrNull()?:1f,
-      {values["trainingScale"]=it.toString()},valueRange=.4f..1f,steps=5)
+    V39WeekPicker(week,focus,onChanged={})
+    if(values["trainingMode"]=="challenges"){
+     HSelect("Número de misiones diarias",values["dailyMissions"]?:"3",
+      (1..7).map{it.toString() to (if(it==1)"1 misión" else "$it misiones")}){values["dailyMissions"]=it}
     }
    }
    if(sectionIndex==1){

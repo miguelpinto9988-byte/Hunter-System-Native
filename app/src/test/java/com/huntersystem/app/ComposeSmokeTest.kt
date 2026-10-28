@@ -106,6 +106,33 @@ class ComposeSmokeTest {
   compose.runOnIdle{ui.go("home")};compose.waitForIdle()
   compose.onNodeWithText("Abrir misión de hoy").assertExists()
  }
+ @Test(timeout=90000) fun weeklyProfileIsSingleCardWithConditionalMissionCount(){
+  compose.runOnIdle{ui.go("profile")};compose.waitForIdle()
+  compose.onNodeWithText("Personaliza tu semana").assertExists()
+  compose.onAllNodesWithText("Exigencia según tu nivel").assertCountEquals(0)
+  compose.onAllNodesWithText("Tu semana de entrenamiento").assertCountEquals(0)
+  compose.onAllNodesWithText("Elige tu semana").assertCountEquals(1)
+  compose.onNodeWithText("Desafíos diarios").performScrollTo().performClick()
+  compose.onNodeWithText("Número de misiones diarias").assertExists()
+  compose.onNodeWithText("Rutinas completas").performScrollTo().performClick()
+  compose.onAllNodesWithText("Número de misiones diarias").assertCountEquals(0)
+ }
+ @Test(timeout=90000) fun completedMissionOffersCompanionIntensitySurvey(){
+  val date=today()
+  compose.runOnIdle{
+   val log=store.log(date)
+   log.put("rpe",6).put("complete",true)
+   store.save()
+   ui.open("session-feedback",obj("date" to date))
+  };compose.waitForIdle()
+  compose.onNodeWithText("Exigencia para tus próximas sesiones").assertExists()
+  val completed=store.logs.o(date).b("complete")
+  compose.runOnIdle{store.adjustTrainingScaleAfterCompletion(date,.6)};compose.waitForIdle()
+  org.junit.Assert.assertTrue(completed)
+  org.junit.Assert.assertTrue(store.logs.o(date).b("complete"))
+  org.junit.Assert.assertEquals(.6,store.profile!!.n("trainingScale"),.001)
+  compose.onNodeWithContentDescription("Cerrar ventana").performClick();compose.waitForIdle()
+ }
  @Test(timeout=90000) @Config(qualifiers="w1280dp-h800dp-land-mdpi") fun tabletNavigationAndDialogRender(){
   compose.onNodeWithText("Inicio").assertIsDisplayed()
   compose.onNodeWithContentDescription("Abrir perfil").performClick();compose.waitForIdle();capture("tablet-profile")
