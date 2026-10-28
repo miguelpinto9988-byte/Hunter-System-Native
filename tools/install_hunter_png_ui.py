@@ -7,6 +7,8 @@ from urllib.request import urlopen, Request
 from io import BytesIO
 from zipfile import ZipFile
 import struct
+from io import BytesIO
+from PIL import Image
 ROOT=Path(__file__).resolve().parents[1]
 SOURCE="https://gcdn.picsart.com/editing-temp/108634cb-1ddd-43e1-9998-b56076925396.zip"
 OUT=ROOT/"app/src/main/assets/hunter-png"
@@ -32,6 +34,19 @@ def main():
     w,h,depth,mode=png_info(buf)
     if w<64 or h<64:raise ValueError("Image too small "+src)
     if area=="icons" and mode!=6:raise ValueError("Icons must be true RGBA PNG: "+src)
+    if area=="icons":
+     image=Image.open(BytesIO(buf)).convert("RGBA")
+     pixels=image.load()
+     for yy in range(h):
+      for xx in range(w):
+       r,g,b,a=pixels[xx,yy]
+       peak=max(r,g,b)
+       # Remove the dark rectangular RGB plate, keeping neon glyphs and highlights.
+       cut=max(0,min(255,round((peak-42)*255/92)))
+       pixels[xx,yy]=(r,g,b,min(a,cut))
+     result=BytesIO()
+     image.save(result,format="PNG",optimize=True)
+     buf=result.getvalue()
     (OUT/src).write_bytes(buf)
     print(src,w,h,"RGBA" if mode==6 else "PNG")
  print("Hunter PNG assets validated:",len(SCENES),"wallpapers,",len(ICONS),"transparent icons")

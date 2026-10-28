@@ -65,6 +65,7 @@ jobs:
 
       - name: Preparar biblioteca de imágenes PNG
         run: |
+          python3 -m pip install --disable-pip-version-check Pillow==11.3.0
           python3 tools/install_hunter_png_ui.py
 
       - name: Comprobar ausencia de miniaturas
