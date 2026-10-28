@@ -6,7 +6,7 @@ def read(path):return (R/path).read_text(encoding="utf8")
 src="app/src/main/java/com/huntersystem/app/"
 gradle=read("app/build.gradle.kts")
 checks={
- "version V43 preview":'versionName = "43.10-approved-icons-preview"' in gradle and "versionCode = 128" in gradle,
+ "version V43 preview":'versionName = "43.11-monarch-equipment-preview"' in gradle and "versionCode = 129" in gradle,
  "Kotlin y Compose":'id("org.jetbrains.kotlin.plugin.compose")' in gradle,
  "identidad Eclipse":(R/(src+"EclipseVisuals.kt")).is_file(),
  "componentes Eclipse":(R/(src+"EclipseComponents.kt")).is_file(),
@@ -32,14 +32,18 @@ checks={
     and not any((R/("app/src/main/assets/monarch-boss/"+boss+".svg")).exists()
       for boss in ("guardia","fortaleza","trono")),
  "reubicación Monarca":read(src+"Screens.kt").index("MonarchSpecialMissionsPanel(ui)") < read(src+"Screens.kt").index("MonarchHero(ui,stats)") and read(src+"Screens.kt").count("MonarchSpecialMissionsPanel(ui)")==1,
+ "misiones Monarca voluntarias y solo equipo":'fun offerFor(store:NativeStore' in read(src+"MonarchSpecialMissionState.kt")
+    and 'fun equipmentReady(store:NativeStore' in read(src+"MonarchSpecialMissionState.kt")
+    and 'MonarchMissionCatalog.offerFor(store,sunday,zone)' in read(src+"MonarchSpecialMissionUI.kt")
+    and 'enabled=reason==null&&consent' in read(src+"MonarchSpecialMissionUI.kt"),
  "objetivos desplegables":'detailsExpanded' in read(src+"MonarchSpecialMissionUI.kt") and 'recordMonarchProgress' in read(src+"MonarchSpecialMissionUI.kt") and 'MonarchBossMissionArtwork(' in read(src+"MonarchSpecialMissionUI.kt"),
  "temas conjuntos":'"constellation"' in read(src+"HunterDesignSystem.kt") and '"ice"' in read(src+"HunterDesignSystem.kt"),
  "splash animado":(R/"app/src/main/java/com/huntersystem/app/HunterAnimatedBootArtwork.kt").is_file() and (R/"app/src/main/assets/monarch_splash_background.webp").is_file() and "HunterAnimatedBootArtwork(" in read(src+"MonarchNavigationV42.kt"),
  "catálogo ampliable":'catalog-hunter2000-extra.json' in read(src+"Catalog.kt"),
  "restricción QA":'approvedForAutoplan' in read(src+"Rules.kt"),
- "artefacto V43":'Hunter-System-V43-10-Approved-Icon-Library-APK' in read(".github/workflows/android-apk.yml"),
+ "artefacto V43":'Hunter-System-V43-11-Monarch-Equipment-APK' in read(".github/workflows/android-apk.yml"),
  "pruebas de catálogo":(R/"app/src/test/java/com/huntersystem/app/Hunter2000CatalogTest.kt").is_file(),
 }
 errors=[name for name,ok in checks.items() if not ok]
-print(json.dumps({"version":"43.10-approved-icons-preview","checks":checks,"status":"ERROR" if errors else "OK","errors":errors},ensure_ascii=False,indent=2))
+print(json.dumps({"version":"43.11-monarch-equipment-preview","checks":checks,"status":"ERROR" if errors else "OK","errors":errors},ensure_ascii=False,indent=2))
 if errors:raise SystemExit(1)
