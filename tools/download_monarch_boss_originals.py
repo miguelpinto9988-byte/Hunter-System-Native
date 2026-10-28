@@ -45,7 +45,7 @@ def download(source:str)->bytes:
   if final.scheme!="https" or final.hostname not in HOSTS:
    raise ValueError("Untrusted redirect")
   data=response.read(8_000_001)
- if not 10000<=len(data)<=8_000_000 or data[:3]!=b"\\xff\\xd8\\xff":
+ if not 10000<=len(data)<=8_000_000 or data[:3]!=b"\xff\xd8\xff":
   raise ValueError("Image is not an original JPEG of expected size")
  return data
 
