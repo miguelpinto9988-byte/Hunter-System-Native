@@ -1,4 +1,4 @@
-# Hunter System V43.9 · Igris, Rey Hormiga y Baran investigados + SVG 2000
+# Hunter System V43.10 · Igris, Rey Hormiga y Baran investigados + SVG 2000
 name: Compilar Hunter System Android APK
 
 on:
@@ -67,6 +67,7 @@ jobs:
         run: |
           python3 -m pip install --disable-pip-version-check Pillow==11.3.0
           python3 tools/install_hunter_png_ui.py
+          python3 tools/install_hunter_reference_icons.py
 
       - name: Comprobar ausencia de miniaturas
         run: python3 tools/verificar_sin_miniaturas.py
@@ -159,7 +160,9 @@ jobs:
               raw=z.read(asset)
               assert raw.startswith(bytes.fromhex('89504e470d0a1a0a')) and len(raw)>10000,f'PNG invalido: {route}'
             icons=[p for p in names if p.startswith('assets/hunter-png/icons/') and p.endswith('.png')]
-            assert len(icons)==32,len(icons)
+            assert len(icons)==69,len(icons)
+            assert 'assets/hunter-png/icons/monarch_seal.png' in names
+            assert 'assets/hunter-png/icons/menu.png' in names
             assert all(z.read(p)[25] == 6 for p in icons),'Iconos sin alfa RGBA'
             assert all(z.read(p).startswith(bytes.fromhex('89504e470d0a1a0a')) for p in icons)
             assert not any(p.startswith('assets/realm-art/') for p in names),'Persisten fondos SVG antiguos'
@@ -180,7 +183,7 @@ jobs:
       - name: Publicar APK instalable
         uses: actions/upload-artifact@v4
         with:
-          name: Hunter-System-V43-9-PNG-UI-APK
+          name: Hunter-System-V43-10-Approved-Icon-Library-APK
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 14

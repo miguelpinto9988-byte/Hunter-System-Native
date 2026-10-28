@@ -6,7 +6,7 @@ def read(path):return (R/path).read_text(encoding="utf8")
 src="app/src/main/java/com/huntersystem/app/"
 gradle=read("app/build.gradle.kts")
 checks={
- "version V43 preview":'versionName = "43.9-png-ui-preview"' in gradle and "versionCode = 127" in gradle,
+ "version V43 preview":'versionName = "43.10-approved-icons-preview"' in gradle and "versionCode = 128" in gradle,
  "Kotlin y Compose":'id("org.jetbrains.kotlin.plugin.compose")' in gradle,
  "identidad Eclipse":(R/(src+"EclipseVisuals.kt")).is_file(),
  "componentes Eclipse":(R/(src+"EclipseComponents.kt")).is_file(),
@@ -18,7 +18,7 @@ checks={
     and 'hunter-png/wallpapers/' in read(src+"HunterRealmWallpaper.kt")
     and 'realm-art/' not in read(src+"HunterRealmWallpaper.kt"),
  "biblioteca iconos PNG":(R/(src+"HunterPngLibrary.kt")).is_file()
-    and len(list((R/"app/src/main/assets/hunter-png/icons").glob("*.png")))==32
+    and len(list((R/"app/src/main/assets/hunter-png/icons").glob("*.png")))==69
     and 'HunterPngIcon(' in read(src+"MonarchRoutinesV42.kt")
     and 'HunterPngIcon(' in read(src+"MonarchProgressV42.kt")
     and 'HunterPngIcon(' in read(src+"Screens.kt"),
@@ -37,9 +37,9 @@ checks={
  "splash animado":(R/"app/src/main/java/com/huntersystem/app/HunterAnimatedBootArtwork.kt").is_file() and (R/"app/src/main/assets/monarch_splash_background.webp").is_file() and "HunterAnimatedBootArtwork(" in read(src+"MonarchNavigationV42.kt"),
  "catálogo ampliable":'catalog-hunter2000-extra.json' in read(src+"Catalog.kt"),
  "restricción QA":'approvedForAutoplan' in read(src+"Rules.kt"),
- "artefacto V43":'Hunter-System-V43-9-PNG-UI-APK' in read(".github/workflows/android-apk.yml"),
+ "artefacto V43":'Hunter-System-V43-10-Approved-Icon-Library-APK' in read(".github/workflows/android-apk.yml"),
  "pruebas de catálogo":(R/"app/src/test/java/com/huntersystem/app/Hunter2000CatalogTest.kt").is_file(),
 }
 errors=[name for name,ok in checks.items() if not ok]
-print(json.dumps({"version":"43.9-png-ui-preview","checks":checks,"status":"ERROR" if errors else "OK","errors":errors},ensure_ascii=False,indent=2))
+print(json.dumps({"version":"43.10-approved-icons-preview","checks":checks,"status":"ERROR" if errors else "OK","errors":errors},ensure_ascii=False,indent=2))
 if errors:raise SystemExit(1)
