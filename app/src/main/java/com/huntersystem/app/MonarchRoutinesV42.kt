@@ -85,6 +85,7 @@ private fun routineMinutes(s:NativeStore,r:JSONObject,p:JSONObject)=
         TopTabs(ui)
         Eyebrow("SISTEMA MONARCA  /  ENTRENAMIENTO")
         Heading("Centro de rutinas",size=36)
+        HunterPngIcon("routines",Modifier.size(66.dp),"Biblioteca de rutinas")
         HText("Elige una secuencia de la biblioteca o genera una sesión adaptada a tu perfil, totalmente sin conexión.",
             size=16,color=LocalHunter.current.muted)
         TrainingMode(ui)
@@ -138,6 +139,7 @@ private fun MonarchRoutineModeCard(title:String,subtitle:String,tag:String,count
         .semantics { contentDescription="$title, $subtitle. Abrir biblioteca." }
         .padding(21.dp)){
         Column(verticalArrangement=Arrangement.spacedBy(10.dp)){
+            HunterPngIcon(hunterRoutinePngKey(title),Modifier.size(64.dp),title)
             HText(tag,size=12,color=color,bold=true)
             Heading(title,size=29)
             HText(subtitle,size=15,color=c.muted)
@@ -380,6 +382,8 @@ fun MonarchRoutineCard(ui:NativeUi,r:JSONObject,p:JSONObject){
         else->c.accent
     }
     HPanel(padding=18){
+        HunterPngIcon(hunterRoutinePngKey(r.s("name"),r.s("category")),
+            Modifier.size(53.dp),"Tipo de rutina")
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
             verticalAlignment=Alignment.CenterVertically){
             HText(r.s("category","RUTINA").uppercase(),size=12,color=tint,bold=true)
