@@ -52,10 +52,15 @@ fun HunterRoot(ui:NativeUi){
     }
     BoxWithConstraints(Modifier.fillMaxSize()){
         val tablet=maxWidth>=MonarchNavigation.tabletWidthDp.dp
-        Scaffold(containerColor=colors.bg,bottomBar={
+        Scaffold(containerColor=androidx.compose.ui.graphics.Color.Transparent,bottomBar={
             if(hasProfile&&store.readError==null&&!tablet)MonarchBottomNavigation(ui)
         }){insets->
-            Row(Modifier.fillMaxSize().padding(insets).hunterSceneBackdrop(if(store.readError!=null) "recovery" else if(hasProfile) ui.tab else "profile")){
+            Box(Modifier.fillMaxSize().padding(insets)){
+                HunterRealmWallpaper(
+                    if(store.readError!=null) "recovery" else if(hasProfile) ui.tab else "profile",
+                    Modifier.matchParentSize()
+                )
+            Row(Modifier.fillMaxSize()){
                 if(hasProfile&&store.readError==null&&tablet)MonarchNavigationRail(ui)
                 Box(Modifier.weight(1f).fillMaxHeight()){
                     if(store.readError!=null){
@@ -81,6 +86,7 @@ fun HunterRoot(ui:NativeUi){
                             .padding(end=14.dp,bottom=12.dp))
                     }
                 }
+            }
             }
         }
     }
