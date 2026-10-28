@@ -85,7 +85,7 @@ def emoji_png(code:str)->bytes:
                              "Accept":"image/png"})
     with urlopen(req,timeout=25) as response:
         data=response.read(400_001)
-    if len(data)>400_000 or data[:8]!=b"\\x89PNG\\r\\n\\x1a\\n":
+    if len(data)>400_000 or data[:8]!=b"\x89PNG\r\n\x1a\n":
         raise ValueError("Invalid raster image "+url)
     return data
 
