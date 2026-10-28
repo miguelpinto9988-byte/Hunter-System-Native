@@ -1,8 +1,16 @@
-# Hunter System V43.2 — Android nativo, catálogo de 2000 SVG
+# Hunter System V43.12 — Monarca con mejoras Eclipse, catálogo de 2000 SVG
 
-Rama de integración: `integration/hunter-v43-compose-2000`. [PR #17](https://github.com/miguelpinto9988-byte/Hunter-System-Native/pull/17), **en borrador**. `main` no cambia.
+Rama principal: `main`. El código integra Monarca V43.11 y las mejoras recientes de Eclipse. Las dos historias se conservan en el commit de fusión.
 
-Monarca 42.9 + Eclipse 41.0, realizados en Kotlin y Jetpack Compose. La compilación de pruebas usa `versionCode=120` y `versionName=43.2-svg-preview` (`applicationId=com.huntersystem.app`).
+Monarca 42.9 + Eclipse 41.0, realizados en Kotlin y Jetpack Compose. La compilación de pruebas usa `versionCode=130` y `versionName=43.12-monarca-eclipse` (`applicationId=com.huntersystem.app`).
+
+## Mejoras Eclipse integradas
+- Perfil simplificado, cinco temas, acompañante y escenarios por tarjetas horizontales.
+- Cuatro pestañas Monarca y acceso al perfil desde el avatar.
+- Equipo contextual, ajustes semanales agrupados y una sola encuesta RPE.
+- Adaptación de grupos a 7, 14 y 21 días.
+- Tres modos de rendimiento y mensajes personalizados de los cinco acompañantes.
+- Conservación del historial de sesiones y recursos propios de Monarca.
 
 ## Recursos de ejercicio
 - **2000 fichas**: 1200 originales y 800 adicionales, con identificadores únicos.
@@ -19,4 +27,4 @@ bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest :app:assembleRel
 ```
 `.github/workflows/android-apk.yml` realiza las auditorías, pruebas Kotlin/Compose y compilación firmada. Verifica los 2000 SHA-256 de los SVG que realmente se empaquetan en la APK. Esta verificación **no acredita** fidelidad visual en Android, rendimiento ni validación biomecánica.
 
-La validación visual en teléfono físico y la evaluación técnica de las 800 fichas siguen pendientes. Consultar [QA SVG](docs/QA-ANDROID-SVG-V43.md). No fusionar el PR hasta documentarlas.
+La validación visual en teléfono físico y la evaluación técnica de las 800 fichas siguen pendientes. Consultar [QA SVG](docs/QA-ANDROID-SVG-V43.md). Las 800 fichas continúan excluidas de la planificación automática.

@@ -1,9 +1,10 @@
-# Hunter System V43.2 — Estado de integración SVG
+# Hunter System V43.12 — Monarca + Eclipse
 
-- La rama de desarrollo integra Monarca 42.9 y Eclipse 41.0 en Kotlin / Jetpack Compose.
-- Catálogo: 1200 + 800 = 2000 ejercicios, rutas de demostración originales `demoPath30`.
-- Las 2000 demostraciones SVG han sido recuperadas de un commit previo y vuelven a reproducirse mediante `OriginalSvg` (Android Canvas / AndroidSVG).
-- Se ha retirado la dependencia Rive, el componente `HunterRiveExercise` y el directorio `demos-rive`; las auditorías verifican que no estén en la APK.
-- Las 800 fichas adicionales permanecen excluidas de planificación automática y pendientes de QA.
-- La batería de CI comprueba XML, SHA-256 y presencia de assets, pero se requieren pruebas visuales, rendimiento y evaluación biomecánica en Android real.
-- Protocolo: [QA-ANDROID-SVG-V43.md](docs/QA-ANDROID-SVG-V43.md). PR #17 sigue en borrador. No modificar `main` mientras haya puertas de QA abiertas.
+- El código de la integración proviene de Monarca V43.11 y del historial de Eclipse en un commit de fusión.
+- Configuración Android: versionCode 130; versionName 43.12-monarca-eclipse.
+- Se mantienen los 2.000 SVG y el bloqueo para planificación automática de las 800 fichas todavía pendientes de validación técnica.
+- El perfil usa los cinco temas, selección visual de personaje y escenario, y una sola encuesta RPE.
+- La progresión por grupo revisa sesiones en ventanas de 7, 14 y 21 días.
+- El rendimiento visual y los mensajes del compañero se controlan con tres modos.
+- Al promover esta integración, main apunta a Monarca y la V41 permanece únicamente como historial Git, no como rama principal separada.
+- La validación en Android físico y la inspección biomecánica de las 800 fichas quedan pendientes.
