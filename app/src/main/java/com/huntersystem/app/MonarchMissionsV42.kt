@@ -84,6 +84,8 @@ fun MonarchMissionsScreen(ui:NativeUi) {
             MonarchMissionsWeek(ui, selected) { selected = it }
         }
         MonarchMissionContent(ui, selected)
+        // La recompensa solo aparece cuando la fecha seleccionada quedó realmente guardada.
+        if(store.logs.o(selected).b("complete")) HunterMissionCompletedCard(ui,selected)
         key(revision) { MonarchMissionsProgress(ui) }
         MonarchMissionsActions(ui)
         key(revision) { MonarchMissionsCalendar(ui) }
