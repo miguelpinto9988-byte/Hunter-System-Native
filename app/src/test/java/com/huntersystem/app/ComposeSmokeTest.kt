@@ -78,9 +78,17 @@ class ComposeSmokeTest {
   compose.onNodeWithText("Continuar").performClick()
   compose.runOnIdle{ui.go("home")};compose.waitForIdle();capture("relic-home")
  }
- @Test(timeout=90000) @Config(qualifiers="w1280dp-h800dp-land-mdpi") fun tabletNavigationAndDialogRender(){
+ @Test(timeout=60000) fun profileCanBeOpenedFromAvatarWithoutBottomTab(){
+   compose.onAllNodesWithText("Perfil").assertCountEquals(0)
+   compose.onNodeWithContentDescription("Abrir perfil").assertIsDisplayed().performClick();compose.waitForIdle()
+   compose.onNodeWithText("Tu perfil de cazador").assertExists()
+   org.junit.Assert.assertEquals("profile",ui.tab)
+   compose.runOnIdle{ui.back()};compose.waitForIdle()
+   org.junit.Assert.assertEquals("home",ui.tab)
+  }
+  @Test(timeout=90000) @Config(qualifiers="w1280dp-h800dp-land-mdpi") fun tabletNavigationAndDialogRender(){
   compose.onNodeWithText("Inicio").assertIsDisplayed()
-  compose.onNodeWithText("Perfil").performClick();compose.waitForIdle();capture("tablet-profile")
+  compose.onNodeWithContentDescription("Abrir perfil").performClick();compose.waitForIdle();capture("tablet-profile")
   compose.runOnIdle{ui.open("exercise",obj("id" to "chair"))};compose.waitForIdle()
   compose.onNodeWithContentDescription("Cerrar ventana").assertIsDisplayed().performClick()
  }

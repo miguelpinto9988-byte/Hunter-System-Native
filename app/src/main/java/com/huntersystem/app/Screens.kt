@@ -11,6 +11,7 @@ import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.*
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import kotlinx.coroutines.*
@@ -42,7 +43,7 @@ fun rankKey(level:Int)=listOf("E","D","C","B","A","S")[((level-1)/5).coerceIn(0,
   Box(Modifier.size(40.dp).clip(RoundedCornerShape(13.dp)).background(c.selected),contentAlignment=Alignment.Center){HunterIcon(Sigil.Crown,Modifier.size(26.dp))}
   Column(Modifier.weight(1f)){Heading("HUNTER SYSTEM",size=20);Eyebrow("ECLIPSE · ASCENSIÓN")}
   if(ui.store.profile!=null)HIconButton(Sigil.Bell,"Recordatorios"){ui.open("reminders")}
-  Avatar(ui.store.state.s("avatar"),ui.store.profile?.s("name")?:"C",Modifier.size(44.dp).clickable{ui.go("profile")})
+  Avatar(ui.store.state.s("avatar"),ui.store.profile?.s("name")?:"C",Modifier.size(44.dp).clickable(role=Role.Button){ui.go("profile")}.semantics{contentDescription="Abrir perfil"})
  }
 }
 @Composable fun SceneColumn(ui:NativeUi,content:@Composable ColumnScope.()->Unit){

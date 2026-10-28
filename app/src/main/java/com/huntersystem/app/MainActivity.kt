@@ -44,7 +44,7 @@ class MainActivity:ComponentActivity(){
 }
 @Composable fun HunterRoot(ui:NativeUi){
  val s=ui.store;s.revision.intValue;val c=LocalHunter.current
- BackHandler(ui.stack.isNotEmpty()||ui.library.isNotBlank()||ui.tab !in listOf("home","profile")){ui.back()}
+ BackHandler(ui.stack.isNotEmpty()||ui.library.isNotBlank()||(ui.tab!="home"&&s.profile!=null)){ui.back()}
  val entrance=remember{Animatable(1f)};val motion=LocalMotionEnabled.current
  LaunchedEffect(ui.tab){if(motion){entrance.snapTo(0f);entrance.animateTo(1f,tween(230,easing=FastOutSlowInEasing))}else entrance.snapTo(1f)}
  BoxWithConstraints(Modifier.fillMaxSize().background(c.bg)){
@@ -67,7 +67,7 @@ class MainActivity:ComponentActivity(){
  }
  if(ui.stack.isNotEmpty())OverlayRoot(ui,ui.stack.last())
 }
-private val navigationItems=listOf(Triple("home","Inicio",Sigil.Home),Triple("plan","Misiones",Sigil.Mission),Triple("routines","Rutinas",Sigil.Routine),Triple("book","Ejercicios",Sigil.Exercise),Triple("profile","Perfil",Sigil.Profile))
+private val navigationItems=listOf(Triple("home","Inicio",Sigil.Home),Triple("plan","Misiones",Sigil.Mission),Triple("routines","Rutinas",Sigil.Routine),Triple("book","Ejercicios",Sigil.Exercise))
 @Composable fun BottomNav(ui:NativeUi){
  val c=LocalHunter.current
  Row(Modifier.fillMaxWidth().background(c.panel).navigationBarsPadding().padding(horizontal=7.dp,vertical=8.dp),verticalAlignment=Alignment.CenterVertically){
