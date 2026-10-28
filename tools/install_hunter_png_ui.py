@@ -9,7 +9,7 @@ from zipfile import ZipFile
 import struct
 ROOT=Path(__file__).resolve().parents[1]
 SOURCE="https://gcdn.picsart.com/editing-temp/108634cb-1ddd-43e1-9998-b56076925396.zip"
-OUT=ROOT/"app/src/main/assets/hunter-ui-png"
+OUT=ROOT/"app/src/main/assets/hunter-png"
 SCENES=("home","plan","routines","book","stats","objectives","profile","recovery")
 ICONS=("academy","achievement","book","cardio","dumbbell","energy","exercises","focus","goal_habit","goal_read","goal_strength","goals","level","lightning","milestone","missions","mobility","panel","profile","progress","reminders","routines","settings","shield","streak","strength","success","timer","training","trophy","warning","xp")
 def png_info(buf):
