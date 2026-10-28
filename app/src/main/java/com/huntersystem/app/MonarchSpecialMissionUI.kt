@@ -10,6 +10,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -122,8 +123,8 @@ fun MonarchSpecialMissionsPanel(ui:NativeUi) {
 @Composable
 private fun MonarchBossMissionArtwork(id:String,title:String,week:Int,status:String){
  val boss=when(id){
-  "guardia"->"IGRIS · CABALLERO DE ARMADURA ROJA"
-  "fortaleza"->"REY HORMIGA DE JEJU · FUTURO BERU"
+  "guardia"->"IGRIS · COMANDANTE CARMESÍ"
+  "fortaleza"->"BERU · REY HORMIGA"
   else->"BARAN · MONARCA DE LAS LLAMAS BLANCAS"
  }
  val accent=when(id){
@@ -133,7 +134,10 @@ private fun MonarchBossMissionArtwork(id:String,title:String,week:Int,status:Str
  }
  val shape=RoundedCornerShape(16.dp)
  Box(Modifier.fillMaxWidth().height(188.dp).clip(shape).background(Color(0xFF090E23))){
-  OriginalSvg("monarch-boss/"+id+".svg",Modifier.fillMaxSize())
+  // Fotografías promocionales originales descargadas al empaquetar, sin redibujo.
+  AssetImage("monarch-boss-original/"+id+".jpg",Modifier.fillMaxSize(),
+   scale=ContentScale.Crop,alignment=Alignment.TopCenter,
+   description="Imagen promocional original de "+boss)
   Box(Modifier.fillMaxSize().background(
    Brush.horizontalGradient(listOf(Color(0xE8080D1B),Color(0xA40A1027),Color(0x00080D1B)))
   ))
@@ -143,7 +147,7 @@ private fun MonarchBossMissionArtwork(id:String,title:String,week:Int,status:Str
     fontFamily=Barlow,fontSize=11.sp,fontWeight=FontWeight.Bold)
    Text(title,color=Color(0xFFF5F7FF),fontFamily=Barlow,fontSize=25.sp,
     lineHeight=27.sp,fontWeight=FontWeight.Bold)
-   Text("JEFE DE SOLO LEVELING · "+boss,color=Color(0xFFCED8F3),fontFamily=Barlow,
+   Text("ARTE PROMOCIONAL · "+boss,color=Color(0xFFCED8F3),fontFamily=Barlow,
     fontSize=11.sp,lineHeight=14.sp,maxLines=2)
   }
   Text(when(status){

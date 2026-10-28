@@ -1,4 +1,4 @@
-# Hunter System V43.6 · Igris, Rey Hormiga y Baran investigados + SVG 2000
+# Hunter System V43.7 · Igris, Rey Hormiga y Baran investigados + SVG 2000
 name: Compilar Hunter System Android APK
 
 on:
@@ -59,6 +59,9 @@ jobs:
           fi
           echo "$HUNTER_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/hunter-system-release.p12"
           keytool -list -keystore "$RUNNER_TEMP/hunter-system-release.p12" -storetype PKCS12 -storepass "$HUNTER_STORE_PASSWORD" > /dev/null
+
+      - name: Descargar arte promocional original de jefes (Solo Leveling)
+        run: python3 tools/download_monarch_boss_originals.py
 
       - name: Comprobar ausencia de miniaturas
         run: python3 tools/verificar_sin_miniaturas.py
@@ -139,11 +142,12 @@ jobs:
             assert data[:4]==b'RIFF' and data[8:12]==b'WEBP','WebP splash corrupto'
             print('Fondo Monarca empaquetado:',len(data),'bytes')
             for boss in ('guardia','fortaleza','trono'):
-              asset=f'assets/monarch-boss/{boss}.svg'
-              assert asset in names,f'Falta arte de jefe: {asset}'
+              asset=f'assets/monarch-boss-original/{boss}.jpg'
+              assert asset in names,f'Falta imagen promocional original: {asset}'
               raw=z.read(asset)
-              assert raw.lstrip().startswith(b'<svg') and b'viewBox=' in raw,f'Portada invalida: {boss}'
-            print('3 portadas de jefes Monarca empaquetadas')
+              assert len(raw)>10000 and raw[:3]==b'\\xff\\xd8\\xff',f'JPEG original invalido: {boss}'
+              assert f'assets/monarch-boss/{boss}.svg' not in names,'Persisten ilustraciones SVG rediseñadas'
+            print('3 imágenes de jefes descargadas y empaquetadas sin rediseño')
             extra=json.loads(z.read('assets/catalog-hunter2000-extra.json'))
             assert len(extra)==800 and all(x.get('approvedForAutoplan') is False and x.get('autoProgressionApproved') is False for x in extra)
             print('APK verificada: 2000 SVG íntegros, 0 Rive, 800 fichas sin QA ni planificación automática')
@@ -160,7 +164,7 @@ jobs:
       - name: Publicar APK instalable
         uses: actions/upload-artifact@v4
         with:
-          name: Hunter-System-V43-6-Solo-Bosses-APK
+          name: Hunter-System-V43-7-Original-Boss-Art-APK
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 14

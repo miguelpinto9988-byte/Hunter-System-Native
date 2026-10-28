@@ -12,10 +12,10 @@ evolution = (app / "Supplement.kt").read_text(encoding="utf-8")
 store = (app / "NativeStore.kt").read_text(encoding="utf-8")
 gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
 # V43 hereda las verificaciones funcionales de Monarca V42.9.
-gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.6-solo-bosses-preview"', 'versionName = "42.9-monarca-fase10"')
+gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.7-original-boss-art-preview"', 'versionName = "42.9-monarca-fase10"')
 workflow = (root / ".github/workflows/android-apk.yml").read_text(encoding="utf-8")
 # V43 cambia el nombre del artefacto; conservar la validación estructural histórica.
-workflow = workflow.replace("Hunter-System-V43-6-Solo-Bosses-APK", "Hunter-System-V42-Monarca-Fase10-APK")
+workflow = workflow.replace("Hunter-System-V43-7-Original-Boss-Art-APK", "Hunter-System-V42-Monarca-Fase10-APK")
 exercises = json.loads((assets / "catalog.json").read_text(encoding="utf-8"))
 errs = []
 
