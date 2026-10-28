@@ -28,6 +28,7 @@ class NativeSvgView(context:Context):View(context){
  var playing=false;set(v){if(field!=v){field=v;updateAnimation()}}
  var speed=1f;set(v){if(field!=v){field=v.coerceIn(.25f,2f);updateAnimation()}}
  var mirrored=false;set(v){field=v;invalidate()}
+ var crop=false;set(v){field=v;invalidate()}
  var fraction=0f;set(v){field=v.coerceIn(0f,1f);invalidate()}
  fun load(asset:String,accent:String="#aacce0",metal:String="#494c68",ornament:String="#8b8fb1"){
   val colors="$accent|$metal|$ornament";if(path==asset&&tint==colors)return
@@ -52,13 +53,13 @@ class NativeSvgView(context:Context):View(context){
   for(m in motions){val phase=((elapsed-m.begin)/m.seconds).let{it-floor(it)};var i=m.times.indexOfLast{it<=phase}.coerceAtLeast(0).coerceAtMost(m.values.lastIndex);val j=min(i+1,m.values.lastIndex);val denom=m.times[j]-m.times[i];val t=if(m.discrete||denom<=0)0.0 else ((phase-m.times[i])/denom).coerceIn(0.0,1.0);m.node.setAttribute(m.attribute,interpolate(m.values[i],m.values[j],t))}
   val writer=StringWriter();TransformerFactory.newInstance().newTransformer().transform(DOMSource(d),StreamResult(writer));val svg=SVG.getFromString(writer.toString());val vb=svg.documentViewBox;val w=vb?.width()?.roundToInt()?.coerceAtLeast(1)?:720;val h=vb?.height()?.roundToInt()?.coerceAtLeast(1)?:1000;val p=svg.renderToPicture(w,h);cache.put(index,p);return p
  }
- override fun onDraw(canvas:Canvas){super.onDraw(canvas);val p=picture((fraction*99).roundToInt())?:return;val scale=min(width.toFloat()/p.width,height.toFloat()/p.height);canvas.save();canvas.translate((width-p.width*scale)/2,(height-p.height*scale)/2);if(mirrored){canvas.translate(p.width*scale,0f);canvas.scale(-scale,scale)}else canvas.scale(scale,scale);canvas.drawPicture(p);canvas.restore()}
+ override fun onDraw(canvas:Canvas){super.onDraw(canvas);val p=picture((fraction*99).roundToInt())?:return;val scale=if(crop)max(width.toFloat()/p.width,height.toFloat()/p.height) else min(width.toFloat()/p.width,height.toFloat()/p.height);canvas.save();canvas.translate((width-p.width*scale)/2,(height-p.height*scale)/2);if(mirrored){canvas.translate(p.width*scale,0f);canvas.scale(-scale,scale)}else canvas.scale(scale,scale);canvas.drawPicture(p);canvas.restore()}
  private fun updateAnimation(){if(!ready)return;animator?.cancel();animator=null;if(!playing||!isAttachedToWindow||windowVisibility!=VISIBLE||visibility!=VISIBLE)return;animator=ValueAnimator.ofFloat(0f,1f).apply{duration=(cycle*1000/speed).toLong();repeatCount=ValueAnimator.INFINITE;interpolator=LinearInterpolator();addUpdateListener{fraction=it.animatedValue as Float};start();currentPlayTime=(fraction*duration).toLong()}}
  override fun onAttachedToWindow(){super.onAttachedToWindow();updateAnimation()}
  override fun onDetachedFromWindow(){animator?.cancel();animator=null;super.onDetachedFromWindow()}
  override fun onWindowVisibilityChanged(v:Int){super.onWindowVisibilityChanged(v);if(ready)updateAnimation()}
  fun release(){animator?.cancel();animator=null;cache.evictAll();doc=null;ready=false}
 }
-@Composable fun OriginalSvg(path:String,modifier:Modifier=Modifier,play:Boolean=false,speed:Float=1f,mirror:Boolean=false,progress:Float?=null,accent:String="#aacce0",metal:String="#494c68",ornament:String="#8b8fb1"){
- AndroidView(factory={NativeSvgView(it)},modifier=modifier,update={v->v.load(path,accent,metal,ornament);v.speed=speed;v.mirrored=mirror;if(progress!=null&&!play)v.fraction=progress;v.playing=play},onRelease={it.release()})
+@Composable fun OriginalSvg(path:String,modifier:Modifier=Modifier,play:Boolean=false,speed:Float=1f,mirror:Boolean=false,progress:Float?=null,accent:String="#aacce0",metal:String="#494c68",ornament:String="#8b8fb1",crop:Boolean=false){
+ AndroidView(factory={NativeSvgView(it)},modifier=modifier,update={v->v.load(path,accent,metal,ornament);v.speed=speed;v.mirrored=mirror;v.crop=crop;if(progress!=null&&!play)v.fraction=progress;v.playing=play},onRelease={it.release()})
 }
