@@ -49,7 +49,7 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
    if(sectionIndex==0){Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(14.dp)){Avatar(ui.pendingAvatar?:s.state.s("avatar"),values["name"]?:"C",Modifier.size(72.dp));Column(verticalArrangement=Arrangement.spacedBy(6.dp)){HButton("Elegir fotografía"){ui.chooseAvatar()};HText("Se guarda en este dispositivo",size=14,color=LocalHunter.current.muted)}}}
    val done=mutableSetOf<String>()
    for(f in sec.a("fields").objects()){
-    val name=f.s("name");val type=f.s("type");if(name in listOf("goal","frequency"))continue;if(name in listOf("age","height","weight")){if(name!="age")continue;Row(horizontalArrangement=Arrangement.spacedBy(9.dp)){for(k in listOf("age","height","weight"))HInput(values[k]?:"",{values[k]=it},fieldLabels[k]?:k,Modifier.weight(1f),number=true)};continue}
+    val name=f.s("name");val type=f.s("type");if(name in listOf("goal","frequency","animate","collection33","scene33"))continue;if(name in listOf("age","height","weight")){if(name!="age")continue;Row(horizontalArrangement=Arrangement.spacedBy(9.dp)){for(k in listOf("age","height","weight"))HInput(values[k]?:"",{values[k]=it},fieldLabels[k]?:k,Modifier.weight(1f),number=true)};continue}
     if(name in listOf("materials46","capabilities46")){
      if(!done.add(name))continue
      val choices=sec.a("fields").objects().filter{it.s("name")==name}
@@ -88,7 +88,6 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
    }
    if(sectionIndex==form.lastIndex){Heading("Zonas e historial",size=26);for((i,injury)in injuries.withIndex()){Row(verticalAlignment=Alignment.CenterVertically){HText("${zoneLabels[injury.s("zone")]?:injury.s("zone")} · ${typeLabels[injury.s("type")]?:injury.s("type")} · ${if(injury.s("stage")=="past")"Anterior" else "Actual"}",Modifier.weight(1f),size=16);HButton("×"){injuries.removeAt(i)}}};HSelect("Zona",injuryZone,zoneLabels.toList()){injuryZone=it};HSelect("Tipo",injuryType,typeLabels.toList()){injuryType=it};Chips(listOf("current" to "Actual","past" to "Anterior"),injuryStage){injuryStage=it};HButton("+ Añadir zona"){injuries+=obj("zone" to injuryZone,"type" to injuryType,"stage" to injuryStage)};HText("El filtro por zonas no constituye un diagnóstico ni un programa de rehabilitación.",size=14,color=LocalHunter.current.muted)}
   }
-  AppearanceControls(ui)
   HButton("Guardar perfil",Modifier.fillMaxWidth(),primary=true){saveProfile()}
   HPanel{Heading("Copia de seguridad",size=29);HText("Guarda tu perfil, calendario y registros en un archivo.",size=16,color=LocalHunter.current.muted);HButton("Exportar copia de seguridad"){ui.export()};HButton("Restaurar copia"){ui.import()}}
   HPanel{Heading("Entrenadores y contenido",size=29);HCheck("Actualizar entrenadores automáticamente",s.state.b("creatorAuto",true)){s.state.put("creatorAuto",!s.state.b("creatorAuto",true));s.save();CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true))};HButton("Actualizar ahora"){ui.open("creator-refresh")};HButton("Recordatorios del sistema"){ui.open("reminders")};HButton("Fuentes y publicaciones"){ui.open("sources")};HText("Hunter System · Eclipse 41.0",size=14,color=LocalHunter.current.muted)}

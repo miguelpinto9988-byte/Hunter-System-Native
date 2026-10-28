@@ -63,25 +63,26 @@ import kotlin.math.*
  }
 }
 
+// Five simple color choices for new and existing hunter profiles.
+// Older palette IDs stay supported by EclipseVisuals for saved profiles.
+val profileColorThemes=listOf("eclipse","ice","aurora","ceniza","amanecer")
 @Composable fun ThemeGallery(selected:String,onSelect:(String)->Unit){
- SectionTitle("Elige tu universo","Seis atmósferas para tu entrenamiento",Sigil.Layers)
- for(row in eclipsePalettes.chunked(2))Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){
+ SectionTitle("Color del sistema","Elige uno de cinco colores",Sigil.Layers)
+ val themes=profileColorThemes.map(::eclipsePalette)
+ for(row in themes.chunked(2))Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){
   for(theme in row){val c=eclipseColors(theme.id);val chosen=selected==theme.id
-   Column(Modifier.weight(1f).clip(RoundedCornerShape(20.dp)).background(c.bg)
-    .border(if(chosen)2.dp else 1.dp,if(chosen)c.accent else c.line,RoundedCornerShape(20.dp))
-    .clickable(role=Role.RadioButton){onSelect(theme.id)}.semantics{this.selected=chosen;contentDescription="Tema ${theme.name}"}.padding(13.dp),verticalArrangement=Arrangement.spacedBy(9.dp)){
-    CompositionLocalProvider(LocalHunter provides c){
-     Box(Modifier.fillMaxWidth().height(64.dp).clip(RoundedCornerShape(12.dp)).background(Brush.linearGradient(listOf(c.selected,c.panel)))){
-      ConstellationField(Modifier.fillMaxSize());HunterIcon(Sigil.Crown,Modifier.align(Alignment.Center).size(30.dp))
-      if(chosen)HunterIcon(Sigil.Check,Modifier.align(Alignment.TopEnd).padding(5.dp).size(16.dp))
-     }
-     HText(theme.name,size=18,bold=true,color=c.text)
-     Row(horizontalArrangement=Arrangement.spacedBy(5.dp)){for(color in listOf(c.accent,c.secondary,c.panel))Box(Modifier.size(10.dp).background(color,CircleShape))}
-    }
+   Row(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(c.panel)
+    .border(if(chosen)2.dp else 1.dp,if(chosen)c.accent else c.line,RoundedCornerShape(16.dp))
+    .clickable(role=Role.RadioButton){onSelect(theme.id)}
+    .semantics{this.selected=chosen;contentDescription="Tema ${theme.name}"}
+    .padding(horizontal=12.dp,vertical=14.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)){
+    Box(Modifier.size(25.dp).clip(CircleShape).background(c.accent))
+    HText(theme.name,Modifier.weight(1f),size=14,color=c.text,bold=chosen,maxLines=1)
+    if(chosen)HunterIcon(Sigil.Check,Modifier.size(15.dp),c.accent)
    }
   }
+  if(row.size==1)Spacer(Modifier.weight(1f))
  }
- HText(eclipsePalette(selected).story,size=15,color=LocalHunter.current.muted)
 }
 @Composable fun CompanionPicker(selected:String,onSelect:(String)->Unit){
  SectionTitle("Tu acompañante","Selecciona quién camina contigo",Sigil.Shield)
@@ -98,24 +99,6 @@ import kotlin.math.*
   }
  }
  CompanionStage(companionKey(obj("companionCharacter" to selected)),Modifier.fillMaxWidth().height(230.dp))
-}
-@Composable fun AppearanceControls(ui:NativeUi){
- val s=ui.store;val prefs=s.state.o("eclipseAppearance")
- fun change(key:String,value:Any){ui.attempt{s.state.put("eclipseAppearance",s.state.o("eclipseAppearance").copyJson().put(key,value));s.save()}}
- HPanel{
-  SectionTitle("Profundidad y movimiento","Elige cómo se ve tu sistema",Sigil.Layers)
-  Chips(listOf("flat" to "2D","depth" to "2.5D","relic" to "3D"),visualMode(prefs)){change("mode",it)}
-  HText(when(visualMode(prefs)){"flat"->"Ilustraciones planas y composición limpia.";"relic"->"Reliquia geométrica 3D junto a tu personaje ilustrado. Abre el visor para girarla.";else->"Ilustraciones en capas con movimiento suave y profundidad."},size=15,color=LocalHunter.current.muted)
-  if(visualMode(prefs)=="relic")HButton("Explorar reliquia 3D",Modifier.fillMaxWidth(),icon=Sigil.Expand){ui.open("relic")}
-  HText("Tamaño del acompañante",size=15,bold=true)
-  Chips(listOf("0.8" to "Compacto","1.0" to "Normal","1.2" to "Grande"),prefs.n("size",1.0).toString()){change("size",it.toDouble())}
-  HText("Velocidad ambiental",size=15,bold=true)
-  Chips(listOf("0.5" to "Lenta","1.0" to "Normal","1.5" to "Rápida"),prefs.n("speed",1.0).toString()){change("speed",it.toDouble())}
-  HCheck("Aura del acompañante",prefs.b("aura",true)){change("aura",!prefs.b("aura",true))}
-  HCheck("Acceso flotante al acompañante",prefs.b("floating",true)){change("floating",!prefs.b("floating",true))}
-  HCheck("Reducir movimiento",prefs.b("reduceMotion")){change("reduceMotion",!prefs.b("reduceMotion"))}
-  HText("Estos ajustes visuales se guardan al cambiarlos.",size=13,color=LocalHunter.current.muted)
- }
 }
 @Composable fun RelicViewer(){
  Eyebrow("SALA DE EVOLUCIÓN");Heading("El núcleo de tu poder")
