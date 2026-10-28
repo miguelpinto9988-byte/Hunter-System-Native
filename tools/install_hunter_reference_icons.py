@@ -69,11 +69,16 @@ def transparent_icon(sheet:Image.Image,region:tuple[int,int,int,int])->Image.Ima
     crop=sheet.crop(region)
     rgba=Image.new("RGBA",crop.size)
     pixels=[]
-    for r,g,b in crop.getdata():
+    for idx,(r,g,b) in enumerate(crop.getdata()):
         peak=max(r,g,b)
         # Every original glyph glows above the dark card. Smooth-cut the
         # dark card's pixels; don't reconstruct, paint, or vectorize glyphs.
         opacity=max(0,min(255,round((peak-46)*255/100)))
+        # Remove the narrow blue panel borders at either edge of a crop.
+        # These stripes belong to the sheet layout, not to the symbol.
+        col=idx%crop.width
+        if col<8 or col>=crop.width-8:
+            opacity=0
         pixels.append((r,g,b,opacity))
     rgba.putdata(pixels)
     bbox=rgba.getbbox()
