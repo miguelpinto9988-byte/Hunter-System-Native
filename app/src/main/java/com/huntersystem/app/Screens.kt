@@ -149,7 +149,7 @@ fun rankKey(level:Int)=listOf("E","D","C","B","A","S")[((level-1)/5).coerceIn(0,
    (if(delta>0)"+" else "")+delta+" "+
    unit+
    ". Basada en la evaluación del "+adjustment.s("previousDate")+
-   " (esfuerzo "+adjustment.i("rpe")+"/10), revisada con el historial del grupo.")
+   " (esfuerzo "+adjustment.i("rpe")+"/10), revisada en períodos de 7, 14 y 21 días.")
  }
  for((i,x)in items.withIndex()){val e=s.catalog.byId[x.s("id")]?:continue;Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){HCheck(e.name,x.b("missionState")||x.b("selfReported")||x.a("actual").objects().count{it.b("done")}>=x.i("sets"),enabled=!closed&&!x.b("archived")){ui.attempt{s.toggleMission(date,i)}};HText("${x.i("sets")} × ${x.i("target")} ${if(e.unit=="sec")"segundos" else "repeticiones"}${if(e.sides)" por lado" else ""}",Modifier.padding(start=33.dp),size=15,color=LocalHunter.current.muted)};HText("↗",Modifier.clickable{ui.open("exercise",obj("id" to e.id))}.padding(10.dp),color=LocalHunter.current.accent)}}
  for((i,x)in tasks.withIndex())HCheck(x.s("text"),x.b("done"),enabled=!closed){ui.attempt{s.toggleTask(date,i)}}

@@ -30,19 +30,41 @@ class GroupEvolutionTest {
   assertEquals(0,GroupEvolution.evaluate(logs,"2026-11-20","upper",profile,catalog).steps)
   assertEquals(0,GroupEvolution.evaluate(logs,"2026-10-26","upper",profile,catalog).steps)
  }
- @Test fun threeWeekAndQuarterReviewsRequireEvidenceAndStayBounded(){
-  val logs=records(
-   record("2026-08-06","cardio",3),record("2026-08-13","cardio",3),
-   record("2026-08-20","cardio",3),record("2026-09-02","cardio",3),
-   record("2026-09-17","cardio",3),record("2026-10-10","cardio",3),
-   record("2026-10-18","cardio",3),record("2026-10-24","cardio",3))
+ @Test fun sevenDayReviewNeedsTwoRealSessions(){
+  val logs=records(record("2026-10-22","cardio",3),record("2026-10-26","cardio",3))
   val result=GroupEvolution.evaluate(logs,"2026-10-28","cardio",profile,catalog)
   assertEquals(2,result.steps)
-  assertEquals(3,result.samples21)
-  assertEquals(8,result.samples90)
+  assertEquals(2,result.samples7)
+  assertEquals(2,result.samples14)
+  assertEquals(2,result.samples21)
   assertEquals(0,GroupEvolution.evaluate(logs,"2026-10-28","lower",profile,catalog).steps)
  }
- @Test fun fatigueBlocksIncreasingDifficultyEvenAfterGoodMonth(){
+ @Test fun fourteenDayReviewNeedsThreeSessionsFromSameGroup(){
+  val logs=records(record("2026-10-15","lower",3),record("2026-10-19","lower",3),
+   record("2026-10-24","lower",3))
+  val result=GroupEvolution.evaluate(logs,"2026-10-28","lower",profile,catalog)
+  assertEquals(2,result.steps)
+  assertEquals(1,result.samples7)
+  assertEquals(3,result.samples14)
+  assertEquals(3,result.samples21)
+ }
+ @Test fun twentyOneDayReviewRequiresFiveSessionsAndExcludesOlderData(){
+  val logs=records(record("2026-08-06","cardio",3),
+   record("2026-10-08","cardio",3),record("2026-10-09","cardio",3),
+   record("2026-10-10","cardio",3),record("2026-10-11","cardio",3),
+   record("2026-10-24","cardio",3))
+  val result=GroupEvolution.evaluate(logs,"2026-10-28","cardio",profile,catalog)
+  assertEquals(2,result.steps)
+  assertEquals(1,result.samples7)
+  assertEquals(1,result.samples14)
+  assertEquals(5,result.samples21)
+  assertEquals(0,GroupEvolution.evaluate(logs,"2026-10-28","upper",profile,catalog).steps)
+  val old=records(record("2026-09-15","cardio",2))
+  val expired=GroupEvolution.evaluate(old,"2026-10-28","cardio",profile,catalog)
+  assertEquals(0,expired.steps)
+  assertEquals(0,expired.samples21)
+ }
+ @Test fun fatigueBlocksIncreasingDifficultyEvenAfterGoodWeeks(){
   val logs=records(record("2026-10-11","upper",3),record("2026-10-18","upper",3),
    record("2026-10-27","upper",8,true))
   assertTrue(GroupEvolution.evaluate(logs,"2026-10-28","upper",profile,catalog).steps<0)

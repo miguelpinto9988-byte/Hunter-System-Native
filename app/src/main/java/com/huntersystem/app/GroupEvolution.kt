@@ -45,8 +45,8 @@ object GroupEvolution {
 
  data class Adjustment(
   val group:String, val steps:Int=0, val lastDate:String="",
-  val lastRpe:Int=0, val samples7:Int=0, val samples21:Int=0,
-  val samples90:Int=0
+  val lastRpe:Int=0, val samples7:Int=0, val samples14:Int=0,
+  val samples21:Int=0
  )
 
  fun evaluate(logs:JSONObject,date:String,group:String,p:JSONObject?,catalog:Catalog):Adjustment {
@@ -59,31 +59,32 @@ object GroupEvolution {
   }.sortedBy{it.first}
   if(past.isEmpty())return Adjustment(group)
   val last=past.last()
+  // Ventanas móviles de 7, 14 y 21 días, independientes por grupo.
+  // Un registro anterior a los 21 días no aumenta la exigencia.
   val seven=past.filter{it.first>=plus(date,-7)}
-  val threeWeeks=past.filter{it.first>=plus(date,-21)}
-  val quarter=past.filter{it.first>=plus(date,-90)}
-  // A historical score outside a 3-week period is displayed but not used to
-  // increase difficulty after a long inactivity.
-  if(threeWeeks.isEmpty())return Adjustment(group,0,last.first,last.second.i("rpe"),seven.size,0,quarter.size)
+  val fourteen=past.filter{it.first>=plus(date,-14)}
+  val twentyOne=past.filter{it.first>=plus(date,-21)}
+  if(twentyOne.isEmpty())return Adjustment(group,0,last.first,last.second.i("rpe"),0,0,0)
   val latestRpe=last.second.i("rpe")
   val high=last.second.b("fatigue")||latestRpe>=8
   val low=latestRpe in 1..3&&!last.second.b("fatigue")
   var steps=if(high)-1 else if(low)1 else 0
 
-  val avg21=threeWeeks.map{it.second.i("rpe").toDouble()}.average()
-  val healthy21=threeWeeks.all{!it.second.b("fatigue")}
-  // Three-week review only after at least three completed sessions of this family.
-  if(threeWeeks.size>=3){
-   if(avg21<=4.0&&healthy21&&!high)steps+=1
-   if(avg21>=7.5||threeWeeks.count{it.second.b("fatigue")}>=2)steps-=1
+  // Revisiones basadas en sesiones completas: el tiempo por sí solo no progresa.
+  // Cada ventana exige más evidencia para agregar un paso.
+  fun review(records:List<Pair<String,JSONObject>>,minimum:Int):Int{
+   if(records.size<minimum)return 0
+   val avg=records.map{it.second.i("rpe").toDouble()}.average()
+   val difficult=records.count{it.second.b("fatigue")||it.second.i("rpe")>=8}
+   return when{
+    difficult>=2||avg>=7.5 -> -1
+    difficult==0&&avg<=4.0 -> 1
+    else -> 0
+   }
   }
-  // Rolling quarterly review: requires evidence, never an automatic time-based boost.
-  if(quarter.size>=8&&threeWeeks.size>=2){
-   val avg90=quarter.map{it.second.i("rpe").toDouble()}.average()
-   val difficult=quarter.count{it.second.b("fatigue")||it.second.i("rpe")>=8}
-   if(avg90<=4.5&&difficult==0&&!high)steps+=1
-   if(avg90>=7.5||difficult>=3)steps-=1
-  }
+  steps+=review(seven,2)
+  steps+=review(fourteen,3)
+  steps+=review(twentyOne,5)
   // A stopped or painful session must block progression even if a previous
   // completed session was easy. It remains visible to the existing risk filters.
   val recentProblem=logs.entries().any{(d,v)->
@@ -93,7 +94,7 @@ object GroupEvolution {
   }
   if(high||recentProblem)steps=steps.coerceAtMost(0)
   // Global safety and medical gates are still enforced by the existing Rules.
-  return Adjustment(group,steps.coerceIn(-2,2),last.first,latestRpe,seven.size,threeWeeks.size,quarter.size)
+  return Adjustment(group,steps.coerceIn(-2,2),last.first,latestRpe,seven.size,fourteen.size,twentyOne.size)
  }
 
  fun feedback(logs:JSONObject,date:String,group:String,p:JSONObject?,catalog:Catalog):Feedback {
@@ -130,8 +131,8 @@ object GroupEvolution {
   out.put("groupAdaptation",obj(
    "group" to adjustment.group,"previousDate" to adjustment.lastDate,
    "rpe" to adjustment.lastRpe,"difference" to (updated-base),
-   "sessions7" to adjustment.samples7,"sessions21" to adjustment.samples21,
-   "sessions90" to adjustment.samples90,
+   "sessions7" to adjustment.samples7,"sessions14" to adjustment.samples14,
+   "sessions21" to adjustment.samples21,
    "why" to (if(updated<base)"Exigencia reducida según la evaluación anterior de este grupo." else "Progresión pequeña según las evaluaciones de este grupo.")
   ))
   return out
