@@ -29,6 +29,14 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
   val out=catalog.defaultState.copyJson();for((k,v)in data.entries())out.put(k,v);return out
  }
  fun restore(data:JSONObject){val checked=validateBackup(data);state=checked;readError=null;save();refreshWeek()}
+ fun updateAppearanceOnly(theme:String,appearance:JSONObject,avatar:String?=null){
+  val existing=profile?:error("Perfil no disponible")
+  // Visual-only changes cannot silently re-interpret goals or rewrite training settings.
+  state.put("profile",existing.copyJson().put("theme",theme))
+  state.put("appearance33",appearance.copyJson())
+  avatar?.let{state.put("avatar",it)}
+  save()
+ }
  fun saveProfile(p:JSONObject,appearance:JSONObject?=null,avatar:String?=null){
   val q=p.copyJson();for((k,range)in mapOf("age" to 13.0..100.0,"height" to 100.0..250.0,"weight" to 30.0..350.0)){val n=q.n(k,Double.NaN);require(n in range){"Revisa "+mapOf("age" to "la edad","height" to "la estatura","weight" to "el peso")[k]};q.put(k,n)};require(q.s("name").isNotBlank()){ "Escribe tu nombre de cazador" }
   q.put("name",q.s("name").take(60));q.put("finalGoal",q.s("finalGoal").take(300));q.put("minutes",q.i("minutes",20));q.put("dailyMissions",q.i("dailyMissions",3).coerceIn(1,7));q.put("frequency",q.i("frequency",2));q.put("experience",if(level(q)==0)"beginner" else "regular");q.put("load",q.n("load").coerceIn(0.0,200.0));q.put("trainingScale",q.n("trainingScale",1.0).coerceIn(.4,1.0))

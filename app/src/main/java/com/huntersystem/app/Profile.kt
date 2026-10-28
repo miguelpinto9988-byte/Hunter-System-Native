@@ -57,6 +57,20 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
  var manualGoalGroup by remember(old==null){mutableStateOf(old?.b("manualGoalGroupNative")?:false)}
  val expanded=remember{mutableStateMapOf<String,Boolean>()}
  fun saveProfile(){ui.attempt{
+  // Appearance-only changes must leave the training profile and its plan intact.
+  val visualOnly=old!=null&&
+   values.all{(k,v)->k in listOf("theme","collection33","scene33")||v==initialValues[k]}&&
+   week.toList()==old.a("weekPlan").strings()&&focus.toList()==old.a("weekFocus").strings()&&
+   arr(injuries).toString()==old.a("injuries").toString()&&
+   manualGoalGroup==old.b("manualGoalGroupNative")
+  if(visualOnly){
+   s.updateAppearanceOnly(values["theme"]?:"eclipse",
+    obj("collection" to values["collection33"],"scene" to values["scene33"]),ui.pendingAvatar)
+   initialValues.clear();initialValues.putAll(values);ui.pendingAvatar=null
+   ui.open("saved",obj("title" to "Apariencia guardada",
+    "body" to "Se actualizó la apariencia sin cambiar objetivos, equipo ni entrenamiento."))
+   return@attempt
+  }
   val p=old?.copyJson()?:JSONObject();val health=old?.o("health")?.copyJson()?:JSONObject();val restrictions=old?.o("restrictions")?.copyJson()?:JSONObject()
   // Preserve existing values and array order when only appearance is edited.
   // Defaults shown for a legacy profile are not implicit training changes.
@@ -95,7 +109,18 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
       ProfileEquipmentOptions(values[name]?:"body",values,expanded,s.catalog)
      }
      name=="companionCharacter"->{if(!done.add(name))continue;CompanionPicker(values[name]?:"knight"){values[name]=it}}
-     type=="radio"->{if(!done.add(name))continue;val opts=sec.a("fields").objects().filter{it.s("name")==name}.map{it.s("value") to when(it.s("value")){"challenges"->"Desafíos diarios";"routines"->"Rutinas completas";else->it.s("label")}};Chips(opts,values[name]?:""){values[name]=it}}
+     type=="radio"->{
+      if(!done.add(name))continue
+      val opts=sec.a("fields").objects().filter{it.s("name")==name}.map{
+       it.s("value") to when(it.s("value")){
+        "challenges"->"Desafíos diarios";"routines"->"Rutinas completas";else->it.s("label")
+       }
+      }
+      Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
+       for((choice,text)in opts)
+        HButton(text,Modifier.weight(1f),primary=values[name]==choice){values[name]=choice}
+      }
+     }
      type=="checkbox"->HCheck(label,values[key]=="true"){values[key]=(values[key]!="true").toString()}
      type=="select"->HSelect(label,values[name]?:"",f.a("options").objects().map{it.s("value") to it.s("label")}){v->values[name]=v;if(name=="goalGroup")manualGoalGroup=true;if(name=="difficulty")values["restSeconds"]=mapOf("basic" to "30","intermediate" to "60","advanced" to "90")[v]?:"30"}
      else->HInput(values[name]?:"",{values[name]=it},label,number=type=="number",multiline=type=="textarea")
@@ -123,12 +148,12 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
   HPanel{
    Heading("Rendimiento visual",size=29)
    HText("Un solo ajuste para imágenes, partículas, animaciones y mensajes del compañero.",size=16,color=LocalHunter.current.muted)
-   Chips(listOf(
-    "max" to "Máxima calidad",
-    "balanced" to "Equilibrado",
-    "saver" to "Ahorro de energía"
-   ),visualTier(s).id){choice->
-    s.state.put("visualQuality",choice);s.save()
+   for((id,label)in listOf(
+    "max" to "Máxima calidad","balanced" to "Equilibrado","saver" to "Ahorro de energía"
+   )){
+    HButton(label,Modifier.fillMaxWidth(),primary=visualTier(s).id==id){
+     s.state.put("visualQuality",id);s.save()
+    }
    }
    when(visualTier(s)){
     VisualTier.MAX->HText("Imágenes hasta 4K si el archivo y la pantalla lo permiten; más partículas, efectos y orientación contextual detallada.",size=15,color=LocalHunter.current.muted)

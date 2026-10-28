@@ -194,7 +194,7 @@ class ComposeSmokeTest {
  }
  @Test(timeout=120000) fun exerciseSessionNotificationsAndCompanionDialogsRender(){
   compose.runOnIdle{ui.open("exercise",obj("id" to "chair"))};compose.waitForIdle()
-  compose.onNodeWithText("Reproducir").assertExists();captureDialog("exercise-dialog")
+  compose.onNodeWithText("Pausar").assertExists();captureDialog("exercise-dialog")
   compose.onNodeWithContentDescription("Cerrar ventana").performClick()
   compose.runOnIdle{ui.open("coach")};compose.waitForIdle();captureDialog("companion-dialog")
   compose.onNodeWithContentDescription("Cerrar ventana").performClick()
