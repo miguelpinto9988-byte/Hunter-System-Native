@@ -21,14 +21,14 @@ class MonarchSpecialMissionTest {
   val missions=dates.map{MonarchMissionCatalog.missionFor(d(it),2,zone)}
   assertEquals(listOf("guardia","fortaleza","trono","fortaleza","guardia"),missions.map{it.id})
   assertEquals(listOf(1,2,3,4,1),missions.map{it.cycleWeek})
-  assertEquals(60,missions[0].goals.first{it.exerciseId=="squat"}.target)
-  assertEquals(80,missions[1].goals.first{it.exerciseId=="squat"}.target)
-  assertEquals(120,missions[2].goals.first{it.exerciseId=="squat"}.target)
-  assertEquals(60,missions[2].goals.first{it.exerciseId=="new46-burpee"}.target)
-  assertEquals(70,missions[2].goals.first{it.exerciseId=="pushup"}.target)
+  assertEquals(100,missions[0].goals.first{it.exerciseId=="squat"}.target)
+  assertEquals(140,missions[1].goals.first{it.exerciseId=="squat"}.target)
+  assertEquals(180,missions[2].goals.first{it.exerciseId=="squat"}.target)
+  assertEquals(75,missions[2].goals.first{it.exerciseId=="new46-burpee"}.target)
+  assertEquals(90,missions[2].goals.first{it.exerciseId=="pushup"}.target)
   // El patrón de niveles vuelve a empezar tras cuatro semanas, sin repetir todos los ejercicios.
   assertNotEquals(missions[0].goals,missions[4].goals)
-  assertEquals("guardia",MonarchMissionCatalog.missionFor(d("2026-11-08"),1,zone).id)
+  assertEquals("trono",MonarchMissionCatalog.missionFor(d("2026-11-08"),1,zone).id)
  }
 
  @Test fun deadlinesRunFromSundayToFollowingSundayNotMinutes() {
@@ -62,7 +62,7 @@ class MonarchSpecialMissionTest {
   val run=obj("id" to spec.id,"status" to "active","weekStart" to spec.weekStart,
    "deadlineAt" to spec.deadlineAt,"cycleWeek" to spec.cycleWeek,
    "goals" to arr(spec.goals.map{obj("exerciseId" to it.exerciseId,"target" to it.target)}),
-   "counts" to obj("squat" to 999,"new46-burpee" to 60,"pushup" to 70))
+   "counts" to obj(*spec.goals.dropLast(1).map{it.exerciseId to it.target}.toTypedArray()))
   val snapshot=MonarchMissionCatalog.fromRun(run)
   assertEquals(spec.goals,snapshot.goals)
   assertTrue(MonarchMissionCatalog.progress(run,snapshot)<1f) // falta cuarto objetivo
@@ -70,17 +70,74 @@ class MonarchSpecialMissionTest {
   assertEquals(1f,MonarchMissionCatalog.progress(run,snapshot),.0001f)
  }
 
- @Test fun noProfileCannotActivateAndDoesNotAlterBackup() {
+ @Test fun noProfileOrLowLevelStillCanAcceptVoluntaryMonarchMission(){
   val ctx=ApplicationProvider.getApplicationContext<Context>()
   ctx.filesDir.listFiles()?.filter{it.name.startsWith("hunter-system-native")}?.forEach{it.delete()}
   val store=NativeStore(ctx)
-  val before=store.export()
   val fixed=d("2026-11-08").atStartOfDay(zone).toInstant().toEpochMilli()
-  val spec=MonarchMissionCatalog.missionFor(d("2026-11-08"),2,zone)
-  assertNotNull(MonarchMissionCatalog.eligibleReason(store,spec,fixed))
-  try{store.startMonarchMission(fixed,zone);fail("No puede iniciar sin perfil")}
+  val offer=MonarchMissionCatalog.offerFor(store,d("2026-11-08"),zone)
+  assertEquals("trono",offer.id)
+  assertEquals(5,offer.goals.size)
+  assertNull(MonarchMissionCatalog.eligibleReason(store,offer,fixed))
+  assertTrue(offer.goals.all{MonarchMissionCatalog.equipmentReady(store,it.exerciseId)})
+  store.startMonarchMission(fixed,zone)
+  assertEquals("active",store.state.o("monarchSpecialMission").s("status"))
+  assertEquals(offer.goals.map{it.exerciseId},
+   MonarchMissionCatalog.fromRun(store.state.o("monarchSpecialMission")).goals.map{it.exerciseId})
+  // No cambia la misión tras modificar edad, nivel, objetivo o dolor del perfil.
+  store.state.put("profile",obj("equipment" to "body","difficulty" to "basic",
+    "goal" to "habit","age" to 16,"health" to obj("pain" to "moderate")))
+  val unchanged=MonarchMissionCatalog.offerFor(store,d("2026-11-08"),zone)
+  assertEquals(offer.goals,unchanged.goals)
+  assertEquals("trono",unchanged.id)
+  // Un intento semanal: no se permite crear otro desafío.
+  try{store.startMonarchMission(fixed,zone);fail("Segundo intento bloqueado")}
   catch(_:IllegalArgumentException){}
-  assertEquals(before,store.export())
+ }
+
+ @Test fun equipmentAloneDeterminesMonarchGoalPool(){
+  val ctx=ApplicationProvider.getApplicationContext<Context>()
+  ctx.filesDir.listFiles()?.filter{it.name.startsWith("hunter-system-native")}?.forEach{it.delete()}
+  val store=NativeStore(ctx)
+  val date=d("2026-11-01")
+  fun offer()=MonarchMissionCatalog.offerFor(store,date,zone)
+  store.state.put("profile",obj("equipment" to "body","difficulty" to "advanced"))
+  val body=offer()
+  assertEquals(5,body.goals.size)
+  assertTrue(body.goals.all{store.catalog.byId[it.exerciseId]?.equipment=="body"})
+  store.state.put("profile",obj("equipment" to "db","difficulty" to "basic",
+    "goal" to "endurance","age" to 15))
+  val dumbbells=offer()
+  assertTrue(dumbbells.goals.any{store.catalog.byId[it.exerciseId]?.equipment=="db"})
+  assertTrue(dumbbells.goals.all{store.catalog.byId[it.exerciseId]?.equipment!="gym"})
+  assertTrue(dumbbells.goals.all{MonarchMissionCatalog.equipmentReady(store,it.exerciseId)})
+  store.state.put("profile",obj("equipment" to "gym",
+    "gymEquipment23" to arr(listOf("barbell"))))
+  val gym=offer()
+  assertTrue(gym.goals.any{store.catalog.byId[it.exerciseId]?.equipment=="gym"})
+  assertTrue(gym.goals.all{MonarchMissionCatalog.equipmentReady(store,it.exerciseId)})
+  assertTrue(gym.goals.none{g->
+   store.catalog.byId[g.exerciseId]?.raw?.a("materialRequirements")?.strings()?.any{
+    it in listOf("cable","machine","smith","cardio")
+   }==true
+  })
+ }
+
+ @Test fun equipmentChangeAfterAcceptanceDoesNotPretendEquipmentExists(){
+  val ctx=ApplicationProvider.getApplicationContext<Context>()
+  ctx.filesDir.listFiles()?.filter{it.name.startsWith("hunter-system-native")}?.forEach{it.delete()}
+  val store=NativeStore(ctx)
+  val fixed=d("2026-11-01").atStartOfDay(zone).toInstant().toEpochMilli()
+  store.state.put("profile",obj("equipment" to "db"))
+  val goals=MonarchMissionCatalog.offerFor(store,d("2026-11-01"),zone).goals
+  val weighted=goals.first{store.catalog.byId[it.exerciseId]?.equipment=="db"}
+  store.startMonarchMission(fixed,zone)
+  store.state.put("profile",obj("equipment" to "body"))
+  assertFalse(MonarchMissionCatalog.equipmentReady(store,weighted.exerciseId))
+  try{store.recordMonarchProgress(weighted.exerciseId,1,fixed,zone);fail("Equipo no disponible")}
+  catch(_:IllegalArgumentException){}
+  store.stopMonarchMission(fixed,zone)
+  assertEquals("stopped",store.state.o("monarchSpecialMission").s("status"))
  }
 
  @Test fun sundayArchivesOldAttemptAndKeepsTheRecord() {
