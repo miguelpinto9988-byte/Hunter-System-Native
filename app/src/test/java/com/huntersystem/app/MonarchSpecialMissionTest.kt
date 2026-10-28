@@ -115,6 +115,7 @@ class MonarchSpecialMissionTest {
     "gymEquipment23" to arr(listOf("barbell"))))
   val gym=offer()
   assertTrue(gym.goals.any{store.catalog.byId[it.exerciseId]?.equipment=="gym"})
+  assertTrue(gym.goals.none{store.catalog.byId[it.exerciseId]?.equipment=="db"}) // Nunca presumir mancuernas en gimnasio
   assertTrue(gym.goals.all{MonarchMissionCatalog.equipmentReady(store,it.exerciseId)})
   assertTrue(gym.goals.none{g->
    store.catalog.byId[g.exerciseId]?.raw?.a("materialRequirements")?.strings()?.any{
