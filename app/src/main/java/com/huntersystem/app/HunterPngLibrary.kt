@@ -17,7 +17,7 @@ private val iconKeys=setOf(
     "lightning","energy","shield","milestone","settings","trophy",
     "success","reminders","xp","goal_strength","goal_habit",
     "goal_read","warning","calendar","history","rest","coach",
-    "search","export","import","menu"
+    "focus","energy"
 )
 
 @Composable

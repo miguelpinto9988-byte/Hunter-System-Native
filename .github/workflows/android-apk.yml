@@ -65,8 +65,7 @@ jobs:
 
       - name: Preparar biblioteca de imágenes PNG
         run: |
-          python3 -m pip install --disable-pip-version-check Pillow==11.3.0
-          python3 tools/build_hunter_png_library.py
+          python3 tools/install_hunter_png_ui.py
 
       - name: Comprobar ausencia de miniaturas
         run: python3 tools/verificar_sin_miniaturas.py
@@ -159,7 +158,8 @@ jobs:
               raw=z.read(asset)
               assert raw.startswith(bytes.fromhex('89504e470d0a1a0a')) and len(raw)>10000,f'PNG invalido: {route}'
             icons=[p for p in names if p.startswith('assets/hunter-png/icons/') and p.endswith('.png')]
-            assert len(icons)>=40,len(icons)
+            assert len(icons)==32,len(icons)
+            assert all(z.read(p)[25] == 6 for p in icons),'Iconos sin alfa RGBA'
             assert all(z.read(p).startswith(bytes.fromhex('89504e470d0a1a0a')) for p in icons)
             assert not any(p.startswith('assets/realm-art/') for p in names),'Persisten fondos SVG antiguos'
             print('8 fondos PNG y',len(icons),'iconos PNG empaquetados, sin fondos SVG')

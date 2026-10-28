@@ -18,7 +18,7 @@ checks={
     and 'hunter-png/wallpapers/' in read(src+"HunterRealmWallpaper.kt")
     and 'realm-art/' not in read(src+"HunterRealmWallpaper.kt"),
  "biblioteca iconos PNG":(R/(src+"HunterPngLibrary.kt")).is_file()
-    and len(list((R/"app/src/main/assets/hunter-png/icons").glob("*.png")))>=40
+    and len(list((R/"app/src/main/assets/hunter-png/icons").glob("*.png")))==32
     and 'HunterPngIcon(' in read(src+"MonarchRoutinesV42.kt")
     and 'HunterPngIcon(' in read(src+"MonarchProgressV42.kt")
     and 'HunterPngIcon(' in read(src+"Screens.kt"),
