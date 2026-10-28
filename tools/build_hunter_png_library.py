@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Raster-only UI artwork for Hunter System. Generates real PNG images from
-existing original WebP scene photography and openly licensed Noto Emoji PNGs.
+existing original WebP scene artwork and CC BY 4.0 OpenEmoji PNGs.
 
 This script is part of the Android build so that backgrounds and icons are
 actually packaged as bitmaps, not SVG, Compose polygons, or remote URLs.
@@ -29,8 +29,7 @@ WALLPAPER_SOURCES = {
     "profile":("scene-c-1.webp","#3D2B72"),
     "recovery":("scene-b-1.webp","#64253C"),
 }
-# 32 semantic icons; Noto Emoji is a PNG illustration library licensed by Google.
-# Source: https://github.com/googlefonts/noto-emoji (Apache License 2.0).
+# Semantic image icons from OpenEmoji (AI-illustrated PNGs, CC BY 4.0).\n# Source: https://github.com/profullstack/openemoji
 EMOJI={
  "panel":"1f3e0","missions":"2694","routines":"1f4aa",
  "exercises":"1f3cb","progress":"1f4c8","profile":"1f9d1",
@@ -79,8 +78,8 @@ def wallpaper(route:str,name:str,accent:str)->None:
         WALLPAPERS/(route+".png"),optimize=True)
 
 def emoji_png(code:str)->bytes:
-    url=("https://raw.githubusercontent.com/googlefonts/noto-emoji/"
-         "main/png/128/emoji_u"+code+".png")
+    url=("https://raw.githubusercontent.com/profullstack/openemoji/"
+         "main/png/128/"+code+".png")
     req=Request(url,headers={"User-Agent":"HunterSystem-APK-Build/43.9",
                              "Accept":"image/png"})
     with urlopen(req,timeout=25) as response:
@@ -93,7 +92,7 @@ def icon(name:str,code:str,cache:dict)->None:
     if code not in cache:
         try:cache[code]=Image.open(io.BytesIO(emoji_png(code))).convert("RGBA")
         except Exception as error:
-            print("Fallback Noto for",name,code,type(error).__name__,flush=True)
+            print("Fallback OpenEmoji for",name,code,type(error).__name__,flush=True)
             cache[code]=Image.open(io.BytesIO(emoji_png("2728"))).convert("RGBA")
     original=cache[code]
     color=ImageColor.getrgb(TINTS.get(name,"#89abed"))
