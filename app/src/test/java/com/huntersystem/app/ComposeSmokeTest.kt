@@ -106,6 +106,30 @@ class ComposeSmokeTest {
   compose.runOnIdle{ui.go("home")};compose.waitForIdle()
   compose.onNodeWithText("Abrir misión de hoy").assertExists()
  }
+ @Test(timeout=90000) fun legacyProfilePreferencesSurviveRemovalOfHiddenFormFields(){
+  compose.runOnIdle{
+   val p=store.profile!!.copyJson()
+    .put("equipment","gym").put("restSeconds",60).put("dailyMissions",5)
+    .put("blockMode22","rounds").put("trainingScale",0.85)
+    .put("gymEquipment23",arr(listOf("barbell","machine")))
+    .put("materials46",arr(listOf("space","band")))
+    .put("capabilities46",arr(listOf("singlebalance")))
+   store.saveProfile(p)
+   ui.go("profile")
+  };compose.waitForIdle()
+  compose.onNodeWithText("Personaliza tu semana").assertExists()
+  compose.onNodeWithText("60 segundos").assertExists()
+  compose.onNodeWithText("Guardar perfil").performScrollTo().performClick();compose.waitForIdle()
+  compose.onNodeWithText("Continuar").performClick();compose.waitForIdle()
+  val p=store.profile!!
+  org.junit.Assert.assertEquals(60,p.i("restSeconds"))
+  org.junit.Assert.assertEquals(5,p.i("dailyMissions"))
+  org.junit.Assert.assertEquals("rounds",p.s("blockMode22"))
+  org.junit.Assert.assertEquals(0.85,p.n("trainingScale"),0.001)
+  org.junit.Assert.assertEquals(setOf("barbell","machine"),p.a("gymEquipment23").strings().toSet())
+  org.junit.Assert.assertEquals(setOf("space","band"),p.a("materials46").strings().toSet())
+  org.junit.Assert.assertEquals(listOf("singlebalance"),p.a("capabilities46").strings())
+ }
  @Test(timeout=90000) fun weeklyProfileIsSingleCardWithConditionalMissionCount(){
   compose.runOnIdle{ui.go("profile")};compose.waitForIdle()
   compose.onNodeWithText("Personaliza tu semana").assertExists()

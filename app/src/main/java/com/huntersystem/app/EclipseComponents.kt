@@ -170,9 +170,6 @@ fun chosenSceneArtwork(scene:String):String{
   ConstellationField(Modifier.matchParentSize());content()
  }
 }
-@Composable fun EmptyState(title:String,body:String,icon:Sigil=Sigil.Search){
- HPanel{HunterIcon(icon,Modifier.size(36.dp));Heading(title,size=27);HText(body,size=16,color=LocalHunter.current.muted)}
-}
 @Composable fun AccessWelcome(){
  HPanel(padding=22){
   Box(Modifier.fillMaxWidth().height((220 * androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)).dp).clip(RoundedCornerShape(18.dp))){

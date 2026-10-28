@@ -4,6 +4,16 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ProfileEquipmentTest {
+ @Test fun profileFormContainsOnlyVisibleSectionsAndFields(){
+  val form=Catalog(loader={java.io.File("src/main/assets",it).readText()}).profileForm.objects()
+  assertEquals(5,form.size)
+  assertEquals(listOf("Foto de perfil","Tu compañero","Objetivo y equipo","¿Desafíos o rutinas completas?","Perfil"),form.map{it.s("title")})
+  val visible=form.flatMap{it.a("fields").objects()}.map{it.s("name")}
+  for(retired in listOf("trainingScale","materials46","capabilities46","scene33","collection33","animate","gym_barbell","gym_machine"))
+   assertFalse("Campo obsoleto: $retired",retired in visible)
+  assertTrue("equipment" in visible)
+  assertTrue("trainingMode" in visible)
+ }
  @Test fun optionsDependOnSelectedEquipment(){
   assertTrue(profileAllowedMaterials("body").contains("pullbar"))
   assertTrue(profileAllowedMaterials("body").contains("mat"))

@@ -1,7 +1,8 @@
 name: Verificar Eclipse Android
 on:
   push:
-    branches: ['codex/eclipse-ascension-redesign']
+    branches: ['main', 'codex/eclipse-ascension-redesign']
+    paths: ['app/**', '.github/workflows/eclipse-verify.yml']
   pull_request:
     paths: ['app/**', '.github/workflows/eclipse-verify.yml']
   workflow_dispatch:

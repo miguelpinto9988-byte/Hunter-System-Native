@@ -9,7 +9,6 @@ import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.*
 import org.json.JSONObject
-import kotlin.math.roundToInt
 
 private val fieldLabels=mapOf("name" to "Nombre de cazador","age" to "Edad","height" to "Altura cm","weight" to "Peso kg","gender" to "Género","theme" to "Tema","difficulty" to "Nivel de entrenamiento","goalGroup" to "Objetivo final","finalGoal" to "Mi meta personal","goal" to "Objetivo principal","frequency" to "Sesiones principales por semana","equipment" to "Equipo","load" to "Peso disponible de una mancuerna · kg","restSeconds" to "Descanso entre series","blockMode22" to "Orden de los bloques","dailyMissions" to "Misiones diarias · 1 a 7","pain" to "¿Tienes dolor actualmente?","recommendations" to "Recomendaciones de tu profesional · opcional","collection33" to "Colección visual","scene33" to "Escenario")
 private val healthFields=setOf("pain","acute","special","recommendations","approved","translated","redFlags")
@@ -17,10 +16,38 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
  val values=remember(old==null){mutableStateMapOf<String,String>().apply{
   val defaults=mapOf("gender" to "unspecified","theme" to "eclipse","difficulty" to "basic","goalGroup" to "habit","goal" to "general","frequency" to "2","equipment" to "body","restSeconds" to "30","dailyMissions" to "3","blockMode22" to "exercise","collection33" to "hunter","scene33" to "auto","trainingMode" to "challenges","companionCharacter" to "knight","trainingScale" to "1","pain" to "none")
   putAll(defaults)
-  for(f in fields){val name=f.s("name");val value=f.s("value");val type=f.s("type");val key=if(name in listOf("materials46","capabilities46"))"$name|$value" else name
-   val raw:Any?=when{old==null->null;name.startsWith("r_")->old.o("restrictions").opt(name.removePrefix("r_"));name.startsWith("gym_")->old.a("gymEquipment23").strings().contains(name.removePrefix("gym_"));name in listOf("materials46","capabilities46")->old.a(name).strings().contains(value);name in healthFields->old.o("health").opt(name);name=="theme"->resolveV39Theme(old.s("theme"),old.s("gender"));name=="collection33"->s.state.o("appearance33").s("collection","hunter");name=="scene33"->s.state.o("appearance33").s("scene","auto");else->old.opt(name)}
-   if(type=="radio"){if(raw!=null&&raw!=JSONObject.NULL)put(name,raw.toString()) else if(f.b("checked"))put(name,value)}else if(raw!=null&&raw!=JSONObject.NULL)put(key,raw.toString()) else if(type=="checkbox")put(key,f.b("checked").toString()) else if(!containsKey(name))put(name,value.ifBlank{f.a("options").objects().firstOrNull()?.s("value")?:""})
+  // Only visible fields belong to profile-form.json. Load historical settings
+  // explicitly so removing obsolete form controls cannot discard saved preferences.
+  for(f in fields){
+   val name=f.s("name");val value=f.s("value");val type=f.s("type")
+   val raw:Any?=when{
+    old==null->null
+    name.startsWith("r_")->old.o("restrictions").opt(name.removePrefix("r_"))
+    name in healthFields->old.o("health").opt(name)
+    else->old.opt(name)
+   }
+   if(type=="radio"){
+    if(raw!=null&&raw!=JSONObject.NULL)put(name,raw.toString())
+    else if(f.b("checked"))put(name,value)
+   }else if(raw!=null&&raw!=JSONObject.NULL)put(name,raw.toString())
+   else if(type=="checkbox")put(name,f.b("checked").toString())
+   else if(!containsKey(name))put(name,value.ifBlank{f.a("options").objects().firstOrNull()?.s("value")?:""})
   }
+  if(old!=null){
+   put("theme",resolveV39Theme(old.s("theme"),old.s("gender")))
+   for(name in listOf("restSeconds","dailyMissions","load","trainingScale","frequency","goal","blockMode22")){
+    old.opt(name)?.takeUnless{it==JSONObject.NULL}?.let{put(name,it.toString())}
+   }
+   put("bench",old.b("bench").toString())
+   put("step",old.b("step").toString())
+   val equipment=old.a("gymEquipment23").strings().toSet()
+   for(name in listOf("barbell","cable","machine","smith","cardio","bench"))
+    put("gym_$name",(name in equipment).toString())
+   for(name in listOf("materials46","capabilities46"))
+    for(value in old.a(name).strings())put("$name|$value","true")
+  }
+  put("collection33",s.state.o("appearance33").s("collection","hunter"))
+  put("scene33",s.state.o("appearance33").s("scene","auto"))
  }}
  val initialValues=remember(old==null){mutableStateMapOf<String,String>().apply{putAll(values)}}
  val injuries=remember(old==null){mutableStateListOf<JSONObject>().apply{addAll(old?.a("injuries")?.objects()?.map{it.copyJson()}?:emptyList())}}
@@ -29,12 +56,11 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
  var injuryZone by remember{mutableStateOf("knee")};var injuryType by remember{mutableStateOf("joint")};var injuryStage by remember{mutableStateOf("current")}
  var manualGoalGroup by remember(old==null){mutableStateOf(old?.b("manualGoalGroupNative")?:false)}
  val expanded=remember{mutableStateMapOf<String,Boolean>()}
- val titleNames=listOf("Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado")
  fun saveProfile(){ui.attempt{
   val p=old?.copyJson()?:JSONObject();val health=old?.o("health")?.copyJson()?:JSONObject();val restrictions=old?.o("restrictions")?.copyJson()?:JSONObject()
   // Preserve existing values and array order when only appearance is edited.
   // Defaults shown for a legacy profile are not implicit training changes.
-  for((name,value)in values){if('|' in name||name.startsWith("gym_")||name.endsWith("33")||(old!=null&&value==initialValues[name]))continue;when{ name.startsWith("r_")->restrictions.put(name.removePrefix("r_"),value=="true");name in healthFields->health.put(name,if(name in listOf("pain","recommendations"))value else value=="true");name in listOf("age","height","weight","load","frequency","restSeconds","dailyMissions","trainingScale")->p.put(name,value.replace(',','.').toDoubleOrNull()?.takeIf{it.isFinite()}?:error("Completa "+(fieldLabels[name]?:"los datos del perfil")));name in listOf("animate","bench","step")->p.put(name,value=="true");else->p.put(name,value)}}
+  for((name,value)in values){if('|' in name||name.startsWith("gym_")||name.endsWith("33")||(old!=null&&value==initialValues[name]))continue;when{ name.startsWith("r_")->restrictions.put(name.removePrefix("r_"),value=="true");name in healthFields->health.put(name,if(name in listOf("pain","recommendations"))value else value=="true");name in listOf("age","height","weight","load","frequency","restSeconds","dailyMissions","trainingScale")->p.put(name,value.replace(',','.').toDoubleOrNull()?.takeIf{it.isFinite()}?:error("Completa "+(fieldLabels[name]?:"los datos del perfil")));else->p.put(name,value)}}
   p.put("manualGoalGroupNative",manualGoalGroup);p.put("injuries",arr(injuries));p.put("health",health);p.put("restrictions",restrictions);p.put("weekPlan",arr(week));p.put("weekFocus",arr(focus))
   // Save only the equipment actually relevant to the selected training environment.
   // In particular, old checked gym machines cannot remain active in bodyweight mode.
@@ -51,7 +77,6 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
  }}
  SceneColumn(ui){if(old==null)AccessWelcome();Eyebrow("CAZADOR · CONFIGURACIÓN");Heading(if(old==null)"Crea tu perfil" else "Tu perfil de cazador");HText("Tu objetivo, nivel, equipo y calendario ajustan la selección de ejercicios.",color=LocalHunter.current.muted)
   for((sectionIndex,sec)in form.withIndex()){
-   if(sectionIndex in listOf(4,5))continue // Combined into a compact training section.
    if(sectionIndex==1)HPanel{ThemeGallery(values["theme"]?:"eclipse"){values["theme"]=it}}
    HPanel{
    val title=when(sectionIndex){3->"Personaliza tu semana";form.lastIndex->"Lesiones y salud";else->sec.s("title")}
@@ -59,10 +84,10 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
    if(sectionIndex==0){Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(14.dp)){Avatar(ui.pendingAvatar?:s.state.s("avatar"),values["name"]?:"C",Modifier.size(72.dp));Column(verticalArrangement=Arrangement.spacedBy(6.dp)){HButton("Elegir fotografía"){ui.chooseAvatar()};HText("Se guarda en este dispositivo",size=14,color=LocalHunter.current.muted)}}}
    val done=mutableSetOf<String>()
    for(f in sec.a("fields").objects()){
-    val name=f.s("name");val type=f.s("type");if(name in listOf("goal","frequency","theme","animate","collection33","scene33","load","bench","step","materials46","capabilities46")||name.startsWith("gym_"))continue;if(name in listOf("age","height","weight")){if(name!="age")continue;Row(horizontalArrangement=Arrangement.spacedBy(9.dp)){for(k in listOf("age","height","weight"))HInput(values[k]?:"",{values[k]=it},fieldLabels[k]?:k,Modifier.weight(1f),number=true)};continue}
+    val name=f.s("name");val type=f.s("type");if(name in listOf("age","height","weight")){if(name!="age")continue;Row(horizontalArrangement=Arrangement.spacedBy(9.dp)){for(k in listOf("age","height","weight"))HInput(values[k]?:"",{values[k]=it},fieldLabels[k]?:k,Modifier.weight(1f),number=true)};continue}
     if(name=="r_noImpact")HButton("Restricciones e indicaciones adicionales ▾",Modifier.fillMaxWidth()){expanded["restrictions"]=expanded["restrictions"]!=true}
     if((name.startsWith("r_")||name in listOf("recommendations","approved","translated"))&&expanded["restrictions"]!=true)continue
-    val key=if(name in listOf("materials46","capabilities46"))"$name|${f.s("value")}" else name
+    val key=name
     val label=fieldLabels[name]?:f.s("label").substringBefore("Seleccionado").trim()
     when{
      name=="equipment"->{
@@ -73,7 +98,6 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
      type=="radio"->{if(!done.add(name))continue;val opts=sec.a("fields").objects().filter{it.s("name")==name}.map{it.s("value") to when(it.s("value")){"challenges"->"Desafíos diarios";"routines"->"Rutinas completas";else->it.s("label")}};Chips(opts,values[name]?:""){values[name]=it}}
      type=="checkbox"->HCheck(label,values[key]=="true"){values[key]=(values[key]!="true").toString()}
      type=="select"->HSelect(label,values[name]?:"",f.a("options").objects().map{it.s("value") to it.s("label")}){v->values[name]=v;if(name=="goalGroup")manualGoalGroup=true;if(name=="difficulty")values["restSeconds"]=mapOf("basic" to "30","intermediate" to "60","advanced" to "90")[v]?:"30"}
-     type=="range"->{HText("Carga del plan adaptado · ${((values[name]?.toFloatOrNull()?:1f)*100).roundToInt()}%",size=17);Slider(values[name]?.toFloatOrNull()?:1f,{values[name]=it.toString()},valueRange=.4f..1f,steps=5);HText("Reduce la dosis del nivel elegido.",size=15,color=LocalHunter.current.muted)}
      else->HInput(values[name]?:"",{values[name]=it},label,number=type=="number",multiline=type=="textarea")
     }
     if(name=="finalGoal"){val result=s.goals.interpret(values[name]?:"",values["goalGroup"]?:"habit");val group=s.catalog.editorial.o("goalGroups").o(result.s("primary"));HNotice(group.s("name","Constancia y bienestar")+" · "+s.catalog.editorial.o("goalPlans").o(result.s("target")).s("why"))}
