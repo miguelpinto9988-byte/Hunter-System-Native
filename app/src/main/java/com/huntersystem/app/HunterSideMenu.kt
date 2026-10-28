@@ -31,7 +31,7 @@ fun HunterSideMenu(ui:NativeUi,onClose:()->Unit){
      verticalArrangement=Arrangement.spacedBy(7.dp)){
     Row(verticalAlignment=Alignment.CenterVertically,
         horizontalArrangement=Arrangement.spacedBy(10.dp)){
-     HunterPngIcon("profile",Modifier.size(60.dp),"Perfil del cazador")
+     HunterPngIcon("profile",Modifier.size(66.dp),"Perfil del cazador")
      Column {
       Eyebrow("HUNTER SYSTEM")
       Heading("SISTEMA MONARCA",size=21)
@@ -89,7 +89,7 @@ private fun HunterSideMenuItem(title:String,icon:String,selected:Boolean,onClick
   verticalAlignment=Alignment.CenterVertically,
   horizontalArrangement=Arrangement.spacedBy(12.dp)
  ){
-  HunterPngIcon(icon,Modifier.size(56.dp),title)
+  HunterPngIcon(icon,Modifier.size(62.dp),title)
   HText(title,Modifier.weight(1f),size=16,bold=selected,
     color=if(selected)c.accent else c.text)
  }
