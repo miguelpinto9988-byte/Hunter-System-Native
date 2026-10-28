@@ -28,7 +28,7 @@ for theme in ("eclipse", "umbral", "abismo", "runa", "hielo", "lavanda",
 profile = (src / "Profile.kt").read_text(encoding="utf-8")
 design = (src / "Design.kt").read_text(encoding="utf-8")
 screens = (src / "Screens.kt").read_text(encoding="utf-8")
-require("MonarchThemePicker(values" in profile, "No hay selector nativo en Perfil")
+require("ThemeGallery(values" in profile, "No hay selector nativo de cinco temas en Perfil")
 require("HunterDesignSystem.tokens(name,source)" in design or "HunterDesignSystem.tokens(name,source,accent)" in design, "No se usan tokens semanticos")
 dashboard = src / "MonarchDashboardV42.kt"
 require("MonarchStatTile(value.toString()" in screens or

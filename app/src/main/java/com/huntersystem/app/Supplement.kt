@@ -52,4 +52,20 @@ fun coachAnswer(s:NativeStore,question:String):String{val q=normalize(question);
  val exercise=s.catalog.exercises.filter{it.raw.s("variant")=="base"}.map{it to terms.count{word->word in normalize(it.name)}}.filter{it.second>0}.maxByOrNull{it.second}?.first;if(exercise!=null){val reasons=s.rules.reasons(exercise,ap);return exercise.name+": "+exercise.raw.a("instructions").strings().joinToString(" ")+" "+exercise.raw.s("cue")+if(reasons.isEmpty())"" else " No está incluido para tu perfil: "+reasons.joinToString(", ")+"."}
  return "No encuentro esa pregunta en mis respuestas locales. Puedo explicar ejercicios del catálogo, tu plan, las restricciones y la evolución semanal. No tengo acceso a un modelo generativo ni a consultas en Internet."
 }
-@Composable fun CoachPanel(ui:NativeUi){val s=ui.store;MonarchCompanionMood(s.profile);Heading("Guía personal",size=28);var question by remember{mutableStateOf("")};var answer by remember{mutableStateOf("")};HInput(question,{question=it.take(250)},"Pregunta sobre tu plan o un ejercicio",multiline=true);HButton("Preguntar",Modifier.fillMaxWidth(),primary=true){answer=coachAnswer(s,question)};for(text in listOf("¿Cómo se adapta mi plan?","¿Cuál es mi objetivo?","¿Qué pasa si siento dolor?"))HButton(text){question=text;answer=coachAnswer(s,text)};if(answer.isNotBlank())HPanel(padding=17){HText(answer)};HText("Respuestas locales basadas en reglas y en tu perfil.",size=14,color=LocalHunter.current.muted)}
+@Composable fun CoachPanel(ui:NativeUi){
+ val s=ui.store;val tier=LocalVisualTier.current
+ val group=GroupEvolution.sessionGroup(s.day(today()),s.profile,s.catalog)?:""
+ fun reply(question:String)=CompanionDialogue.message(s.profile,tier,DialogueContext(DialogueMoment.GUIDE,group=group))+
+  "\n\n"+coachAnswer(s,question)
+ CompanionStage(companionKey(s.profile),Modifier.fillMaxWidth().height(250.dp))
+ Eyebrow("TU COMPAÑERO");Heading(companionName(s.profile),size=34);Heading("Guía personal",size=26)
+ HText(CompanionDialogue.message(s.profile,tier,DialogueContext(DialogueMoment.WELCOME,group=group)),
+  size=16,color=LocalHunter.current.muted)
+ var question by remember{mutableStateOf("")};var answer by remember{mutableStateOf("")}
+ HInput(question,{question=it.take(250)},"Pregunta sobre tu plan o un ejercicio",multiline=true)
+ HButton("Preguntar",Modifier.fillMaxWidth(),primary=true){answer=reply(question)}
+ for(q in listOf("¿Cómo se adapta mi plan?","¿Cuál es mi objetivo?","¿Qué pasa si siento dolor?"))
+  HButton(q){question=q;answer=reply(q)}
+ if(answer.isNotBlank())HPanel(padding=17){HText(answer)}
+ HText("Respuestas locales basadas en datos y reglas del perfil; no utiliza IA remota.",size=14,color=LocalHunter.current.muted)
+}

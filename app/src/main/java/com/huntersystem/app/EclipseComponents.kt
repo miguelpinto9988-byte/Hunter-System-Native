@@ -44,9 +44,11 @@ import kotlin.math.*
  HPanel(modifier,padding=15,decor=false){HunterIcon(icon,Modifier.size(20.dp));Heading(value,size=30);HText(label,size=12,color=LocalHunter.current.muted)}
 }
 
-@Composable fun CompanionStage(character:String,modifier:Modifier=Modifier,prefs:JSONObject=LocalVisualPreferences.current,description:String?=null){
- val c=LocalHunter.current;val phase=ambientPhase(prefs.n("speed",1.0).toFloat());val mode=visualMode(prefs)
- val glow=prefs.b("aura",true);val size=prefs.n("size",1.0).toFloat().coerceIn(.8f,1.2f)
+@Composable fun CompanionStage(character:String,modifier:Modifier=Modifier,description:String?=null){
+ val c=LocalHunter.current;val tier=LocalVisualTier.current
+ val phase=ambientPhase(if(tier==VisualTier.MAX)1f else .65f)
+ val mode=when(tier){VisualTier.MAX->"relic";VisualTier.BALANCED->"depth";VisualTier.SAVER->"flat"}
+ val glow=tier!=VisualTier.SAVER
  Box(modifier.clip(RoundedCornerShape(24.dp)),contentAlignment=Alignment.Center){
   if(glow)Canvas(Modifier.fillMaxSize()){
    val center=Offset(this.size.width*.5f,this.size.height*.5f);val radius=this.size.minDimension*.5f
@@ -57,31 +59,35 @@ import kotlin.math.*
   if(mode=="relic")RelicScene(Modifier.align(Alignment.CenterEnd).fillMaxWidth(.58f).fillMaxHeight(.9f))
   AssetImage("ui33/companion-$character.webp",Modifier.fillMaxHeight(.80f).fillMaxWidth(if(mode=="relic").54f else .68f).align(if(mode=="relic")Alignment.CenterStart else Alignment.Center)
    .graphicsLayer{
-    scaleX=size;scaleY=size
-    if(mode=="depth"){translationY=sin(phase.value*PI.toFloat()*2)*5.dp.toPx();rotationY=sin(phase.value*PI.toFloat()*2)*5f;cameraDistance=16*density}
+    if(tier!=VisualTier.SAVER){
+     translationY=sin(phase.value*PI.toFloat()*2)*(if(tier==VisualTier.MAX)7 else 3).dp.toPx()
+     rotationY=sin(phase.value*PI.toFloat()*2)*(if(tier==VisualTier.MAX)5f else 2f)
+     cameraDistance=16*density
+    }
    },description=description)
  }
 }
 
+// Five simple color choices for new and existing hunter profiles.
+// Older palette IDs stay supported by EclipseVisuals for saved profiles.
+val profileColorThemes=listOf("eclipse","ice","aurora","ceniza","amanecer")
 @Composable fun ThemeGallery(selected:String,onSelect:(String)->Unit){
- SectionTitle("Elige tu universo","Seis atmósferas para tu entrenamiento",Sigil.Layers)
- for(row in eclipsePalettes.chunked(2))Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){
+ SectionTitle("Color del sistema","Elige uno de cinco colores",Sigil.Layers)
+ val themes=profileColorThemes.map(::eclipsePalette)
+ for(row in themes.chunked(2))Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){
   for(theme in row){val c=eclipseColors(theme.id);val chosen=selected==theme.id
-   Column(Modifier.weight(1f).clip(RoundedCornerShape(20.dp)).background(c.bg)
-    .border(if(chosen)2.dp else 1.dp,if(chosen)c.accent else c.line,RoundedCornerShape(20.dp))
-    .clickable(role=Role.RadioButton){onSelect(theme.id)}.semantics{this.selected=chosen;contentDescription="Tema ${theme.name}"}.padding(13.dp),verticalArrangement=Arrangement.spacedBy(9.dp)){
-    CompositionLocalProvider(LocalHunter provides c){
-     Box(Modifier.fillMaxWidth().height(64.dp).clip(RoundedCornerShape(12.dp)).background(Brush.linearGradient(listOf(c.selected,c.panel)))){
-      ConstellationField(Modifier.fillMaxSize());HunterIcon(Sigil.Crown,Modifier.align(Alignment.Center).size(30.dp))
-      if(chosen)HunterIcon(Sigil.Check,Modifier.align(Alignment.TopEnd).padding(5.dp).size(16.dp))
-     }
-     HText(theme.name,size=18,bold=true,color=c.text)
-     Row(horizontalArrangement=Arrangement.spacedBy(5.dp)){for(color in listOf(c.accent,c.secondary,c.panel))Box(Modifier.size(10.dp).background(color,CircleShape))}
-    }
+   Row(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(c.panel)
+    .border(if(chosen)2.dp else 1.dp,if(chosen)c.accent else c.line,RoundedCornerShape(16.dp))
+    .clickable(role=Role.RadioButton){onSelect(theme.id)}
+    .semantics{this.selected=chosen;contentDescription="Tema ${theme.name}"}
+    .padding(horizontal=12.dp,vertical=14.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)){
+    Box(Modifier.size(25.dp).clip(CircleShape).background(c.accent))
+    HText(theme.name,Modifier.weight(1f),size=14,color=c.text,bold=chosen,maxLines=1)
+    if(chosen)HunterIcon(Sigil.Check,Modifier.size(15.dp),c.accent)
    }
   }
+  if(row.size==1)Spacer(Modifier.weight(1f))
  }
- HText(eclipsePalette(selected).story,size=15,color=LocalHunter.current.muted)
 }
 @Composable fun CompanionPicker(selected:String,onSelect:(String)->Unit){
  SectionTitle("Tu acompañante","Selecciona quién camina contigo",Sigil.Shield)
@@ -99,22 +105,62 @@ import kotlin.math.*
  }
  CompanionStage(companionKey(obj("companionCharacter" to selected)),Modifier.fillMaxWidth().height(230.dp))
 }
-@Composable fun AppearanceControls(ui:NativeUi){
- val s=ui.store;val prefs=s.state.o("eclipseAppearance")
- fun change(key:String,value:Any){ui.attempt{s.state.put("eclipseAppearance",s.state.o("eclipseAppearance").copyJson().put(key,value));s.save()}}
- HPanel{
-  SectionTitle("Profundidad y movimiento","Elige cómo se ve tu sistema",Sigil.Layers)
-  Chips(listOf("flat" to "2D","depth" to "2.5D","relic" to "3D"),visualMode(prefs)){change("mode",it)}
-  HText(when(visualMode(prefs)){"flat"->"Ilustraciones planas y composición limpia.";"relic"->"Reliquia geométrica 3D junto a tu personaje ilustrado. Abre el visor para girarla.";else->"Ilustraciones en capas con movimiento suave y profundidad."},size=15,color=LocalHunter.current.muted)
-  if(visualMode(prefs)=="relic")HButton("Explorar reliquia 3D",Modifier.fillMaxWidth()){ui.open("relic")}
-  HText("Tamaño del acompañante",size=15,bold=true)
-  Chips(listOf("0.8" to "Compacto","1.0" to "Normal","1.2" to "Grande"),prefs.n("size",1.0).toString()){change("size",it.toDouble())}
-  HText("Velocidad ambiental",size=15,bold=true)
-  Chips(listOf("0.5" to "Lenta","1.0" to "Normal","1.5" to "Rápida"),prefs.n("speed",1.0).toString()){change("speed",it.toDouble())}
-  HCheck("Aura del acompañante",prefs.b("aura",true)){change("aura",!prefs.b("aura",true))}
-  HCheck("Acceso flotante al acompañante",prefs.b("floating",true)){change("floating",!prefs.b("floating",true))}
-  HCheck("Reducir movimiento",prefs.b("reduceMotion")){change("reduceMotion",!prefs.b("reduceMotion"))}
-  HText("Estos ajustes visuales se guardan al cambiarlos.",size=13,color=LocalHunter.current.muted)
+
+// Local art selections used by both the picker and home.
+fun chosenHunterArtwork(collection:String,gender:String):String{
+ val actual=if(collection=="alternate")listOf("hunter","reader","regressor")[(java.time.LocalDate.now().toEpochDay()%3).toInt()] else collection
+ return "ui34/"+when(actual){"reader"->"reader-e.webp";"regressor"->"regressor-e.webp";else->if(gender=="female")"hunter-female-e.webp" else "hunter-male-e.webp"}
+}
+fun chosenSceneArtwork(scene:String):String{
+ val index=when(scene){"sanctuary"->0;"journey"->1;else->(java.time.LocalDate.now().toEpochDay()%2).toInt()}
+ return "ui33/scene-e-$index.webp"
+}
+@Composable fun HunterPicker(selected:String,gender:String,onSelect:(String)->Unit){
+ val c=LocalHunter.current
+ SectionTitle("Elige tu cazador","Desliza para ver los personajes",Sigil.Profile)
+ val choices=listOf("hunter" to "Cazador","reader" to "Kim Dokja","regressor" to "Junghyeok Yu","alternate" to "Alternar")
+ Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp)){
+  for((key,label)in choices){val active=selected==key
+   Column(Modifier.width(138.dp).clip(RoundedCornerShape(18.dp))
+    .background(if(active)c.selected else c.input)
+    .border(if(active)2.dp else 1.dp,if(active)c.accent else c.line,RoundedCornerShape(18.dp))
+    .clickable(role=Role.RadioButton){onSelect(key)}
+    .semantics{this.selected=active;contentDescription="Cazador $label"}
+    .padding(9.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(7.dp)){
+    Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(12.dp)).background(c.panel),contentAlignment=Alignment.BottomCenter){
+     AssetImage(chosenHunterArtwork(key,gender),Modifier.fillMaxWidth().fillMaxHeight(.96f),description="Ilustración de $label")
+    }
+    HText(label,size=13,bold=active,maxLines=1)
+    HunterIcon(if(active)Sigil.Check else Sigil.Plus,Modifier.size(15.dp),if(active)c.accent else c.muted)
+   }
+  }
+ }
+}
+@Composable fun BackgroundPicker(selected:String,collection:String,gender:String,onSelect:(String)->Unit){
+ val c=LocalHunter.current
+ SectionTitle("Elige tu fondo","Desliza para ver los escenarios",Sigil.Layers)
+ val choices=listOf("auto" to "Alternar cada día","sanctuary" to "Santuarios y portales","journey" to "Viajes y constelaciones")
+ Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp)){
+  for((key,label)in choices){val active=selected==key
+   Column(Modifier.width(168.dp).clip(RoundedCornerShape(18.dp))
+    .background(if(active)c.selected else c.input)
+    .border(if(active)2.dp else 1.dp,if(active)c.accent else c.line,RoundedCornerShape(18.dp))
+    .clickable(role=Role.RadioButton){onSelect(key)}
+    .semantics{this.selected=active;contentDescription="Fondo $label"}
+    .padding(8.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(7.dp)){
+    AssetImage(chosenSceneArtwork(key),Modifier.fillMaxWidth().height(105.dp).clip(RoundedCornerShape(12.dp)),ContentScale.Crop,description="Escenario $label")
+    HText(label,size=13,bold=active,maxLines=1)
+    HunterIcon(if(active)Sigil.Check else Sigil.Plus,Modifier.size(15.dp),if(active)c.accent else c.muted)
+   }
+  }
+ }
+ HText("Vista previa de tu cazador y fondo",size=15,color=c.muted)
+ Box(Modifier.fillMaxWidth().height(218.dp).clip(RoundedCornerShape(18.dp))
+  .border(1.dp,c.line,RoundedCornerShape(18.dp))
+  .semantics{contentDescription="Vista previa del cazador y fondo"},contentAlignment=Alignment.BottomCenter){
+  AssetImage(chosenSceneArtwork(selected),Modifier.fillMaxSize(),ContentScale.Crop)
+  Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent,c.bg.copy(alpha=.25f)))))
+  AssetImage(chosenHunterArtwork(collection,gender),Modifier.fillMaxWidth(.62f).fillMaxHeight(.96f),description="Cazador seleccionado")
  }
 }
 @Composable fun RelicViewer(){
@@ -128,9 +174,6 @@ import kotlin.math.*
  Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(Brush.verticalGradient(listOf(c.input,c.panel))).border(1.dp,c.accent.copy(alpha=.25f),RoundedCornerShape(26.dp))){
   ConstellationField(Modifier.matchParentSize());content()
  }
-}
-@Composable fun EmptyState(title:String,body:String,icon:Sigil=Sigil.Search){
- HPanel{HunterIcon(icon,Modifier.size(36.dp));Heading(title,size=27);HText(body,size=16,color=LocalHunter.current.muted)}
 }
 @Composable fun AccessWelcome(){
  HPanel(padding=22){
@@ -152,7 +195,7 @@ import kotlin.math.*
     RelicScene(Modifier.size(170.dp));Heading("HUNTER SYSTEM",size=30);Eyebrow("ECLIPSE · ASCENSIÓN")
     HText(error?:"Preparando tu próximo capítulo…",size=16,color=c.muted)
     if(error==null)androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth(),color=c.accent,trackColor=c.panel)
-    else HButton("Reintentar",primary=true,onClick=retry)
+    else HButton("Reintentar",primary=true,icon=Sigil.Reset,onClick=retry)
    }
   }
  }

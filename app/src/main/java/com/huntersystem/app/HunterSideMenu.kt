@@ -50,8 +50,7 @@ fun HunterSideMenu(ui:NativeUi,onClose:()->Unit){
       Triple("routines","Rutinas","routines"),
       Triple("book","Ejercicios","exercises"),
       Triple("stats","Progreso y estadísticas","progress"),
-      Triple("objectives","Mis metas","goals"),
-      Triple("profile","Perfil","profile"))
+      Triple("objectives","Mis metas","goals"))
    for((route,title,icon) in routes){
      HunterSideMenuItem(title,icon,ui.tab==route){
        ui.go(route);onClose()
@@ -65,9 +64,6 @@ fun HunterSideMenu(ui:NativeUi,onClose:()->Unit){
    }
    HunterSideMenuItem("Recordatorios","reminders",false){
       ui.open("reminders");onClose()
-   }
-   HunterSideMenuItem("Configuración y datos","settings",false){
-      ui.go("profile");onClose()
    }
    HText("Fondos PNG · Íconos PNG con transparencia",
       Modifier.padding(start=10.dp,top=15.dp,bottom=10.dp),

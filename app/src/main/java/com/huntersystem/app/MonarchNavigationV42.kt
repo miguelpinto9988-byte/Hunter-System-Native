@@ -30,11 +30,10 @@ object MonarchNavigation {
         MonarchDestination("home","Panel"),
         MonarchDestination("plan","Misiones"),
         MonarchDestination("routines","Rutinas"),
-        MonarchDestination("book","Ejercicios"),
-        MonarchDestination("profile","Perfil")
+        MonarchDestination("book","Ejercicios")
     )
-    val routes=tabs.map{it.id}.toSet()+setOf("objectives","stats")
-    fun activeTab(route:String):String=if(route=="objectives"||route=="stats")"home" else route
+    val routes=tabs.map{it.id}.toSet()+setOf("objectives","stats","profile")
+    fun activeTab(route:String):String=if(route in setOf("objectives","stats","profile"))"home" else route
     fun index(route:String):Int=tabs.indexOfFirst{it.id==activeTab(route)}.coerceAtLeast(0)
     const val tabletWidthDp=840
 }

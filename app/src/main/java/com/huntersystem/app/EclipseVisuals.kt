@@ -13,7 +13,6 @@ import androidx.compose.ui.graphics.drawscope.*
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.*
 import androidx.compose.ui.unit.*
-import org.json.JSONObject
 import kotlin.math.*
 
 /** Palettes are local assets: changing appearance never changes the exercise plan. */
@@ -36,8 +35,9 @@ fun eclipseColors(id:String):HunterColors {
   "--metal26" to "#59617a","--ornament26" to hex(p.secondary)))
 }
 val LocalMotionEnabled=staticCompositionLocalOf{false}
-val LocalVisualPreferences=staticCompositionLocalOf{JSONObject()}
-fun visualMode(prefs:JSONObject)=prefs.s("mode","depth").takeIf{it in listOf("flat","depth","relic")}?:"depth"
+val LocalVisualPreferences=staticCompositionLocalOf{org.json.JSONObject()}
+fun visualMode(prefs:org.json.JSONObject)=prefs.s("mode","depth").takeIf{it in listOf("flat","depth","relic")} ?:"depth"
+val LocalVisualTier=staticCompositionLocalOf{VisualTier.BALANCED}
 @Composable fun ambientPhase(speed:Float=1f):State<Float> {
  if(!LocalMotionEnabled.current)return rememberUpdatedState(.18f)
  val animation=rememberInfiniteTransition(label="eclipse-ambient")
@@ -116,10 +116,21 @@ internal fun rotateRelic(p:RelicPoint,yaw:Float,pitch:Float):RelicPoint {
 }
 
 @Composable fun ConstellationField(modifier:Modifier=Modifier){
- val c=LocalHunter.current
+ val c=LocalHunter.current;val tier=LocalVisualTier.current
+ val phase=ambientPhase(if(tier==VisualTier.MAX)1f else .65f).value
  Canvas(modifier){
-  val points=listOf(.12f to .20f,.26f to .11f,.39f to .25f,.67f to .12f,.83f to .31f,.69f to .48f,.90f to .68f,.54f to .80f,.30f to .66f)
-  points.zipWithNext().forEach{(a,b)->drawLine(c.accent.copy(alpha=.10f),Offset(a.first*size.width,a.second*size.height),Offset(b.first*size.width,b.second*size.height),1f)}
-  points.forEachIndexed{i,p->drawCircle(c.secondary.copy(alpha=if(i%3==0).7f else .3f),if(i%3==0)2.dp.toPx() else 1.dp.toPx(),Offset(p.first*size.width,p.second*size.height))}
+  for(i in 0 until tier.stars){
+   val x=((i*37+12)%97)/100f;val y=((i*61+20)%91)/100f
+   val move=if(tier==VisualTier.MAX)sin((phase*2*PI+i*.7).toFloat())*.014f else 0f
+   val center=Offset((x+move)*size.width,(y-move*.4f)*size.height)
+   val large=i%5==0
+   val alpha=if(tier==VisualTier.MAX).65f else if(tier==VisualTier.BALANCED).42f else .2f
+   drawCircle(c.secondary.copy(alpha=alpha),if(large)2.dp.toPx() else 1.dp.toPx(),center)
+   if(tier==VisualTier.MAX&&large)drawCircle(c.accent.copy(alpha=.1f),6.dp.toPx(),center)
+   if(tier!=VisualTier.SAVER&&i%4==0&&i+1<tier.stars){
+    val nx=((i*37+49)%97)/100f;val ny=((i*61+81)%91)/100f
+    drawLine(c.accent.copy(alpha=.075f),center,Offset(nx*size.width,ny*size.height),1f)
+   }
+  }
  }
 }

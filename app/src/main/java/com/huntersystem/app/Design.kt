@@ -59,7 +59,11 @@ fun resolveV39Theme(value:String?,gender:String=""):String=when(value?.lowercase
  val p=store.profile
  val theme=resolveV39Theme(p?.s("theme"),p?.s("gender")?:"")
  val colors=HunterColors(v39VisualTokens(theme,store.catalog.design.o("colors").o(theme),p?.s("themeAccent","default")?:"default"))
- CompositionLocalProvider(LocalHunter provides colors){
+ val tier=visualTier(store)
+ val motion=LocalMonarchMotion.current
+ val enabled=motion.copy(reduced=motion.reduced||tier==VisualTier.SAVER)
+ CompositionLocalProvider(LocalHunter provides colors,LocalVisualTier provides tier,LocalMonarchMotion provides enabled,LocalMotionEnabled provides !enabled.reduced,
+  LocalVisualPreferences provides store.state.o("eclipseAppearance")){
   MaterialTheme(
    colorScheme=darkColorScheme(primary=colors.accent,onPrimary=colors.bg,surface=colors.panel,
     onSurface=colors.text,background=colors.bg,onBackground=colors.text,outline=colors.line),
@@ -166,7 +170,25 @@ fun resolveV39Theme(value:String?,gender:String=""):String=when(value?.lowercase
 }
 @Composable fun HNotice(text:String){HPanel(decor=false,padding=15){HText(text,size=16,color=LocalHunter.current.muted)}}
 @Composable fun Chips(options:List<Pair<String,String>>,value:String,onChange:(String)->Unit){Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(7.dp)){for((key,label)in options)HChip(label,value==key){onChange(key)}}}
-@Composable fun AssetImage(path:String,modifier:Modifier=Modifier,scale:ContentScale=ContentScale.Fit,description:String?=null,alignment:Alignment=Alignment.Center){val context=LocalContext.current;val bitmap=remember(path){runCatching{context.assets.open(path).use{BitmapFactory.decodeStream(it)}?.asImageBitmap()}.getOrNull()};if(bitmap!=null)Image(bitmap,description,modifier,contentScale=scale,alignment=alignment)}
+private val adaptiveBitmapCache=object:android.util.LruCache<String,ImageBitmap>(48*1024){
+ override fun sizeOf(key:String,value:ImageBitmap)=value.asAndroidBitmap().allocationByteCount/1024
+}
+@Composable fun AssetImage(path:String,modifier:Modifier=Modifier,scale:ContentScale=ContentScale.Fit,description:String?=null,alignment:Alignment=Alignment.Center){
+ val ctx=LocalContext.current;val tier=LocalVisualTier.current;val key=path+"|"+tier.id
+ val bitmap by produceState<ImageBitmap?>(adaptiveBitmapCache.get(key),key) {
+  value=kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO){
+   adaptiveBitmapCache.get(key)?:runCatching{
+    val bounds=BitmapFactory.Options().apply{inJustDecodeBounds=true}
+    ctx.assets.open(path).use{BitmapFactory.decodeStream(it,null,bounds)}
+    var sample=1
+    while(maxOf(bounds.outWidth,bounds.outHeight)/sample>tier.imageEdge)sample*=2
+    ctx.assets.open(path).use{BitmapFactory.decodeStream(it,null,BitmapFactory.Options().apply{inSampleSize=sample})}
+     ?.asImageBitmap()?.also{adaptiveBitmapCache.put(key,it)}
+   }.getOrNull()
+  }
+ }
+ if(bitmap!=null)Image(bitmap!!,description,modifier,contentScale=scale,alignment=alignment)
+}
 @Composable fun Avatar(data:String,name:String,modifier:Modifier=Modifier){val image=remember(data){if(data.isBlank())null else runCatching{val b=Base64.decode(data.substringAfter(','),Base64.DEFAULT);BitmapFactory.decodeByteArray(b,0,b.size)?.asImageBitmap()}.getOrNull()};Box(modifier.clip(CircleShape).background(LocalHunter.current.selected),contentAlignment=Alignment.Center){if(image!=null)Image(image,null,Modifier.fillMaxSize(),contentScale=ContentScale.Crop) else HText(name.take(1).uppercase().ifBlank{"C"},size=23,bold=true)}}
 fun companionKey(p:JSONObject?)=mapOf("knight" to "igris","warrior" to "iron","bear" to "tank","insect" to "beru","scientist" to "dokja")[p?.s("companionCharacter")]?:"igris"
 fun companionName(p:JSONObject?)=mapOf("igris" to "IGRIS","iron" to "IRON","tank" to "TANK","beru" to "BERU","dokja" to "DOKJA KIM")[companionKey(p)]?:"IGRIS"

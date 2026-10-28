@@ -200,6 +200,14 @@ fun MonarchMissionContent(ui:NativeUi,date:String) {
             if(log?.b("complete")==true)HNotice("✓ Misión completada y guardada.")
             if(log?.b("pain")==true)HNotice("Sesión detenida por molestias. Consulta tu perfil antes de entrenar.")
             day.s("blocked381").takeIf{it.isNotBlank()}?.let{HNotice(it)}
+            val adapted=items.firstOrNull{it.optJSONObject("groupAdaptation")!=null}
+            adapted?.o("groupAdaptation")?.let{a->
+                val delta=a.i("difference")
+                HNotice("Adaptación · "+GroupEvolution.label(a.s("group"))+": "+
+                    (if(delta>0)"+" else "")+delta+" unidades. "+
+                    "Basada en esfuerzo "+a.i("rpe")+"/10 del "+a.s("previousDate")+
+                    " y revisiones de 7, 14 y 21 días.")
+            }
             if(items.isEmpty()&&tasks.isEmpty())HNotice(
                 if(day.s("kind")=="rest")"Día de descanso elegido en tu calendario."
                 else "Esta misión todavía no tiene ejercicios compatibles. Revisa tu Perfil."

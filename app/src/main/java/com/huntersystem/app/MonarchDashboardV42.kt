@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -48,6 +49,8 @@ fun MonarchDashboardHero(ui: NativeUi, stats: JSONObject) {
         Box(Modifier.fillMaxWidth().clip(shape)
             .background(Brush.linearGradient(listOf(c.surface, c.panel, c.bg)))
             .border(1.dp, c.accent.copy(alpha = .48f), shape)) {
+            AssetImage(chosenSceneArtwork(store.state.o("appearance33").s("scene","auto")),
+                Modifier.matchParentSize().graphicsLayer{alpha=.18f},ContentScale.Crop)
             Canvas(Modifier.matchParentSize()) {
                 val center = Offset(size.width * .79f, size.height * .41f)
                 val radius = (size.width * if (expansive) .24f else .33f)
@@ -368,7 +371,9 @@ fun MonarchDashboardCompanion(ui: NativeUi) {
             Column(Modifier.weight(1f)) {
                 Eyebrow("ACOMPAÑANTE ACTIVO")
                 Heading(companionName(ui.store.profile), size = 23)
-                HText("Consejos de entrenamiento. Cambia el personaje desde Perfil.",
+                HText(CompanionDialogue.message(ui.store.profile,LocalVisualTier.current,
+                     DialogueContext(DialogueMoment.WELCOME,
+                       group=GroupEvolution.sessionGroup(ui.store.day(today()),ui.store.profile,ui.store.catalog)?:"")),
                     size = 14, color = c.muted)
             }
             HText("↗", size = 23, color = c.accent)

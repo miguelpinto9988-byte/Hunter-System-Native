@@ -23,7 +23,7 @@ styles = read("app/src/main/res/values/styles.xml")
 splash = read("app/src/main/res/values-v31/styles.xml")
 gradle = read("app/build.gradle.kts")
 # V43 hereda las verificaciones funcionales de Monarca V42.9.
-gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.11-monarch-equipment-preview"', 'versionName = "42.9-monarca-fase10"')
+gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.11-monarch-equipment-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"')
 manifest = read("app/src/main/AndroidManifest.xml")
 workflow = read(".github/workflows/android-apk.yml")
 catalog = json.loads((assets / "catalog.json").read_text(encoding="utf-8"))
@@ -34,8 +34,10 @@ check(len(list(assets.rglob("*.mp4"))) == 342,
 check(not (assets / "exercise_thumbnails").exists(), "No se admiten miniaturas de ejercicios")
 check(not (assets / "v39-miniatures").exists(), "No se admiten miniaturas V39")
 check(all(f'MonarchDestination("{name}"' in navigation
-          for name in ("home","plan","routines","book","profile")),
+          for name in ("home","plan","routines","book")),
       "Falta alguna pestaña del menú principal")
+check('setOf("objectives","stats","profile")' in navigation and 'Abrir perfil' in screens,
+      "Perfil debe permanecer accesible desde el avatar")
 for name in ("MonarchBootScreen", "MonarchBottomNavigation",
              "MonarchNavigationRail", "MonarchScreenTransition",
              "MonarchRecoveryScreen"):

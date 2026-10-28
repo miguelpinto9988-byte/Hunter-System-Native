@@ -113,52 +113,12 @@ fun MonarchCompanionPicker(selected:String, onSelected:(String)->Unit) {
     }
 }
 
-@Composable
-fun MonarchCompanionOptions(
-    values:Map<String,String>, onChange:(String,String)->Unit
-){
-    val c=LocalHunter.current
-    Column(verticalArrangement=Arrangement.spacedBy(13.dp)) {
-        Heading("Presencia y movimiento",size=23)
-        HText("Personaliza su presencia sin modificar tu entrenamiento.",
-            color=c.muted,size=14)
-        HCheck("Mostrar acompañante flotante",
-            values["companionVisible"]!="false"){
-            onChange("companionVisible",
-                (values["companionVisible"]=="false").toString())
-        }
-        Eyebrow("MOVIMIENTO")
-        Chips(
-            listOf("off" to "Quieto","calm" to "Lento",
-                "normal" to "Normal","fast" to "Rápido"),
-            MonarchCompanions.motion(values["companionMotion"])
-        ){onChange("companionMotion",it)}
-        Eyebrow("TAMAÑO EN PANTALLA")
-        Chips(
-            listOf("compact" to "Compacto","regular" to "Normal",
-                "large" to "Grande"),
-            MonarchCompanions.size(values["companionSize"])
-        ){onChange("companionSize",it)}
-        Eyebrow("ESTILO DE MENSAJE")
-        Chips(
-            listOf("balanced" to "Equilibrado","strategic" to "Estratégico",
-                "warm" to "Cercano"),
-            MonarchCompanions.tone(values["companionTone"])
-        ){onChange("companionTone",it)}
-        HNotice("Los mensajes del acompañante son orientaciones locales; no son una IA remota ni sustituyen recomendaciones profesionales.")
-    }
-}
-
 /** Globo visual de estado. La respuesta a preguntas sigue siendo local y basada en reglas. */
 @Composable
 fun MonarchCompanionMood(p:JSONObject?,modifier:Modifier=Modifier) {
     val c=LocalHunter.current
     val spec=MonarchCompanions.forId(p?.s("companionCharacter"))
-    val phrase=when(MonarchCompanions.tone(p?.s("companionTone"))){
-        "strategic" -> "Planifica, ejecuta y registra cada serie."
-        "warm" -> "Vas a tu ritmo; tus avances cuentan."
-        else -> spec.motto
-    }
+    val phrase=CompanionDialogue.message(p,LocalVisualTier.current,DialogueContext(DialogueMoment.WELCOME))
     Row(modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
         horizontalArrangement=Arrangement.spacedBy(12.dp)){
         AssetImage("ui33/companion-${spec.asset}.webp",
@@ -175,15 +135,13 @@ fun MonarchCompanionMood(p:JSONObject?,modifier:Modifier=Modifier) {
 @Composable
 fun MonarchFloatingCompanion(ui:NativeUi, modifier:Modifier=Modifier){
     val p=ui.store.profile
-    if(p?.b("companionVisible",true)==false) return
+    val tier=LocalVisualTier.current
+    if(tier==VisualTier.SAVER)return
     val character=MonarchCompanions.forId(p?.s("companionCharacter"))
-    val size=MonarchCompanions.size(p?.s("companionSize"))
-    val width=when(size){"compact"->51;"large"->82;else->65}
-    val height=when(size){"compact"->69;"large"->108;else->86}
-    val motion=if(p?.b("animate",true)==false)"off"
-        else MonarchCompanions.motion(p?.s("companionMotion"))
-    val cycleMs=when(motion){"calm"->3100;"fast"->1200;else->2200}
-    val amplitude=if(motion=="off")0f else if(motion=="fast")7f else 5f
+    val width=if(tier==VisualTier.MAX)76 else 62
+    val height=if(tier==VisualTier.MAX)100 else 82
+    val cycleMs=if(tier==VisualTier.MAX)1650 else 2850
+    val amplitude=if(tier==VisualTier.MAX)7f else 3f
     val dy=if(LocalMonarchMotion.current.reduced || amplitude==0f) 0f else {
         val transition=rememberInfiniteTransition(label="monarch-companion")
         val floatOffset by transition.animateFloat(
