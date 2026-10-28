@@ -140,6 +140,17 @@ fun rankKey(level:Int)=listOf("E","D","C","B","A","S")[((level-1)/5).coerceIn(0,
 @Composable fun TrainingMode(ui:NativeUi){val p=ui.store.profile?:return;Chips(listOf("challenges" to "Desafíos diarios","routines" to "Rutinas completas"),p.s("trainingMode","challenges")){mode->ui.attempt{ui.store.saveProfile(p.copyJson().put("trainingMode",mode))}}}
 @Composable fun PlanScreen(ui:NativeUi){SceneColumn(ui){TopTabs(ui);Eyebrow("TU SISTEMA · SEMANA ${ui.store.state.a("cycles").length().coerceAtLeast(1)}");Heading("Una misión a la vez.");TrainingMode(ui);MissionCompanion(ui);MissionContent(ui,today());if(ui.store.day(today()).a("items").length()>0)HPanel{Eyebrow("SESIÓN GUIADA · ANIMACIONES 2D");Heading("Un paso a la vez.",size=30);HText(ui.store.day(today()).s("planningNote"),size=16,color=LocalHunter.current.muted);HButton("Abrir sesión paso a paso",Modifier.fillMaxWidth(),primary=true){ui.open("session",obj("date" to today()))}};WeeklyPanel(ui);CalendarPanel(ui)}}
 @Composable fun MissionContent(ui:NativeUi,date:String){val s=ui.store;val day=s.day(date);val l=s.logs.optJSONObject(date);val items=l?.a("items")?.objects()?:day.a("items").objects();val tasks=l?.a("missionTasks")?.objects()?:day.a("tasks").objects();val closed=l?.b("complete")==true||l?.b("pain")==true||date!=today();HPanel{Eyebrow("NOTIFICACIÓN DEL SISTEMA");Heading("MISIÓN DIARIA",size=32);Heading(day.s("title"),size=25);HText("${(s.fraction(l)*(items.size+tasks.size)).roundToInt()} / ${items.size+tasks.size} objetivos completados",size=16,color=LocalHunter.current.muted);day.s("blocked381").takeIf{it.isNotBlank()}?.let{HNotice(it)}
+ val adjustment=items.mapNotNull{it.optJSONObject("groupAdaptation")}.firstOrNull()
+ if(adjustment!=null){
+  val delta=adjustment.i("difference")
+  val adaptedExercise=items.firstOrNull{it.optJSONObject("groupAdaptation")!=null}?.let{s.catalog.byId[it.s("id")]}
+  val unit=if(adaptedExercise?.unit=="sec")"segundos" else "repeticiones"
+  HNotice("Adaptación de "+GroupEvolution.label(adjustment.s("group"))+" · "+
+   (if(delta>0)"+" else "")+delta+" "+
+   unit+
+   ". Basada en la evaluación del "+adjustment.s("previousDate")+
+   " (esfuerzo "+adjustment.i("rpe")+"/10), revisada con el historial del grupo.")
+ }
  for((i,x)in items.withIndex()){val e=s.catalog.byId[x.s("id")]?:continue;Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically){Column(Modifier.weight(1f)){HCheck(e.name,x.b("missionState")||x.b("selfReported")||x.a("actual").objects().count{it.b("done")}>=x.i("sets"),enabled=!closed&&!x.b("archived")){ui.attempt{s.toggleMission(date,i)}};HText("${x.i("sets")} × ${x.i("target")} ${if(e.unit=="sec")"segundos" else "repeticiones"}${if(e.sides)" por lado" else ""}",Modifier.padding(start=33.dp),size=15,color=LocalHunter.current.muted)};HText("↗",Modifier.clickable{ui.open("exercise",obj("id" to e.id))}.padding(10.dp),color=LocalHunter.current.accent)}}
  for((i,x)in tasks.withIndex())HCheck(x.s("text"),x.b("done"),enabled=!closed){ui.attempt{s.toggleTask(date,i)}}
  HText(if(l?.b("complete")==true)"✓ MISIÓN COMPLETADA" else if(l?.b("pain")==true)"SESIÓN DETENIDA" else "◇ MISIÓN EN CURSO",color=LocalHunter.current.accent,size=16,bold=true)
