@@ -98,13 +98,15 @@ object MonarchMissionCatalog {
   val gear=p.s("equipment","body")
   val gym=p.a("gymEquipment23").strings().toSet()
   val mats=p.a("materials46").strings().toSet()
+  // Estar en un gimnasio NO implica tener todas sus máquinas ni mancuernas.
+  val hasDumbbells=gear=="db" || (gear=="gym"&&("db" in gym||"db" in mats))
   if((e.gym||e.equipment=="gym")&&gear!="gym")return false
-  if(e.equipment=="db"&&gear !in listOf("db","gym"))return false
+  if(e.equipment=="db"&&!hasDumbbells)return false
   if(e.equipment !in setOf("body","db","gym",""))return false
   val needed=(e.raw.a("materialRequirements").strings()+e.raw.a("materials46").strings()).distinct()
   return needed.all{k->
    when(k){
-    "db"->gear in listOf("db","gym")
+    "db"->hasDumbbells
     "gym"->gear=="gym"
     "bench"->p.b("bench")||"bench" in gym
     "step"->p.b("step")||"step" in mats
