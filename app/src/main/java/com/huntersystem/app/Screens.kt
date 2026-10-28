@@ -74,14 +74,15 @@ fun rankKey(level:Int)=listOf("E","D","C","B","A","S")[((level-1)/5).coerceIn(0,
  }
 }
 @Composable fun Hero(ui:NativeUi,stats:JSONObject){
- val s=ui.store;val p=s.profile?:JSONObject();val c=LocalHunter.current;val prefs=LocalVisualPreferences.current
+ val s=ui.store;val p=s.profile?:JSONObject();val c=LocalHunter.current;val tier=LocalVisualTier.current
  val rank=rankKey(stats.i("level",1));val appearance=s.state.o("appearance33")
  var collection=appearance.s("collection","hunter")
  if(collection=="alternate")collection=listOf("hunter","reader","regressor")[(LocalDate.now().toEpochDay()%3).toInt()]
  val character=if(collection=="hunter")"hunter-"+if(p.s("gender")=="female")"female" else "male" else collection
  val filename="$character-${rank.lowercase()}.webp"
  val art=remember(filename){if(runCatching{s.context.assets.open("ui34/$filename").close()}.isSuccess)"ui34/$filename" else "ui33/$filename"}
- val phase=ambientPhase(prefs.n("speed",1.0).toFloat());val mode=visualMode(prefs)
+ val phase=ambientPhase(if(tier==VisualTier.MAX)1f else .65f)
+ val mode=when(tier){VisualTier.MAX->"relic";VisualTier.BALANCED->"depth";VisualTier.SAVER->"flat"}
  HPanel(padding=0){
   Box(Modifier.fillMaxWidth().height((330 * androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)).dp)){
    AssetImage(chosenSceneArtwork(appearance.s("scene","auto")),Modifier.fillMaxSize(),ContentScale.Crop)
@@ -89,7 +90,7 @@ fun rankKey(level:Int)=listOf("E","D","C","B","A","S")[((level-1)/5).coerceIn(0,
    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent,c.panel))))
    if(mode=="relic")RelicScene(Modifier.align(Alignment.TopEnd).size(140.dp))
    AssetImage(art,Modifier.align(Alignment.BottomEnd).fillMaxWidth(.56f).fillMaxHeight(.95f).graphicsLayer{
-    if(mode=="depth"){translationY=sin(phase.value*PI.toFloat()*2)*4.dp.toPx();rotationY=sin(phase.value*PI.toFloat()*2)*3f;cameraDistance=16*density}
+    if(tier!=VisualTier.SAVER){translationY=sin(phase.value*PI.toFloat()*2)*(if(tier==VisualTier.MAX)6 else 3).dp.toPx();rotationY=sin(phase.value*PI.toFloat()*2)*3f;cameraDistance=16*density}
    },ContentScale.Fit,alignment=Alignment.BottomCenter)
    Column(Modifier.padding(22.dp).fillMaxWidth(.70f),verticalArrangement=Arrangement.spacedBy(13.dp)){
     Box(Modifier.clickable{ui.open("evolution")}){StatusPill("RANGO $rank",Sigil.Crown)}
@@ -111,7 +112,10 @@ fun rankKey(level:Int)=listOf("E","D","C","B","A","S")[((level-1)/5).coerceIn(0,
    CompanionStage(companionKey(ui.store.profile),Modifier.size(90.dp,110.dp))
    Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(5.dp)){
     Eyebrow("A TU LADO");Heading(companionName(ui.store.profile),size=25)
-    HText("Tu próximo paso está en la misión de hoy.",size=15,color=LocalHunter.current.muted)
+    val day=ui.store.day(today())
+    val group=GroupEvolution.sessionGroup(day,ui.store.profile,ui.store.catalog)?:""
+    HText(CompanionDialogue.message(ui.store.profile,LocalVisualTier.current,
+     DialogueContext(DialogueMoment.WELCOME,group=group)),size=15,color=LocalHunter.current.muted)
     HText("Abrir guía personal",size=14,color=LocalHunter.current.accent,bold=true)
    }
    HunterIcon(Sigil.Arrow,Modifier.size(18.dp))

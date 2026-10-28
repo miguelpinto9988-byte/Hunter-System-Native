@@ -120,6 +120,22 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
    }
   }
   HButton("Guardar perfil",Modifier.fillMaxWidth(),primary=true){saveProfile()}
+  HPanel{
+   Heading("Rendimiento visual",size=29)
+   HText("Un solo ajuste para imágenes, partículas, animaciones y mensajes del compañero.",size=16,color=LocalHunter.current.muted)
+   Chips(listOf(
+    "max" to "Máxima calidad",
+    "balanced" to "Equilibrado",
+    "saver" to "Ahorro de energía"
+   ),visualTier(s).id){choice->
+    s.state.put("visualQuality",choice);s.save()
+   }
+   when(visualTier(s)){
+    VisualTier.MAX->HText("Imágenes hasta 4K si el archivo y la pantalla lo permiten; más partículas, efectos y orientación contextual detallada.",size=15,color=LocalHunter.current.muted)
+    VisualTier.BALANCED->HText("Imágenes hasta Full HD, efectos moderados y mensajes adaptados a la misión y al ejercicio.",size=15,color=LocalHunter.current.muted)
+    VisualTier.SAVER->HText("Imágenes hasta HD, efectos mínimos y mensajes breves predefinidos. Se respetan los ajustes de animación del dispositivo.",size=15,color=LocalHunter.current.muted)
+   }
+  }
   HPanel{Heading("Copia de seguridad",size=29);HText("Guarda tu perfil, calendario y registros en un archivo.",size=16,color=LocalHunter.current.muted);HButton("Exportar copia de seguridad"){ui.export()};HButton("Restaurar copia"){ui.import()}}
   HPanel{Heading("Entrenadores y contenido",size=29);HCheck("Actualizar entrenadores automáticamente",s.state.b("creatorAuto",true)){s.state.put("creatorAuto",!s.state.b("creatorAuto",true));s.save();CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true))};HButton("Actualizar ahora"){ui.open("creator-refresh")};HButton("Recordatorios del sistema"){ui.open("reminders")};HButton("Fuentes y publicaciones"){ui.open("sources")};HText("Hunter System · Eclipse 41.0",size=14,color=LocalHunter.current.muted)}
  }

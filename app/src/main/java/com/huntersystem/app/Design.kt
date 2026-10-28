@@ -48,13 +48,13 @@ fun resolveV39Theme(value:String?,gender:String=""):String=when(value?.lowercase
 }
 @Composable fun HunterTheme(store:NativeStore,content:@Composable ()->Unit){
  store.revision.intValue
- val p=store.profile;val prefs=store.state.o("eclipseAppearance")
+ val p=store.profile;val tier=visualTier(store)
  val colors=eclipseColors(resolveV39Theme(p?.s("theme"),p?.s("gender")?:""))
  val context=LocalContext.current
  val life=LocalLifecycleOwner.current.lifecycle.currentStateAsState().value
  val systemMotion=runCatching{Settings.Global.getFloat(context.contentResolver,Settings.Global.ANIMATOR_DURATION_SCALE,1f)>0f}.getOrDefault(true)
- val motion=p?.b("animate",true)!=false&&!prefs.b("reduceMotion")&&systemMotion&&life.isAtLeast(Lifecycle.State.RESUMED)
- CompositionLocalProvider(LocalHunter provides colors,LocalMotionEnabled provides motion,LocalVisualPreferences provides prefs){
+ val motion=tier!=VisualTier.SAVER&&systemMotion&&life.isAtLeast(Lifecycle.State.RESUMED)
+ CompositionLocalProvider(LocalHunter provides colors,LocalMotionEnabled provides motion,LocalVisualTier provides tier){
   MaterialTheme(colorScheme=darkColorScheme(primary=colors.accent,onPrimary=colors.bg,secondary=colors.secondary,onSecondary=colors.bg,
    surface=colors.panel,onSurface=colors.text,surfaceVariant=colors.surface,onSurfaceVariant=colors.muted,
    background=colors.bg,onBackground=colors.text,outline=colors.line,error=Color(0xffffb4b4)),
@@ -163,11 +163,13 @@ fun buttonLabel(text:String)=text.trim().trim('‹','›','→','↗','⟶','✧
 private val assetBitmaps=object:android.util.LruCache<String,ImageBitmap>(24*1024){override fun sizeOf(key:String,value:ImageBitmap)=value.asAndroidBitmap().allocationByteCount/1024}
 @Composable fun AssetImage(path:String,modifier:Modifier=Modifier,scale:ContentScale=ContentScale.Fit,description:String?=null,alignment:Alignment=Alignment.Center){
  val context=LocalContext.current
- val bitmap by produceState(assetBitmaps.get(path),path){value=withContext(Dispatchers.IO){assetBitmaps.get(path)?:runCatching{
+ val tier=LocalVisualTier.current
+ val key=path+"|"+tier.id
+ val bitmap by produceState(assetBitmaps.get(key),key){value=withContext(Dispatchers.IO){assetBitmaps.get(key)?:runCatching{
   val bounds=BitmapFactory.Options().apply{inJustDecodeBounds=true};context.assets.open(path).use{BitmapFactory.decodeStream(it,null,bounds)}
-  var sample=1;while(maxOf(bounds.outWidth,bounds.outHeight)/sample>1600)sample*=2
+  var sample=1;while(maxOf(bounds.outWidth,bounds.outHeight)/sample>tier.imageEdge)sample*=2
   val options=BitmapFactory.Options().apply{inSampleSize=sample}
-  context.assets.open(path).use{BitmapFactory.decodeStream(it,null,options)}?.asImageBitmap()?.also{assetBitmaps.put(path,it)}
+  context.assets.open(path).use{BitmapFactory.decodeStream(it,null,options)}?.asImageBitmap()?.also{assetBitmaps.put(key,it)}
  }.getOrNull()}}
  if(bitmap!=null)Image(bitmap!!,description,modifier,contentScale=scale,alignment=alignment) else Spacer(modifier)
 }

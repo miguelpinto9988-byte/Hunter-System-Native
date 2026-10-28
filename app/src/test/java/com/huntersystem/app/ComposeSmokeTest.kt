@@ -130,6 +130,19 @@ class ComposeSmokeTest {
   org.junit.Assert.assertEquals(setOf("space","band"),p.a("materials46").strings().toSet())
   org.junit.Assert.assertEquals(listOf("singlebalance"),p.a("capabilities46").strings())
  }
+ @Test(timeout=90000) fun visualQualityIsControlledByThreePresetsNearEndOfProfile(){
+  compose.runOnIdle{ui.go("profile")};compose.waitForIdle()
+  compose.onNodeWithText("Rendimiento visual").performScrollTo().assertExists()
+  for(label in listOf("Máxima calidad","Equilibrado","Ahorro de energía"))
+   compose.onNodeWithText(label).assertExists()
+  compose.onNodeWithText("Máxima calidad").performClick()
+  org.junit.Assert.assertEquals("max",store.state.s("visualQuality"))
+  compose.onNodeWithText("Ahorro de energía").performClick()
+  org.junit.Assert.assertEquals("saver",store.state.s("visualQuality"))
+  compose.onNodeWithText("Equilibrado").performClick()
+  org.junit.Assert.assertEquals("balanced",store.state.s("visualQuality"))
+  compose.onAllNodesWithText("Presencia y movimiento").assertCountEquals(0)
+ }
  @Test(timeout=90000) fun weeklyProfileIsSingleCardWithConditionalMissionCount(){
   compose.runOnIdle{ui.go("profile")};compose.waitForIdle()
   compose.onNodeWithText("Personaliza tu semana").assertExists()

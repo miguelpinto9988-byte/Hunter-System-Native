@@ -49,7 +49,7 @@ class MainActivity:ComponentActivity(){
  LaunchedEffect(ui.tab){if(motion){entrance.snapTo(0f);entrance.animateTo(1f,tween(230,easing=FastOutSlowInEasing))}else entrance.snapTo(1f)}
  BoxWithConstraints(Modifier.fillMaxSize().background(c.bg)){
   val wide=maxWidth>=840.dp
-  val companionDock=s.profile!=null&&ui.tab!="profile"&&s.state.o("eclipseAppearance").b("floating",true)
+  val companionDock=s.profile!=null&&ui.tab!="profile"&&LocalVisualTier.current.floatingCompanion
   Scaffold(containerColor=c.bg,contentWindowInsets=WindowInsets.safeDrawing,bottomBar={if(s.profile!=null&&!wide)BottomNav(ui)}){padding->
    Row(Modifier.fillMaxSize().padding(padding)){
     if(s.profile!=null&&wide)NavigationRail(ui)

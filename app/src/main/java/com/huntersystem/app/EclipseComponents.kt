@@ -44,9 +44,11 @@ import kotlin.math.*
  HPanel(modifier,padding=15,decor=false){HunterIcon(icon,Modifier.size(20.dp));Heading(value,size=30);HText(label,size=12,color=LocalHunter.current.muted)}
 }
 
-@Composable fun CompanionStage(character:String,modifier:Modifier=Modifier,prefs:JSONObject=LocalVisualPreferences.current,description:String?=null){
- val c=LocalHunter.current;val phase=ambientPhase(prefs.n("speed",1.0).toFloat());val mode=visualMode(prefs)
- val glow=prefs.b("aura",true);val size=prefs.n("size",1.0).toFloat().coerceIn(.8f,1.2f)
+@Composable fun CompanionStage(character:String,modifier:Modifier=Modifier,description:String?=null){
+ val c=LocalHunter.current;val tier=LocalVisualTier.current
+ val phase=ambientPhase(if(tier==VisualTier.MAX)1f else .65f)
+ val mode=when(tier){VisualTier.MAX->"relic";VisualTier.BALANCED->"depth";VisualTier.SAVER->"flat"}
+ val glow=tier!=VisualTier.SAVER
  Box(modifier.clip(RoundedCornerShape(24.dp)),contentAlignment=Alignment.Center){
   if(glow)Canvas(Modifier.fillMaxSize()){
    val center=Offset(this.size.width*.5f,this.size.height*.5f);val radius=this.size.minDimension*.5f
@@ -57,8 +59,11 @@ import kotlin.math.*
   if(mode=="relic")RelicScene(Modifier.align(Alignment.CenterEnd).fillMaxWidth(.58f).fillMaxHeight(.9f))
   AssetImage("ui33/companion-$character.webp",Modifier.fillMaxHeight(.80f).fillMaxWidth(if(mode=="relic").54f else .68f).align(if(mode=="relic")Alignment.CenterStart else Alignment.Center)
    .graphicsLayer{
-    scaleX=size;scaleY=size
-    if(mode=="depth"){translationY=sin(phase.value*PI.toFloat()*2)*5.dp.toPx();rotationY=sin(phase.value*PI.toFloat()*2)*5f;cameraDistance=16*density}
+    if(tier!=VisualTier.SAVER){
+     translationY=sin(phase.value*PI.toFloat()*2)*(if(tier==VisualTier.MAX)7 else 3).dp.toPx()
+     rotationY=sin(phase.value*PI.toFloat()*2)*(if(tier==VisualTier.MAX)5f else 2f)
+     cameraDistance=16*density
+    }
    },description=description)
  }
 }

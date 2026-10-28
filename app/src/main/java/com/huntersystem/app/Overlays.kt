@@ -54,7 +54,7 @@ import kotlin.math.*
  else->HNotice("Selecciona una sección para continuar.")
  }}}
  }}}
-@Composable fun ExerciseDetail(ui:NativeUi,id:String){val s=ui.store;val e=s.catalog.byId[id]?:return;val c=LocalHunter.current;var playing by remember(id){mutableStateOf(s.profile?.b("animate",true)?:true)};var mirror by remember(id){mutableStateOf(false)};var speed by remember(id){mutableFloatStateOf(s.state.n("demoSpeed",1.0).toFloat())};var seek by remember(id){mutableFloatStateOf(0f)}
+@Composable fun ExerciseDetail(ui:NativeUi,id:String){val s=ui.store;val e=s.catalog.byId[id]?:return;val c=LocalHunter.current;val tier=LocalVisualTier.current;var playing by remember(id,tier){mutableStateOf(tier!=VisualTier.SAVER)};var mirror by remember(id){mutableStateOf(false)};var speed by remember(id){mutableFloatStateOf(s.state.n("demoSpeed",1.0).toFloat())};var seek by remember(id){mutableFloatStateOf(0f)}
  Eyebrow("${e.group} · ${e.category}");Heading(e.name,size=35);HText("${if(e.unit=="sec")"Por tiempo" else "Por repeticiones"}${if(e.sides)" · Cantidad por lado" else ""} · ${if(e.impact)"Con saltos" else "Sin saltos"}",size=16,color=c.muted)
  ExerciseStage{OriginalSvg(e.demo,Modifier.fillMaxWidth().height(390.dp),play=playing,speed=speed,mirror=mirror,progress=seek,accent=c.hex("accent"),metal=c.hex("metal26"),ornament=c.hex("ornament26"))}
  Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){HButton(if(playing)"Ⅱ Pausar" else "▶ Reproducir",Modifier.weight(1f),primary=true){playing=!playing};HButton("⇄ Espejo",Modifier.weight(1f)){mirror=!mirror}}
@@ -69,7 +69,11 @@ import kotlin.math.*
 }
 @Composable fun SessionRecord(ui:NativeUi,date:String){val s=ui.store;val l=remember(date){runCatching{s.log(date)}.getOrNull()};if(l==null){HNotice("El registro está disponible en la fecha de hoy.");return};val closed=l.b("complete")||l.b("pain");var rpe by remember(date){mutableStateOf(l.i("rpe").toString())};var notes by remember(date){mutableStateOf(l.s("notes"))};var fatigue by remember(date){mutableStateOf(l.b("fatigue"))};val latestRpe by rememberUpdatedState(rpe);val latestNotes by rememberUpdatedState(notes);val latestFatigue by rememberUpdatedState(fatigue)
  DisposableEffect(date){onDispose{if(!l.b("complete")&&!l.b("pain")){val n=latestRpe.toIntOrNull()?.coerceIn(0,10)?:0;if(l.i("rpe")!=n||l.s("notes")!=latestNotes||l.b("fatigue")!=latestFatigue){l.put("rpe",n);l.put("notes",latestNotes.take(3000));l.put("fatigue",latestFatigue);s.save()}}}}
- Eyebrow("REGISTRO DETALLADO · $date");Heading("Cada serie cuenta.");HNotice("Confirma únicamente lo que hayas realizado. Marcar la misión no añade series ni cantidades a este registro.")
+ Eyebrow("REGISTRO DETALLADO · $date");Heading("Cada serie cuenta.")
+ HText(CompanionDialogue.message(s.profile,LocalVisualTier.current,
+  DialogueContext(DialogueMoment.SURVEY,group=l.s("trainingGroup"),
+   rpe=l.i("rpe"),fatigue=fatigue)),size=16,color=LocalHunter.current.muted)
+ HNotice("Confirma únicamente lo que hayas realizado. Marcar la misión no añade series ni cantidades a este registro.")
  for((i,x)in l.a("items").objects().withIndex()){val e=s.catalog.byId[x.s("id")]?:continue;HPanel(padding=15){Heading(e.name,size=27);if(x.b("archived"))HNotice(x.s("archiveReason"));HText("${x.i("sets")} × ${x.i("target")} ${if(e.unit=="sec")"s" else "repeticiones"}${if(e.sides)" por lado" else ""}",size=15);for(si in 0 until x.i("sets")){val actual=x.a("actual").optJSONObject(si);Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)){HText("${if(actual?.b("done")==true)"✓" else "○"} Serie ${si+1}",Modifier.weight(1f),size=17);HText(if(actual?.b("done")==true)"${actual.n("value")} ${if(e.unit=="sec")"s" else "rep"} · ${actual.n("kg")} kg" else "Pendiente",size=15,color=LocalHunter.current.muted);if(!closed&&!x.b("archived"))HButton("Registrar"){ui.open("series",obj("date" to date,"itemIndex" to i,"setIndex" to si))}}}}}
  if(!closed){
   CompanionStage(companionKey(s.profile),Modifier.fillMaxWidth().height(120.dp))
@@ -79,7 +83,11 @@ import kotlin.math.*
 }
 
 @Composable fun SeriesEditor(ui:NativeUi,data:JSONObject){val s=ui.store;val date=data.s("date",today());val l=s.logs.optJSONObject(date)?:return;val itemIndex=data.i("itemIndex");val setIndex=data.i("setIndex");val x=l.a("items").optJSONObject(itemIndex)?:return;val e=s.catalog.byId[x.s("id")]?:return;val a=x.a("actual").optJSONObject(setIndex)?:JSONObject();var amount by remember{mutableStateOf(a.n("value",x.n("target")).let{if(it%1==0.0)it.toInt().toString() else it.toString()})};var load by remember{mutableStateOf(a.n("kg").toString())}
- Heading(e.name,size=32);Eyebrow("SERIE ${setIndex+1} DE ${x.i("sets")}");HInput(amount,{amount=it},if(x.s("unit",e.unit)=="sec")"Segundos realizados" else "Repeticiones realizadas",number=true);if(e.sides)HText("Indica la cantidad por lado.",size=16,color=LocalHunter.current.muted);if(e.equipment!="body")HInput(load,{load=it},"Carga utilizada · kg",number=true)
+ Heading(e.name,size=32);Eyebrow("SERIE ${setIndex+1} DE ${x.i("sets")}")
+ HText(CompanionDialogue.message(s.profile,LocalVisualTier.current,DialogueContext(
+  DialogueMoment.SERIES,group=e.type,exercise=e.name,set=setIndex+1,sets=x.i("sets"))),
+  size=15,color=LocalHunter.current.muted)
+ HInput(amount,{amount=it},if(x.s("unit",e.unit)=="sec")"Segundos realizados" else "Repeticiones realizadas",number=true);if(e.sides)HText("Indica la cantidad por lado.",size=16,color=LocalHunter.current.muted);if(e.equipment!="body")HInput(load,{load=it},"Carga utilizada · kg",number=true)
  HButton("Confirmar serie realizada",Modifier.fillMaxWidth(),primary=true){ui.attempt{s.confirmSet(date,itemIndex,setIndex,amount.replace(',','.').toDouble(),load.replace(',','.').toDouble());ui.back()}}
  if(a.b("done"))HButton("Desmarcar esta serie",Modifier.fillMaxWidth()){ui.attempt{s.confirmSet(date,itemIndex,setIndex,amount.replace(',','.').toDouble(),load.replace(',','.').toDouble(),false);ui.back()}}
 }
@@ -95,8 +103,17 @@ import kotlin.math.*
  val lifecycle=LocalLifecycleOwner.current.lifecycle;DisposableEffect(lifecycle,signature){val observer=LifecycleEventObserver{_,event->if(event==Lifecycle.Event.ON_STOP){running=false;persist()}};lifecycle.addObserver(observer);onDispose{lifecycle.removeObserver(observer);persist()}}
  LaunchedEffect(running,index){while(running&&remaining>0){delay(1000);remaining--;if(remaining==0){running=false;TimerSound.play(s.context)}}}
  Eyebrow(if(preview)"VISTA PREVIA DE LA SESIÓN" else "SESIÓN GUIADA · $date");Heading(day.s("title",day.s("name")),size=31);HProgress(index.toFloat()/steps.size);HText("Paso ${min(index+1,steps.size)} de ${steps.size}",size=15,color=LocalHunter.current.muted)
- if(index>=steps.size){Heading("Secuencia terminada",size=32);HNotice("El registro se completa únicamente con las series o misiones que confirmes.");if(!preview&&date==today())HButton("Revisar y completar sesión",primary=true){ui.open("record",obj("date" to date))};return}
- val step=steps[index];Heading(step.s("label"),size=28);val e=s.catalog.byId[step.s("id")];if(e!=null)ExerciseStage{OriginalSvg(e.demo,Modifier.fillMaxWidth().height(360.dp),play=running,speed=speed,mirror=mirror,accent=LocalHunter.current.hex("accent"))}
+ if(index>=steps.size){Heading("Secuencia terminada",size=32)
+  HText(CompanionDialogue.message(s.profile,LocalVisualTier.current,DialogueContext(
+   DialogueMoment.COMPLETED,group=GroupEvolution.sessionGroup(day,s.profile,s.catalog)?:"")),
+   size=16,color=LocalHunter.current.muted)
+  HNotice("El registro se completa únicamente con las series o misiones que confirmes.");if(!preview&&date==today())HButton("Revisar y completar sesión",primary=true){ui.open("record",obj("date" to date))};return}
+ val step=steps[index];Heading(step.s("label"),size=28);val e=s.catalog.byId[step.s("id")]
+ if(e!=null&&step.s("kind")=="exercise")HText(CompanionDialogue.message(s.profile,LocalVisualTier.current,
+  DialogueContext(DialogueMoment.EXERCISE,group=e.type,exercise=e.name,
+   set=step.i("setIndex")+1,sets=step.i("sets"),target=step.i("target"),
+   seconds=e.unit=="sec",cue=e.raw.s("cue"))),size=15,color=LocalHunter.current.muted)
+ if(e!=null)ExerciseStage{OriginalSvg(e.demo,Modifier.fillMaxWidth().height(360.dp),play=running,speed=speed,mirror=mirror,accent=LocalHunter.current.hex("accent"))}
  HPanel(padding=18){Eyebrow(if(step.s("kind")=="exercise")"TIEMPO DE EJERCICIO" else "RECUPERACIÓN");Heading("${remaining/60}:${(remaining%60).toString().padStart(2,'0')}",size=58);HProgress(if(step.i("seconds")==0)0f else remaining.toFloat()/step.i("seconds"))};if(step.s("kind")=="exercise")HText("Serie ${step.i("setIndex")+1}/${step.i("sets")} · ${step.i("target")} ${if(step.s("unit")=="sec")"segundos" else "repeticiones"}${if(e?.sides==true)" por lado" else ""}",bold=true)
  Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){HButton(if(running)"Ⅱ Pausar" else "▶ Iniciar",Modifier.weight(1f),primary=true){running=!running};HButton("Reiniciar",Modifier.weight(1f)){running=false;remaining=step.i("seconds")}}
  Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){HSelect("Velocidad visual",speed.toString(),listOf("0.5" to "0,5×","1.0" to "1×","1.5" to "1,5×"),Modifier.weight(1f)){speed=it.toFloat()};HButton("⇄ Espejo",Modifier.weight(1f)){mirror=!mirror}}
