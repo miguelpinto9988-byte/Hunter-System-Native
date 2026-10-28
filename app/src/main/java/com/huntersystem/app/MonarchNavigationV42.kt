@@ -77,11 +77,11 @@ fun MonarchBootScreen(error:String?,retry:()->Unit){
     }
 }
 
-@Composable
 private fun monarchPngDestination(id:String):String=when(id){
  "home"->"panel";"plan"->"missions";"routines"->"routines";"book"->"exercises";
  "stats"->"progress";"objectives"->"goals";else->"profile"
 }
+@Composable
 private fun MonarchNavItem(destination:MonarchDestination,selected:Boolean,vertical:Boolean,onSelect:()->Unit){
     val c=LocalHunter.current
     val tint by animateColorAsState(
