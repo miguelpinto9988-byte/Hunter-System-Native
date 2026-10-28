@@ -22,6 +22,17 @@ import kotlin.math.*
  HunterRealmWallpaper("overlay-"+overlay.type,Modifier.matchParentSize())
  Column(Modifier.fillMaxSize().padding(16.dp)){
  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){HButton("‹"){ui.back()};OriginalSvg("decor/crest.svg",Modifier.width(72.dp).height(22.dp),accent=c.hex("accent"),metal=c.hex("metal26"),ornament=c.hex("ornament26"));HButton("×"){ui.stack.clear()}}
+ if(overlay.type in listOf("confirm-finish","delete-goal","confirm-import")){
+    Row(Modifier.fillMaxWidth().padding(vertical=10.dp),
+       verticalAlignment=Alignment.CenterVertically,
+       horizontalArrangement=Arrangement.spacedBy(12.dp)){
+       HunterPngIcon("warning",Modifier.size(62.dp),"Advertencia")
+       Column(Modifier.weight(1f)){
+          Heading("¿Estás seguro?",size=25)
+          HText("Revisa la acción antes de confirmar.",size=14,color=c.muted)
+       }
+    }
+ }
  Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(top=18.dp,bottom=20.dp),verticalArrangement=Arrangement.spacedBy(16.dp)){key(overlay){when(overlay.type){
  "exercise"->ExerciseDetail(ui,overlay.data.s("id"))
  "mission"->{val date=overlay.data.s("date",today());Eyebrow(date);MissionContent(ui,date)}
