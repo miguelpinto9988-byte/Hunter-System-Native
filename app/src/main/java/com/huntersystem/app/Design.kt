@@ -86,7 +86,7 @@ fun resolveV39Theme(value:String?,gender:String=""):String=when(value?.lowercase
  val stroke=Brush.linearGradient(listOf(c.accent.copy(alpha=.50f),c.line,c.line))
  Box(modifier.fillMaxWidth()
     .then(if(onClick!=null)Modifier.graphicsLayer{scaleX=scale;scaleY=scale} else Modifier)
-    .clip(shape).background(Brush.verticalGradient(listOf(c.surface,c.panel)))
+    .clip(shape).background(Brush.verticalGradient(listOf(c.surface.copy(alpha=.95f),c.panel.copy(alpha=.89f))))
     .border(1.dp,stroke,shape)
     .then(if(onClick!=null)Modifier.clickable(
         interactionSource=interaction,indication=LocalIndication.current,
