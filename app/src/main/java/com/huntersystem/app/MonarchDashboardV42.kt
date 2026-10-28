@@ -394,9 +394,15 @@ fun MonarchDashboardGoals(ui:NativeUi) {
                 size = 15, color = c.muted)
         }
         goals.take(3).forEach { goal ->
-            HCheck(goal.s("title",goal.s("text")).take(100),
-                today() in goal.a("dates").strings()) {
-                ui.attempt { s.toggleGoal(goal.s("id")) }
+            val title=goal.s("title",goal.s("text"))
+            Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
+                horizontalArrangement=Arrangement.spacedBy(10.dp)){
+                HunterPngIcon(hunterGoalPngKey(title),Modifier.size(44.dp),title)
+                Box(Modifier.weight(1f)){
+                    HCheck(title.take(100),today() in goal.a("dates").strings()){
+                        ui.attempt { s.toggleGoal(goal.s("id")) }
+                    }
+                }
             }
         }
         HButton("+ AÑADIR META", Modifier.fillMaxWidth()) {
