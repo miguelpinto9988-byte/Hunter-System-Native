@@ -33,7 +33,7 @@ fun MonarchSpecialMissionsPanel(ui:NativeUi) {
  LaunchedEffect(Unit){
   while(true){delay(30000L);now=System.currentTimeMillis()}
  }
- val current=MonarchMissionCatalog.missionFor(sunday,level(store.adjusted()),zone)
+ val current=MonarchMissionCatalog.offerFor(store,sunday,zone)
  val run=store.state.optJSONObject("monarchSpecialMission")
  val weekly=run?.s("weekStart")==current.weekStart
  val status=if(weekly)MonarchMissionCatalog.status(run,now) else "none"
@@ -57,6 +57,8 @@ fun MonarchSpecialMissionsPanel(ui:NativeUi) {
   }
   HText("Ciclo Monarca · semana "+current.cycleWeek+" de 4",size=14,bold=true,color=colors.accent)
   HText(mission.story,size=15,color=colors.muted)
+  HText("DESAFÍO MONARCA · EXIGENCIA EXTREMA · VOLUNTARIO",size=13,color=colors.accent,bold=true)
+  HText("La misión rota por semana sin depender de tu nivel u objetivos. Solo se seleccionan ejercicios con el equipo que declaraste; no es una orden de entrenamiento.",size=14,color=colors.muted)
   HText("CIERRE AUTOMÁTICO EL DOMINGO · TIEMPO RESTANTE",size=13,color=colors.muted,bold=true)
   Heading(deadlineText,size=24)
   if(weekly&&run!=null)HProgress(MonarchMissionCatalog.progress(run,mission))
@@ -91,9 +93,12 @@ fun MonarchSpecialMissionsPanel(ui:NativeUi) {
     }
    }
   }
+  }
   when(status){
    "active"->{
-    HText("Registra manualmente solo lo que realizaste. Distribuye el esfuerzo, descansa y detente ante dolor o mareo.",size=14,color=colors.muted)
+    HText("Registra únicamente lo realizado. Estas metas son semanales y muy exigentes: distribúyelas, descansa, adapta la intensidad a tu capacidad y detente ante dolor, mareo o pérdida de técnica.",size=14,color=colors.muted)
+    if(mission.goals.any{!MonarchMissionCatalog.equipmentReady(store,it.exerciseId)})
+     HText("Tu selección de equipo cambió: algunas metas ya no corresponden al material disponible. Puedes detener esta misión sin penalización.",size=14,color=colors.accent)
     val reached=mission.goals.all{(run?.o("counts")?.i(it.exerciseId)?:0)>=it.target}
     HButton("RECLAMAR SELLO MONARCA",Modifier.fillMaxWidth(),primary=true,enabled=reached){
      ui.attempt{store.completeMonarchMission()}
@@ -106,16 +111,16 @@ fun MonarchSpecialMissionsPanel(ui:NativeUi) {
    else->{
     val reason=MonarchMissionCatalog.eligibleReason(store,mission,now)
     if(reason!=null)HText(reason,size=14,color=colors.muted)
+    else HText("No importa tu nivel, objetivo ni experiencia del perfil. La elección es tuya; confirma que comprendes la exigencia del desafío.",size=14,color=colors.muted)
     // El botón solo crea la misión: no comienza automáticamente el ejercicio.
     var consent by remember(current.weekStart){mutableStateOf(false)}
-    if(reason==null)HCheck("Acepto voluntariamente el desafío. Puedo descansar o detenerme sin penalización.",consent){
+    if(reason==null)HCheck("Acepto voluntariamente este desafío extremo de siete días. Solo usaré el equipo disponible; puedo parar sin penalización.",consent){
      consent=!consent
     }
     HButton("ACTIVAR MISIÓN DE ESTA SEMANA",Modifier.fillMaxWidth(),primary=true,enabled=reason==null&&consent){
      ui.attempt{store.startMonarchMission()}
     }
    }
-  }
   }
  }
 }
