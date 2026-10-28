@@ -91,7 +91,22 @@ class ComposeSmokeTest {
    compose.runOnIdle{ui.back()};compose.waitForIdle()
    org.junit.Assert.assertEquals("home",ui.tab)
   }
-  @Test(timeout=90000) @Config(qualifiers="w1280dp-h800dp-land-mdpi") fun tabletNavigationAndDialogRender(){
+  @Test(timeout=90000) fun hunterAndBackgroundCarouselsPreviewAndPersist(){
+  compose.runOnIdle{ui.go("profile")};compose.waitForIdle()
+  compose.onNodeWithContentDescription("Cazador Kim Dokja").performScrollTo().performClick()
+  compose.onNodeWithContentDescription("Fondo Santuarios y portales").performScrollTo().performClick()
+  compose.onNodeWithContentDescription("Vista previa del cazador y fondo").assertExists()
+  compose.onNodeWithText("Guardar perfil").performScrollTo().performClick();compose.waitForIdle()
+  org.junit.Assert.assertEquals("reader",store.state.o("appearance33").s("collection"))
+  org.junit.Assert.assertEquals("sanctuary",store.state.o("appearance33").s("scene"))
+  compose.onNodeWithText("Continuar").performClick()
+  val reload=NativeStore(store.context)
+  org.junit.Assert.assertEquals("reader",reload.state.o("appearance33").s("collection"))
+  org.junit.Assert.assertEquals("sanctuary",reload.state.o("appearance33").s("scene"))
+  compose.runOnIdle{ui.go("home")};compose.waitForIdle()
+  compose.onNodeWithText("Abrir misión de hoy").assertExists()
+ }
+ @Test(timeout=90000) @Config(qualifiers="w1280dp-h800dp-land-mdpi") fun tabletNavigationAndDialogRender(){
   compose.onNodeWithText("Inicio").assertIsDisplayed()
   compose.onNodeWithContentDescription("Abrir perfil").performClick();compose.waitForIdle();capture("tablet-profile")
   compose.runOnIdle{ui.open("exercise",obj("id" to "chair"))};compose.waitForIdle()

@@ -43,13 +43,15 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
   s.saveProfile(p,appearance,ui.pendingAvatar);initialValues.clear();initialValues.putAll(values);ui.pendingAvatar=null;ReminderScheduler.schedule(s.context,s.state.o("reminders"));CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true));ui.open("saved",obj("title" to "Configuración guardada","body" to "Tu acompañante aplicó la interpretación local de tus preferencias. Se revisó el plan de la semana actual. Los registros realizados se conservan."))
  }}
  SceneColumn(ui){if(old==null)AccessWelcome();Eyebrow("CAZADOR · CONFIGURACIÓN");Heading(if(old==null)"Crea tu perfil" else "Tu perfil de cazador");HText("Tu objetivo, nivel, equipo y calendario ajustan la selección de ejercicios.",color=LocalHunter.current.muted)
-  for((sectionIndex,sec)in form.withIndex())HPanel{
+  for((sectionIndex,sec)in form.withIndex()){
+   if(sectionIndex==1)HPanel{ThemeGallery(values["theme"]?:"eclipse"){values["theme"]=it}}
+   HPanel{
    val title=if(sectionIndex==form.lastIndex)"Lesiones y salud" else sec.s("title")
    if(sectionIndex==form.lastIndex){Row(Modifier.fillMaxWidth().clickable{expanded["health"]=expanded["health"]!=true},horizontalArrangement=Arrangement.SpaceBetween){Heading(title,size=30);HText(if(expanded["health"]==true)"−" else "+",size=28)};HText(if(injuries.isEmpty())"Sin lesiones registradas · tocar para editar" else "${injuries.size} zonas registradas · tocar para editar",size=15,color=LocalHunter.current.muted);if(expanded["health"]!=true)return@HPanel}else Heading(title,size=30)
    if(sectionIndex==0){Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(14.dp)){Avatar(ui.pendingAvatar?:s.state.s("avatar"),values["name"]?:"C",Modifier.size(72.dp));Column(verticalArrangement=Arrangement.spacedBy(6.dp)){HButton("Elegir fotografía"){ui.chooseAvatar()};HText("Se guarda en este dispositivo",size=14,color=LocalHunter.current.muted)}}}
    val done=mutableSetOf<String>()
    for(f in sec.a("fields").objects()){
-    val name=f.s("name");val type=f.s("type");if(name in listOf("goal","frequency","animate","collection33","scene33"))continue;if(name in listOf("age","height","weight")){if(name!="age")continue;Row(horizontalArrangement=Arrangement.spacedBy(9.dp)){for(k in listOf("age","height","weight"))HInput(values[k]?:"",{values[k]=it},fieldLabels[k]?:k,Modifier.weight(1f),number=true)};continue}
+    val name=f.s("name");val type=f.s("type");if(name in listOf("goal","frequency","theme","animate","collection33","scene33"))continue;if(name in listOf("age","height","weight")){if(name!="age")continue;Row(horizontalArrangement=Arrangement.spacedBy(9.dp)){for(k in listOf("age","height","weight"))HInput(values[k]?:"",{values[k]=it},fieldLabels[k]?:k,Modifier.weight(1f),number=true)};continue}
     if(name in listOf("materials46","capabilities46")){
      if(!done.add(name))continue
      val choices=sec.a("fields").objects().filter{it.s("name")==name}
@@ -62,7 +64,6 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
     val key=if(name in listOf("materials46","capabilities46"))"$name|${f.s("value")}" else name
     val label=fieldLabels[name]?:f.s("label").substringBefore("Seleccionado").trim()
     when{
-     name=="theme"->{ThemeGallery(values[name]?:"eclipse"){values[name]=it}}
      name=="companionCharacter"->{if(!done.add(name))continue;CompanionPicker(values[name]?:"knight"){values[name]=it}}
      type=="radio"->{if(!done.add(name))continue;val opts=sec.a("fields").objects().filter{it.s("name")==name}.map{it.s("value") to when(it.s("value")){"challenges"->"Desafíos diarios";"routines"->"Rutinas completas";else->it.s("label")}};Chips(opts,values[name]?:""){values[name]=it}}
      type=="checkbox"->HCheck(label,values[key]=="true"){values[key]=(values[key]!="true").toString()}
@@ -86,7 +87,12 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
      })
     }
    }
+   if(sectionIndex==1){
+    HunterPicker(values["collection33"]?:"hunter",values["gender"]?:"unspecified"){values["collection33"]=it}
+    BackgroundPicker(values["scene33"]?:"auto",values["collection33"]?:"hunter",values["gender"]?:"unspecified"){values["scene33"]=it}
+   }
    if(sectionIndex==form.lastIndex){Heading("Zonas e historial",size=26);for((i,injury)in injuries.withIndex()){Row(verticalAlignment=Alignment.CenterVertically){HText("${zoneLabels[injury.s("zone")]?:injury.s("zone")} · ${typeLabels[injury.s("type")]?:injury.s("type")} · ${if(injury.s("stage")=="past")"Anterior" else "Actual"}",Modifier.weight(1f),size=16);HButton("×"){injuries.removeAt(i)}}};HSelect("Zona",injuryZone,zoneLabels.toList()){injuryZone=it};HSelect("Tipo",injuryType,typeLabels.toList()){injuryType=it};Chips(listOf("current" to "Actual","past" to "Anterior"),injuryStage){injuryStage=it};HButton("+ Añadir zona"){injuries+=obj("zone" to injuryZone,"type" to injuryType,"stage" to injuryStage)};HText("El filtro por zonas no constituye un diagnóstico ni un programa de rehabilitación.",size=14,color=LocalHunter.current.muted)}
+   }
   }
   HButton("Guardar perfil",Modifier.fillMaxWidth(),primary=true){saveProfile()}
   HPanel{Heading("Copia de seguridad",size=29);HText("Guarda tu perfil, calendario y registros en un archivo.",size=16,color=LocalHunter.current.muted);HButton("Exportar copia de seguridad"){ui.export()};HButton("Restaurar copia"){ui.import()}}

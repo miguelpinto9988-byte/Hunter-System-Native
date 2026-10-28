@@ -84,7 +84,7 @@ fun rankKey(level:Int)=listOf("E","D","C","B","A","S")[((level-1)/5).coerceIn(0,
  val phase=ambientPhase(prefs.n("speed",1.0).toFloat());val mode=visualMode(prefs)
  HPanel(padding=0){
   Box(Modifier.fillMaxWidth().height((330 * androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)).dp)){
-   AssetImage("eclipse/portal.webp",Modifier.fillMaxSize(),ContentScale.Crop)
+   AssetImage(chosenSceneArtwork(appearance.s("scene","auto")),Modifier.fillMaxSize(),ContentScale.Crop)
    Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(c.bg.copy(alpha=.92f),c.bg.copy(alpha=.35f),Color.Transparent))))
    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent,c.panel))))
    if(mode=="relic")RelicScene(Modifier.align(Alignment.TopEnd).size(140.dp))
