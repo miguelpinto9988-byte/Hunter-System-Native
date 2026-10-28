@@ -78,6 +78,10 @@ fun MonarchBootScreen(error:String?,retry:()->Unit){
 }
 
 @Composable
+private fun monarchPngDestination(id:String):String=when(id){
+ "home"->"panel";"plan"->"missions";"routines"->"routines";"book"->"exercises";
+ "stats"->"progress";"objectives"->"goals";else->"profile"
+}
 private fun MonarchNavItem(destination:MonarchDestination,selected:Boolean,vertical:Boolean,onSelect:()->Unit){
     val c=LocalHunter.current
     val tint by animateColorAsState(
@@ -98,14 +102,14 @@ private fun MonarchNavItem(destination:MonarchDestination,selected:Boolean,verti
         Column(item.width(76.dp).defaultMinSize(minHeight=76.dp).padding(vertical=10.dp),
             horizontalAlignment=Alignment.CenterHorizontally,
             verticalArrangement=Arrangement.spacedBy(6.dp)){
-            MonarchGlyph(destination.id,Modifier.size(25.dp),color=tint)
+            HunterPngIcon(monarchPngDestination(destination.id),Modifier.size(30.dp),destination.title)
             HText(destination.title,size=12,bold=selected,color=tint,maxLines=1)
         }
     }else{
         Column(item.fillMaxWidth().fillMaxHeight().padding(vertical=8.dp),
             horizontalAlignment=Alignment.CenterHorizontally,
             verticalArrangement=Arrangement.spacedBy(4.dp)){
-            MonarchGlyph(destination.id,Modifier.size(24.dp),color=tint)
+            HunterPngIcon(monarchPngDestination(destination.id),Modifier.size(29.dp),destination.title)
             HText(destination.title,size=11,bold=selected,color=tint,maxLines=1)
         }
     }
@@ -141,7 +145,7 @@ fun MonarchNavigationRail(ui:NativeUi){
         .border(1.dp,c.line).padding(horizontal=8.dp,vertical=16.dp),
         horizontalAlignment=Alignment.CenterHorizontally,
         verticalArrangement=Arrangement.spacedBy(14.dp)){
-        MonarchGlyph("plan",Modifier.size(32.dp),color=c.accent)
+        HunterPngIcon("missions",Modifier.size(42.dp),"Misiones")
         Spacer(Modifier.height(12.dp))
         for(destination in MonarchNavigation.tabs){
             MonarchNavItem(destination,
