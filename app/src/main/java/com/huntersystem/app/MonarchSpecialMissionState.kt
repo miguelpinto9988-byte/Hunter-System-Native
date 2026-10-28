@@ -36,30 +36,35 @@ object MonarchMissionCatalog {
   val start=sunday(date)
   val weeks=ChronoUnit.WEEKS.between(anchor,start)
   val cycle=cycleIndex(start)
-  // Los intermedios solo reciben Guardia; los avanzados alternan tres exigencias.
-  val id=if(level<2)"guardia" else listOf("guardia","fortaleza","trono","fortaleza")[cycle]
+  // La rotación Monarca es universal: NUNCA depende del nivel/objetivo del perfil.
+  @Suppress("UNUSED_VARIABLE") val legacyLevel=level
+  val id=listOf("guardia","fortaleza","trono","fortaleza")[cycle]
   // En ciclos sucesivos rotan los ejercicios complementarios, no las metas mínimas.
   val variant=Math.floorMod(weeks.toInt()+Math.floorDiv(weeks.toInt(),4),4)
+  // Desafíos muy exigentes, pero acumulados en 7 días, nunca una sesión forzada.
+  // La asignación efectiva adapta esta base al EQUIPO realmente declarado.
   val goals=when(id){
    "guardia"->listOf(
-    MonarchMissionGoal("squat",60),
-    listOf(MonarchMissionGoal("jumpjack",90),MonarchMissionGoal("mountain",70),
-      MonarchMissionGoal("jumpjack",110),MonarchMissionGoal("mountain",85))[variant],
-    listOf(MonarchMissionGoal("plank",90),MonarchMissionGoal("kneelingplank",110),
-      MonarchMissionGoal("plank",120),MonarchMissionGoal("wallplank",150))[variant])
+    MonarchMissionGoal("squat",100),
+    listOf(MonarchMissionGoal("jumpjack",180),MonarchMissionGoal("mountain",160),
+      MonarchMissionGoal("jumpjack",200),MonarchMissionGoal("mountain",175))[variant],
+    listOf(MonarchMissionGoal("plank",180),MonarchMissionGoal("kneelingplank",200),
+      MonarchMissionGoal("plank",210),MonarchMissionGoal("wallplank",240))[variant],
+    MonarchMissionGoal("pushup",45))
    "fortaleza"->listOf(
-    MonarchMissionGoal("squat",80),MonarchMissionGoal("new46-burpee",35),
-    listOf(MonarchMissionGoal("reverselunge",40),MonarchMissionGoal("stepup",46),
-      MonarchMissionGoal("lateralunge",40),MonarchMissionGoal("reverselunge",50))[variant],
-    MonarchMissionGoal("plank",120))
+    MonarchMissionGoal("squat",140),MonarchMissionGoal("new46-burpee",50),
+    listOf(MonarchMissionGoal("reverselunge",90),MonarchMissionGoal("stepup",90),
+      MonarchMissionGoal("lateralunge",90),MonarchMissionGoal("reverselunge",110))[variant],
+    MonarchMissionGoal("plank",240),MonarchMissionGoal("pushup",65))
    else->listOf(
-    MonarchMissionGoal("squat",120),MonarchMissionGoal("new46-burpee",60),
-    MonarchMissionGoal("pushup",70),
-    listOf(MonarchMissionGoal("plank",180),MonarchMissionGoal("mountain",130),
-      MonarchMissionGoal("jumpjack",150),MonarchMissionGoal("kneelingplank",210))[variant])
+    MonarchMissionGoal("squat",180),MonarchMissionGoal("new46-burpee",75),
+    MonarchMissionGoal("pushup",90),
+    listOf(MonarchMissionGoal("plank",300),MonarchMissionGoal("mountain",240),
+      MonarchMissionGoal("jumpjack",300),MonarchMissionGoal("kneelingplank",320))[variant],
+    MonarchMissionGoal("reverselunge",120))
   }
   return MonarchMissionSpec(id,names.getValue(id),stories.getValue(id),
-   start.toString(),cycle+1,deadline(start,zone),if(id=="guardia")1 else 2,goals)
+   start.toString(),cycle+1,deadline(start,zone),0,goals)
  }
  fun fromRun(run:JSONObject):MonarchMissionSpec {
   val id=run.s("id")
@@ -67,7 +72,7 @@ object MonarchMissionCatalog {
   require(id in names&&goals.isNotEmpty()&&goals.all{it.target>0}){"Datos de misión Monarca incompletos"}
   return MonarchMissionSpec(id,names.getValue(id),stories.getValue(id),
    run.s("weekStart"),run.i("cycleWeek",1),run.optLong("deadlineAt"),
-   if(id=="guardia")1 else 2,goals)
+   0,goals)
  }
  fun status(run:JSONObject?,now:Long):String {
   if(run==null)return "none"
@@ -81,27 +86,98 @@ object MonarchMissionCatalog {
   return (done.toFloat()/total).coerceIn(0f,1f)
  }
  fun remaining(run:JSONObject,now:Long)=maxOf(0L,run.optLong("deadlineAt")-now)
- fun exerciseCompatible(store:NativeStore,exerciseId:String):Boolean {
-  val p=store.adjusted()
+ /**
+  * Única condición del perfil que influye en las misiones Monarca: equipo real.
+  * Sin auto-planificación y sin incluir los 800 ejercicios todavía no auditados.
+  * Los requisitos secundarios de cada ejercicio deben estar seleccionados.
+  */
+ fun equipmentReady(store:NativeStore,exerciseId:String):Boolean {
   val e=store.catalog.byId[exerciseId]?:return false
-  return store.profile?.n("age",0.0)?.let{it>=18}==true &&
-   !store.rules.active(p)&&store.rules.gate(p).ok &&
-   !e.raw.b("sourceExpansion2k")&&store.rules.compatible(e,p)
+  if(e.raw.b("sourceExpansion2k")||e.raw.b("sourceOnly"))return false
+  val p=store.profile?:JSONObject()
+  val gear=p.s("equipment","body")
+  val gym=p.a("gymEquipment23").strings().toSet()
+  val mats=p.a("materials46").strings().toSet()
+  if((e.gym||e.equipment=="gym")&&gear!="gym")return false
+  if(e.equipment=="db"&&gear !in listOf("db","gym"))return false
+  if(e.equipment !in setOf("body","db","gym",""))return false
+  val needed=(e.raw.a("materialRequirements").strings()+e.raw.a("materials46").strings()).distinct()
+  return needed.all{k->
+   when(k){
+    "db"->gear in listOf("db","gym")
+    "gym"->gear=="gym"
+    "bench"->p.b("bench")||"bench" in gym
+    "step"->p.b("step")||"step" in mats
+    "barbell","cable","machine","smith","cardio"->gear=="gym"&&k in gym
+    "body"->true
+    else->k in mats || (gear=="gym"&&k in gym)
+   }
+  }
  }
+ private fun goalFor(e:Exercise,id:String):MonarchMissionGoal {
+  // Repeticiones semanales totales, sin recomendación automática de carga.
+  val points=when(id){"guardia"->0;"fortaleza"->1;else->2}
+  val amount=when {
+   e.unit=="sec"->listOf(180,240,300)[points]
+   e.equipment!="body"->listOf(36,48,60)[points]
+   e.group in setOf("Piernas","Cadera")->listOf(100,140,180)[points]
+   e.group in setOf("Core","Abdomen")->listOf(65,90,120)[points]
+   else->listOf(45,65,90)[points]
+  }
+  return MonarchMissionGoal(e.id,amount)
+ }
+ /** Oferta congelable: ciclo Monarca independiente del perfil, equipo adaptable. */
+ fun offerFor(store:NativeStore,date:LocalDate,zone:ZoneId=ZoneId.systemDefault()):MonarchMissionSpec {
+  val base=missionFor(date,2,zone)
+  val gear=store.profile?.s("equipment","body")?:"body"
+  val eligible=store.catalog.originalExercises.filter{equipmentReady(store,it.id)}
+  val picks=base.goals.mapNotNull{g->
+   store.catalog.byId[g.exerciseId]?.takeIf{equipmentReady(store,it.id)}
+  }.distinctBy{it.id}.toMutableList()
+  // Si el perfil declara mancuernas o equipamiento de gimnasio, aparecen
+  // desafíos que realmente usan esos materiales; sin equipamiento, nunca.
+  val equipmentPicks=if(gear=="body")emptyList() else eligible.filter{
+   if(gear=="db")it.equipment=="db" else it.equipment=="gym"||it.equipment=="db"
+  }.filter{!it.raw.b("highSkill46")&&!it.power&&!it.impact}
+   .sortedWith(compareByDescending<Exercise>{it.equipment=="gym"&&gear=="gym"}
+      .thenBy{it.name}.thenBy{it.id})
+  val desired=if(base.id=="guardia")4 else 5
+  val gearCount=if(gear=="body")0 else if(gear=="gym")2 else 1
+  val chosenGear=mutableListOf<Exercise>()
+  for(e in equipmentPicks){
+   if(chosenGear.size>=gearCount)break
+   if(chosenGear.none{it.group==e.group})chosenGear+=e
+  }
+  // Se garantiza variedad de movimiento, sin requerir aparatos no marcados.
+  val selected=mutableListOf<Exercise>()
+  selected+=picks.take(desired-chosenGear.size)
+  val bodyPool=eligible.filter{it.equipment=="body"&&!it.gym}
+   .filter{!it.raw.b("highSkill46")&&!it.power&&!it.impact}
+   .sortedWith(compareBy<Exercise>{it.name}.thenBy{it.id})
+  for(e in bodyPool){
+   if(selected.size>=desired-chosenGear.size)break
+   if(selected.none{it.id==e.id||it.group==e.group})selected+=e
+  }
+  for(e in bodyPool){
+   if(selected.size>=desired-chosenGear.size)break
+   if(selected.none{it.id==e.id})selected+=e
+  }
+  selected+=chosenGear
+  return base.copy(goals=selected.distinctBy{it.id}.map{goalFor(it,base.id)})
+ }
+ fun exerciseCompatible(store:NativeStore,exerciseId:String):Boolean =
+  equipmentReady(store,exerciseId)
  fun eligibleReason(store:NativeStore,mission:MonarchMissionSpec,now:Long):String? {
-  val profile=store.profile?:return "Completa tu perfil para acceder a desafíos exigentes."
-  val p=store.adjusted()
-  if(profile.n("age")<18)return "Los desafíos Monarca están reservados a personas adultas."
-  if(level(p)<mission.minimumLevel)return "Tu perfil necesita nivel "+(if(mission.minimumLevel==2)"avanzado" else "intermedio")+"."
-  if(store.rules.active(p)||!store.rules.gate(p).ok)
-   return "Hay dolor, lesiones o limitaciones registrados. Esta misión no está disponible."
   val run=store.state.optJSONObject("monarchSpecialMission")
   if(run!=null&&run.s("weekStart")==mission.weekStart)
-   return if(status(run,now)=="active")"Ya has iniciado el desafío de esta semana." else "Esta semana ya se ha utilizado. Nuevo desafío el próximo domingo."
-  if(mission.goals.any{!exerciseCompatible(store,it.exerciseId)})
-   return "Alguno de los ejercicios exige capacidades o condiciones distintas. Revisa tu perfil."
+   return if(status(run,now)=="active")"Ya has iniciado el desafío de esta semana."
+    else "Esta semana ya se ha utilizado. Nuevo desafío el próximo domingo."
+  if(mission.goals.isEmpty())return "No se encontraron ejercicios con el equipo declarado."
+  if(mission.goals.any{!equipmentReady(store,it.exerciseId)})
+   return "La misión necesita equipo que no está marcado como disponible. Revisa solo Equipo en Perfil."
   return null
  }
+
 }
 
 /** Renueva la oferta cada domingo al abrir o mantener abierta la app, sin servicio remoto. */
@@ -123,8 +199,7 @@ fun NativeStore.syncMonarchWeek(now:Long=System.currentTimeMillis(),zone:ZoneId=
 }
 /** Solo un intento voluntario por semana; se conserva el progreso y el historial. */
 fun NativeStore.startMonarchMission(now:Long=System.currentTimeMillis(),zone:ZoneId=ZoneId.systemDefault()) {
- val spec=MonarchMissionCatalog.missionFor(MonarchMissionCatalog.weekStart(now,zone),
-  level(adjusted()),zone)
+ val spec=MonarchMissionCatalog.offerFor(this,MonarchMissionCatalog.weekStart(now,zone),zone)
  val reason=MonarchMissionCatalog.eligibleReason(this,spec,now)
  require(reason==null){reason?:"Misión no disponible"}
  syncMonarchWeek(now,zone)
@@ -148,7 +223,7 @@ fun NativeStore.recordMonarchProgress(
  val run=checkedMonarchRun(now,zone)
  val goal=MonarchMissionCatalog.fromRun(run).goals.firstOrNull{it.exerciseId==exerciseId}
   ?:error("Ejercicio fuera de la misión")
- require(MonarchMissionCatalog.exerciseCompatible(this,exerciseId)){"Revisa las restricciones actuales de tu perfil"}
+ require(MonarchMissionCatalog.exerciseCompatible(this,exerciseId)){"Este ejercicio requiere equipo que ya no está disponible en Perfil"}
  val counts=run.o("counts")
  counts.put(exerciseId,(counts.i(exerciseId)+increment).coerceIn(0,goal.target))
  run.put("counts",counts)
@@ -158,7 +233,7 @@ fun NativeStore.completeMonarchMission(now:Long=System.currentTimeMillis(),zone:
  val run=checkedMonarchRun(now,zone)
  val spec=MonarchMissionCatalog.fromRun(run)
  require(spec.goals.all{run.o("counts").i(it.exerciseId)>=it.target}){"Faltan objetivos"}
- require(spec.goals.all{MonarchMissionCatalog.exerciseCompatible(this,it.exerciseId)}){"Revisa las restricciones actuales"}
+ require(spec.goals.all{MonarchMissionCatalog.equipmentReady(this,it.exerciseId)}){"Revisa el equipo de la misión antes de reclamar el sello"}
  run.put("status","completed").put("finishedAt",now)
  run.put("seal","Sello Monarca: "+spec.title).put("selfReported",true)
  save()
