@@ -69,7 +69,7 @@ fun HunterSideMenu(ui:NativeUi,onClose:()->Unit){
    HunterSideMenuItem("Configuración y datos","settings",false){
       ui.go("profile");onClose()
    }
-   HText("Diseño con imágenes PNG locales · sin conexión",
+   HText("Arte PNG de escenas · Íconos OpenEmoji (CC BY 4.0)",
       Modifier.padding(start=10.dp,top=15.dp,bottom=10.dp),
       size=12,color=c.muted)
   }
