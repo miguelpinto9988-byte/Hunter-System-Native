@@ -117,21 +117,26 @@ class ComposeSmokeTest {
   compose.onNodeWithText("Rutinas completas").performScrollTo().performClick()
   compose.onAllNodesWithText("Número de misiones diarias").assertCountEquals(0)
  }
- @Test(timeout=90000) fun completedMissionOffersCompanionIntensitySurvey(){
+ @Test(timeout=90000) fun originalCompanionEffortSurveyIsTheOnlyCompletionScreen(){
   val date=today()
   compose.runOnIdle{
    val log=store.log(date)
-   log.put("rpe",6).put("complete",true)
+   for(item in log.a("items").objects())item.put("missionState",true)
+   for(task in log.a("missionTasks").objects())task.put("done",true)
    store.save()
-   ui.open("session-feedback",obj("date" to date))
+   ui.open("record",obj("date" to date))
   };compose.waitForIdle()
-  compose.onNodeWithText("Exigencia para tus próximas sesiones").assertExists()
-  val completed=store.logs.o(date).b("complete")
-  compose.runOnIdle{store.adjustTrainingScaleAfterCompletion(date,.6)};compose.waitForIdle()
-  org.junit.Assert.assertTrue(completed)
+  compose.onNodeWithText("Evaluación de tu compañero").assertExists()
+  compose.onNodeWithText("Esfuerzo percibido · RPE").assertExists()
+  compose.onAllNodesWithText("Exigencia para tus próximas sesiones").assertCountEquals(0)
+  compose.onNodeWithText("Seleccionar esfuerzo").performScrollTo().performClick()
+  compose.onNodeWithText("6 / 10").performClick()
+  compose.onNodeWithText("Completar sesión").performScrollTo().performClick()
+  compose.waitForIdle()
+  org.junit.Assert.assertEquals(6,store.logs.o(date).i("rpe"))
   org.junit.Assert.assertTrue(store.logs.o(date).b("complete"))
-  org.junit.Assert.assertEquals(.6,store.profile!!.n("trainingScale"),.001)
-  compose.onNodeWithContentDescription("Cerrar ventana").performClick();compose.waitForIdle()
+  org.junit.Assert.assertTrue(ui.stack.isEmpty())
+  org.junit.Assert.assertEquals(1,store.planner.feedback(store.logs,plus(date,1)).completed)
  }
  @Test(timeout=90000) @Config(qualifiers="w1280dp-h800dp-land-mdpi") fun tabletNavigationAndDialogRender(){
   compose.onNodeWithText("Inicio").assertIsDisplayed()
