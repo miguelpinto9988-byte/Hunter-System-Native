@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.Color
 /**
  * Wallpapers originales para las pantallas reales de Hunter System.
  *
- * Reutiliza el reproductor vectorial AndroidSVG, de forma local y sin red.
+ * Utiliza solo PNG rasterizados, totalmente locales; sin SVG ni Canvas.
  * Se sitúa DETRÁS de Compose: nunca modifica clicks, datos, ni desplazamiento.
  * Los paisajes son estáticos, respetando de forma natural movimiento reducido.
  */
@@ -36,7 +36,7 @@ internal fun hunterRealmArtRoute(route:String):String {
 fun HunterRealmWallpaper(route:String,modifier:Modifier=Modifier){
     val scene=hunterRealmArtRoute(route)
     Box(modifier.background(Color(0xFF050916))){
-        OriginalSvg("realm-art/$scene.svg",Modifier.fillMaxSize(),crop=true)
+        AssetImage("hunter-png/wallpapers/$scene.png",Modifier.fillMaxSize(),scale=androidx.compose.ui.layout.ContentScale.Crop,description=null)
         // Protege contraste en todas las resoluciones sin editar la ilustración.
         Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
                 0f to Color(0x52040919),
