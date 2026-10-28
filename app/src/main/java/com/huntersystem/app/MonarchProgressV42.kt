@@ -108,7 +108,7 @@ private fun MonarchSummaryTile(title:String,value:String,subtitle:String,modifie
             "SERIE" in title.uppercase()->"dumbbell"
             "RACHA" in title.uppercase()->"streak"
             else->"exercises"
-        },Modifier.size(43.dp),title)
+        },Modifier.size(52.dp),title)
         Eyebrow(title.uppercase())
         Heading(value,size=31)
         HText(subtitle,size=12,color=c.muted)
@@ -123,7 +123,7 @@ private fun MonarchProgressTrend(data:MonarchAnalyticsSnapshot,showSets:Boolean)
     val maxValue=max(1,values.maxOrNull()?:1)
     val total=values.sum()
     HPanel(padding=16){
-        HunterPngIcon("progress",Modifier.size(48.dp),"Evolución registrada")
+        HunterPngIcon("progress",Modifier.size(58.dp),"Evolución registrada")
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
             verticalAlignment=Alignment.CenterVertically){
             Heading(if(showSets)"Series registradas" else "Sesiones completadas",size=22)
@@ -175,7 +175,7 @@ private fun MonarchKindDistribution(data:MonarchAnalyticsSnapshot){
     )
     val total=groups.sumOf{it.second}
     HPanel(padding=18){
-        HunterPngIcon("milestone",Modifier.size(46.dp),"Modalidades de entrenamiento")
+        HunterPngIcon("milestone",Modifier.size(57.dp),"Modalidades de entrenamiento")
         Heading("Sesiones por modalidad",size=22)
         if(total==0)HText("No hay sesiones completadas clasificadas en este período.",
             size=14,color=c.muted)
@@ -299,7 +299,7 @@ fun MonarchProgressScreen(ui:NativeUi){
     val c=LocalHunter.current
     SceneColumn(ui){
         Eyebrow("CENTRO DE EVOLUCIÓN · MONARCA")
-        HunterPngIcon("achievement",Modifier.size(59.dp),"Centro de evolución")
+        HunterPngIcon("achievement",Modifier.size(70.dp),"Centro de evolución")
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
             verticalAlignment=Alignment.CenterVertically){
             Column {

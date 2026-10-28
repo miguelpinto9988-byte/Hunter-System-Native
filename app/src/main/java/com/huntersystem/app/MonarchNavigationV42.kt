@@ -102,14 +102,14 @@ private fun MonarchNavItem(destination:MonarchDestination,selected:Boolean,verti
         Column(item.width(76.dp).defaultMinSize(minHeight=76.dp).padding(vertical=10.dp),
             horizontalAlignment=Alignment.CenterHorizontally,
             verticalArrangement=Arrangement.spacedBy(6.dp)){
-            HunterPngIcon(monarchPngDestination(destination.id),Modifier.size(30.dp),destination.title)
+            HunterPngIcon(monarchPngDestination(destination.id),Modifier.size(39.dp),destination.title)
             HText(destination.title,size=12,bold=selected,color=tint,maxLines=1)
         }
     }else{
-        Column(item.fillMaxWidth().fillMaxHeight().padding(vertical=8.dp),
+        Column(item.fillMaxWidth().fillMaxHeight().padding(vertical=5.dp),
             horizontalAlignment=Alignment.CenterHorizontally,
             verticalArrangement=Arrangement.spacedBy(4.dp)){
-            HunterPngIcon(monarchPngDestination(destination.id),Modifier.size(29.dp),destination.title)
+            HunterPngIcon(monarchPngDestination(destination.id),Modifier.size(38.dp),destination.title)
             HText(destination.title,size=11,bold=selected,color=tint,maxLines=1)
         }
     }
@@ -122,7 +122,7 @@ fun MonarchBottomNavigation(ui:NativeUi){
     Row(Modifier.fillMaxWidth()
         .background(Brush.verticalGradient(listOf(c.surface,c.panel)))
         .border(1.dp,c.line)
-        .navigationBarsPadding().height(75.dp).padding(horizontal=6.dp,vertical=6.dp),
+        .navigationBarsPadding().height(86.dp).padding(horizontal=6.dp,vertical=5.dp),
         verticalAlignment=Alignment.CenterVertically,
         horizontalArrangement=Arrangement.spacedBy(3.dp)){
         for(destination in MonarchNavigation.tabs){
@@ -145,7 +145,7 @@ fun MonarchNavigationRail(ui:NativeUi){
         .border(1.dp,c.line).padding(horizontal=8.dp,vertical=16.dp),
         horizontalAlignment=Alignment.CenterHorizontally,
         verticalArrangement=Arrangement.spacedBy(14.dp)){
-        HunterPngIcon("missions",Modifier.size(42.dp),"Misiones")
+        HunterPngIcon("missions",Modifier.size(53.dp),"Misiones")
         Spacer(Modifier.height(12.dp))
         for(destination in MonarchNavigation.tabs){
             MonarchNavItem(destination,

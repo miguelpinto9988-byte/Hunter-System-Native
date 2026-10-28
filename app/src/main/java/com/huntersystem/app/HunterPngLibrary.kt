@@ -12,12 +12,17 @@ import androidx.compose.ui.layout.ContentScale
  */
 private val iconKeys=setOf(
     "panel","missions","routines","exercises","progress","profile",
-    "goals","academy","strength","cardio","mobility","book","level",
-    "streak","achievement","timer","training","dumbbell","focus",
-    "lightning","energy","shield","milestone","settings","trophy",
-    "success","reminders","xp","goal_strength","goal_habit",
-    "goal_read","warning","calendar","history","rest","coach",
-    "focus","energy"
+    "menu","reminders","back","settings","strength","academy",
+    "trophy","cardio","start","pause","success","available",
+    "locked","warning","timer","retry","progress_bar","milestone",
+    "streak","level","xp","goals","crystal","rune",
+    "monarch_seal","portal","chest","insignia","special","next",
+    "close","add","remove","edit","book","training",
+    "dumbbell","focus","energy","lightning","shield","achievement",
+    "goal_strength","goal_habit","goal_read","calendar","history","rest",
+    "coach","search","export","import","notifications","play",
+    "complete","delete","back_arrow","goal_finish","rank","stats",
+    "library","monarch","programs"
 )
 
 @Composable

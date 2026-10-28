@@ -18,7 +18,7 @@ fun HunterMissionCompletedCard(ui:NativeUi,date:String){
  HPanel(padding=18){
   Row(verticalAlignment=Alignment.CenterVertically,
       horizontalArrangement=Arrangement.spacedBy(14.dp)){
-   HunterPngIcon("success",Modifier.size(66.dp),"Misión completada")
+   HunterPngIcon("success",Modifier.size(76.dp),"Misión completada")
    Column(Modifier.weight(1f)){
     Eyebrow("RECOMPENSA DESBLOQUEADA")
     Heading("¡Misión completada!",size=27)
