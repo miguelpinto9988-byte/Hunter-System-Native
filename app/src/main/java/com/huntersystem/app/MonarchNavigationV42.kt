@@ -102,7 +102,7 @@ private fun MonarchNavItem(destination:MonarchDestination,selected:Boolean,verti
         Column(item.width(76.dp).defaultMinSize(minHeight=76.dp).padding(vertical=10.dp),
             horizontalAlignment=Alignment.CenterHorizontally,
             verticalArrangement=Arrangement.spacedBy(6.dp)){
-            HunterPngIcon(monarchPngDestination(destination.id),Modifier.size(39.dp),destination.title)
+            HunterPngIcon(monarchPngDestination(destination.id),Modifier.size(45.dp),destination.title)
             HText(destination.title,size=12,bold=selected,color=tint,maxLines=1)
         }
     }else{
