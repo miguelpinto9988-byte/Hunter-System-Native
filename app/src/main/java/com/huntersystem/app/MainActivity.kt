@@ -50,6 +50,22 @@ fun HunterRoot(ui:NativeUi){
     BackHandler(ui.stack.isNotEmpty()||ui.library.isNotBlank()||(hasProfile&&ui.tab!="home")){
         ui.back()
     }
+    val drawer=rememberDrawerState(initialValue=DrawerValue.Closed)
+    val scope=rememberCoroutineScope()
+    ui.openMenu={scope.launch{drawer.open()}}
+    ModalNavigationDrawer(
+        drawerState=drawer,
+        gesturesEnabled=hasProfile,
+        scrimColor=androidx.compose.ui.graphics.Color(0xB4040710),
+        drawerContent={
+            ModalDrawerSheet(
+                modifier=Modifier.width(304.dp),
+                drawerContainerColor=androidx.compose.ui.graphics.Color(0xFF050A1B)
+            ){
+                HunterSideMenu(ui){scope.launch{drawer.close()}}
+            }
+        }
+    ){
     BoxWithConstraints(Modifier.fillMaxSize()){
         val tablet=maxWidth>=MonarchNavigation.tabletWidthDp.dp
         Scaffold(containerColor=androidx.compose.ui.graphics.Color.Transparent,bottomBar={
@@ -89,6 +105,7 @@ fun HunterRoot(ui:NativeUi){
             }
             }
         }
+    }
     }
     if(ui.stack.isNotEmpty())OverlayRoot(ui,ui.stack.last())
 }
