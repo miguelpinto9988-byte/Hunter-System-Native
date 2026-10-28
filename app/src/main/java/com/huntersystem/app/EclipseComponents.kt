@@ -195,7 +195,7 @@ fun chosenSceneArtwork(scene:String):String{
     RelicScene(Modifier.size(170.dp));Heading("HUNTER SYSTEM",size=30);Eyebrow("ECLIPSE · ASCENSIÓN")
     HText(error?:"Preparando tu próximo capítulo…",size=16,color=c.muted)
     if(error==null)androidx.compose.material3.LinearProgressIndicator(Modifier.fillMaxWidth(),color=c.accent,trackColor=c.panel)
-    else HButton("Reintentar",primary=true,icon=Sigil.Reset,onClick=retry)
+    else HButton("Reintentar",primary=true,onClick=retry)
    }
   }
  }
