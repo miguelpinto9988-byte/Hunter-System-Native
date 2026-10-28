@@ -18,7 +18,9 @@ import org.json.JSONArray
 import java.time.LocalDate
 import kotlin.math.*
 
-@Composable fun OverlayRoot(ui:NativeUi,overlay:Overlay){val c=LocalHunter.current;Dialog(onDismissRequest={ui.back()},properties=DialogProperties(usePlatformDefaultWidth=false,decorFitsSystemWindows=true)){Column(Modifier.fillMaxWidth().fillMaxHeight(.96f).padding(horizontal=10.dp,vertical=8.dp).clip(RoundedCornerShape(HunterDesignSystem.Dimensions.cornerDialog)).background(Brush.verticalGradient(listOf(c.surface,c.panel))).hunterSceneBackdrop("overlay-"+overlay.type).border(1.dp,c.line,RoundedCornerShape(HunterDesignSystem.Dimensions.cornerDialog)).padding(16.dp)){
+@Composable fun OverlayRoot(ui:NativeUi,overlay:Overlay){val c=LocalHunter.current;Dialog(onDismissRequest={ui.back()},properties=DialogProperties(usePlatformDefaultWidth=false,decorFitsSystemWindows=true)){Box(Modifier.fillMaxWidth().fillMaxHeight(.96f).padding(horizontal=10.dp,vertical=8.dp).clip(RoundedCornerShape(HunterDesignSystem.Dimensions.cornerDialog)).background(Brush.verticalGradient(listOf(c.surface,c.panel))).border(1.dp,c.line,RoundedCornerShape(HunterDesignSystem.Dimensions.cornerDialog))){
+ HunterRealmWallpaper("overlay-"+overlay.type,Modifier.matchParentSize())
+ Column(Modifier.fillMaxSize().padding(16.dp)){
  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){HButton("‹"){ui.back()};OriginalSvg("decor/crest.svg",Modifier.width(72.dp).height(22.dp),accent=c.hex("accent"),metal=c.hex("metal26"),ornament=c.hex("ornament26"));HButton("×"){ui.stack.clear()}}
  Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(top=18.dp,bottom=20.dp),verticalArrangement=Arrangement.spacedBy(16.dp)){key(overlay){when(overlay.type){
  "exercise"->ExerciseDetail(ui,overlay.data.s("id"))
@@ -73,7 +75,7 @@ import kotlin.math.*
  "review"->ReviewPanel(ui)
  else->HNotice("Selecciona una sección para continuar.")
  }}}
- }}}
+ }}}}
 @Composable fun ExerciseDetail(ui:NativeUi,id:String){val s=ui.store;val e=s.catalog.byId[id]?:return;val c=LocalHunter.current;var playing by remember(id){mutableStateOf(s.profile?.b("animate",true)?:true)};var mirror by remember(id){mutableStateOf(false)};var speed by remember(id){mutableFloatStateOf(s.state.n("demoSpeed",1.0).toFloat())};var seek by remember(id){mutableFloatStateOf(0f)};var restart by remember(id){mutableIntStateOf(0)}
  Eyebrow("${e.group} · ${e.category}");Heading(e.name,size=35);HText("${if(e.unit=="sec")"Por tiempo" else "Por repeticiones"}${if(e.sides)" · Cantidad por lado" else ""} · ${if(e.impact)"Con saltos" else "Sin saltos"}",size=16,color=c.muted)
  MonarchExerciseStage(e.name,e.demo,playing,speed,mirror,progress=seek,height=360,restartToken=restart)
