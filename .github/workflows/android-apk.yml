@@ -145,7 +145,7 @@ jobs:
               asset=f'assets/monarch-boss-original/{boss}.jpg'
               assert asset in names,f'Falta imagen promocional original: {asset}'
               raw=z.read(asset)
-              assert len(raw)>10000 and raw[:3]==b'\\xff\\xd8\\xff',f'JPEG original invalido: {boss}'
+              assert len(raw)>10000 and raw[:3]==b'\xff\xd8\xff',f'JPEG original invalido: {boss}'
               assert f'assets/monarch-boss/{boss}.svg' not in names,'Persisten ilustraciones SVG rediseñadas'
             print('3 imágenes de jefes descargadas y empaquetadas sin rediseño')
             extra=json.loads(z.read('assets/catalog-hunter2000-extra.json'))
