@@ -6,13 +6,16 @@ def read(path):return (R/path).read_text(encoding="utf8")
 src="app/src/main/java/com/huntersystem/app/"
 gradle=read("app/build.gradle.kts")
 checks={
- "version V43 preview":'versionName = "43.7-original-boss-art-preview"' in gradle and "versionCode = 125" in gradle,
+ "version V43 preview":'versionName = "43.8-fantasy-realms-preview"' in gradle and "versionCode = 126" in gradle,
  "Kotlin y Compose":'id("org.jetbrains.kotlin.plugin.compose")' in gradle,
  "identidad Eclipse":(R/(src+"EclipseVisuals.kt")).is_file(),
  "componentes Eclipse":(R/(src+"EclipseComponents.kt")).is_file(),
  "composición Monarca":(R/(src+"MonarchDashboardV42.kt")).is_file(),
  "portal Eclipse retirado":'FusionEclipsePortal()' not in read(src+"Screens.kt") and not (R/"app/src/main/assets/eclipse/portal.webp").exists(),
- "fondos por ventana":(R/(src+"HunterSceneBackdropsV43.kt")).is_file() and 'hunterSceneBackdrop(' in read(src+"MainActivity.kt") and 'hunterSceneBackdrop(' in read(src+"Overlays.kt"),
+ "fondos por ventana":all((R/("app/src/main/assets/realm-art/"+route+".svg")).is_file() for route in
+    ("home","plan","routines","book","stats","objectives","profile","recovery"))
+    and 'HunterRealmWallpaper(' in read(src+"MainActivity.kt") and 'HunterRealmWallpaper(' in read(src+"Overlays.kt")
+    and 'crop=true' in read(src+"HunterRealmWallpaper.kt"),
  "portadas originales descargables":(R/"tools/download_monarch_boss_originals.py").is_file()
     and 'monarch-boss-original/' in read(src+"MonarchSpecialMissionUI.kt")
     and not any((R/("app/src/main/assets/monarch-boss/"+boss+".svg")).exists()
@@ -23,9 +26,9 @@ checks={
  "splash animado":(R/"app/src/main/java/com/huntersystem/app/HunterAnimatedBootArtwork.kt").is_file() and (R/"app/src/main/assets/monarch_splash_background.webp").is_file() and "HunterAnimatedBootArtwork(" in read(src+"MonarchNavigationV42.kt"),
  "catálogo ampliable":'catalog-hunter2000-extra.json' in read(src+"Catalog.kt"),
  "restricción QA":'approvedForAutoplan' in read(src+"Rules.kt"),
- "artefacto V43":'Hunter-System-V43-7-Original-Boss-Art-APK' in read(".github/workflows/android-apk.yml"),
+ "artefacto V43":'Hunter-System-V43-8-Fantasy-Realms-APK' in read(".github/workflows/android-apk.yml"),
  "pruebas de catálogo":(R/"app/src/test/java/com/huntersystem/app/Hunter2000CatalogTest.kt").is_file(),
 }
 errors=[name for name,ok in checks.items() if not ok]
-print(json.dumps({"version":"43.7-original-boss-art-preview","checks":checks,"status":"ERROR" if errors else "OK","errors":errors},ensure_ascii=False,indent=2))
+print(json.dumps({"version":"43.8-fantasy-realms-preview","checks":checks,"status":"ERROR" if errors else "OK","errors":errors},ensure_ascii=False,indent=2))
 if errors:raise SystemExit(1)

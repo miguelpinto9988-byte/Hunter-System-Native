@@ -16,10 +16,10 @@ profile=read("Profile.kt")
 main=read("MainActivity.kt")
 gradle=(root/"app/build.gradle.kts").read_text(encoding="utf-8")
 # V43 hereda las verificaciones funcionales de Monarca V42.9.
-gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.7-original-boss-art-preview"', 'versionName = "42.9-monarca-fase10"')
+gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.8-fantasy-realms-preview"', 'versionName = "42.9-monarca-fase10"')
 workflow=(root/".github/workflows/android-apk.yml").read_text(encoding="utf-8")
 # V43 cambia el nombre del artefacto; conservar la validación estructural histórica.
-workflow = workflow.replace("Hunter-System-V43-7-Original-Boss-Art-APK", "Hunter-System-V42-Monarca-Fase10-APK")
+workflow = workflow.replace("Hunter-System-V43-8-Fantasy-Realms-APK", "Hunter-System-V42-Monarca-Fase10-APK")
 errors=[]
 def require(predicate,label):
     if not predicate: errors.append(label)
