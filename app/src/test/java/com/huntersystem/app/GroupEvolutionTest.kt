@@ -49,6 +49,12 @@ class GroupEvolutionTest {
   val incomplete=record("2026-10-27","core",1).put("complete",false)
   assertEquals(0,GroupEvolution.evaluate(records(incomplete),"2026-10-28","core",profile,catalog).steps)
  }
+ @Test fun painfulOrUnfinishedSessionBlocksIncreaseForItsOwnGroup(){
+  val stopped=record("2026-10-27","upper",0).put("complete",false).put("pain",true)
+  val logs=records(record("2026-10-24","upper",2),stopped)
+  assertEquals(0,GroupEvolution.evaluate(logs,"2026-10-28","upper",profile,catalog).steps)
+  assertEquals(0,GroupEvolution.evaluate(logs,"2026-10-28","lower",profile,catalog).steps)
+ }
  @Test fun exercisesFromActualSessionDetermineGroupAndNotOtherMuscles(){
   val upper=catalog.exercises.first{it.type=="upper"}
   val lower=catalog.exercises.first{it.type=="lower"}

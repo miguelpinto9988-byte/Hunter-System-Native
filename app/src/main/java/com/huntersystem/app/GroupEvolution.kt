@@ -84,7 +84,14 @@ object GroupEvolution {
    if(avg90<=4.5&&difficult==0&&!high)steps+=1
    if(avg90>=7.5||difficult>=3)steps-=1
   }
-  if(high)steps=steps.coerceAtMost(0)
+  // A stopped or painful session must block progression even if a previous
+  // completed session was easy. It remains visible to the existing risk filters.
+  val recentProblem=logs.entries().any{(d,v)->
+   val l=v as? JSONObject
+   l!=null&&d<date&&d>=plus(date,-14)&&logGroup(l,p,catalog)==group&&
+    (l.b("pain")||l.b("fatigue")||l.i("rpe")>=8)
+  }
+  if(high||recentProblem)steps=steps.coerceAtMost(0)
   // Global safety and medical gates are still enforced by the existing Rules.
   return Adjustment(group,steps.coerceIn(-2,2),last.first,latestRpe,seven.size,threeWeeks.size,quarter.size)
  }
