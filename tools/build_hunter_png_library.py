@@ -31,20 +31,20 @@ WALLPAPER_SOURCES = {
 }
 # Semantic image icons from OpenEmoji (AI-illustrated PNGs, CC BY 4.0).\n# Source: https://github.com/profullstack/openemoji
 EMOJI={
- "panel":"1f3e0","missions":"2694","routines":"1f4aa",
- "exercises":"1f3cb","progress":"1f4c8","profile":"1f9d1",
+ "panel":"1f3e0","missions":"2694-fe0f","routines":"1f4aa",
+ "exercises":"1f3cb-fe0f","progress":"1f4c8","profile":"1f9d1",
  "goals":"1f3af","academy":"1f4da","strength":"1f4aa",
  "cardio":"1f3c3","mobility":"1f9d8","book":"1f4d6",
- "level":"1f451","streak":"1f525","achievement":"1f396",
- "timer":"23f1","training":"1f6b4","dumbbell":"1f3cb",
+ "level":"1f451","streak":"1f525","achievement":"1f396-fe0f",
+ "timer":"23f1-fe0f","training":"1f6b4","dumbbell":"1f3cb-fe0f",
  "focus":"1f3af","lightning":"26a1","energy":"2728",
- "shield":"1f6e1","milestone":"1f3c5","settings":"2699",
+ "shield":"1f6e1-fe0f","milestone":"1f3c5","settings":"2699-fe0f",
  "trophy":"1f3c6","success":"2705","reminders":"1f514",
  "xp":"1f48e","goal_strength":"1f4aa","goal_habit":"1f331",
- "goal_read":"1f4d6","warning":"26a0",
+ "goal_read":"1f4d6","warning":"26a0-fe0f",
  "calendar":"1f4c5","history":"1f4dc","rest":"1f6cc",
  "coach":"1f393","search":"1f50e","export":"1f4be",
- "import":"1f4e5","menu":"1f5c3",
+ "import":"1f4e5","menu":"1f5c3-fe0f",
 }
 TINTS={"panel":"#38c7ff","missions":"#ed5f9b","routines":"#a27cff",
  "exercises":"#42d7ff","progress":"#5ee1d0","profile":"#b18aff",
