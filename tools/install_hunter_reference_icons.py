@@ -21,7 +21,7 @@ SHEET_URL="https://gcdn.picsart.com/editing-temp/7c6b73e8-0a5f-4736-90e6-c33eb7b
 REGIONS={
 "panel":(735,242,819,318),"missions":(52,426,139,509),
 "routines":(884,249,983,319),"exercises":(1052,248,1137,320),
-"progress":(1220,248,1307,319),"profile":(1406,247,1495,320),
+"progress":(1220,248,1307,319),"profile":(1381,248,1457,318),
 "menu":(68,246,147,311),"reminders":(215,242,300,317),
 "back":(370,241,444,313),"settings":(525,241,613,315),
 "strength":(160,428,270,516),"academy":(276,428,372,513),
@@ -81,10 +81,17 @@ def transparent_icon(sheet:Image.Image,region:tuple[int,int,int,int])->Image.Ima
             opacity=0
         pixels.append((r,g,b,opacity))
     rgba.putdata(pixels)
-    bbox=rgba.getbbox()
+    # Tight bounding box uses meaningful glyph pixels, not the faint
+    # remnants of a card border or a diffuse background glow.
+    meaningful=rgba.getchannel("A").point(lambda alpha:255 if alpha>=70 else 0)
+    bbox=meaningful.getbbox()
     if bbox is None:raise ValueError("Icon vanished during alpha isolation")
-    rgba=rgba.crop(bbox)
-    rgba.thumbnail((116,116),Image.Resampling.LANCZOS)
+    x0,y0,x1,y1=bbox
+    rgba=rgba.crop((
+        max(0,x0-4),max(0,y0-4),
+        min(crop.width,x1+4),min(crop.height,y1+4)
+    ))
+    rgba.thumbnail((110,110),Image.Resampling.LANCZOS)
     result=Image.new("RGBA",(128,128),(0,0,0,0))
     result.alpha_composite(rgba,((128-rgba.width)//2,(128-rgba.height)//2))
     if result.getpixel((0,0))[3]!=0:
