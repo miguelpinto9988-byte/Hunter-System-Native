@@ -13,3 +13,11 @@ Integración de iconos retro pixel art, planos y multicolor en la biblioteca nat
 Verificar iconos en navegación inferior, menú lateral, misiones, rutinas, progreso, controles de reproducción, diálogos y lanzador Android. Probar también un dispositivo con resolución pequeña y uno con DPI alto.
 
 Los íconos son SVG editables; los PNG mostrados previamente eran prototipos visuales. Esta biblioteca es una adaptación vectorial consistente del estilo aprobado, no una conversión píxel por píxel de aquellas imágenes.
+
+## Retirada definitiva de iconos PNG heredados
+
+- La APK conserva los **43 iconos SVG Pixel 2D** y ninguna copia raster PNG antigua en `assets/hunter-png/icons/`.
+- Se retiraron los generadores de iconos PNG que se ejecutaban durante la compilacion.
+- `tools/install_hunter_png_ui.py` ahora instala solamente los ocho **fondos PNG** de las pantallas y limpia posibles iconos PNG de compilaciones locales previas.
+- `tools/check_pixel_icons.py` comprueba la validez de los 43 SVG, las 70 claves de iconos y la ausencia de rutas PNG activas. La verificacion del APK vuelve a comprobar que no se empaqueten iconos PNG.
+- Los fondos de pantalla PNG, las ilustraciones de ejercicios y otros contenidos graficos no se eliminan, porque no forman parte de la biblioteca antigua de iconos.

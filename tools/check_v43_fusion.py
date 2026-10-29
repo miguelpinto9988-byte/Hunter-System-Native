@@ -17,12 +17,14 @@ checks={
     and 'HunterRealmWallpaper(' in read(src+"MainActivity.kt") and 'HunterRealmWallpaper(' in read(src+"Overlays.kt")
     and 'hunter-png/wallpapers/' in read(src+"HunterRealmWallpaper.kt")
     and 'realm-art/' not in read(src+"HunterRealmWallpaper.kt"),
- "biblioteca iconos PNG":(R/(src+"HunterPngLibrary.kt")).is_file()
-    and len(list((R/"app/src/main/assets/hunter-png/icons").glob("*.png")))==69
+ "biblioteca iconos SVG 2D":(R/(src+"HunterPngLibrary.kt")).is_file()
+    and len(list((R/"app/src/main/assets/hunter-icons").glob("*.svg")))==43
+    and not (R/"app/src/main/assets/hunter-png/icons").exists()
+    and 'hunter-icons/$graphic.svg' in read(src+"HunterPngLibrary.kt")
     and 'HunterPngIcon(' in read(src+"MonarchRoutinesV42.kt")
     and 'HunterPngIcon(' in read(src+"MonarchProgressV42.kt")
     and 'HunterPngIcon(' in read(src+"Screens.kt"),
- "menu lateral PNG":(R/(src+"HunterSideMenu.kt")).is_file()
+ "menu lateral SVG 2D":(R/(src+"HunterSideMenu.kt")).is_file()
     and 'ModalNavigationDrawer(' in read(src+"MainActivity.kt")
     and 'HunterSideMenu(ui)' in read(src+"MainActivity.kt"),
  "recompensa real":'if(!log.b("complete")) return' in read(src+"HunterMissionCompletedCard.kt")
@@ -45,5 +47,5 @@ checks={
  "pruebas de catálogo":(R/"app/src/test/java/com/huntersystem/app/Hunter2000CatalogTest.kt").is_file(),
 }
 errors=[name for name,ok in checks.items() if not ok]
-print(json.dumps({"version":"43.11-monarch-equipment-preview","checks":checks,"status":"ERROR" if errors else "OK","errors":errors},ensure_ascii=False,indent=2))
+print(json.dumps({"version":"43.12-monarca-eclipse-pixel-2d","checks":checks,"status":"ERROR" if errors else "OK","errors":errors},ensure_ascii=False,indent=2))
 if errors:raise SystemExit(1)

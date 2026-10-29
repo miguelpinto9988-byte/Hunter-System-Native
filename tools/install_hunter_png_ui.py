@@ -1,53 +1,46 @@
 #!/usr/bin/env python3
-"""Install approved PNG backgrounds/icons, unchanged, from a versioned ZIP.
-PNG icon alpha is mandatory. This runs in CI before building the APK.
-"""
+"""Instala los fondos PNG; los iconos de la app son exclusivamente SVG Pixel 2D."""
 from pathlib import Path
-from urllib.request import urlopen, Request
+from urllib.request import Request, urlopen
 from io import BytesIO
 from zipfile import ZipFile
+from shutil import rmtree
 import struct
-from io import BytesIO
-from PIL import Image
+
 ROOT=Path(__file__).resolve().parents[1]
 SOURCE="https://gcdn.picsart.com/editing-temp/108634cb-1ddd-43e1-9998-b56076925396.zip"
 OUT=ROOT/"app/src/main/assets/hunter-png"
 SCENES=("home","plan","routines","book","stats","objectives","profile","recovery")
-ICONS=("academy","achievement","book","cardio","dumbbell","energy","exercises","focus","goal_habit","goal_read","goal_strength","goals","level","lightning","milestone","missions","mobility","panel","profile","progress","reminders","routines","settings","shield","streak","strength","success","timer","training","trophy","warning","xp")
-def png_info(buf):
- if buf[:8]!=b"\x89PNG\r\n\x1a\n":raise ValueError("PNG signature missing")
- width,height,depth,mode=struct.unpack(">IIBB",buf[16:26])
- return width,height,depth,mode
+
+def png_info(data):
+    if data[:8]!=b"\x89PNG\r\n\x1a\n":
+        raise ValueError("PNG signature missing")
+    return struct.unpack(">IIBB",data[16:26])
+
 def main():
- req=Request(SOURCE,headers={"User-Agent":"HunterSystem-Asset-Installer/1.0"})
- with urlopen(req,timeout=75) as res:
-  raw=res.read(15_000_001)
- if len(raw)>15_000_000:raise ValueError("Asset package too large")
- with ZipFile(BytesIO(raw)) as z:
-  names=set(z.namelist())
-  for area,keys in (("wallpapers",SCENES),("icons",ICONS)):
-   (OUT/area).mkdir(parents=True,exist_ok=True)
-   for name in keys:
-    src=f"{area}/{name}.png"
-    if src not in names:raise ValueError("Missing "+src)
-    buf=z.read(src)
-    w,h,depth,mode=png_info(buf)
-    if w<64 or h<64:raise ValueError("Image too small "+src)
-    if area=="icons" and mode!=6:raise ValueError("Icons must be true RGBA PNG: "+src)
-    if area=="icons":
-     image=Image.open(BytesIO(buf)).convert("RGBA")
-     pixels=image.load()
-     for yy in range(h):
-      for xx in range(w):
-       r,g,b,a=pixels[xx,yy]
-       peak=max(r,g,b)
-       # Remove the dark rectangular RGB plate, keeping neon glyphs and highlights.
-       cut=max(0,min(255,round((peak-42)*255/92)))
-       pixels[xx,yy]=(r,g,b,min(a,cut))
-     result=BytesIO()
-     image.save(result,format="PNG",optimize=True)
-     buf=result.getvalue()
-    (OUT/src).write_bytes(buf)
-    print(src,w,h,"RGBA" if mode==6 else "PNG")
- print("Hunter PNG assets validated:",len(SCENES),"wallpapers,",len(ICONS),"transparent icons")
-if __name__=="__main__":main()
+    legacy=OUT/"icons"
+    if legacy.exists():
+        rmtree(legacy)
+    req=Request(SOURCE,headers={"User-Agent":"HunterSystem-Asset-Installer/1.0"})
+    with urlopen(req,timeout=75) as response:
+        raw=response.read(15_000_001)
+    if len(raw)>15_000_000:
+        raise ValueError("Asset package too large")
+    with ZipFile(BytesIO(raw)) as z:
+        names=set(z.namelist())
+        (OUT/"wallpapers").mkdir(parents=True,exist_ok=True)
+        for name in SCENES:
+            path=f"wallpapers/{name}.png"
+            if path not in names:
+                raise ValueError("Missing "+path)
+            data=z.read(path)
+            w,h,depth,mode=png_info(data)
+            if w<64 or h<64:
+                raise ValueError("Image too small "+path)
+            (OUT/path).write_bytes(data)
+            print(path,w,h,"RGBA" if mode==6 else "PNG")
+    assert not legacy.exists(),"Persisten iconos PNG antiguos"
+    print("Hunter: 8 fondos PNG, 0 iconos PNG antiguos")
+
+if __name__=="__main__":
+    main()

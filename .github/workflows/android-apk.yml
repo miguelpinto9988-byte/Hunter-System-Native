@@ -63,11 +63,11 @@ jobs:
       - name: Descargar arte promocional original de jefes (Solo Leveling)
         run: python3 tools/download_monarch_boss_originals.py
 
-      - name: Preparar biblioteca de imágenes PNG
-        run: |
-          python3 -m pip install --disable-pip-version-check Pillow==11.3.0
-          python3 tools/install_hunter_png_ui.py
-          python3 tools/install_hunter_reference_icons.py
+      - name: Preparar solo fondos PNG
+        run: python3 tools/install_hunter_png_ui.py
+
+      - name: Verificar biblioteca exclusiva SVG Pixel 2D
+        run: python3 tools/check_pixel_icons.py
 
       - name: Comprobar ausencia de miniaturas
         run: python3 tools/verificar_sin_miniaturas.py
@@ -159,14 +159,18 @@ jobs:
               assert asset in names,f'Falta fondo PNG de ventana: {route}'
               raw=z.read(asset)
               assert raw.startswith(bytes.fromhex('89504e470d0a1a0a')) and len(raw)>10000,f'PNG invalido: {route}'
-            icons=[p for p in names if p.startswith('assets/hunter-png/icons/') and p.endswith('.png')]
-            assert len(icons)==69,len(icons)
-            assert 'assets/hunter-png/icons/monarch_seal.png' in names
-            assert 'assets/hunter-png/icons/menu.png' in names
-            assert all(z.read(p)[25] == 6 for p in icons),'Iconos sin alfa RGBA'
-            assert all(z.read(p).startswith(bytes.fromhex('89504e470d0a1a0a')) for p in icons)
+            assert not any(p.startswith('assets/hunter-png/icons/') for p in names),'Persisten iconos PNG antiguos'
+            icon_sources=list((source/'hunter-icons').glob('*.svg'))
+            expected_icons={'assets/hunter-icons/'+p.name for p in icon_sources}
+            packaged_icons={p for p in names if p.startswith('assets/hunter-icons/')}
+            assert len(expected_icons)==43,('Cantidad incorrecta de iconos SVG',len(expected_icons))
+            assert packaged_icons==expected_icons,('Los SVG de la APK no coinciden',len(packaged_icons))
+            import xml.etree.ElementTree as ET
+            for path in sorted(packaged_icons):
+              root=ET.fromstring(z.read(path))
+              assert root.tag=='{http://www.w3.org/2000/svg}svg',path
             assert not any(p.startswith('assets/realm-art/') for p in names),'Persisten fondos SVG antiguos'
-            print('8 fondos PNG y',len(icons),'iconos PNG empaquetados, sin fondos SVG')
+            print('8 fondos PNG conservados, 43 iconos SVG y cero iconos PNG antiguos')
             extra=json.loads(z.read('assets/catalog-hunter2000-extra.json'))
             assert len(extra)==800 and all(x.get('approvedForAutoplan') is False and x.get('autoProgressionApproved') is False for x in extra)
             print('APK verificada: 2000 SVG íntegros, 0 Rive, 800 fichas sin QA ni planificación automática')

@@ -15,7 +15,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 
 /**
- * Menú lateral Monarca. Todos los pictogramas son PNG reales de la biblioteca,
+ * Menú lateral Monarca. Todos los pictogramas usan los SVG Pixel 2D,
  * las rutas son las mismas que usa la navegación inferior.
  */
 @Composable
@@ -65,7 +65,7 @@ fun HunterSideMenu(ui:NativeUi,onClose:()->Unit){
    HunterSideMenuItem("Recordatorios","reminders",false){
       ui.open("reminders");onClose()
    }
-   HText("Fondos PNG · Íconos PNG con transparencia",
+   HText("Fondos PNG · Íconos SVG Pixel 2D con transparencia",
       Modifier.padding(start=10.dp,top=15.dp,bottom=10.dp),
       size=12,color=c.muted)
   }
