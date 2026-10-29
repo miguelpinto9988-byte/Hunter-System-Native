@@ -45,46 +45,23 @@ val LocalVisualTier=staticCompositionLocalOf{VisualTier.BALANCED}
 }
 
 enum class Sigil { Home, Mission, Routine, Exercise, Profile, Star, Arrow, Back, Close, Play, Pause, Reset, Mirror, Shield, Bell, Settings, Flame, Chart, Target, Book, Check, Plus, Clock, Crown, Layers, Search, Spark, Download, Expand }
-@Composable fun HunterIcon(icon:Sigil,modifier:Modifier=Modifier,color:Color=LocalHunter.current.accent,description:String?=null,filled:Boolean=false){
- Canvas(modifier.size(24.dp).then(if(description!=null)Modifier.semantics{contentDescription=description} else Modifier)){
-  val unit=size.minDimension/24f
-  scale(unit,unit,pivot=Offset.Zero){
-   val stroke=Stroke(1.65f,cap=StrokeCap.Round,join=StrokeJoin.Round)
-   fun line(x:Float,y:Float,x2:Float,y2:Float)=drawLine(color,Offset(x,y),Offset(x2,y2),1.65f,StrokeCap.Round)
-   fun path(vararg points:Float,close:Boolean=false){val p=Path();p.moveTo(points[0],points[1]);for(i in 2 until points.size step 2)p.lineTo(points[i],points[i+1]);if(close)p.close();drawPath(p,color,style=if(filled&&close)Fill else stroke)}
-   fun circle(x:Float,y:Float,r:Float)=drawCircle(color,r,Offset(x,y),style=stroke)
-   when(icon){
-    Sigil.Home->{path(3f,10f,12f,3f,21f,10f);path(5f,9f,5f,21f,10f,21f,10f,15f,14f,15f,14f,21f,19f,21f,19f,9f)}
-    Sigil.Mission->{path(7f,4f,4f,4f,4f,21f,20f,21f,20f,4f,17f,4f);path(8f,2f,16f,2f,16f,6f,8f,6f,close=true);path(8f,13f,11f,16f,17f,10f)}
-    Sigil.Routine->{path(12f,2f,22f,8f,12f,14f,2f,8f,close=true);path(3f,13f,12f,18f,21f,13f);path(3f,17f,12f,22f,21f,17f)}
-    Sigil.Exercise->{line(7f,12f,17f,12f);path(4f,7f,8f,7f,8f,17f,4f,17f,close=true);path(16f,7f,20f,7f,20f,17f,16f,17f,close=true);line(2f,10f,2f,14f);line(22f,10f,22f,14f)}
-    Sigil.Profile->{circle(12f,7f,4f);val p=Path();p.moveTo(4f,21f);p.cubicTo(4f,11f,20f,11f,20f,21f);drawPath(p,color,style=stroke)}
-    Sigil.Star, Sigil.Spark->{path(12f,2f,15f,9f,22f,12f,15f,15f,12f,22f,9f,15f,2f,12f,9f,9f,close=true)}
-    Sigil.Arrow->{line(4f,12f,20f,12f);path(14f,6f,20f,12f,14f,18f)}
-    Sigil.Back->{line(20f,12f,4f,12f);path(10f,6f,4f,12f,10f,18f)}
-    Sigil.Close->{line(6f,6f,18f,18f);line(6f,18f,18f,6f)}
-    Sigil.Play->path(7f,3f,21f,12f,7f,21f,close=true)
-    Sigil.Pause->{path(5f,4f,9f,4f,9f,20f,5f,20f,close=true);path(15f,4f,19f,4f,19f,20f,15f,20f,close=true)}
-    Sigil.Reset->{drawArc(color,-75f,290f,false,Offset(4f,4f),Size(16f,16f),style=stroke);path(12f,1f,12f,7f,17f,4f)}
-    Sigil.Mirror->{line(12f,3f,12f,21f);path(8f,6f,3f,12f,8f,18f,close=true);path(16f,6f,21f,12f,16f,18f,close=true)}
-    Sigil.Shield->{path(12f,2f,21f,6f,19f,16f,12f,22f,5f,16f,3f,6f,close=true);path(8f,12f,11f,15f,16f,9f)}
-    Sigil.Bell->{path(4f,18f,6f,14f,6f,9f,8f,5f,12f,3f,16f,5f,18f,9f,18f,14f,20f,18f,close=true);drawArc(color,0f,180f,false,Offset(10f,19f),Size(4f,3f),style=stroke)}
-    Sigil.Settings->{circle(12f,12f,4f);circle(12f,12f,9f);for(i in 0..7){val a=i*PI/4;line((12+8*cos(a)).toFloat(),(12+8*sin(a)).toFloat(),(12+11*cos(a)).toFloat(),(12+11*sin(a)).toFloat())}}
-    Sigil.Flame->{path(12f,2f,11f,9f,16f,7f,20f,14f,18f,20f,12f,22f,6f,20f,4f,14f,8f,7f,8f,13f,12f,2f,close=true)}
-    Sigil.Chart->{line(4f,20f,21f,20f);line(6f,15f,6f,20f);line(12f,10f,12f,20f);line(18f,5f,18f,20f);path(3f,11f,10f,6f,14f,8f,21f,2f)}
-    Sigil.Target->{circle(12f,12f,9f);circle(12f,12f,5f);drawCircle(color,1.8f,Offset(12f,12f))}
-    Sigil.Book->{path(12f,6f,8f,3f,2f,3f,2f,19f,8f,19f,12f,22f,16f,19f,22f,19f,22f,3f,16f,3f,12f,6f,12f,22f);line(5f,8f,8f,8f);line(16f,8f,19f,8f)}
-    Sigil.Check->path(4f,12f,10f,18f,21f,5f)
-    Sigil.Plus->{line(4f,12f,20f,12f);line(12f,4f,12f,20f)}
-    Sigil.Clock->{circle(12f,12f,9f);path(12f,6f,12f,12f,16f,15f)}
-    Sigil.Crown->{path(3f,6f,8f,11f,12f,3f,16f,11f,21f,6f,19f,19f,5f,19f,close=true);line(6f,22f,18f,22f)}
-    Sigil.Layers->{path(12f,2f,22f,7f,12f,12f,2f,7f,close=true);path(2f,12f,12f,17f,22f,12f);path(2f,17f,12f,22f,22f,17f)}
-    Sigil.Search->{circle(10f,10f,7f);line(15f,15f,22f,22f)}
-    Sigil.Download->{path(12f,2f,12f,16f);path(6f,10f,12f,16f,18f,10f);path(3f,17f,3f,22f,21f,22f,21f,17f)}
-    Sigil.Expand->{path(3f,9f,3f,3f,9f,3f);path(15f,3f,21f,3f,21f,9f);path(21f,15f,21f,21f,15f,21f);path(9f,21f,3f,21f,3f,15f)}
-   }
-  }
+@Suppress("UNUSED_PARAMETER")
+@Composable
+fun HunterIcon(icon:Sigil,modifier:Modifier=Modifier,color:Color=LocalHunter.current.accent,description:String?=null,filled:Boolean=false){
+ val pixelKey=when(icon){
+  Sigil.Home->"panel";Sigil.Mission->"missions";Sigil.Routine->"routines"
+  Sigil.Exercise->"exercises";Sigil.Profile->"profile"
+  Sigil.Star, Sigil.Spark->"milestone";Sigil.Arrow->"next"
+  Sigil.Back->"back";Sigil.Close->"close";Sigil.Play->"play"
+  Sigil.Pause->"pause";Sigil.Reset->"retry";Sigil.Mirror->"back_arrow"
+  Sigil.Shield->"shield";Sigil.Bell->"notifications";Sigil.Settings->"settings"
+  Sigil.Flame->"streak";Sigil.Chart->"progress";Sigil.Target->"goals"
+  Sigil.Book->"book";Sigil.Check->"complete";Sigil.Plus->"add"
+  Sigil.Clock->"timer";Sigil.Crown->"monarch"
+  Sigil.Layers->"library";Sigil.Search->"search"
+  Sigil.Download->"import";Sigil.Expand->"portal"
  }
+ HunterPngIcon(pixelKey,modifier.size(24.dp),description)
 }
 
 /** A small 3D mesh with perspective projection, face sorting and directional lighting. */
