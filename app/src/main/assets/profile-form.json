@@ -150,36 +150,6 @@
     "title": "Objetivo y equipo",
     "fields": [
       {
-        "name": "equipment",
-        "type": "select",
-        "value": "",
-        "checked": false,
-        "min": "",
-        "max": "",
-        "step": "",
-        "placeholder": "",
-        "label": "EquipoPeso corporalMancuernasGimnasio · barras, poleas y máquinas",
-        "options": [
-          {
-            "value": "body",
-            "label": "Peso corporal"
-          },
-          {
-            "value": "db",
-            "label": "Mancuernas"
-          },
-          {
-            "value": "gym",
-            "label": "Gimnasio · barras, poleas y máquinas"
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "title": "¿Desafíos o rutinas completas?",
-    "fields": [
-      {
         "name": "difficulty",
         "type": "select",
         "value": "",
@@ -253,6 +223,36 @@
         "label": "Mi meta personalConstancia y bienestarAlterna fuerza general y cardio para practicar con constancia.No se identificaron palabras clave; se conserva la familia elegida.INTERPRETACIÓN LOCAL · SIN CONEXIÓNConstancia y bienestarSe adaptará el plan a la prioridad mostrada.Prioridad: Constancia y bienestar · Objetivo: Mantener una rutina estableLa vista previa orienta tu objetivo. Al guardar el perfil se interpretan también tus días, equipo, preferencias, modalidades y restricciones declaradas.",
         "options": []
       },
+      {
+        "name": "equipment",
+        "type": "select",
+        "value": "",
+        "checked": false,
+        "min": "",
+        "max": "",
+        "step": "",
+        "placeholder": "",
+        "label": "EquipoPeso corporalMancuernasGimnasio · barras, poleas y máquinas",
+        "options": [
+          {
+            "value": "body",
+            "label": "Peso corporal"
+          },
+          {
+            "value": "db",
+            "label": "Mancuernas"
+          },
+          {
+            "value": "gym",
+            "label": "Gimnasio · barras, poleas y máquinas"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "title": "¿Desafíos o rutinas completas?",
+    "fields": [
       {
         "name": "trainingMode",
         "type": "radio",
