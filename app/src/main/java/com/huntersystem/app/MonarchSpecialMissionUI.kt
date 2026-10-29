@@ -2,6 +2,7 @@ package com.huntersystem.app
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.draw.clip
@@ -48,8 +49,8 @@ fun MonarchSpecialMissionsPanel(ui:NativeUi) {
  val m=(ms/60000L)%60
  val deadlineText=d.toString()+" d  "+h.toString()+" h  "+m.toString()+" min"
  var detailsExpanded by rememberSaveable(current.weekStart){mutableStateOf(false)}
- HPanel(padding=16){
-  MonarchBossMissionArtwork(mission.id, mission.title, current.cycleWeek, status)
+ MonarchBossMissionCard(mission.id){
+  MonarchBossMissionHeading(mission.id, mission.title, current.cycleWeek, status)
   Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
    verticalAlignment=Alignment.CenterVertically){
    Eyebrow("EVENTO SEMANAL · MISIÓN MONARCA")
@@ -125,8 +126,45 @@ fun MonarchSpecialMissionsPanel(ui:NativeUi) {
  }
 }
 
+/**
+ * El arte del jefe forma parte del fondo de la MISMA tarjeta: no existe una
+ * subventana de imagen independiente. El degradado inferior se funde con la
+ * superficie del panel y mantiene legibles los controles y el texto.
+ *
+ * Se usan los tres JPG ya empaquetados: guardia (Igris), fortaleza (Beru)
+ * y trono (Baran). No se modifican los datos ni la rotación de misiones.
+ */
 @Composable
-private fun MonarchBossMissionArtwork(id:String,title:String,week:Int,status:String){
+private fun MonarchBossMissionCard(
+ id:String,
+ content:@Composable ColumnScope.()->Unit
+){
+ val colors=LocalHunter.current
+ val shape=RoundedCornerShape(HunterDesignSystem.Dimensions.cornerCard)
+ Box(Modifier.fillMaxWidth().clip(shape)
+  .background(Brush.verticalGradient(listOf(colors.surface,colors.panel)))
+  .border(1.dp,colors.accent.copy(alpha=.50f),shape)){
+  // Imagen sin marco propio: ocupa el ancho de la tarjeta y se desvanece.
+  Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(355.dp)){
+   AssetImage("monarch-boss-original/"+id+".jpg",Modifier.fillMaxSize(),
+    scale=ContentScale.Crop,alignment=Alignment.Center,
+    description=null)
+   Box(Modifier.matchParentSize().background(
+    Brush.horizontalGradient(listOf(
+     Color(0xEB080D1B),Color(0xC4080D1B),Color(0x5C080D1B)))))
+   Box(Modifier.matchParentSize().background(
+    Brush.verticalGradient(listOf(
+     Color(0x5A080D1B),Color(0x850D1729),colors.panel))))
+  }
+  Column(Modifier.fillMaxWidth().padding(16.dp),
+   verticalArrangement=Arrangement.spacedBy(HunterDesignSystem.Dimensions.spacing),
+   content=content)
+ }
+}
+
+/** Solo textos sobre el fondo compartido, sin bordes ni contenedor de imagen. */
+@Composable
+private fun MonarchBossMissionHeading(id:String,title:String,week:Int,status:String){
  val boss=when(id){
   "guardia"->"IGRIS · COMANDANTE CARMESÍ"
   "fortaleza"->"BERU · REY HORMIGA"
@@ -137,16 +175,8 @@ private fun MonarchBossMissionArtwork(id:String,title:String,week:Int,status:Str
   "fortaleza"->Color(0xFFA999FF)
   else->Color(0xFFC6B2FF)
  }
- val shape=RoundedCornerShape(16.dp)
- Box(Modifier.fillMaxWidth().height(188.dp).clip(shape).background(Color(0xFF090E23))){
-  // Fotografías promocionales originales descargadas al empaquetar, sin redibujo.
-  AssetImage("monarch-boss-original/"+id+".jpg",Modifier.fillMaxSize(),
-   scale=ContentScale.Crop,alignment=Alignment.TopCenter,
-   description="Imagen promocional original de "+boss)
-  Box(Modifier.fillMaxSize().background(
-   Brush.horizontalGradient(listOf(Color(0xE8080D1B),Color(0xA40A1027),Color(0x00080D1B)))
-  ))
-  Column(Modifier.align(Alignment.CenterStart).fillMaxWidth(.72f).padding(14.dp),
+ Box(Modifier.fillMaxWidth().heightIn(min=188.dp)){
+  Column(Modifier.align(Alignment.TopStart).fillMaxWidth(.72f),
    verticalArrangement=Arrangement.spacedBy(6.dp)){
    Text("JEFE SEMANAL  ·  CICLO "+week+"/4",color=accent,
     fontFamily=Barlow,fontSize=11.sp,fontWeight=FontWeight.Bold)
@@ -156,14 +186,15 @@ private fun MonarchBossMissionArtwork(id:String,title:String,week:Int,status:Str
     fontSize=11.sp,lineHeight=14.sp,maxLines=2)
   }
   Text(when(status){
-    "active"->"EN CURSO"
-    "completed"->"COMPLETADA"
-    "expired"->"FINALIZADA"
-    "stopped"->"DETENIDA"
-    else->"DISPONIBLE"
-   },
-   modifier=Modifier.align(Alignment.BottomEnd).padding(12.dp)
-    .clip(RoundedCornerShape(9.dp)).background(Color(0xDD0A1027)).padding(horizontal=9.dp,vertical=5.dp),
+   "active"->"EN CURSO"
+   "completed"->"COMPLETADA"
+   "expired"->"FINALIZADA"
+   "stopped"->"DETENIDA"
+   else->"DISPONIBLE"
+  },
+   modifier=Modifier.align(Alignment.BottomEnd)
+    .clip(RoundedCornerShape(9.dp)).background(Color(0xDD0A1027))
+    .padding(horizontal=9.dp,vertical=5.dp),
    fontFamily=Barlow,fontSize=10.sp,fontWeight=FontWeight.Bold,color=accent)
  }
 }
