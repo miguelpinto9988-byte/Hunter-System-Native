@@ -22,7 +22,8 @@ checks={
  "biblioteca iconos SVG 2D":(R/(src+"HunterPngLibrary.kt")).is_file()
     and len(list((R/"app/src/main/assets/hunter-icons").glob("*.svg")))==49
     and not (R/"app/src/main/assets/hunter-png/icons").exists()
-    and 'hunter-icons/$graphic.svg' in read(src+"HunterPngLibrary.kt")
+    and 'painterResource(id=hunterIconDrawableId(key))' in read(src+"HunterPngLibrary.kt")
+    and len(list((R/"app/src/main/res/drawable").glob("hunter_icon_*.xml")))==49
     and 'HunterPngIcon(' in read(src+"MonarchRoutinesV42.kt")
     and 'HunterPngIcon(' in read(src+"MonarchProgressV42.kt")
     and 'HunterPngIcon(' in read(src+"Screens.kt"),

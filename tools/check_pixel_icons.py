@@ -42,8 +42,36 @@ if len(mapping)!=76:
 for key,icon in mapping.items():
     if not (ICONS/(icon+".svg")).is_file():
         errors.append(f"Icono SVG faltante: {key} -> {icon}")
-if 'hunter-icons/$graphic.svg' not in library:
-    errors.append("Biblioteca no apunta al directorio SVG")
+vector_root=ROOT/"app/src/main/res/drawable"
+native_mapping=dict(re.findall(
+    r'"([a-z_]+)"\s+to\s+R\.drawable\.hunter_icon_([a-z_]+)',library
+))
+if len(native_mapping)!=49:
+    errors.append(f"Se esperaban 49 mapas de vectores nativos y hay {len(native_mapping)}")
+for path in svgs:
+    name=path.stem
+    vector=vector_root/("hunter_icon_"+name+".xml")
+    if not vector.is_file():
+        errors.append("Falta vector Android: "+name)
+        continue
+    try:
+        root=ET.parse(vector).getroot()
+        if root.tag!="vector":
+            errors.append("Vector Android invalido: "+name)
+        children=list(root)
+        if not children or any(x.tag!="path" for x in children):
+            errors.append("Vector sin trazados nativos: "+name)
+        if native_mapping.get(name)!=name:
+            errors.append("Mapeo vector incorrecto: "+name)
+    except ET.ParseError as err:
+        errors.append(f"Vector Android XML corrupto: {name} ({err})")
+for key,graphic in mapping.items():
+    if graphic not in native_mapping:
+        errors.append(f"Clave sin vector nativo: {key} -> {graphic}")
+if "painterResource(id=hunterIconDrawableId(key))" not in library:
+    errors.append("El renderizador no usa recursos vectoriales nativos")
+if "produceState" in library or "SVG.getFromInputStream" in library or "getOrNull()" in library:
+    errors.append("El renderizador puede ocultar errores y dejar iconos invisibles")
 for path in SOURCE.glob("*.kt"):
     if 'hunter-png/icons/' in path.read_text(encoding="utf-8"):
         errors.append(f"Referencia a icono PNG en {path.name}")
@@ -66,13 +94,7 @@ palette={
 for filename,color in palette.items():
     if color not in (ICONS/filename).read_text(encoding="utf-8"):
         errors.append(f"Color de grupo incorrecto en {filename}: {color}")
-if "FilterQuality.High" not in library or "onSizeChanged" not in library:
-    errors.append("El renderizador no usa alta calidad y tamaño físico")
-if "hunterSvgRasterSize" not in library or "else->1024" not in library:
-    errors.append("Falta rasterización adaptativa hasta 1024 px")
-if "LruCache<String,ImageBitmap>(32*1024)" not in library:
-    errors.append("Falta el límite de memoria para iconos HD")
 if errors:
     print("\n".join("ERROR: "+x for x in errors))
     sys.exit(1)
-print(f"OK: {len(svgs)} SVG Sólido minimalista, {len(mapping)} claves, cero iconos PNG")
+print(f"OK: {len(svgs)} SVG fuente, {len(native_mapping)} vectores nativos, {len(mapping)} claves, 0 iconos PNG")
