@@ -71,8 +71,10 @@ check('it.open("academy")' in dashboard and
       'it.open("reminders")' in dashboard and
       'ui.open("coach")' in dashboard,
       "El dashboard ha perdido un acceso existente")
-check("companionKey(store.profile)" in dashboard,
+check('companionKey(ui.store.profile)' in dashboard or 'companionKey(store.profile)' in dashboard,
       "El acompañante debe obedecer al Perfil")
+check('resolvedHunterArtwork(' in dashboard and 'appearance33' in dashboard,
+      "El cazador visible en la tarjeta Monarca debe obedecer a la selección del Perfil")
 check("Modifier.clickable(role = Role.Button)" in dashboard,
       "Faltan indicadores de accesibilidad en las acciones")
 check("fun stats():JSONObject" in store and
