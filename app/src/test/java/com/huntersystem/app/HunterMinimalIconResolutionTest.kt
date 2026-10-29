@@ -10,14 +10,17 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 /** Prueba de visualización real: no basta con que los SVG estén empaquetados. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk=[35])
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class HunterMinimalIconResolutionTest {
     @Test fun all49NativeVectorsActuallyPaintVisiblePixels() {
         val context=ApplicationProvider.getApplicationContext<Context>()
         assertEquals(49,hunterNativeVectorResources.size)
+        val missing=mutableListOf<String>()
         for ((name,id) in hunterNativeVectorResources) {
             val drawable=requireNotNull(context.getDrawable(id)) {
                 "No existe el vector Android del ícono $name"
@@ -27,10 +30,10 @@ class HunterMinimalIconResolutionTest {
             drawable.draw(Canvas(output))
             val pixels=IntArray(96*96)
             output.getPixels(pixels,0,96,0,0,96,96)
-            assertTrue("Ícono vacío o invisible: $name",
-                pixels.any { Color.alpha(it)>0 })
+            if (pixels.none { Color.alpha(it)>0 }) missing+=name
             output.recycle()
         }
+        assertTrue("Vectores que no dibujan píxeles: ${missing.joinToString()}", missing.isEmpty())
     }
 
     @Test fun everySemanticIconPointsToANativeVector() {

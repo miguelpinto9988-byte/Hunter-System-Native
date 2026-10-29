@@ -14,6 +14,10 @@ android {
    listOf("http.proxyHost","http.proxyPort","https.proxyHost","https.proxyPort","javax.net.ssl.trustStore").forEach { key -> System.getProperty(key)?.let { t.systemProperty(key,it) } }
    t.systemProperty("maven.repo.local", rootProject.file("../dev-tools/maven-cache").absolutePath)
    t.maxHeapSize="1536m"
+   t.testLogging {
+     exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+     events(org.gradle.api.tasks.testing.logging.TestLogEvent.FAILED)
+   }
  } }
 }
 dependencies {
