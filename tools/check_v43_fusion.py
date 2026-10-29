@@ -55,8 +55,14 @@ checks={
     and 'recordMonarchProgress' in read(src+"MonarchSpecialMissionUI.kt")
     and 'MonarchBossMissionCard(mission.id)' in read(src+"MonarchSpecialMissionUI.kt")
     and 'MonarchBossMissionHeading(' in read(src+"MonarchSpecialMissionUI.kt")
-    and 'AssetImage("monarch-boss-original/"+id+".jpg"' in read(src+"MonarchSpecialMissionUI.kt")
     and 'MonarchBossMissionArtwork(' not in read(src+"MonarchSpecialMissionUI.kt"),
+ "fondo de los tres jefes hasta borde inferior":'MonarchBossMissionCard(mission.id)' in read(src+"MonarchSpecialMissionUI.kt")
+    and 'AssetImage(' in read(src+"MonarchSpecialMissionUI.kt")
+    and '"monarch-boss-original/"+id+".jpg"' in read(src+"MonarchSpecialMissionUI.kt")
+    and 'Modifier.matchParentSize()' in read(src+"MonarchSpecialMissionUI.kt").split('private fun MonarchBossMissionCard(',1)[1].split('private fun MonarchBossMissionHeading(',1)[0]
+    and 'alignment=Alignment.BottomCenter' in read(src+"MonarchSpecialMissionUI.kt")
+    and '.height(355.dp)' not in read(src+"MonarchSpecialMissionUI.kt")
+    and all('"'+name+'"' in read(src+"MonarchSpecialMissionState.kt") for name in ("guardia","fortaleza","trono")),
  "temas conjuntos":'"constellation"' in read(src+"HunterDesignSystem.kt") and '"ice"' in read(src+"HunterDesignSystem.kt"),
  "splash animado":(R/"app/src/main/java/com/huntersystem/app/HunterAnimatedBootArtwork.kt").is_file() and (R/"app/src/main/assets/monarch_splash_background.webp").is_file() and "HunterAnimatedBootArtwork(" in read(src+"MonarchNavigationV42.kt"),
  "catálogo ampliable":'catalog-hunter2000-extra.json' in read(src+"Catalog.kt"),

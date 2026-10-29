@@ -144,18 +144,26 @@ private fun MonarchBossMissionCard(
  Box(Modifier.fillMaxWidth().clip(shape)
   .background(Brush.verticalGradient(listOf(colors.surface,colors.panel)))
   .border(1.dp,colors.accent.copy(alpha=.50f),shape)){
-  // Imagen sin marco propio: ocupa el ancho de la tarjeta y se desvanece.
-  Box(Modifier.align(Alignment.TopCenter).fillMaxWidth().height(355.dp)){
-   AssetImage("monarch-boss-original/"+id+".jpg",Modifier.fillMaxSize(),
-    scale=ContentScale.Crop,alignment=Alignment.Center,
-    description=null)
-   Box(Modifier.matchParentSize().background(
-    Brush.horizontalGradient(listOf(
-     Color(0xEB080D1B),Color(0xC4080D1B),Color(0x5C080D1B)))))
-   Box(Modifier.matchParentSize().background(
-    Brush.verticalGradient(listOf(
-     Color(0x5A080D1B),Color(0x850D1729),colors.panel))))
-  }
+  // Todas las misiones (Igris, Beru y Baran) comparten el fondo a
+  // tamaño COMPLETO. matchParentSize toma la altura final del contenido,
+  // incluso cuando se despliegan los objetivos; no deja cortes a mitad.
+  AssetImage(
+   "monarch-boss-original/"+id+".jpg",
+   Modifier.matchParentSize(),
+   scale=ContentScale.Crop,
+   alignment=Alignment.BottomCenter,
+   description=null
+  )
+  // La imagen continúa hasta el borde inferior de la tarjeta.
+  // Los degradados son semitransparentes para que el arte siga visible.
+  Box(Modifier.matchParentSize().background(
+   Brush.horizontalGradient(listOf(
+    Color(0xB8080D1B),Color(0x97080D1B),Color(0x60080D1B)))))
+  Box(Modifier.matchParentSize().background(
+   Brush.verticalGradient(listOf(
+    Color(0x65080D1B),Color(0x42080D1B),
+    colors.panel.copy(alpha=.53f),
+    colors.panel.copy(alpha=.72f)))))
   Column(Modifier.fillMaxWidth().padding(16.dp),
    verticalArrangement=Arrangement.spacedBy(HunterDesignSystem.Dimensions.spacing),
    content=content)
