@@ -30,7 +30,7 @@ La sección **Personaliza tu semana → Elige tu semana** usa directamente `V39T
 ## Fondos generales sin sombras
 
 - `HunterFlatBackground.kt` dibuja únicamente el color de fondo del tema; no carga fondos PNG ni imágenes de personajes.
-- La aplicación principal y las ventanas emergentes utilizan este único fondo plano.
+- La aplicación principal, las ventanas emergentes y la cabecera del menú lateral utilizan fondos planos sin imágenes.
 - Se retira `HunterRealmWallpaper.kt` y el instalador obsoleto `tools/install_hunter_png_ui.py`.
 - `tools/check_plain_backgrounds.py` borra posibles PNG de fondo antiguos en compilaciones locales y exige que la interfaz no vuelva a utilizarlos.
 - El empaquetado de la APK comprueba que ya no se incluyen los ocho fondos PNG anteriores.
