@@ -87,7 +87,7 @@ private val iconToSvg = mapOf(
 )
 
 /**
- * Iconos Monarca de dos tonos como VectorDrawable nativo; fuentes SVG idénticas.
+ * Íconos SOLIDO MINIMALISTA como VectorDrawable nativo.
  * Nada de carga asíncrona, Canvas Bitmap ni errores ignorados: Android
  * resuelve, mide y pinta el recurso en cada fotograma, incluso sin conexión.
  * Los SVG originales transparentes se conservan como fuentes editables.

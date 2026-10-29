@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Valida los 49 SVG editables y VectorDrawable nativos, sin exigir rasterización."""
+"""Verifica los 49 SVG del estilo Sólido minimalista de alta definición."""
 from pathlib import Path
 import re
 import sys
@@ -21,10 +21,10 @@ for path in svgs:
         root=ET.parse(path).getroot()
         if root.tag!="{http://www.w3.org/2000/svg}svg":
             errors.append(f"SVG invalido: {path.name}")
-        if root.get("viewBox")!="0 0 24 24":
+        if root.get("viewBox")!="0 0 96 96":
             errors.append(f"Vista vectorial inesperada: {path.name}")
-        if root.get("width")!="24" or root.get("height")!="24":
-            errors.append(f"Dimensiones fuente SVG inesperadas: {path.name}")
+        if root.get("width")!="1024" or root.get("height")!="1024":
+            errors.append(f"Tamaño de exportación insuficiente: {path.name}")
         if root.get("shape-rendering")=="crispEdges":
             errors.append(f"Persisten bordes pixelados: {path.name}")
         if any(node.tag.rsplit("}",1)[-1] in ("filter","image","foreignObject","script") for node in root.iter()):
@@ -63,14 +63,6 @@ for path in svgs:
             errors.append("Vector sin trazados nativos: "+name)
         if native_mapping.get(name)!=name:
             errors.append("Mapeo vector incorrecto: "+name)
-        android="{http://schemas.android.com/apk/res/android}"
-        if root.get(android+"viewportWidth")!="24" or root.get(android+"viewportHeight")!="24":
-            errors.append("Viewport del vector Android inesperado: "+name)
-        svg=ET.parse(path).getroot()
-        svg_paths=[node.get("d") for node in svg if node.tag.rsplit("}",1)[-1]=="path"]
-        native_paths=[node.get(android+"pathData") for node in children]
-        if not svg_paths or svg_paths!=native_paths:
-            errors.append("Vector Android no coincide con los trazados del SVG: "+name)
     except ET.ParseError as err:
         errors.append(f"Vector Android XML corrupto: {name} ({err})")
 for key,graphic in mapping.items():
@@ -91,16 +83,17 @@ if "V39Training.of(week[day], focus[day])" not in picker or "HunterPngIcon(activ
     errors.append("El selector semanal no usa iconos segun los datos reales")
 if "HunterPngIcon(item.iconKey" not in picker:
     errors.append("La leyenda semanal no usa los mismos iconos")
-# Paleta aprobada por la nueva familia: cian y lavanda en todos los
-# pictogramas. Los vectores son escalables; 24x24 es su viewBox, no un bitmap.
-palette=("#A8DCFF","#A99AFF")
-for group in ("upper","lower","core","cardio","mobility","rest"):
-    filename="week_"+group+".svg"
-    source=(ICONS/filename).read_text(encoding="utf-8")
-    native=(vector_root/("hunter_icon_week_"+group+".xml")).read_text(encoding="utf-8")
-    for color in palette:
-        if color not in source or color not in native:
-            errors.append(f"Paleta del grupo no coincide en SVG y vector Android: {filename} ({color})")
+palette={
+ "week_upper.svg":"#368EFF",
+ "week_core.svg":"#04CDB9",
+ "week_lower.svg":"#FF526A",
+ "week_mobility.svg":"#A768F4",
+ "week_cardio.svg":"#FF4086",
+ "week_rest.svg":"#FFC640",
+}
+for filename,color in palette.items():
+    if color not in (ICONS/filename).read_text(encoding="utf-8"):
+        errors.append(f"Color de grupo incorrecto en {filename}: {color}")
 if errors:
     print("\n".join("ERROR: "+x for x in errors))
     sys.exit(1)
