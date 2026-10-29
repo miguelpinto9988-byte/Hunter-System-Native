@@ -12,11 +12,14 @@ checks={
  "componentes Eclipse":(R/(src+"EclipseComponents.kt")).is_file(),
  "composición Monarca":(R/(src+"MonarchDashboardV42.kt")).is_file(),
  "portal Eclipse retirado":'FusionEclipsePortal()' not in read(src+"Screens.kt") and not (R/"app/src/main/assets/eclipse/portal.webp").exists(),
- "fondos por ventana":all((R/("app/src/main/assets/hunter-png/wallpapers/"+route+".png")).is_file() for route in
-    ("home","plan","routines","book","stats","objectives","profile","recovery"))
-    and 'HunterRealmWallpaper(' in read(src+"MainActivity.kt") and 'HunterRealmWallpaper(' in read(src+"Overlays.kt")
-    and 'hunter-png/wallpapers/' in read(src+"HunterRealmWallpaper.kt")
-    and 'realm-art/' not in read(src+"HunterRealmWallpaper.kt"),
+ "fondos limpios en todas las pantallas":'HunterRealmWallpaper(' in read(src+"MainActivity.kt")
+    and 'HunterRealmWallpaper(' in read(src+"Overlays.kt")
+    and 'hunter-png/wallpapers/' not in read(src+"HunterRealmWallpaper.kt")
+    and 'chosenSceneArtwork(' not in read(src+"MonarchDashboardV42.kt")
+    and 'ui33/scene-' not in read(src+"Screens.kt"),
+ "cuatro retratos 4K":all((R/("app/src/main/assets/hunter-4k/"+name+".webp")).is_file()
+    for name in ("reader","regressor","hunter-male","hunter-female"))
+    and 'hunter-4k/' in read(src+"HunterArtworkV43.kt"),
  "biblioteca iconos PNG":(R/(src+"HunterPngLibrary.kt")).is_file()
     and len(list((R/"app/src/main/assets/hunter-png/icons").glob("*.png")))==69
     and 'HunterPngIcon(' in read(src+"MonarchRoutinesV42.kt")
@@ -45,5 +48,5 @@ checks={
  "pruebas de catálogo":(R/"app/src/test/java/com/huntersystem/app/Hunter2000CatalogTest.kt").is_file(),
 }
 errors=[name for name,ok in checks.items() if not ok]
-print(json.dumps({"version":"43.11-monarch-equipment-preview","checks":checks,"status":"ERROR" if errors else "OK","errors":errors},ensure_ascii=False,indent=2))
+print(json.dumps({"version":"43.12-monarca-eclipse-4k","checks":checks,"status":"ERROR" if errors else "OK","errors":errors},ensure_ascii=False,indent=2))
 if errors:raise SystemExit(1)
