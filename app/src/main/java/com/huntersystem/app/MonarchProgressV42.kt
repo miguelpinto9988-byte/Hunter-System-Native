@@ -17,6 +17,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
@@ -432,7 +433,6 @@ fun MonarchEvolutionScreen(ui:NativeUi){
             "registradas en el dispositivo.",size=13,color=c.muted)
     }
     val ranks=s.catalog.design.a("ranks").objects()
-    val char=if(s.profile?.s("gender")=="female")"hunter-female" else "hunter-male"
     for((index,entry)in ranks.withIndex()){
         val key=entry.s("key",listOf("E","D","C","B","A","S").getOrElse(index){"S"})
         val accessible=listOf("E","D","C","B","A","S").indexOf(key) <=
@@ -456,8 +456,36 @@ fun MonarchEvolutionScreen(ui:NativeUi){
                 }
             }
             if(key==rank){
-                AssetImage("ui33/$char-${key.lowercase()}.webp",
-                    Modifier.fillMaxWidth().height(180.dp))
+                // Vista de evolución con la misma composición cinematográfica de Monarca.
+                Box(Modifier.fillMaxWidth().height(260.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(Color(0xFF050E20))) {
+                    AssetImage(
+                        "ui33/scene-${key.lowercase()}-0.webp",
+                        Modifier.matchParentSize().graphicsLayer { alpha = .70f },
+                        androidx.compose.ui.layout.ContentScale.Crop
+                    )
+                    AssetImage(
+                        resolvedHunterArtwork(
+                            s.state.o("appearance33").s("collection","hunter"),
+                            s.profile?.s("gender","unspecified") ?: "unspecified",
+                            key
+                        ),
+                        Modifier.align(Alignment.CenterEnd).fillMaxHeight().fillMaxWidth(.86f),
+                        androidx.compose.ui.layout.ContentScale.Crop,
+                        description = "Cazador de rango $key",
+                        alignment = Alignment.TopEnd
+                    )
+                    Box(Modifier.matchParentSize().background(
+                        Brush.horizontalGradient(listOf(
+                            Color(0xE6051024),Color(0x80051024),Color.Transparent
+                        ))
+                    ))
+                    Column(Modifier.align(Alignment.CenterStart).padding(16.dp)) {
+                        Eyebrow("EVOLUCIÓN ACTUAL")
+                        Heading("RANGO $key",size=29)
+                    }
+                }
             }
             if(entry.s("detail").isNotBlank())HText(entry.s("detail"),
                 size=14,color=c.muted)
