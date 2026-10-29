@@ -30,8 +30,9 @@ checks={
     and 'HunterSideMenu(ui)' in read(src+"MainActivity.kt"),
  "recompensa real":'if(!log.b("complete")) return' in read(src+"HunterMissionCompletedCard.kt")
     and 'HunterMissionCompletedCard(ui,selected)' in read(src+"MonarchMissionsV42.kt"),
- "portadas originales descargables":(R/"tools/download_monarch_boss_originals.py").is_file()
-    and 'monarch-boss-original/' in read(src+"MonarchSpecialMissionUI.kt")
+ "portadas originales archivadas sin fondos":(R/"tools/download_monarch_boss_originals.py").is_file()
+    and 'monarch-boss-original/' not in read(src+"MonarchSpecialMissionUI.kt")
+    and 'AssetImage(' not in read(src+"MonarchSpecialMissionUI.kt")
     and not any((R/("app/src/main/assets/monarch-boss/"+boss+".svg")).exists()
       for boss in ("guardia","fortaleza","trono")),
  "reubicación Monarca":read(src+"Screens.kt").index("MonarchSpecialMissionsPanel(ui)") < read(src+"Screens.kt").index("MonarchHero(ui,stats)") and read(src+"Screens.kt").count("MonarchSpecialMissionsPanel(ui)")==1,
