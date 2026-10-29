@@ -13,6 +13,12 @@ class ProfileEquipmentTest {
    assertFalse("Campo obsoleto: $retired",retired in visible)
   assertTrue("equipment" in visible)
   assertTrue("trainingMode" in visible)
+  val companion=form[1].a("fields").objects().map{it.s("name")}
+  val objective=form[2].a("fields").objects().map{it.s("name")}
+  assertTrue(listOf("difficulty","goalGroup","finalGoal","equipment").all{it in objective})
+  assertTrue(listOf("difficulty","goalGroup","finalGoal").none{it in companion})
+  for(key in listOf("difficulty","goalGroup","finalGoal","equipment"))
+   assertEquals("Campo duplicado: $key",1,visible.count{it==key})
  }
  @Test fun optionsDependOnSelectedEquipment(){
   assertTrue(profileAllowedMaterials("body").contains("pullbar"))
@@ -38,5 +44,34 @@ class ProfileEquipmentTest {
   assertEquals(listOf("barbell","machine"),selectedProfileGym("gym",selected))
   assertEquals(listOf("space","rack","kb"),selectedProfileMaterials("gym",selected))
   assertEquals(listOf("singlebalance","olympic"),selectedProfileCapabilities("gym",selected))
+ }
+ @Test fun compactOptionsKeepExplicitKeysAndDoNotInferMissingEquipment(){
+  val body=profileCompactEquipment("body")
+  val dumbbells=profileCompactEquipment("db")
+  val gym=profileCompactEquipment("gym")
+  assertTrue(body.size<=6)
+  assertTrue(dumbbells.size<=7)
+  assertTrue(gym.size<=10)
+  assertFalse(body.flatMap{it.keys}.any{it.startsWith("gym_")})
+  assertFalse(dumbbells.flatMap{it.keys}.any{it.startsWith("gym_")})
+  assertTrue(gym.flatMap{it.keys}.contains("gym_barbell"))
+  assertFalse(profileCompactSelected(profileCompactMaterials[0],mapOf("materials46|space" to "true")))
+  assertTrue(profileCompactSelected(profileCompactMaterials[0],mapOf(
+   "materials46|space" to "true","materials46|wall" to "true")))
+ }
+ @Test fun previouslySavedDetailedEquipmentIsNotSilentlyDiscarded(){
+  val stored=mapOf(
+   "materials46|space" to "true",
+   "materials46|rack" to "true",
+   "materials46|abwheel" to "true",
+   "capabilities46|nordic" to "true"
+  )
+  val previous=profileLegacySelections("body",stored)
+  assertTrue("materials46|rack" in previous)
+  assertTrue("materials46|abwheel" in previous)
+  assertTrue("capabilities46|nordic" in previous)
+  assertFalse("materials46|space" in previous)
+  assertEquals(listOf("space","abwheel"),selectedProfileMaterials("body",stored).sorted().reversed())
+  assertTrue(profileCompactCapabilities("body").none{it.keys.contains("capabilities46|olympic")})
  }
 }

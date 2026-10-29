@@ -125,7 +125,7 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
      type=="select"->HSelect(label,values[name]?:"",f.a("options").objects().map{it.s("value") to it.s("label")}){v->values[name]=v;if(name=="goalGroup")manualGoalGroup=true;if(name=="difficulty")values["restSeconds"]=mapOf("basic" to "30","intermediate" to "60","advanced" to "90")[v]?:"30"}
      else->HInput(values[name]?:"",{values[name]=it},label,number=type=="number",multiline=type=="textarea")
     }
-    if(name=="finalGoal"){val result=s.goals.interpret(values[name]?:"",values["goalGroup"]?:"habit");val group=s.catalog.editorial.o("goalGroups").o(result.s("primary"));HNotice(group.s("name","Constancia y bienestar")+" · "+s.catalog.editorial.o("goalPlans").o(result.s("target")).s("why"))}
+    if(name=="finalGoal"&&!values[name].isNullOrBlank()){val result=s.goals.interpret(values[name]?:"",values["goalGroup"]?:"habit");val group=s.catalog.editorial.o("goalGroups").o(result.s("primary"));HNotice(group.s("name","Constancia y bienestar")+" · "+s.catalog.editorial.o("goalPlans").o(result.s("target")).s("why"))}
    }
 
    if(sectionIndex==3){

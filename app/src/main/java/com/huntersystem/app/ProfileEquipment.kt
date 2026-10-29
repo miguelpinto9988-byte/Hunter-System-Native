@@ -57,81 +57,134 @@ internal fun profileAllowedCapabilities(equipment:String):Set<String>{
   else->all-setOf("overhead","ballistichinge","turkish","olympic")
  }
 }
-private val gymGroups=listOf(
- MaterialGroup("Barras y bancos",listOf("gym_barbell","gym_bench")),
- MaterialGroup("Máquinas y poleas",listOf("gym_cable","gym_machine","gym_smith")),
- MaterialGroup("Cardio de gimnasio",listOf("gym_cardio"))
+/**
+ * Controles compactos y explícitos.
+ * Las opciones con varias claves requieren TODOS los complementos indicados:
+ * nunca se infiere equipo ni habilidad a partir del nivel de entrenamiento.
+ */
+internal data class ProfileCompactOption(val label:String,val keys:List<String>)
+
+internal val profileCompactMaterials=listOf(
+ ProfileCompactOption("Espacio despejado, pared libre",listOf("materials46|space","materials46|wall")),
+ ProfileCompactOption("Colchoneta",listOf("materials46|mat")),
+ ProfileCompactOption("Silla estable",listOf("materials46|chair")),
+ ProfileCompactOption("Banda elástica, anclaje seguro",listOf("materials46|band","materials46|anchor")),
+ ProfileCompactOption("Barra de dominadas",listOf("materials46|pullbar")),
+ ProfileCompactOption("Escalón o plataforma baja",listOf("step"))
 )
-private val gymLabels=mapOf(
- "gym_barbell" to "Barra y discos","gym_bench" to "Banco y soportes",
- "gym_cable" to "Poleas","gym_machine" to "Máquinas de fuerza",
- "gym_smith" to "Máquina Smith","gym_cardio" to "Cinta o ergómetro"
+
+internal val profileCompactGym=listOf(
+ ProfileCompactOption("Barra con discos, banco (ambos)",listOf("gym_barbell","gym_bench")),
+ ProfileCompactOption("Poleas, máquinas de fuerza (ambas)",listOf("gym_cable","gym_machine")),
+ ProfileCompactOption("Máquinas de cardio",listOf("gym_cardio")),
+ ProfileCompactOption("Rack con seguros",listOf("materials46|rack"))
 )
-@Composable private fun ProfileEquipmentCheck(values:MutableMap<String,String>,key:String,label:String){
- HCheck(label,values[key]=="true"){values[key]=(values[key]!="true").toString()}
+
+internal val profileCompactDb=listOf(
+ ProfileCompactOption("Banco de entrenamiento",listOf("bench"))
+)
+
+internal val profileCompactSkills=listOf(
+ ProfileCompactOption("Equilibrio a una pierna durante 30 s",listOf("capabilities46|singlebalance")),
+ ProfileCompactOption("Colgarse 20 s con control y sin dolor",listOf("capabilities46|hanging")),
+ ProfileCompactOption("Aterrizar saltos bajos con estabilidad",listOf("capabilities46|landing"))
+)
+internal val profileCompactWeightSkill=ProfileCompactOption(
+ "Control de una carga ligera sobre la cabeza, sin dolor",
+ listOf("capabilities46|overhead")
+)
+
+internal fun profileCompactEquipment(equipment:String):List<ProfileCompactOption> =
+ profileCompactMaterials+when(equipment){
+  "gym"->profileCompactGym
+  "db"->profileCompactDb
+  else->emptyList()
+ }
+
+internal fun profileCompactCapabilities(equipment:String):List<ProfileCompactOption> =
+ profileCompactSkills+if(equipment=="db"||equipment=="gym")listOf(profileCompactWeightSkill)
+ else emptyList()
+
+internal fun profileCompactSelected(option:ProfileCompactOption,values:Map<String,String>):Boolean=
+ option.keys.all{values[it]=="true"}
+
+/** Las selecciones avanzadas antiguas no desaparecen silenciosamente del perfil. */
+internal fun profileLegacySelections(equipment:String,values:Map<String,String>):List<String>{
+ val shown=(profileCompactEquipment(equipment)+profileCompactCapabilities(equipment))
+  .flatMap{it.keys}.toSet()
+ return values.keys.filter{key->
+  values[key]=="true"&&key !in shown&&(
+   key.startsWith("materials46|")||key.startsWith("capabilities46|")||
+   key.startsWith("gym_")||key=="bench"||key=="step"
+  )
+ }.sorted()
 }
+
+@Composable private fun ProfileCompactCheck(
+ values:MutableMap<String,String>,
+ option:ProfileCompactOption
+){
+ val n=option.keys.count{values[it]=="true"}
+ val partial=if(n in 1 until option.keys.size)" · $n/${option.keys.size} guardados" else ""
+ HCheck(option.label+partial,n==option.keys.size){
+  val enabled=n!=option.keys.size
+  for(key in option.keys) values[key]=enabled.toString()
+ }
+}
+
 @Composable fun ProfileEquipmentOptions(
  equipment:String,
  values:MutableMap<String,String>,
  expanded:MutableMap<String,Boolean>,
  catalog:Catalog
 ){
- val quickMaterials=when(equipment){
-  "db"->listOf("mat","space","band","chair","pullbar")
-  "gym"->listOf("mat","space","band")
-  else->listOf("space","mat","chair","wall","band","pullbar")
- }
+ val options=profileCompactEquipment(equipment)
+ val skills=profileCompactCapabilities(equipment)
+ val legacy=profileLegacySelections(equipment,values)
  HText(when(equipment){
-  "gym"->"Elige solo las máquinas y accesorios disponibles en tu gimnasio."
-  "db"->"Entrenas con mancuernas. Marca los accesorios que realmente tienes."
-  else->"Entrenas con tu peso corporal. No necesitas máquinas."
+  "gym"->"Selecciona únicamente el equipo que tu gimnasio tiene disponible."
+  "db"->"Mancuernas y complementos opcionales, sin listas extensas."
+  else->"Con tu peso corporal puedes empezar sin seleccionar accesorios."
  },size=15,color=LocalHunter.current.muted)
  if(equipment=="db"||equipment=="gym"){
-  HInput(values["load"]?:"0",{values["load"]=it},"Peso de una mancuerna · kg",number=true)
+  HInput(values["load"]?:"0",{values["load"]=it},"Peso disponible de una mancuerna · kg",number=true)
  }
- if(equipment=="db")ProfileEquipmentCheck(values,"bench","Banco de entrenamiento disponible")
- ProfileEquipmentCheck(values,"step","Escalón o plataforma baja disponible")
- if(equipment=="gym"){
-  HText("Equipo de gimnasio",size=16,bold=true)
-  for(group in gymGroups){
-   val selected=group.ids.count{values[it]=="true"}
-   val id="gym-section-"+group.title
-   HButton(group.title+" · "+selected+" seleccionados ▾",Modifier.fillMaxWidth()){expanded[id]=expanded[id]!=true}
-   if(expanded[id]==true)for(key in group.ids)ProfileEquipmentCheck(values,key,gymLabels[key]?:key)
+ val count=(options+skills).count{profileCompactSelected(it,values)}
+ val panelId="profile-compact-options"
+ HButton(
+  "Complementos y habilidades (opcional) · $count seleccionados ▾",
+  Modifier.fillMaxWidth()
+ ){expanded[panelId]=expanded[panelId]!=true}
+ if(expanded[panelId]==true){
+  HText("Complementos habituales",size=16,bold=true)
+  HText(
+   "Marca solo lo que tengas. Una opción con comas requiere disponer de todos los elementos indicados.",
+   size=13,color=LocalHunter.current.muted
+  )
+  for(option in profileCompactMaterials)ProfileCompactCheck(values,option)
+  if(equipment=="db"){
+   HText("Para mancuernas",size=16,bold=true)
+   for(option in profileCompactDb)ProfileCompactCheck(values,option)
   }
- }
- HText("Accesorios disponibles (opcional)",size=16,bold=true)
- for(key in quickMaterials)ProfileEquipmentCheck(values,"materials46|"+key,catalog.materials.s(key,key))
- val extras=profileAllowedMaterials(equipment)-quickMaterials.toSet()
- HButton("Más accesorios (opcional) ▾",Modifier.fillMaxWidth()){expanded["extra-materials"]=expanded["extra-materials"]!=true}
- if(expanded["extra-materials"]==true){
-  for(group in materialGroups){
-   val choices=group.ids.filter{it in extras}
-   if(choices.isEmpty())continue
-   val id="material-section-"+group.title
-   val n=choices.count{values["materials46|"+it]=="true"}
-   HButton(group.title+" · "+n+" ▾",Modifier.fillMaxWidth()){expanded[id]=expanded[id]!=true}
-   if(expanded[id]==true)for(key in choices)ProfileEquipmentCheck(values,"materials46|"+key,catalog.materials.s(key,key))
+  if(equipment=="gym"){
+   HText("Para gimnasio",size=16,bold=true)
+   for(option in profileCompactGym)ProfileCompactCheck(values,option)
   }
- }
- HText("Lo que puedes hacer con control (opcional)",size=16,bold=true)
- HText("Marca solo capacidades que ya realizas con seguridad; no se deducen de tu nivel.",size=14,color=LocalHunter.current.muted)
- val quickCaps=when(equipment){
-  "db"->listOf("singlebalance","hanging","overhead")
-  "gym"->listOf("singlebalance","hanging","overhead")
-  else->listOf("singlebalance","hanging","landing")
- }
- for(key in quickCaps)ProfileEquipmentCheck(values,"capabilities46|"+key,catalog.capabilities.s(key,key))
- HButton("Otras habilidades (avanzado) ▾",Modifier.fillMaxWidth()){expanded["extra-capabilities"]=expanded["extra-capabilities"]!=true}
- if(expanded["extra-capabilities"]==true){
-  val allowed=profileAllowedCapabilities(equipment)-quickCaps.toSet()
-  for(group in capabilityGroups){
-   val choices=group.ids.filter{it in allowed}
-   if(choices.isEmpty())continue
-   val id="capability-section-"+group.title
-   val n=choices.count{values["capabilities46|"+it]=="true"}
-   HButton(group.title+" · "+n+" ▾",Modifier.fillMaxWidth()){expanded[id]=expanded[id]!=true}
-   if(expanded[id]==true)for(key in choices)ProfileEquipmentCheck(values,"capabilities46|"+key,catalog.capabilities.s(key,key))
+  HText("Habilidades comprobadas (opcional)",size=16,bold=true)
+  HText(
+   "Se indican solo si ya las realizas con control. Tu nivel no las activa automáticamente.",
+   size=13,color=LocalHunter.current.muted
+  )
+  for(option in skills)ProfileCompactCheck(values,option)
+  if(legacy.isNotEmpty()){
+   HText(
+    "${legacy.size} opciones específicas de una configuración anterior siguen guardadas. " +
+    "No se añadirán otras automáticamente.",
+    size=13,color=LocalHunter.current.muted
+   )
+   HButton("Quitar opciones antiguas · ${legacy.size}",Modifier.fillMaxWidth()){
+    legacy.forEach{values[it]="false"}
+   }
   }
  }
 }
