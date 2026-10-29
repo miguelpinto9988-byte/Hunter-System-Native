@@ -7,8 +7,8 @@ import java.time.LocalDate
 
 /**
  * Retratos aislados Monarca V43.12: selección persistida en appearance33.
- * No modifican ni el XP ni la progresión. Los cuatro maestros 4K se colocan
- * en app/src/main/assets/hunter-4k/{reader,regressor,hunter-male,hunter-female}.webp.
+ * No modifican ni el XP ni la progresión. Las cuatro versiones HD se generan
+ * en app/src/main/assets/hunter-hd/{reader,regressor,hunter-male,hunter-female}.webp.
  * Se aceptan futuras variantes por rango (-e, -d, -c, -b, -a, -s).
  * Mantiene las 24 ilustraciones históricas ui33/ui34 como fallback local.
  */
@@ -37,18 +37,18 @@ internal fun resolvedHunterArtwork(collection: String, gender: String, rank: Str
     val key = hunterPortraitKey(collection, gender)
     val grade = rank.lowercase().takeIf { it in setOf("e", "d", "c", "b", "a", "s") } ?: "e"
     return remember(context, key, grade) {
-        // Para el rango E se muestra el nuevo retrato 4K. Los rangos D-S
-        // mantienen sus evoluciones propias hasta incorporar imágenes 4K de cada rango.
+        // Para el rango E se muestra el retrato HD optimizado. Los rangos D-S
+        // mantienen sus evoluciones propias hasta incorporar nuevas ilustraciones HD para cada rango.
         val candidates = if (grade == "e") listOf(
-            "hunter-4k/$key-e.webp",
-            "hunter-4k/$key.webp",
+            "hunter-hd/$key-e.webp",
+            "hunter-hd/$key.webp",
             "ui34/$key-e.webp",
             "ui33/$key-e.webp"
         ) else listOf(
-            "hunter-4k/$key-$grade.webp",
+            "hunter-hd/$key-$grade.webp",
             "ui34/$key-$grade.webp",
             "ui33/$key-$grade.webp",
-            "hunter-4k/$key.webp",
+            "hunter-hd/$key.webp",
             "ui33/$key-e.webp"
         )
         candidates.firstOrNull { path ->

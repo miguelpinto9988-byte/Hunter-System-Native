@@ -32,3 +32,16 @@ dependencies {
  testImplementation("androidx.compose.ui:ui-test-junit4")
  debugImplementation("androidx.compose.ui:ui-test-manifest")
 }
+
+ 
+// Los masters 4K se guardan fuera de src/main/assets: la APK solo recibe HD.
+// Generacion automatica tambien en compilaciones locales y Android Studio.
+val prepareHunterHd = tasks.register<org.gradle.api.tasks.Exec>("prepareHunterHd") {
+    workingDir = rootProject.projectDir
+    commandLine("python3", "tools/prepare_hunter_hd.py")
+}
+tasks.configureEach {
+    if (name.startsWith("merge") && name.endsWith("Assets")) {
+        dependsOn(prepareHunterHd)
+    }
+}

@@ -156,9 +156,9 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
     }
    }
    when(visualTier(s)){
-    VisualTier.MAX->HText("Imágenes hasta 4K si el archivo y la pantalla lo permiten; más partículas, efectos y orientación contextual detallada.",size=15,color=LocalHunter.current.muted)
-    VisualTier.BALANCED->HText("Imágenes hasta Full HD, efectos moderados y mensajes adaptados a la misión y al ejercicio.",size=15,color=LocalHunter.current.muted)
-    VisualTier.SAVER->HText("Imágenes hasta HD, efectos mínimos y mensajes breves predefinidos. Se respetan los ajustes de animación del dispositivo.",size=15,color=LocalHunter.current.muted)
+    VisualTier.MAX->HText("Personajes HD de hasta 720 píxeles de ancho, con más efectos visuales y orientación contextual detallada.",size=15,color=LocalHunter.current.muted)
+    VisualTier.BALANCED->HText("Personajes HD optimizados, efectos moderados y mensajes adaptados a la misión y al ejercicio.",size=15,color=LocalHunter.current.muted)
+    VisualTier.SAVER->HText("Menor resolución de decodificación, efectos mínimos y mensajes breves predefinidos. Se respetan los ajustes de animación del dispositivo.",size=15,color=LocalHunter.current.muted)
    }
   }
   HPanel{Heading("Copia de seguridad",size=29);HText("Guarda tu perfil, calendario y registros en un archivo.",size=16,color=LocalHunter.current.muted);HButton("Exportar copia de seguridad"){ui.export()};HButton("Restaurar copia"){ui.import()}}

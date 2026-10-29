@@ -13,9 +13,9 @@ enum class VisualTier(
  val animated:Boolean,
  val floatingCompanion:Boolean
 ) {
- MAX("max","Máxima calidad",4096,30,true,true),
- BALANCED("balanced","Equilibrado",1920,12,true,true),
- SAVER("saver","Ahorro de energía",1280,4,false,false);
+ MAX("max","Máxima calidad",1080,30,true,true),
+ BALANCED("balanced","Equilibrado",1080,12,true,true),
+ SAVER("saver","Ahorro de energía",720,4,false,false);
  companion object {
   fun from(id:String?):VisualTier=entries.firstOrNull{it.id==id}?:BALANCED
  }
