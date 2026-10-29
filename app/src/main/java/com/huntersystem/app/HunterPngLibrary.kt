@@ -6,6 +6,10 @@ import android.util.LruCache
 import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.ImageBitmap
@@ -17,7 +21,7 @@ import com.caverock.androidsvg.SVG
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** Iconos originales 2D pixel art: archivos SVG locales, sin fondos ni red. */
+/** Iconos Sólido minimalista en SVG de alta definición: transparencia y colores por categoría. */
 private val iconToSvg = mapOf(
     "panel" to "home",
     "missions" to "quest",
@@ -89,36 +93,69 @@ private val iconToSvg = mapOf(
     "monarch" to "crown",
     "programs" to "checklist",
     "mobility" to "leaf",
-    "week_upper" to "week_upper",
-    "week_core" to "week_core",
-    "week_lower" to "week_lower",
-    "week_mobility" to "week_mobility",
-    "week_rest" to "week_rest",
-    "week_cardio" to "week_cardio"
-)
+    "week_u/**
+ * SVG escalable: rasterizar según los píxeles físicos reales del componente,
+ * al doble de la medida de salida para antialiasing. Evita bitmaps gigantes
+ * para iconos pequeños y ofrece hasta 1024 px para imágenes grandes.
+ */
+internal fun hunterSvgRasterSize(physicalPixels:Int):Int {
+    val supersampled=(physicalPixels.coerceAtLeast(1).toLong()*2L)
+        .coerceAtMost(1024L).toInt()
+    return when {
+        supersampled<=128->128
+        supersampled<=192->192
+        supersampled<=256->256
+        supersampled<=384->384
+        supersampled<=512->512
+        else->1024
+    }
+}
 
-/** Cache de bitmaps de 128px compartido entre pantallas: sin redibujar SVG en cada recomposición. */
-private val hunterPixelCache = object : LruCache<String, ImageBitmap>(100) {}
+/** Caché por icono y resolución, limitada a 32 MiB para evitar consumo excesivo. */
+private val hunterSvgCache=object:LruCache<String,ImageBitmap>(32*1024){
+    override fun sizeOf(key:String,value:ImageBitmap):Int =
+        ((value.width.toLong()*value.height.toLong()*4L+1023L)/1024L).toInt()
+}
 
-/** API histórica mantenida para no romper las llamadas existentes de Monarca. */
+/** Firma histórica conservada para compatibilidad con las pantallas existentes. */
 @Composable
-fun HunterPngIcon(key:String, modifier:Modifier=Modifier, contentDescription:String?=null) {
+fun HunterPngIcon(key:String,modifier:Modifier=Modifier,contentDescription:String?=null){
     val graphic=iconToSvg[key] ?: "lightning"
     val path="hunter-icons/$graphic.svg"
     val ctx=LocalContext.current
-    val bitmap by produceState<ImageBitmap?>(hunterPixelCache.get(path),path) {
-        value=withContext(Dispatchers.IO) {
-            synchronized(hunterPixelCache){hunterPixelCache.get(path)} ?: runCatching {
+    var resolution by remember(path){mutableIntStateOf(256)}
+    val cacheKey="$path@$resolution"
+    val bitmap by produceState<ImageBitmap?>(
+        initialValue=synchronized(hunterSvgCache){hunterSvgCache.get(cacheKey)},
+        key1=cacheKey
+    ){
+        value=withContext(Dispatchers.IO){
+            synchronized(hunterSvgCache){hunterSvgCache.get(cacheKey)} ?: runCatching {
                 ctx.assets.open(path).use { input ->
-                    val picture=SVG.getFromInputStream(input).renderToPicture(128,128)
-                    val bitmap=Bitmap.createBitmap(128,128,Bitmap.Config.ARGB_8888)
+                    val picture=SVG.getFromInputStream(input).renderToPicture(resolution,resolution)
+                    val bitmap=Bitmap.createBitmap(resolution,resolution,Bitmap.Config.ARGB_8888)
                     Canvas(bitmap).drawPicture(picture)
                     bitmap.asImageBitmap().also { converted ->
-                        synchronized(hunterPixelCache){hunterPixelCache.put(path,converted)}
+                        synchronized(hunterSvgCache){hunterSvgCache.put(cacheKey,converted)}
                     }
                 }
             }.getOrNull()
         }
+    }
+    val measured=modifier.onSizeChanged { size ->
+        val desired=hunterSvgRasterSize(maxOf(size.width,size.height))
+        if(resolution!=desired)resolution=desired
+    }
+    if(bitmap!=null)Image(
+        bitmap=bitmap!!,
+        contentDescription=contentDescription,
+        modifier=measured,
+        contentScale=ContentScale.Fit,
+        filterQuality=FilterQuality.High
+    )
+}
+
+  }
     }
     if(bitmap!=null) Image(
         bitmap=bitmap!!,contentDescription=contentDescription,modifier=modifier,

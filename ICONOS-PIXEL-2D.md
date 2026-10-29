@@ -1,44 +1,32 @@
-# Hunter System V43.12 — iconografía Pixel 2D
+# Hunter System V43.12 — familia de íconos Sólido minimalista HD
 
-Integración de iconos retro pixel art, planos y multicolor en la biblioteca nativa del proyecto.
+Diseño escogido: **Sólido minimalista**, no las propuestas posteriores de estilo 3D, cristal o insignias. Sustituye los 49 SVG pixel art anteriores con siluetas suaves, planas, sin contornos negros ni brillos y fondo transparente. Los SVG son **vectores**, por lo que no tienen una resolución máxima fija.
 
-- Directorio de fuentes: `app/src/main/assets/hunter-icons/` (49 SVG originales con transparencia).
-- Los 76 identificadores antiguos de `HunterPngIcon` apuntan a estas ilustraciones.
-- Las 29 variantes del enum `Sigil` usan la misma biblioteca, por lo que deja de haber dos estilos distintos.
-- Las imágenes se vectorizan en el recurso original y se rasterizan una vez a 128x128 con AndroidSVG, guardándolas en una caché LRU y mostrándolas con interpolación desactivada.
-- Se actualiza el icono de inicio para que incluya la corona Pixel Monarca.
-- No se modifica ninguna rutina, misión, contenido técnico, estado de usuario o formato de guardado.
+## Familia de color
 
-## Comprobaciones sugeridas al compilar
-Verificar iconos en navegación inferior, misiones, rutinas, progreso, controles de reproducción, diálogos y lanzador Android. Probar también un dispositivo con resolución pequeña y uno con DPI alto.
+| Uso | Color base | Identificador |
+|---|---|---|
+| Tren superior / fuerza | Azul eléctrico | `#368EFF` |
+| Tren central / core | Turquesa | `#04CDB9` |
+| Tren inferior | Coral | `#FF526A` |
+| Movilidad | Violeta | `#A768F4` |
+| Cardio | Rosa intenso | `#FF4086` |
+| Descanso | Amarillo cálido | `#FFC640` |
 
-Los íconos son SVG editables; los PNG mostrados previamente eran prototipos visuales. Esta biblioteca es una adaptación vectorial consistente del estilo aprobado, no una conversión píxel por píxel de aquellas imágenes.
+Los destinos principales Panel, Misiones, Rutinas y Ejercicios conservan símbolos familiares: casa azul, corona azul/violeta, mancuerna azul y libro violeta. Acciones secundarias usan los mismos colores y geometría.
 
-## Retirada definitiva de iconos PNG heredados
+## Nitidez y rendimiento
 
-- La APK conserva los **49 iconos SVG Pixel 2D** y ninguna copia raster PNG antigua en `assets/hunter-png/icons/`.
-- Se retiraron los generadores de iconos PNG que se ejecutaban durante la compilacion.
-- Se eliminó el instalador de fondos PNG generales: no se necesitan fondos de personajes detrás de la interfaz.
-- `tools/check_pixel_icons.py` comprueba la validez de los 49 SVG, las 76 claves de iconos y la ausencia de rutas PNG activas. La verificacion del APK vuelve a comprobar que no se empaqueten iconos PNG.
-- Se eliminaron los fondos globales PNG de personajes; se mantienen las ilustraciones interiores de ejercicios, tarjetas y jefes Monarca, que son recursos independientes.
+- **49 SVG** en `app/src/main/assets/hunter-icons/`, con `viewBox="0 0 96 96"` y dimensiones de exportación **1024 × 1024 px** (sin fondo).
+- El renderizador Android `HunterPngIcon` conserva su nombre y sus 76 claves para mantener compatibilidad.
+- Rasterización adaptativa según los **píxeles físicos del dispositivo**, con sobremuestreo ×2, en tamaños de 128, 192, 256, 384, 512 y 1024 px.
+- Interpolación `FilterQuality.High` y una caché LRU limitada a **32 MiB**.
+- Los iconos dinámicos de `V39WeekPicker.kt` continúan reflejando los valores reales `weekPlan` / `weekFocus`.
+- El ícono de inicio nativo Android adopta una corona azul/violeta con fondo sólido.
+- Se mantienen fuera de la APK los íconos PNG heredados y los fondos generales de sombras.
 
-## Iconos por grupo de entrenamiento semanal
+## Fuera de alcance
 
-Se añadieron seis SVG originales y transparentes: `week_upper.svg`, `week_core.svg`, `week_lower.svg`, `week_mobility.svg`, `week_rest.svg`, `week_cardio.svg`.
-La sección **Personaliza tu semana → Elige tu semana** usa directamente `V39Training.of(week[day], focus[day])` para mostrar el ícono correspondiente a cada día; también los muestra en la leyenda inferior. Al pulsar una casilla para cambiar de actividad, se actualizan la categoría, el foco y el ícono de forma reactiva, y al guardar el perfil se conservan las claves `weekPlan` y `weekFocus` preexistentes. No se alteraron los registros de entrenamiento.
+No se modifica el arte de Misiones Monarca, el catálogo de ejercicios, las imágenes de los jefes, los datos de progreso ni la navegación inferior única.
 
-## Fondos generales sin sombras
-
-- `HunterFlatBackground.kt` dibuja únicamente el color de fondo del tema; no carga fondos PNG ni imágenes de personajes.
-- La aplicación principal, las ventanas emergentes y la cabecera del menú lateral utilizan fondos planos sin imágenes.
-- Se retira `HunterRealmWallpaper.kt` y el instalador obsoleto `tools/install_hunter_png_ui.py`.
-- `tools/check_plain_backgrounds.py` borra posibles PNG de fondo antiguos en compilaciones locales y exige que la interfaz no vuelva a utilizarlos.
-- El empaquetado de la APK comprueba que ya no se incluyen los ocho fondos PNG anteriores.
-- **Sin cambios:** portadas y tarjetas de jefes Monarca, compañero, biblioteca de ejercicios, íconos SVG y arte de arranque.
-
-## Navegación simplificada (sin barra lateral)
-
-- Se retiraron completamente `HunterSideMenu.kt`, el menú hamburguesa del encabezado, el drawer y el rail lateral de tabletas.
-- **Panel, Misiones, Rutinas y Ejercicios** quedan accesibles exclusivamente desde la barra inferior, visible en teléfonos y tabletas.
-- El avatar del encabezado sigue abriendo Perfil. Objetivos y estadísticas conservan los accesos dentro del panel; Academia y Recordatorios siguen accesibles desde el panel y el perfil.
-- Los 49 SVG antiguos permanecen temporalmente sin cambios mientras se valida una dirección visual alternativa, para no sustituir otra vez la identidad sin aprobación del diseño.
+Las comprobaciones CI validan las 49 fuentes SVG, la paleta de categorías, el renderer HD, la inexistencia de imágenes heredadas y las pruebas de escalado.
