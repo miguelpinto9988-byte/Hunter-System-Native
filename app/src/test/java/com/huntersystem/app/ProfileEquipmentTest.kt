@@ -27,6 +27,22 @@ class ProfileEquipmentTest {
   assertFalse(profileAllowedCapabilities("body").contains("overhead"))
   assertTrue(profileAllowedCapabilities("gym").contains("olympic"))
  }
+ @Test fun compactEquipmentQuickOptionsRespectTheirMode(){
+  val body=profileQuickMaterialKeys("body")
+  val dumbbells=profileQuickMaterialKeys("db")
+  val gym=profileQuickMaterialKeys("gym")
+  assertTrue("space" in body)
+  assertFalse("space" in gym)
+  assertEquals(listOf("mat","band","chair"),dumbbells)
+  for(mode in listOf("body","db","gym")){
+   assertTrue(profileAllowedMaterials(mode).containsAll(profileQuickMaterialKeys(mode)))
+   assertTrue(profileAllowedCapabilities(mode).containsAll(profileQuickCapabilityKeys(mode)))
+   assertEquals(profileQuickMaterialKeys(mode).size,
+    profileQuickMaterialKeys(mode).distinct().size)
+  }
+  assertFalse("overhead" in profileQuickCapabilityKeys("body"))
+  assertTrue("overhead" in profileQuickCapabilityKeys("gym"))
+ }
  @Test fun hiddenMachineOptionsDoNotLeakIntoBodyweightProfile(){
   val selected=mapOf(
    "gym_barbell" to "true","gym_machine" to "true",
