@@ -128,7 +128,7 @@ fun chosenSceneArtwork(scene:String):String{
     .semantics{this.selected=active;contentDescription="Cazador $label"}
     .padding(9.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(7.dp)){
     Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(12.dp)).background(c.panel),contentAlignment=Alignment.BottomCenter){
-     AssetImage(chosenHunterArtwork(key,gender),Modifier.fillMaxWidth().fillMaxHeight(.96f),description="Ilustración de $label")
+     AssetImage(resolvedHunterArtwork(key,gender),Modifier.fillMaxWidth().fillMaxHeight(.96f),description="Ilustración de $label")
     }
     HText(label,size=13,bold=active,maxLines=1)
     HunterIcon(if(active)Sigil.Check else Sigil.Plus,Modifier.size(15.dp),if(active)c.accent else c.muted)
@@ -160,7 +160,7 @@ fun chosenSceneArtwork(scene:String):String{
   .semantics{contentDescription="Vista previa del cazador y fondo"},contentAlignment=Alignment.BottomCenter){
   AssetImage(chosenSceneArtwork(selected),Modifier.fillMaxSize(),ContentScale.Crop)
   Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent,c.bg.copy(alpha=.25f)))))
-  AssetImage(chosenHunterArtwork(collection,gender),Modifier.fillMaxWidth(.62f).fillMaxHeight(.96f),description="Cazador seleccionado")
+  AssetImage(resolvedHunterArtwork(collection,gender),Modifier.fillMaxWidth(.62f).fillMaxHeight(.96f),description="Cazador seleccionado")
  }
 }
 @Composable fun RelicViewer(){

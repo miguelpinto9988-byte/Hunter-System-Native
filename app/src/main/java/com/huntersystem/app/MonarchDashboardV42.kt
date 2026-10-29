@@ -36,15 +36,18 @@ fun MonarchDashboardHero(ui: NativeUi, stats: JSONObject) {
     val xp = stats.i("xp").coerceAtLeast(0)
     val xpInLevel = xp % 300
     val rank = rankKey(level)
-    val companion = companionKey(store.profile)
-    val companionTitle = companionName(store.profile)
+    val artwork = resolvedHunterArtwork(
+        store.state.o("appearance33").s("collection", "hunter"),
+        profile.s("gender", "unspecified"), rank
+    )
+    val artworkTitle = hunterPortraitTitle(store.state.o("appearance33").s("collection", "hunter"), profile.s("gender", "unspecified"))
     val name = profile.s("name", "Cazador").ifBlank { "Cazador" }.take(36)
     val shape = RoundedCornerShape(26.dp)
 
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val expansive = maxWidth >= 680.dp
         val compact = maxWidth < 355.dp
-        val artWidth = if (expansive) 300.dp else if (compact) 128.dp else 154.dp
+        val artWidth = if (expansive) 310.dp else if (compact) 138.dp else 174.dp
         val artHeight = if (expansive) 282.dp else 212.dp
         Box(Modifier.fillMaxWidth().clip(shape)
             .background(Brush.linearGradient(listOf(c.surface, c.panel, c.bg)))
@@ -92,10 +95,10 @@ fun MonarchDashboardHero(ui: NativeUi, stats: JSONObject) {
                     Box(Modifier.width(artWidth).fillMaxHeight(),
                         contentAlignment = Alignment.BottomCenter) {
                         AssetImage(
-                            "ui33/companion-$companion.webp",
+                            artwork,
                             Modifier.fillMaxSize(),
                             ContentScale.Fit,
-                            description = "Acompañante $companionTitle configurado desde Perfil",
+                            description = "Cazador $artworkTitle, rango $rank, seleccionado desde Perfil",
                             alignment = Alignment.BottomCenter
                         )
                     }
