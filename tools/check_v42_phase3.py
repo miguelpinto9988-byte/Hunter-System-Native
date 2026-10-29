@@ -39,13 +39,17 @@ check(all(f'MonarchDestination("{name}"' in navigation
 check('setOf("objectives","stats","profile")' in navigation and 'Abrir perfil' in screens,
       "Perfil debe permanecer accesible desde el avatar")
 for name in ("MonarchBootScreen", "MonarchBottomNavigation",
-             "MonarchNavigationRail", "MonarchScreenTransition",
-             "MonarchRecoveryScreen"):
+             "MonarchScreenTransition", "MonarchRecoveryScreen"):
     check(f"fun {name}(" in navigation, f"Falta componente {name}")
-check('MonarchScreenTransition(if(hasProfile)ui.tab else "profile"' in main, "No está conectado el host de transición seguro")
+check("MonarchScreenTransition(" in main and 'if(hasProfile)ui.tab else "profile"' in main,
+      "No está conectado el host de transición seguro")
 check("rememberSaveableStateHolder()" in main, "Las rutas no conservan su estado guardable")
-check("MonarchNavigationRail(ui)" in main, "No hay rail de navegación en tablet")
-check("MonarchBottomNavigation(ui)" in main, "No hay navegación inferior móvil")
+check("MonarchNavigationRail(" not in navigation and "MonarchNavigationRail(" not in main,
+      "La navegación lateral de tabletas debe estar retirada")
+check("ModalNavigationDrawer(" not in main and not (src/"HunterSideMenu.kt").exists(),
+      "El menú lateral ya no forma parte de la aplicación")
+check("MonarchBottomNavigation(ui)" in main and "!tablet" not in main,
+      "La navegación inferior debe estar disponible también en tabletas")
 check("MonarchBootScreen(error)" in main, "No se sustituyó carga inicial")
 check("MonarchRecoveryScreen(ui,store.readError!!)" in main,
       "No hay recuperación de guardados corruptos")
