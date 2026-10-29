@@ -12,11 +12,13 @@ checks={
  "componentes Eclipse":(R/(src+"EclipseComponents.kt")).is_file(),
  "composición Monarca":(R/(src+"MonarchDashboardV42.kt")).is_file(),
  "portal Eclipse retirado":'FusionEclipsePortal()' not in read(src+"Screens.kt") and not (R/"app/src/main/assets/eclipse/portal.webp").exists(),
- "fondos por ventana":all((R/("app/src/main/assets/hunter-png/wallpapers/"+route+".png")).is_file() for route in
-    ("home","plan","routines","book","stats","objectives","profile","recovery"))
-    and 'HunterRealmWallpaper(' in read(src+"MainActivity.kt") and 'HunterRealmWallpaper(' in read(src+"Overlays.kt")
-    and 'hunter-png/wallpapers/' in read(src+"HunterRealmWallpaper.kt")
-    and 'realm-art/' not in read(src+"HunterRealmWallpaper.kt"),
+ "fondos planos sin imagenes de sombras":(R/(src+"HunterFlatBackground.kt")).is_file()
+    and not (R/(src+"HunterRealmWallpaper.kt")).exists()
+    and not (R/"app/src/main/assets/hunter-png/wallpapers").exists()
+    and "HunterFlatBackground(Modifier.matchParentSize())" in read(src+"MainActivity.kt")
+    and "HunterFlatBackground(Modifier.matchParentSize())" in read(src+"Overlays.kt")
+    and "LocalHunter.current.bg" in read(src+"HunterFlatBackground.kt")
+    and "AssetImage(" not in read(src+"HunterFlatBackground.kt"),
  "biblioteca iconos SVG 2D":(R/(src+"HunterPngLibrary.kt")).is_file()
     and len(list((R/"app/src/main/assets/hunter-icons").glob("*.svg")))==49
     and not (R/"app/src/main/assets/hunter-png/icons").exists()

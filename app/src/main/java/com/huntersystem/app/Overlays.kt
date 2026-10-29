@@ -19,7 +19,7 @@ import java.time.LocalDate
 import kotlin.math.*
 
 @Composable fun OverlayRoot(ui:NativeUi,overlay:Overlay){val c=LocalHunter.current;Dialog(onDismissRequest={ui.back()},properties=DialogProperties(usePlatformDefaultWidth=false,decorFitsSystemWindows=true)){Box(Modifier.fillMaxWidth().fillMaxHeight(.96f).padding(horizontal=10.dp,vertical=8.dp).clip(RoundedCornerShape(HunterDesignSystem.Dimensions.cornerDialog)).background(Brush.verticalGradient(listOf(c.surface,c.panel))).border(1.dp,c.line,RoundedCornerShape(HunterDesignSystem.Dimensions.cornerDialog))){
- HunterRealmWallpaper("overlay-"+overlay.type,Modifier.matchParentSize())
+ HunterFlatBackground(Modifier.matchParentSize())
  Column(Modifier.fillMaxSize().padding(16.dp)){
  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){HButton("‹"){ui.back()};OriginalSvg("decor/crest.svg",Modifier.width(72.dp).height(22.dp),accent=c.hex("accent"),metal=c.hex("metal26"),ornament=c.hex("ornament26"));HButton("×"){ui.stack.clear()}}
  if(overlay.type in listOf("confirm-finish","delete-goal","confirm-import")){

@@ -72,10 +72,7 @@ fun HunterRoot(ui:NativeUi){
             if(hasProfile&&store.readError==null&&!tablet)MonarchBottomNavigation(ui)
         }){insets->
             Box(Modifier.fillMaxSize().padding(insets)){
-                HunterRealmWallpaper(
-                    if(store.readError!=null) "recovery" else if(hasProfile) ui.tab else "profile",
-                    Modifier.matchParentSize()
-                )
+                HunterFlatBackground(Modifier.matchParentSize())
             Row(Modifier.fillMaxSize()){
                 if(hasProfile&&store.readError==null&&tablet)MonarchNavigationRail(ui)
                 Box(Modifier.weight(1f).fillMaxHeight()){

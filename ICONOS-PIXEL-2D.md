@@ -18,11 +18,20 @@ Los íconos son SVG editables; los PNG mostrados previamente eran prototipos vis
 
 - La APK conserva los **49 iconos SVG Pixel 2D** y ninguna copia raster PNG antigua en `assets/hunter-png/icons/`.
 - Se retiraron los generadores de iconos PNG que se ejecutaban durante la compilacion.
-- `tools/install_hunter_png_ui.py` ahora instala solamente los ocho **fondos PNG** de las pantallas y limpia posibles iconos PNG de compilaciones locales previas.
+- Se eliminó el instalador de fondos PNG generales: no se necesitan fondos de personajes detrás de la interfaz.
 - `tools/check_pixel_icons.py` comprueba la validez de los 49 SVG, las 76 claves de iconos y la ausencia de rutas PNG activas. La verificacion del APK vuelve a comprobar que no se empaqueten iconos PNG.
-- Los fondos de pantalla PNG, las ilustraciones de ejercicios y otros contenidos graficos no se eliminan, porque no forman parte de la biblioteca antigua de iconos.
+- Se eliminaron los fondos globales PNG de personajes; se mantienen las ilustraciones interiores de ejercicios, tarjetas y jefes Monarca, que son recursos independientes.
 
 ## Iconos por grupo de entrenamiento semanal
 
 Se añadieron seis SVG originales y transparentes: `week_upper.svg`, `week_core.svg`, `week_lower.svg`, `week_mobility.svg`, `week_rest.svg`, `week_cardio.svg`.
 La sección **Personaliza tu semana → Elige tu semana** usa directamente `V39Training.of(week[day], focus[day])` para mostrar el ícono correspondiente a cada día; también los muestra en la leyenda inferior. Al pulsar una casilla para cambiar de actividad, se actualizan la categoría, el foco y el ícono de forma reactiva, y al guardar el perfil se conservan las claves `weekPlan` y `weekFocus` preexistentes. No se alteraron los registros de entrenamiento.
+
+## Fondos generales sin sombras
+
+- `HunterFlatBackground.kt` dibuja únicamente el color de fondo del tema; no carga fondos PNG ni imágenes de personajes.
+- La aplicación principal y las ventanas emergentes utilizan este único fondo plano.
+- Se retira `HunterRealmWallpaper.kt` y el instalador obsoleto `tools/install_hunter_png_ui.py`.
+- `tools/check_plain_backgrounds.py` borra posibles PNG de fondo antiguos en compilaciones locales y exige que la interfaz no vuelva a utilizarlos.
+- El empaquetado de la APK comprueba que ya no se incluyen los ocho fondos PNG anteriores.
+- **Sin cambios:** portadas y tarjetas de jefes Monarca, compañero, biblioteca de ejercicios, íconos SVG y arte de arranque.
