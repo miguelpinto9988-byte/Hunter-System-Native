@@ -16,6 +16,10 @@ if any(x in main for x in ("ModalNavigationDrawer(","ModalDrawerSheet(","Monarch
     errors.append("Persisten los componentes de navegación lateral")
 if "MonarchBottomNavigation(ui)" not in main or "!tablet" in main:
     errors.append("La navegación inferior no se usa en todas las pantallas")
+if "if(hasProfile && !profileStandalone" not in main:
+    errors.append("La navegación inferior no debe aparecer en la pantalla de perfil")
+if 'setOf("objectives","stats","profile")' in nav:
+    errors.append("El perfil no debe ser una pestaña del menú principal")
 if "MonarchNavigationRail(" in nav:
     errors.append("Persiste el rail lateral para tabletas")
 if "openMenu" in screens or "Abrir menú lateral" in screens:

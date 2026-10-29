@@ -32,6 +32,13 @@ checks={
     and "MonarchNavigationRail(" not in read(src+"MonarchNavigationV42.kt")
     and "openMenu" not in read(src+"Screens.kt")
     and "MonarchBottomNavigation(ui)" in read(src+"MainActivity.kt"),
+ "perfil inicial independiente":'profileStandalone -> ProfileScreen(ui)' in read(src+"MainActivity.kt")
+    and 'if(hasProfile && !profileStandalone' in read(src+"MainActivity.kt")
+    and 'fun openProfile()' in read(src+"Screens.kt")
+    and 'fun profileSaved()' in read(src+"Screens.kt")
+    and 'SceneColumn(ui,showHeader=false)' in read(src+"Profile.kt")
+    and 'ui.profileSaved()' in read(src+"Profile.kt")
+    and 'setOf("objectives","stats","profile")' not in read(src+"MonarchNavigationV42.kt"),
  "recompensa real":'if(!log.b("complete")) return' in read(src+"HunterMissionCompletedCard.kt")
     and 'HunterMissionCompletedCard(ui,selected)' in read(src+"MonarchMissionsV42.kt"),
  "portadas originales descargables":(R/"tools/download_monarch_boss_originals.py").is_file()

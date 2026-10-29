@@ -32,8 +32,8 @@ object MonarchNavigation {
         MonarchDestination("routines","Rutinas"),
         MonarchDestination("book","Ejercicios")
     )
-    val routes=tabs.map{it.id}.toSet()+setOf("objectives","stats","profile")
-    fun activeTab(route:String):String=if(route in setOf("objectives","stats","profile"))"home" else route
+    val routes=tabs.map{it.id}.toSet()+setOf("objectives","stats")
+    fun activeTab(route:String):String=if(route in setOf("objectives","stats"))"home" else route
     fun index(route:String):Int=tabs.indexOfFirst{it.id==activeTab(route)}.coerceAtLeast(0)
 }
 

@@ -26,17 +26,69 @@ import kotlin.math.*
 
 data class Overlay(val type:String,val data:JSONObject=JSONObject())
 class NativeUi(val store:NativeStore){
- var tab by mutableStateOf(if(store.profile==null)"profile" else "home")
- var top by mutableStateOf("home");var library by mutableStateOf("")
- val stack=mutableStateListOf<Overlay>();val generated=mutableStateMapOf<String,List<JSONObject>>();var serial=0
+ var tab by mutableStateOf("home")
+ var profileEditorOpen by mutableStateOf(store.profile==null)
+ var top by mutableStateOf("home")
+ var library by mutableStateOf("")
+ val stack=mutableStateListOf<Overlay>()
+ val generated=mutableStateMapOf<String,List<JSONObject>>()
+ var serial=0
  var pendingAvatar by mutableStateOf<String?>(null)
- var message:(String)->Unit={};var export:()->Unit={};var import:()->Unit={};var chooseAvatar:()->Unit={};var openUrl:(String)->Unit={};var requestNotifications:()->Unit={}
- fun go(t:String){tab=t;library="";stack.clear()}
+ var message:(String)->Unit={}
+ var export:()->Unit={}
+ var import:()->Unit={}
+ var chooseAvatar:()->Unit={}
+ var openUrl:(String)->Unit={}
+ var requestNotifications:()->Unit={}
+ fun openProfile(){
+  profileEditorOpen=true
+  library=""
+  stack.clear()
+ }
+ fun closeProfile(){
+  if(store.profile==null)return // El usuario debe completar la creación inicial.
+  profileEditorOpen=false
+  tab="home"
+  top="home"
+  library=""
+  pendingAvatar=null
+  stack.clear()
+ }
+ fun profileSaved(){
+  check(store.profile!=null){"Guarda tu perfil antes de entrar al Panel"}
+  closeProfile()
+ }
+ fun go(t:String){
+  if(t=="profile" || store.profile==null){
+   openProfile()
+   return
+  }
+  profileEditorOpen=false
+  tab=t
+  library=""
+  stack.clear()
+ }
  fun open(type:String,data:JSONObject=JSONObject()){stack+=Overlay(type,data)}
- fun back(){if(stack.isNotEmpty())stack.removeAt(stack.lastIndex) else if(library.isNotBlank())library="" else if(tab!="home")tab="home"}
- fun attempt(block:()->Unit){try{block()}catch(e:Exception){message(e.message?:"No se pudo completar la acción")}}
- fun routine(id:String)=generated.values.flatten().firstOrNull{it.s("id")==id}?:store.state.a("customRoutines").objects().firstOrNull{it.s("id")==id}?:store.catalog.routines.firstOrNull{it.s("id")==id}
+ fun back(){
+  when{
+   stack.isNotEmpty()->stack.removeAt(stack.lastIndex)
+   profileEditorOpen->closeProfile()
+   library.isNotBlank()->library=""
+   tab!="home"->tab="home"
+  }
+ }
+ fun attempt(block:()->Unit){
+  try{block()}catch(e:Exception){message(e.message?:"No se pudo completar la acción")}
+ }
+ fun routine(id:String)=generated.values.flatten().firstOrNull{it.s("id")==id}
+  ?:store.state.a("customRoutines").objects().firstOrNull{it.s("id")==id}
+  ?:store.catalog.routines.firstOrNull{it.s("id")==id}
 }
+
+/** Perfil separado del host de navegación, visible tras el splash solo si falta. */
+internal fun mustShowStandaloneProfile(profileExists:Boolean,editorRequested:Boolean,readError:Boolean):Boolean =
+ !readError && (!profileExists || editorRequested)
+
 fun rankKey(level:Int)=listOf("E","D","C","B","A","S")[((level-1)/5).coerceIn(0,5)]
 @Composable fun Header(ui:NativeUi){
  val s=ui.store
@@ -56,13 +108,15 @@ fun rankKey(level:Int)=listOf("E","D","C","B","A","S")[((level-1)/5).coerceIn(0,
     })
  }
 }
-@Composable fun SceneColumn(ui:NativeUi,content:@Composable ColumnScope.()->Unit){
+@Composable fun SceneColumn(ui:NativeUi,showHeader:Boolean=true,content:@Composable ColumnScope.()->Unit){
  val scroll=rememberSaveable(ui.tab,ui.library,saver=ScrollState.Saver){ScrollState(0)}
  Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter){
   Column(Modifier.widthIn(max=960.dp).fillMaxWidth().fillMaxHeight()
     .verticalScroll(scroll).padding(horizontal=18.dp,vertical=20.dp),
     verticalArrangement=Arrangement.spacedBy(20.dp)){
-    Header(ui);content();Spacer(Modifier.height(25.dp))
+    if(showHeader)Header(ui)
+    content()
+    Spacer(Modifier.height(25.dp))
   }
  }
 }

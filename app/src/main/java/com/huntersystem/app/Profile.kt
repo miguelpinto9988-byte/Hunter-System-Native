@@ -67,8 +67,8 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
    s.updateAppearanceOnly(values["theme"]?:"eclipse",
     obj("collection" to values["collection33"],"scene" to values["scene33"]),ui.pendingAvatar)
    initialValues.clear();initialValues.putAll(values);ui.pendingAvatar=null
-   ui.open("saved",obj("title" to "Apariencia guardada",
-    "body" to "Se actualizó la apariencia sin cambiar objetivos, equipo ni entrenamiento."))
+   ui.profileSaved()
+   ui.message("Apariencia guardada. Regresaste al Panel.")
    return@attempt
   }
   val p=old?.copyJson()?:JSONObject();val health=old?.o("health")?.copyJson()?:JSONObject();val restrictions=old?.o("restrictions")?.copyJson()?:JSONObject()
@@ -87,9 +87,17 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
   if(selectedEquipment=="body")p.put("load",0.0)
   if(old==null||arr(injuries).toString()!=old.a("injuries").toString())p.put("limits",injuries.any{it.s("stage")!="past"})
   val appearance=obj("collection" to values["collection33"],"scene" to values["scene33"])
-  s.saveProfile(p,appearance,ui.pendingAvatar);initialValues.clear();initialValues.putAll(values);ui.pendingAvatar=null;ReminderScheduler.schedule(s.context,s.state.o("reminders"));CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true));ui.open("saved",obj("title" to "Configuración guardada","body" to "Tu acompañante aplicó la interpretación local de tus preferencias. Se revisó el plan de la semana actual. Los registros realizados se conservan."))
+  s.saveProfile(p,appearance,ui.pendingAvatar);initialValues.clear();initialValues.putAll(values);ui.pendingAvatar=null;ReminderScheduler.schedule(s.context,s.state.o("reminders"));CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true));ui.profileSaved();ui.message("Perfil guardado. Tu planificación ya está aplicada en el Panel.")
  }}
- SceneColumn(ui){Eyebrow("CAZADOR · CONFIGURACIÓN");Heading(if(old==null)"Crea tu perfil" else "Tu perfil de cazador");HText("Tu objetivo, nivel, equipo y calendario ajustan la selección de ejercicios.",color=LocalHunter.current.muted)
+ SceneColumn(ui,showHeader=false){
+  if(old!=null)HButton("← VOLVER AL PANEL"){ui.closeProfile()}
+  Eyebrow("HUNTER SYSTEM  ·  PERFIL DEL CAZADOR")
+  Heading(if(old==null)"Crea tu perfil" else "Tu perfil de cazador")
+  HText(
+   if(old==null)"Configura tu perfil para entrar por primera vez al sistema. Al guardar se generará tu semana y se abrirá el Panel."
+   else "Edita tu configuración en esta pantalla independiente. Al guardar regresarás al Panel con el plan actualizado.",
+   color=LocalHunter.current.muted
+  )
   for((sectionIndex,sec)in form.withIndex()){
    if(sectionIndex==1)HPanel{ThemeGallery(values["theme"]?:"eclipse"){values["theme"]=it}}
    HPanel{

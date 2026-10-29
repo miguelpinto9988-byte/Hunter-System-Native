@@ -26,7 +26,7 @@ class ComposeSmokeTest {
  fun capture(name:String){compose.runOnIdle{val view=compose.activity.window.decorView;val image=Bitmap.createBitmap(view.width.coerceAtLeast(393),view.height.coerceAtLeast(851),Bitmap.Config.ARGB_8888);view.draw(android.graphics.Canvas(image));val qa=File("../qa");qa.mkdirs();File(qa,"native-$name.png").outputStream().use{image.compress(Bitmap.CompressFormat.PNG,100,it)}}}
  @Test(timeout=120000) fun sixScreensAndExerciseDialogRender(){
   for(tab in listOf("home","plan","routines","book","stats","profile")){
-   compose.runOnIdle{ui.go(tab)};compose.waitForIdle();compose.onAllNodesWithText("HUNTER SYSTEM").onFirst().assertIsDisplayed();capture(tab)
+   compose.runOnIdle{ui.go(tab)};compose.waitForIdle();if(tab=="profile")compose.onNodeWithText("Tu perfil de cazador").assertExists() else compose.onAllNodesWithText("HUNTER SYSTEM").onFirst().assertIsDisplayed();capture(tab)
   }
   compose.runOnIdle{ui.open("exercise",obj("id" to "chair"))};compose.waitForIdle();compose.onAllNodesWithText("Sentadilla a silla").onFirst().assertExists();compose.runOnIdle{ui.back()};compose.waitForIdle()
  }
@@ -34,6 +34,16 @@ class ComposeSmokeTest {
   compose.runOnIdle{store.state.put("profile",JSONObject.NULL);store.save();ui.go("profile")};compose.waitForIdle()
   val qa=File("../qa");qa.mkdirs();File(qa,"initial-semantics.txt").writeText(compose.onRoot().printToString());capture("initial-profile")
   compose.onNodeWithText("Crea tu perfil").assertExists();compose.onAllNodesWithText("Nombre de cazador").onFirst().assertExists()
+  compose.onNodeWithContentDescription("Panel, seleccionada").assertDoesNotExist()
+ }
+ @Test(timeout=60000) fun avatarOpensIndependentEditorAndBackReturnsToPanel(){
+  compose.onNodeWithContentDescription("Abrir perfil").performClick()
+  compose.waitForIdle()
+  compose.onNodeWithText("Tu perfil de cazador").assertExists()
+  compose.onNodeWithContentDescription("Panel, seleccionada").assertDoesNotExist()
+  compose.onNodeWithText("← VOLVER AL PANEL").performClick()
+  compose.waitForIdle()
+  compose.onNodeWithText("Bienvenido, Cazador").assertExists()
  }
  @Test(timeout=90000) fun generatedRoutineAssignmentPreservesDisplayedItems(){
   // El diseño Monarca 42 cambió la selección visual; ejercitamos el generador real y la asignación.

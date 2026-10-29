@@ -36,13 +36,16 @@ check(not (assets / "v39-miniatures").exists(), "No se admiten miniaturas V39")
 check(all(f'MonarchDestination("{name}"' in navigation
           for name in ("home","plan","routines","book")),
       "Falta alguna pestaña del menú principal")
-check('setOf("objectives","stats","profile")' in navigation and 'Abrir perfil' in screens,
-      "Perfil debe permanecer accesible desde el avatar")
+check('setOf("objectives","stats")' in navigation and 'Abrir perfil' in screens
+      and 'fun openProfile()' in screens,
+      "Perfil independiente debe permanecer accesible desde el avatar")
 for name in ("MonarchBootScreen", "MonarchBottomNavigation",
              "MonarchScreenTransition", "MonarchRecoveryScreen"):
     check(f"fun {name}(" in navigation, f"Falta componente {name}")
-check("MonarchScreenTransition(" in main and 'if(hasProfile)ui.tab else "profile"' in main,
-      "No está conectado el host de transición seguro")
+check("MonarchScreenTransition(ui.tab" in main
+      and "profileStandalone -> ProfileScreen(ui)" in main
+      and "mustShowStandaloneProfile(" in main,
+      "Perfil debe ser una pantalla aparte y las pestañas conservar transición segura")
 check("rememberSaveableStateHolder()" in main, "Las rutas no conservan su estado guardable")
 check("MonarchNavigationRail(" not in navigation and "MonarchNavigationRail(" not in main,
       "La navegación lateral de tabletas debe estar retirada")

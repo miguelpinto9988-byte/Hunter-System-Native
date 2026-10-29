@@ -36,55 +36,60 @@ class MainActivity:ComponentActivity(){
  private fun toast(message:String){Toast.makeText(this,message,Toast.LENGTH_LONG).show()}
  override fun onCreate(savedInstanceState:Bundle?){
   super.onCreate(savedInstanceState)
-  setContent{var repository by remember{mutableStateOf<NativeStore?>(null)};var error by remember{mutableStateOf<String?>(null)};LaunchedEffect(Unit){try{val s=withContext(Dispatchers.IO){HunterRepository.get(this@MainActivity).also{if(it.readError==null)it.refreshWeek()}};val controller=NativeUi(s);controller.message={toast(it)};controller.export={createBackup.launch("Hunter-System-Backup-${today()}.json")};controller.import={openBackup.launch(arrayOf("application/json","text/plain","application/octet-stream"))};controller.chooseAvatar={pickAvatar.launch("image/*")};controller.requestNotifications={if(android.os.Build.VERSION.SDK_INT>=33)notifyPermission.launch(Manifest.permission.POST_NOTIFICATIONS)};controller.openUrl={url->runCatching{val uri=Uri.parse(url);require(uri.scheme=="https");startActivity(Intent(Intent.ACTION_VIEW,uri))}.onFailure{toast("No se pudo abrir el enlace")}};savedInstanceState?.getString("tab")?.takeIf{it in MonarchNavigation.routes}?.let{controller.tab=it};savedInstanceState?.getString("library")?.let{controller.library=it};savedInstanceState?.getString("top")?.let{controller.top=it};ui=controller;repository=s;if(s.readError==null)ReminderScheduler.schedule(this@MainActivity,s.state.o("reminders"));if(s.readError==null)CreatorFeedNative.schedule(this@MainActivity,s.state.b("creatorAuto",true))}catch(e:Exception){error=e.message?:"No se pudo abrir Hunter System"}}
+  setContent{var repository by remember{mutableStateOf<NativeStore?>(null)};var error by remember{mutableStateOf<String?>(null)};LaunchedEffect(Unit){try{val s=withContext(Dispatchers.IO){HunterRepository.get(this@MainActivity).also{if(it.readError==null)it.refreshWeek()}};val controller=NativeUi(s);controller.message={toast(it)};controller.export={createBackup.launch("Hunter-System-Backup-${today()}.json")};controller.import={openBackup.launch(arrayOf("application/json","text/plain","application/octet-stream"))};controller.chooseAvatar={pickAvatar.launch("image/*")};controller.requestNotifications={if(android.os.Build.VERSION.SDK_INT>=33)notifyPermission.launch(Manifest.permission.POST_NOTIFICATIONS)};controller.openUrl={url->runCatching{val uri=Uri.parse(url);require(uri.scheme=="https");startActivity(Intent(Intent.ACTION_VIEW,uri))}.onFailure{toast("No se pudo abrir el enlace")}};savedInstanceState?.getString("tab")?.let{if(it=="profile")controller.openProfile() else if(it in MonarchNavigation.routes&&s.profile!=null)controller.tab=it};savedInstanceState?.getString("library")?.let{if(s.profile!=null)controller.library=it};savedInstanceState?.getString("top")?.let{controller.top=it};if(savedInstanceState?.getBoolean("profileOpen")==true)controller.openProfile();ui=controller;repository=s;if(s.readError==null)ReminderScheduler.schedule(this@MainActivity,s.state.o("reminders"));if(s.readError==null)CreatorFeedNative.schedule(this@MainActivity,s.state.b("creatorAuto",true))}catch(e:Exception){error=e.message?:"No se pudo abrir Hunter System"}}
  val s=repository;MonarchMotionProvider { if(s!=null){HunterTheme(s){HunterRoot(ui!!)}}else MonarchBootScreen(error){recreate()} }
  }}
- override fun onSaveInstanceState(outState:Bundle){ui?.let{outState.putString("tab",it.tab);outState.putString("library",it.library);outState.putString("top",it.top)};super.onSaveInstanceState(outState)}
+ override fun onSaveInstanceState(outState:Bundle){ui?.let{outState.putString("tab",it.tab);outState.putString("library",it.library);outState.putString("top",it.top);outState.putBoolean("profileOpen",it.profileEditorOpen)};super.onSaveInstanceState(outState)}
 }
 @Composable
 fun HunterRoot(ui:NativeUi){
     val store=ui.store
     store.revision.intValue
     val hasProfile=store.profile!=null
-    BackHandler(ui.stack.isNotEmpty()||ui.library.isNotBlank()||(hasProfile&&ui.tab!="home")){
-        ui.back()
-    }
-    // Navegación inferior única, tanto en teléfonos como en tabletas.
+    // El perfil se dibuja fuera de las pestañas tanto al crear como al editar.
+    val profileStandalone=mustShowStandaloneProfile(
+        profileExists=hasProfile,
+        editorRequested=ui.profileEditorOpen,
+        readError=store.readError!=null
+    )
+    BackHandler(
+        ui.stack.isNotEmpty() ||
+        (hasProfile && (profileStandalone || ui.library.isNotBlank() || ui.tab!="home"))
+    ){ui.back()}
     Scaffold(
         containerColor=androidx.compose.ui.graphics.Color.Transparent,
         bottomBar={
-            if(hasProfile&&store.readError==null)MonarchBottomNavigation(ui)
+            if(hasProfile && !profileStandalone && store.readError==null)
+                MonarchBottomNavigation(ui)
         }
     ){insets->
         Box(Modifier.fillMaxSize().padding(insets)){
             HunterFlatBackground(Modifier.matchParentSize())
-            Box(Modifier.fillMaxSize()){
-                if(store.readError!=null){
-                    MonarchRecoveryScreen(ui,store.readError!!)
-                }else{
+            when {
+                store.readError!=null -> MonarchRecoveryScreen(ui,store.readError!!)
+                profileStandalone -> ProfileScreen(ui)
+                else -> {
                     val saveableScreens=rememberSaveableStateHolder()
-                    MonarchScreenTransition(
-                        if(hasProfile)ui.tab else "profile",
-                        Modifier.fillMaxSize()
-                    ){route->
-                        saveableScreens.SaveableStateProvider(route){
-                            when(route){
-                                "home"->HomeScreen(ui)
-                                "plan"->PlanScreen(ui)
-                                "objectives"->ObjectivesScreen(ui)
-                                "routines"->RoutinesScreen(ui)
-                                "book"->ExercisesScreen(ui)
-                                "stats"->ProgressScreen(ui)
-                                else->ProfileScreen(ui)
+                    Box(Modifier.fillMaxSize()){
+                        MonarchScreenTransition(ui.tab,Modifier.fillMaxSize()){route->
+                            saveableScreens.SaveableStateProvider(route){
+                                when(route){
+                                    "home"->HomeScreen(ui)
+                                    "plan"->PlanScreen(ui)
+                                    "objectives"->ObjectivesScreen(ui)
+                                    "routines"->RoutinesScreen(ui)
+                                    "book"->ExercisesScreen(ui)
+                                    "stats"->ProgressScreen(ui)
+                                    else->HomeScreen(ui)
+                                }
                             }
                         }
+                        FloatingCompanion(
+                            ui,
+                            Modifier.align(Alignment.BottomEnd)
+                                .padding(end=14.dp,bottom=12.dp)
+                        )
                     }
-                }
-                if(hasProfile&&ui.tab!="profile"&&store.readError==null){
-                    FloatingCompanion(
-                        ui,
-                        Modifier.align(Alignment.BottomEnd).padding(end=14.dp,bottom=12.dp)
-                    )
                 }
             }
         }

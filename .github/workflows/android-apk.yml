@@ -108,6 +108,9 @@ jobs:
       - name: Comprobar navegación inferior sin barra lateral
         run: python3 tools/check_bottom_navigation_only.py
 
+      - name: Comprobar inicio y guardado de perfil independiente
+        run: python3 tools/check_standalone_profile.py
+
       - name: Comprobar estado de recursos Hunter 2000
         run: python3 tools/import_hunter2000_assets.py --check
 
