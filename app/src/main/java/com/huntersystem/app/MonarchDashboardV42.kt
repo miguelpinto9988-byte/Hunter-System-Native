@@ -24,6 +24,18 @@ import java.time.LocalDate
 import kotlin.math.roundToInt
 
 /**
+ * Usa las ilustraciones del cazador que YA existen en la APK.
+ * E utiliza las versiones más detalladas ui34; el resto usa ui33.
+ * Nunca depende del compañero escogido en la creación del perfil.
+ */
+internal fun monarchHunterHeroArtwork(gender:String,rank:String):String {
+    val body=if(gender=="female")"female" else "male"
+    val safeRank=rank.lowercase().takeIf { it in setOf("e","d","c","b","a","s") } ?: "e"
+    val folder=if(safeRank=="e")"ui34" else "ui33"
+    return "$folder/hunter-$body-$safeRank.webp"
+}
+
+/**
  * Fase 04: dashboard Monarca. Solo lee NativeStore y enlaza acciones existentes.
  * No altera el perfil, las sesiones, las estadísticas, las restricciones ni el catálogo.
  */
@@ -36,8 +48,7 @@ fun MonarchDashboardHero(ui: NativeUi, stats: JSONObject) {
     val xp = stats.i("xp").coerceAtLeast(0)
     val xpInLevel = xp % 300
     val rank = rankKey(level)
-    val companion = companionKey(store.profile)
-    val companionTitle = companionName(store.profile)
+    val hunterArtwork = monarchHunterHeroArtwork(profile.s("gender"), rank)
     val name = profile.s("name", "Cazador").ifBlank { "Cazador" }.take(36)
     val shape = RoundedCornerShape(26.dp)
 
@@ -51,16 +62,9 @@ fun MonarchDashboardHero(ui: NativeUi, stats: JSONObject) {
             .border(1.dp, c.accent.copy(alpha = .48f), shape)) {
             AssetImage(chosenSceneArtwork(store.state.o("appearance33").s("scene","auto")),
                 Modifier.matchParentSize().graphicsLayer{alpha=.18f},ContentScale.Crop)
+            // Solo la cuadrícula discreta original; sin halos ni círculos
+            // detrás del cazador. La ilustración conserva su transparencia.
             Canvas(Modifier.matchParentSize()) {
-                val center = Offset(size.width * .79f, size.height * .41f)
-                val radius = (size.width * if (expansive) .24f else .33f)
-                    .coerceAtMost(size.height * .42f)
-                drawCircle(c.accent.copy(alpha = .08f), radius, center)
-                drawCircle(c.secondary.copy(alpha = .16f), radius * .76f, center)
-                drawCircle(c.accent.copy(alpha = .26f), radius * .92f, center,
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(1.5.dp.toPx()))
-                drawCircle(c.secondary.copy(alpha = .20f), radius * .58f, center,
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx()))
                 for (n in 0..5) {
                     val y = (n + 1) * size.height / 7f
                     drawLine(c.line.copy(alpha = .14f),
@@ -92,10 +96,10 @@ fun MonarchDashboardHero(ui: NativeUi, stats: JSONObject) {
                     Box(Modifier.width(artWidth).fillMaxHeight(),
                         contentAlignment = Alignment.BottomCenter) {
                         AssetImage(
-                            "ui33/companion-$companion.webp",
+                            hunterArtwork,
                             Modifier.fillMaxSize(),
                             ContentScale.Fit,
-                            description = "Acompañante $companionTitle configurado desde Perfil",
+                            description = "Cazador de tu perfil · rango $rank",
                             alignment = Alignment.BottomCenter
                         )
                     }
