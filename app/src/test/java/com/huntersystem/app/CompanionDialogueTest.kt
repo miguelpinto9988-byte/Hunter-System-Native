@@ -7,9 +7,11 @@ class CompanionDialogueTest {
  private val companions=listOf("knight","warrior","bear","insect","scientist")
  private fun profile(key:String)=obj("companionCharacter" to key,"difficulty" to "intermediate")
 
- @Test fun threeRenderingTiersHaveDifferentBudgetsAndStableFallback(){
+ @Test fun renderingTiersRespectHdMaximumAndStableFallback(){
   assertEquals(VisualTier.BALANCED,VisualTier.from("invalid"))
-  assertEquals(listOf(4096,1920,1280),listOf(VisualTier.MAX,VisualTier.BALANCED,VisualTier.SAVER).map{it.imageEdge})
+  assertEquals(listOf(1080,1080,720),listOf(VisualTier.MAX,VisualTier.BALANCED,VisualTier.SAVER).map{it.imageEdge})
+  assertTrue(VisualTier.entries.all{it.imageEdge<=1080})
+  assertTrue(VisualTier.SAVER.imageEdge<VisualTier.BALANCED.imageEdge)
   assertEquals(listOf(30,12,4),listOf(VisualTier.MAX,VisualTier.BALANCED,VisualTier.SAVER).map{it.stars})
   assertFalse(VisualTier.SAVER.animated)
   assertTrue(VisualTier.MAX.animated)
