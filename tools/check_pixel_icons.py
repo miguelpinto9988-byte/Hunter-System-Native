@@ -12,8 +12,8 @@ LEGACY=ASSETS/"hunter-png/icons"
 SOURCE=ROOT/"app/src/main/java/com/huntersystem/app"
 errors=[]
 svgs=sorted(ICONS.glob("*.svg"))
-if len(svgs)!=43:
-    errors.append(f"Se esperaban 43 SVG y hay {len(svgs)}")
+if len(svgs)!=49:
+    errors.append(f"Se esperaban 49 SVG y hay {len(svgs)}")
 if LEGACY.exists():
     errors.append("Persisten iconos PNG antiguos")
 for path in svgs:
@@ -29,8 +29,8 @@ for path in svgs:
         errors.append(f"XML invalido en {path.name}: {e}")
 library=(SOURCE/"HunterPngLibrary.kt").read_text(encoding="utf-8")
 mapping=dict(re.findall(r'"([a-z_]+)"\s+to\s+"([a-z_]+)"',library))
-if len(mapping)!=70:
-    errors.append(f"Se esperaban 70 claves y hay {len(mapping)}")
+if len(mapping)!=76:
+    errors.append(f"Se esperaban 76 claves y hay {len(mapping)}")
 for key,icon in mapping.items():
     if not (ICONS/(icon+".svg")).is_file():
         errors.append(f"Icono SVG faltante: {key} -> {icon}")
@@ -39,6 +39,14 @@ if 'hunter-icons/$graphic.svg' not in library:
 for path in SOURCE.glob("*.kt"):
     if 'hunter-png/icons/' in path.read_text(encoding="utf-8"):
         errors.append(f"Referencia a icono PNG en {path.name}")
+for group in ("upper","lower","core","cardio","mobility","rest"):
+    if not (ICONS/("week_"+group+".svg")).is_file():
+        errors.append("Falta icono de grupo semanal "+group)
+picker=(SOURCE/"V39WeekPicker.kt").read_text(encoding="utf-8")
+if "V39Training.of(week[day], focus[day])" not in picker or "HunterPngIcon(active.iconKey" not in picker:
+    errors.append("El selector semanal no usa iconos segun los datos reales")
+if "HunterPngIcon(item.iconKey" not in picker:
+    errors.append("La leyenda semanal no usa los mismos iconos")
 if errors:
     print("\n".join("ERROR: "+x for x in errors))
     sys.exit(1)

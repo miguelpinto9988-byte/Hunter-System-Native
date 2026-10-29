@@ -88,7 +88,13 @@ private val iconToSvg = mapOf(
     "library" to "book",
     "monarch" to "crown",
     "programs" to "checklist",
-    "mobility" to "leaf"
+    "mobility" to "leaf",
+    "week_upper" to "week_upper",
+    "week_core" to "week_core",
+    "week_lower" to "week_lower",
+    "week_mobility" to "week_mobility",
+    "week_rest" to "week_rest",
+    "week_cardio" to "week_cardio"
 )
 
 /** Cache de bitmaps de 128px compartido entre pantallas: sin redibujar SVG en cada recomposición. */

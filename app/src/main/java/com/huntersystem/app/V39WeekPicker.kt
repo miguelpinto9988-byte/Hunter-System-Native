@@ -20,15 +20,15 @@ import androidx.compose.ui.unit.sp
 
 /**
  * Selector visual V39. Conserva el esquema weekPlan/weekFocus del generador nativo:
- * train+upper/lower/core, cardio, mobility, rest.
+ * train+upper/lower/core, cardio, mobility, rest. Iconos SVG Pixel 2D según el foco real de cada día.
  */
-enum class V39Training(val title: String, val symbol: String, val accent: Color) {
-    UPPER("Tren superior", "▲", Color(0xFF237CFF)),
-    LOWER("Tren inferior", "▼", Color(0xFFF44295)),
-    CARDIO("Cardio", "♥", Color(0xFF00B79A)),
-    MOBILITY("Movilidad", "✦", Color(0xFFF1B837)),
-    CORE("Tren central", "◎", Color(0xFF8B51F5)),
-    REST("Descanso", "☾", Color(0xFF7184A6));
+enum class V39Training(val title: String, val iconKey: String, val accent: Color) {
+    UPPER("Tren superior", "week_upper", Color(0xFF237CFF)),
+    LOWER("Tren inferior", "week_lower", Color(0xFFF44295)),
+    CARDIO("Cardio", "week_cardio", Color(0xFF00B79A)),
+    MOBILITY("Movilidad", "week_mobility", Color(0xFFF1B837)),
+    CORE("Tren central", "week_core", Color(0xFF8B51F5)),
+    REST("Descanso", "week_rest", Color(0xFF7184A6));
 
     fun next(): V39Training = entries[(ordinal + 1) % entries.size]
 
@@ -87,7 +87,7 @@ fun V39WeekPicker(
                 ) {
                     Text(label, fontSize = 11.sp, fontWeight = FontWeight.SemiBold,
                         color = Color.White, maxLines = 1)
-                    Text(active.symbol, fontSize = 20.sp, color = active.accent)
+                    HunterPngIcon(active.iconKey, Modifier.size(29.dp), null)
                 }
             }
         }
@@ -97,8 +97,7 @@ fun V39WeekPicker(
                 for (item in pair) {
                     Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Box(Modifier.size(14.dp)
-                            .clip(RoundedCornerShape(4.dp)).background(item.accent))
+                        HunterPngIcon(item.iconKey, Modifier.size(29.dp), null)
                         HText(item.title, size = 13, color = LocalHunter.current.text)
                     }
                 }

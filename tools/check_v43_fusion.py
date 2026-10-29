@@ -18,7 +18,7 @@ checks={
     and 'hunter-png/wallpapers/' in read(src+"HunterRealmWallpaper.kt")
     and 'realm-art/' not in read(src+"HunterRealmWallpaper.kt"),
  "biblioteca iconos SVG 2D":(R/(src+"HunterPngLibrary.kt")).is_file()
-    and len(list((R/"app/src/main/assets/hunter-icons").glob("*.svg")))==43
+    and len(list((R/"app/src/main/assets/hunter-icons").glob("*.svg")))==49
     and not (R/"app/src/main/assets/hunter-png/icons").exists()
     and 'hunter-icons/$graphic.svg' in read(src+"HunterPngLibrary.kt")
     and 'HunterPngIcon(' in read(src+"MonarchRoutinesV42.kt")
