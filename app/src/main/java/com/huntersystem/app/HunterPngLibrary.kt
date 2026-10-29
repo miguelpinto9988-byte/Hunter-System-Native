@@ -21,7 +21,7 @@ import com.caverock.androidsvg.SVG
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** Iconos Sólido minimalista en SVG de alta definición: transparencia y colores por categoría. */
+/** Iconos sólidos minimalistas en SVG HD, transparentes y con paleta de entrenamiento. */
 private val iconToSvg = mapOf(
     "panel" to "home",
     "missions" to "quest",
@@ -93,7 +93,15 @@ private val iconToSvg = mapOf(
     "monarch" to "crown",
     "programs" to "checklist",
     "mobility" to "leaf",
-    "week_u/**
+    "week_upper" to "week_upper",
+    "week_core" to "week_core",
+    "week_lower" to "week_lower",
+    "week_mobility" to "week_mobility",
+    "week_rest" to "week_rest",
+    "week_cardio" to "week_cardio"
+)
+
+/**
  * SVG escalable: rasterizar según los píxeles físicos reales del componente,
  * al doble de la medida de salida para antialiasing. Evita bitmaps gigantes
  * para iconos pequeños y ofrece hasta 1024 px para imágenes grandes.
@@ -155,13 +163,6 @@ fun HunterPngIcon(key:String,modifier:Modifier=Modifier,contentDescription:Strin
     )
 }
 
-  }
-    }
-    if(bitmap!=null) Image(
-        bitmap=bitmap!!,contentDescription=contentDescription,modifier=modifier,
-        contentScale=ContentScale.Fit,filterQuality=FilterQuality.None
-    )
-}
 
 /** Clave adaptativa basada en el contenido REAL de la rutina y sus categorías. */
 fun hunterRoutinePngKey(title:String,category:String=""):String{
