@@ -26,9 +26,12 @@ checks={
     and 'HunterPngIcon(' in read(src+"MonarchRoutinesV42.kt")
     and 'HunterPngIcon(' in read(src+"MonarchProgressV42.kt")
     and 'HunterPngIcon(' in read(src+"Screens.kt"),
- "menu lateral SVG 2D":(R/(src+"HunterSideMenu.kt")).is_file()
-    and 'ModalNavigationDrawer(' in read(src+"MainActivity.kt")
-    and 'HunterSideMenu(ui)' in read(src+"MainActivity.kt"),
+ "navegacion inferior unica":not (R/(src+"HunterSideMenu.kt")).exists()
+    and "ModalNavigationDrawer(" not in read(src+"MainActivity.kt")
+    and "MonarchNavigationRail(" not in read(src+"MainActivity.kt")
+    and "MonarchNavigationRail(" not in read(src+"MonarchNavigationV42.kt")
+    and "openMenu" not in read(src+"Screens.kt")
+    and "MonarchBottomNavigation(ui)" in read(src+"MainActivity.kt"),
  "recompensa real":'if(!log.b("complete")) return' in read(src+"HunterMissionCompletedCard.kt")
     and 'HunterMissionCompletedCard(ui,selected)' in read(src+"MonarchMissionsV42.kt"),
  "portadas originales descargables":(R/"tools/download_monarch_boss_originals.py").is_file()

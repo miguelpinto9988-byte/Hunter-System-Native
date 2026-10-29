@@ -35,7 +35,6 @@ object MonarchNavigation {
     val routes=tabs.map{it.id}.toSet()+setOf("objectives","stats","profile")
     fun activeTab(route:String):String=if(route in setOf("objectives","stats","profile"))"home" else route
     fun index(route:String):Int=tabs.indexOfFirst{it.id==activeTab(route)}.coerceAtLeast(0)
-    const val tabletWidthDp=840
 }
 
 /**
@@ -81,37 +80,30 @@ private fun monarchPngDestination(id:String):String=when(id){
  "stats"->"progress";"objectives"->"goals";else->"profile"
 }
 @Composable
-private fun MonarchNavItem(destination:MonarchDestination,selected:Boolean,vertical:Boolean,onSelect:()->Unit){
-    val c=LocalHunter.current
-    val tint by animateColorAsState(
-        if(selected)c.accent else c.muted,
-        animationSpec=if(LocalMonarchMotion.current.reduced)snap() else tween(180),
-        label="nav-tint")
-    val shape=RoundedCornerShape(18.dp)
-    val item=Modifier
-        .clip(shape)
-        .background(if(selected)c.selected else Color.Transparent)
-        .border(1.dp,if(selected)c.accent.copy(alpha=.56f) else Color.Transparent,shape)
-        .semantics(mergeDescendants=true){
-            contentDescription=destination.title+(if(selected)", seleccionada" else "")
-            this.selected=selected
-        }
-        .clickable(role=Role.Tab,onClick=onSelect)
-    if(vertical){
-        Column(item.width(76.dp).defaultMinSize(minHeight=76.dp).padding(vertical=10.dp),
-            horizontalAlignment=Alignment.CenterHorizontally,
-            verticalArrangement=Arrangement.spacedBy(6.dp)){
-            HunterPngIcon(monarchPngDestination(destination.id),Modifier.size(45.dp),destination.title)
-            HText(destination.title,size=12,bold=selected,color=tint,maxLines=1)
-        }
-    }else{
-        Column(item.fillMaxWidth().fillMaxHeight().padding(vertical=5.dp),
-            horizontalAlignment=Alignment.CenterHorizontally,
-            verticalArrangement=Arrangement.spacedBy(4.dp)){
-            HunterPngIcon(monarchPngDestination(destination.id),Modifier.size(44.dp),destination.title)
-            HText(destination.title,size=11,bold=selected,color=tint,maxLines=1)
-        }
-    }
+private fun MonarchNavItem(
+ destination:MonarchDestination,selected:Boolean,onSelect:()->Unit
+){
+ val c=LocalHunter.current
+ val tint by animateColorAsState(
+     if(selected)c.accent else c.muted,
+     animationSpec=if(LocalMonarchMotion.current.reduced)snap() else tween(180),
+     label="nav-tint")
+ val shape=RoundedCornerShape(18.dp)
+ val item=Modifier
+     .clip(shape)
+     .background(if(selected)c.selected else Color.Transparent)
+     .border(1.dp,if(selected)c.accent.copy(alpha=.56f) else Color.Transparent,shape)
+     .semantics(mergeDescendants=true){
+         contentDescription=destination.title+(if(selected)", seleccionada" else "")
+         this.selected=selected
+     }
+     .clickable(role=Role.Tab,onClick=onSelect)
+ Column(item.fillMaxWidth().fillMaxHeight().padding(vertical=5.dp),
+     horizontalAlignment=Alignment.CenterHorizontally,
+     verticalArrangement=Arrangement.spacedBy(4.dp)){
+     HunterPngIcon(monarchPngDestination(destination.id),Modifier.size(44.dp),destination.title)
+     HText(destination.title,size=11,bold=selected,color=tint,maxLines=1)
+ }
 }
 
 /** Barra inferior compacta. Respeta gesto de navegación Android y borde de ventana. */
@@ -128,29 +120,8 @@ fun MonarchBottomNavigation(ui:NativeUi){
             Box(Modifier.weight(1f).fillMaxHeight()){
                 MonarchNavItem(destination,
                     selected=MonarchNavigation.activeTab(ui.tab)==destination.id,
-                    vertical=false,
                     onSelect={if(ui.tab!=destination.id)ui.go(destination.id)})
             }
-        }
-    }
-}
-
-/** Rail nativo para pantallas >= 840dp; evita estirar los cinco botones en tablets. */
-@Composable
-fun MonarchNavigationRail(ui:NativeUi){
-    val c=LocalHunter.current
-    Column(Modifier.width(96.dp).fillMaxHeight()
-        .background(Brush.verticalGradient(listOf(c.surface,c.panel)))
-        .border(1.dp,c.line).padding(horizontal=8.dp,vertical=16.dp),
-        horizontalAlignment=Alignment.CenterHorizontally,
-        verticalArrangement=Arrangement.spacedBy(14.dp)){
-        HunterPngIcon("missions",Modifier.size(53.dp),"Misiones")
-        Spacer(Modifier.height(12.dp))
-        for(destination in MonarchNavigation.tabs){
-            MonarchNavItem(destination,
-                selected=MonarchNavigation.activeTab(ui.tab)==destination.id,
-                vertical=true,
-                onSelect={if(ui.tab!=destination.id)ui.go(destination.id)})
         }
     }
 }

@@ -30,7 +30,7 @@ class NativeUi(val store:NativeStore){
  var top by mutableStateOf("home");var library by mutableStateOf("")
  val stack=mutableStateListOf<Overlay>();val generated=mutableStateMapOf<String,List<JSONObject>>();var serial=0
  var pendingAvatar by mutableStateOf<String?>(null)
- var openMenu:()->Unit={};var message:(String)->Unit={};var export:()->Unit={};var import:()->Unit={};var chooseAvatar:()->Unit={};var openUrl:(String)->Unit={};var requestNotifications:()->Unit={}
+ var message:(String)->Unit={};var export:()->Unit={};var import:()->Unit={};var chooseAvatar:()->Unit={};var openUrl:(String)->Unit={};var requestNotifications:()->Unit={}
  fun go(t:String){tab=t;library="";stack.clear()}
  fun open(type:String,data:JSONObject=JSONObject()){stack+=Overlay(type,data)}
  fun back(){if(stack.isNotEmpty())stack.removeAt(stack.lastIndex) else if(library.isNotBlank())library="" else if(tab!="home")tab="home"}
@@ -38,7 +38,24 @@ class NativeUi(val store:NativeStore){
  fun routine(id:String)=generated.values.flatten().firstOrNull{it.s("id")==id}?:store.state.a("customRoutines").objects().firstOrNull{it.s("id")==id}?:store.catalog.routines.firstOrNull{it.s("id")==id}
 }
 fun rankKey(level:Int)=listOf("E","D","C","B","A","S")[((level-1)/5).coerceIn(0,5)]
-@Composable fun Header(ui:NativeUi){val s=ui.store;val rank=rankKey(s.stats().i("level",1));Row(Modifier.fillMaxWidth().padding(bottom=12.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)){Box(Modifier.size(51.dp).clip(RoundedCornerShape(11.dp)).clickable{ui.openMenu()},contentAlignment=Alignment.Center){HunterPngIcon("menu",Modifier.size(47.dp),"Abrir menú lateral")};Column(Modifier.weight(1f)){Heading("HUNTER SYSTEM",size=28);Eyebrow("SISTEMA DE SOMBRAS")};HText(rank,size=22,bold=true,color=LocalHunter.current.accent,modifier=Modifier.clickable{ui.open("evolution")});Avatar(s.state.s("avatar"),s.profile?.s("name")?:"C",Modifier.size(36.dp).clickable{ui.go("profile")}.semantics{contentDescription="Abrir perfil"})}}
+@Composable fun Header(ui:NativeUi){
+ val s=ui.store
+ val rank=rankKey(s.stats().i("level",1))
+ Row(Modifier.fillMaxWidth().padding(bottom=12.dp),
+     verticalAlignment=Alignment.CenterVertically,
+     horizontalArrangement=Arrangement.spacedBy(8.dp)){
+  Column(Modifier.weight(1f)){
+   Heading("HUNTER SYSTEM",size=28)
+   Eyebrow("SISTEMA DE SOMBRAS")
+  }
+  HText(rank,size=22,bold=true,color=LocalHunter.current.accent,
+    modifier=Modifier.clickable{ui.open("evolution")})
+  Avatar(s.state.s("avatar"),s.profile?.s("name")?:"C",
+    Modifier.size(36.dp).clickable{ui.go("profile")}.semantics{
+      contentDescription="Abrir perfil"
+    })
+ }
+}
 @Composable fun SceneColumn(ui:NativeUi,content:@Composable ColumnScope.()->Unit){
  val scroll=rememberSaveable(ui.tab,ui.library,saver=ScrollState.Saver){ScrollState(0)}
  Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter){

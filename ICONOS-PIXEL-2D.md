@@ -10,7 +10,7 @@ Integración de iconos retro pixel art, planos y multicolor en la biblioteca nat
 - No se modifica ninguna rutina, misión, contenido técnico, estado de usuario o formato de guardado.
 
 ## Comprobaciones sugeridas al compilar
-Verificar iconos en navegación inferior, menú lateral, misiones, rutinas, progreso, controles de reproducción, diálogos y lanzador Android. Probar también un dispositivo con resolución pequeña y uno con DPI alto.
+Verificar iconos en navegación inferior, misiones, rutinas, progreso, controles de reproducción, diálogos y lanzador Android. Probar también un dispositivo con resolución pequeña y uno con DPI alto.
 
 Los íconos son SVG editables; los PNG mostrados previamente eran prototipos visuales. Esta biblioteca es una adaptación vectorial consistente del estilo aprobado, no una conversión píxel por píxel de aquellas imágenes.
 
@@ -35,3 +35,10 @@ La sección **Personaliza tu semana → Elige tu semana** usa directamente `V39T
 - `tools/check_plain_backgrounds.py` borra posibles PNG de fondo antiguos en compilaciones locales y exige que la interfaz no vuelva a utilizarlos.
 - El empaquetado de la APK comprueba que ya no se incluyen los ocho fondos PNG anteriores.
 - **Sin cambios:** portadas y tarjetas de jefes Monarca, compañero, biblioteca de ejercicios, íconos SVG y arte de arranque.
+
+## Navegación simplificada (sin barra lateral)
+
+- Se retiraron completamente `HunterSideMenu.kt`, el menú hamburguesa del encabezado, el drawer y el rail lateral de tabletas.
+- **Panel, Misiones, Rutinas y Ejercicios** quedan accesibles exclusivamente desde la barra inferior, visible en teléfonos y tabletas.
+- El avatar del encabezado sigue abriendo Perfil. Objetivos y estadísticas conservan los accesos dentro del panel; Academia y Recordatorios siguen accesibles desde el panel y el perfil.
+- Los 49 SVG antiguos permanecen temporalmente sin cambios mientras se valida una dirección visual alternativa, para no sustituir otra vez la identidad sin aprobación del diseño.
