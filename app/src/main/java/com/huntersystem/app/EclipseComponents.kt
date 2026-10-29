@@ -161,14 +161,15 @@ fun chosenSceneArtwork(scene:String):String{
 @Composable fun ExerciseStage(content:@Composable BoxScope.()->Unit){
  val c=LocalHunter.current
  Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(26.dp)).background(Brush.verticalGradient(listOf(c.input,c.panel))).border(1.dp,c.accent.copy(alpha=.25f),RoundedCornerShape(26.dp))){
-  ConstellationField(Modifier.matchParentSize());content()
+  content()
  }
 }
 @Composable fun AccessWelcome(){
  HPanel(padding=22){
   Box(Modifier.fillMaxWidth().height((220 * androidx.compose.ui.platform.LocalDensity.current.fontScale.coerceAtLeast(1f)).dp).clip(RoundedCornerShape(18.dp))){
-   AssetImage("eclipse/portal.webp",Modifier.fillMaxSize(),ContentScale.Crop)
-   Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(LocalHunter.current.bg,Color.Transparent))))
+   // Bienvenida sin ilustración de portal como fondo.
+   Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(
+    listOf(LocalHunter.current.panel,LocalHunter.current.bg))))
    Column(Modifier.align(Alignment.CenterStart).padding(16.dp),verticalArrangement=Arrangement.spacedBy(10.dp)){HunterIcon(Sigil.Crown,Modifier.size(32.dp));Eyebrow("TU HISTORIA EMPIEZA AQUÍ");Heading("Despierta\ntu potencial.",size=32)}
   }
   HText("Crea tu perfil para preparar tus misiones, elegir tu acompañante y dar forma a tu entrenamiento.",size=16,color=LocalHunter.current.muted)

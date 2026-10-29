@@ -10,7 +10,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 
@@ -23,10 +22,9 @@ fun HunterSideMenu(ui:NativeUi,onClose:()->Unit){
  val c=LocalHunter.current
  Column(Modifier.width(304.dp).fillMaxHeight().background(Color(0xFF050A1B))){
   Box(Modifier.fillMaxWidth().height(218.dp)){
-   AssetImage("hunter-png/wallpapers/profile.png",Modifier.fillMaxSize(),
-      scale=ContentScale.Crop)
+   // Encabezado limpio, sin el antiguo wallpaper ilustrado.
    Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
-      listOf(Color(0x62040819),Color(0xE3071025)))))
+      listOf(Color(0xFF10253B),Color(0xFF080F20)))))
    Column(Modifier.align(Alignment.BottomStart).padding(horizontal=20.dp,vertical=17.dp),
      verticalArrangement=Arrangement.spacedBy(7.dp)){
     Row(verticalAlignment=Alignment.CenterVertically,
@@ -65,7 +63,7 @@ fun HunterSideMenu(ui:NativeUi,onClose:()->Unit){
    HunterSideMenuItem("Recordatorios","reminders",false){
       ui.open("reminders");onClose()
    }
-   HText("Fondos PNG · Íconos PNG con transparencia",
+   HText("Interfaz limpia · Íconos PNG",
       Modifier.padding(start=10.dp,top=15.dp,bottom=10.dp),
       size=12,color=c.muted)
   }
