@@ -47,29 +47,15 @@ fun MonarchDashboardHero(ui: NativeUi, stats: JSONObject) {
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val expansive = maxWidth >= 680.dp
         val compact = maxWidth < 355.dp
-        val artWidth = if (expansive) 310.dp else if (compact) 138.dp else 174.dp
-        val artHeight = if (expansive) 282.dp else 212.dp
+        val artWidth = if (expansive) 370.dp else if (compact) 148.dp else 190.dp
+        val artHeight = if (expansive) 340.dp else 290.dp
         Box(Modifier.fillMaxWidth().clip(shape)
             .background(Brush.linearGradient(listOf(c.surface, c.panel, c.bg)))
             .border(1.dp, c.accent.copy(alpha = .48f), shape)) {
-            AssetImage(chosenSceneArtwork(store.state.o("appearance33").s("scene","auto")),
-                Modifier.matchParentSize().graphicsLayer{alpha=.18f},ContentScale.Crop)
-            Canvas(Modifier.matchParentSize()) {
-                val center = Offset(size.width * .79f, size.height * .41f)
-                val radius = (size.width * if (expansive) .24f else .33f)
-                    .coerceAtMost(size.height * .42f)
-                drawCircle(c.accent.copy(alpha = .08f), radius, center)
-                drawCircle(c.secondary.copy(alpha = .16f), radius * .76f, center)
-                drawCircle(c.accent.copy(alpha = .26f), radius * .92f, center,
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(1.5.dp.toPx()))
-                drawCircle(c.secondary.copy(alpha = .20f), radius * .58f, center,
-                    style = androidx.compose.ui.graphics.drawscope.Stroke(1.dp.toPx()))
-                for (n in 0..5) {
-                    val y = (n + 1) * size.height / 7f
-                    drawLine(c.line.copy(alpha = .14f),
-                        Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
-                }
-            }
+            // Sin ilustraciones o círculos de fondo: el personaje 4K ocupa la zona derecha.
+            Box(Modifier.matchParentSize().background(
+                Brush.horizontalGradient(listOf(Color.Transparent,c.secondary.copy(alpha=.045f)))
+            ))
             Column(Modifier.fillMaxWidth().padding(18.dp),
                 verticalArrangement = Arrangement.spacedBy(13.dp)) {
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,

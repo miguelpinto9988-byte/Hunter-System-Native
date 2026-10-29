@@ -37,11 +37,18 @@ internal fun resolvedHunterArtwork(collection: String, gender: String, rank: Str
     val key = hunterPortraitKey(collection, gender)
     val grade = rank.lowercase().takeIf { it in setOf("e", "d", "c", "b", "a", "s") } ?: "e"
     return remember(context, key, grade) {
-        val candidates = listOf(
-            "hunter-4k/$key-$grade.webp", // evolución 4K específica, si está instalada
-            "hunter-4k/$key.webp",        // retrato maestro 4K
-            "ui34/$key-$grade.webp",      // legado de alta resolución
-            "ui33/$key-$grade.webp",      // legado de todos los rangos
+        // Para el rango E se muestra el nuevo retrato 4K. Los rangos D-S
+        // mantienen sus evoluciones propias hasta incorporar imágenes 4K de cada rango.
+        val candidates = if (grade == "e") listOf(
+            "hunter-4k/$key-e.webp",
+            "hunter-4k/$key.webp",
+            "ui34/$key-e.webp",
+            "ui33/$key-e.webp"
+        ) else listOf(
+            "hunter-4k/$key-$grade.webp",
+            "ui34/$key-$grade.webp",
+            "ui33/$key-$grade.webp",
+            "hunter-4k/$key.webp",
             "ui33/$key-e.webp"
         )
         candidates.firstOrNull { path ->

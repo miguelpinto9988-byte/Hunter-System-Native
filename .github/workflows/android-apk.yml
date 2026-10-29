@@ -142,6 +142,12 @@ jobs:
             for path in svgs:
               raw=z.read(path)
               assert hashlib.sha256(raw).hexdigest()==sha[path.removeprefix('assets/')],path
+            for key in ('reader','regressor','hunter-male','hunter-female'):
+              art=f'assets/hunter-4k/{key}.webp'
+              assert art in names, f'Falta cazador 4K en APK: {art}'
+              raw=z.read(art)
+              assert len(raw)>100000 and raw[:4]==b'RIFF' and raw[8:12]==b'WEBP', f'Imagen de cazador 4K invalida: {art}'
+              print('Cazador 4K en APK:', key, len(raw), 'bytes')
             artwork='assets/monarch_splash_background.webp'
             assert artwork in names,'Falta fondo animado de carga'
             data=z.read(artwork)

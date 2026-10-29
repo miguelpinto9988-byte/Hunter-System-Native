@@ -136,31 +136,20 @@ fun chosenSceneArtwork(scene:String):String{
   }
  }
 }
-@Composable fun BackgroundPicker(selected:String,collection:String,gender:String,onSelect:(String)->Unit){
+/** Los fondos de escena fueron retirados de TODAS las pantallas, incluido Perfil. */
+@Composable fun BackgroundPicker(selected:String,collection:String,gender:String,onSelect:(String)->Unit) {
  val c=LocalHunter.current
- SectionTitle("Elige tu fondo","Desliza para ver los escenarios",Sigil.Layers)
- val choices=listOf("auto" to "Alternar cada día","sanctuary" to "Santuarios y portales","journey" to "Viajes y constelaciones")
- Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp)){
-  for((key,label)in choices){val active=selected==key
-   Column(Modifier.width(168.dp).clip(RoundedCornerShape(18.dp))
-    .background(if(active)c.selected else c.input)
-    .border(if(active)2.dp else 1.dp,if(active)c.accent else c.line,RoundedCornerShape(18.dp))
-    .clickable(role=Role.RadioButton){onSelect(key)}
-    .semantics{this.selected=active;contentDescription="Fondo $label"}
-    .padding(8.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(7.dp)){
-    AssetImage(chosenSceneArtwork(key),Modifier.fillMaxWidth().height(105.dp).clip(RoundedCornerShape(12.dp)),ContentScale.Crop,description="Escenario $label")
-    HText(label,size=13,bold=active,maxLines=1)
-    HunterIcon(if(active)Sigil.Check else Sigil.Plus,Modifier.size(15.dp),if(active)c.accent else c.muted)
-   }
-  }
- }
- HText("Vista previa de tu cazador y fondo",size=15,color=c.muted)
- Box(Modifier.fillMaxWidth().height(218.dp).clip(RoundedCornerShape(18.dp))
-  .border(1.dp,c.line,RoundedCornerShape(18.dp))
-  .semantics{contentDescription="Vista previa del cazador y fondo"},contentAlignment=Alignment.BottomCenter){
-  AssetImage(chosenSceneArtwork(selected),Modifier.fillMaxSize(),ContentScale.Crop)
-  Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent,c.bg.copy(alpha=.25f)))))
-  AssetImage(resolvedHunterArtwork(collection,gender),Modifier.fillMaxWidth(.62f).fillMaxHeight(.96f),description="Cazador seleccionado")
+ SectionTitle("Fondo limpio del sistema","Sin ilustraciones detrás de las pantallas",Sigil.Layers)
+ HText("El fondo oscuro uniforme se aplica al panel, misiones, rutinas, ejercicios, progreso y perfil.",
+     size=14,color=c.muted)
+ Box(Modifier.fillMaxWidth().height(230.dp).clip(RoundedCornerShape(18.dp))
+     .background(Brush.verticalGradient(listOf(c.panel,c.bg)))
+     .border(1.dp,c.line,RoundedCornerShape(18.dp))
+     .semantics{contentDescription="Vista previa del cazador con fondo limpio"},
+     contentAlignment=Alignment.BottomEnd) {
+     AssetImage(resolvedHunterArtwork(collection,gender),
+         Modifier.fillMaxWidth(.62f).fillMaxHeight(.95f),
+         ContentScale.Fit,description="Cazador seleccionado",alignment=Alignment.BottomCenter)
  }
 }
 @Composable fun RelicViewer(){

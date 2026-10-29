@@ -32,18 +32,13 @@ internal fun hunterRealmArtRoute(route:String):String {
     }
 }
 
+/**
+ * Fondo global uniforme: sin wallpapers ilustrados en ninguna ruta de la aplicación.
+ * Los personajes solo aparecen en los componentes de selección y evolución.
+ */
 @Composable
-fun HunterRealmWallpaper(route:String,modifier:Modifier=Modifier){
-    val scene=hunterRealmArtRoute(route)
-    Box(modifier.background(Color(0xFF050916))){
-        AssetImage("hunter-png/wallpapers/$scene.png",Modifier.fillMaxSize(),scale=androidx.compose.ui.layout.ContentScale.Crop,description=null)
-        // Protege contraste en todas las resoluciones sin editar la ilustración.
-        Box(Modifier.fillMaxSize().background(Brush.verticalGradient(
-                0f to Color(0x52040919),
-                .24f to Color(0x8305091A),
-                .49f to Color(0xBB050919),
-                .72f to Color(0xE2050917),
-                1f to Color(0xFB050916)
-        )))
-    }
+fun HunterRealmWallpaper(route:String, modifier:Modifier=Modifier) {
+    Box(modifier.background(Brush.verticalGradient(
+        listOf(Color(0xFF050916),Color(0xFF0A1426),Color(0xFF050916))
+    )))
 }
