@@ -75,7 +75,8 @@ check('companionKey(ui.store.profile)' in dashboard and
       'fun MonarchDashboardCompanion(' in dashboard,
       "El panel de acompañante debe seguir usando el personaje seleccionado en Perfil")
 check('monarchHunterHeroArtwork(profile.s("gender"), rank)' in dashboard and
-      'ui34/hunter-' in dashboard,
+      'val folder=if(safeRank=="e")"ui34" else "ui33"' in dashboard and
+      'return "$folder/hunter-$body-$safeRank.webp"' in dashboard,
       "La tarjeta Evolución Monarca debe mostrar al cazador del perfil")
 check("Modifier.clickable(role = Role.Button)" in dashboard,
       "Faltan indicadores de accesibilidad en las acciones")
