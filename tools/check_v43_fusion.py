@@ -84,6 +84,16 @@ checks={
      and 'if(type=="evolution")return' in read(src+"Screens.kt")
      and 'HProgress(xpInLevel/300f)' in read(src+"MonarchDashboardV42.kt")
      and 'HunterEvolutionImage(' in read(src+"MonarchDashboardV42.kt"),
+ "contornos suaves V43.12":(R/"tools/check_monarch_outlines_v43.py").is_file()
+    and 'fun Modifier.monarchOutline(' in read(src+"MonarchOutlineV43.kt")
+    and 'fun Modifier.monarchPressable(' in read(src+"MonarchOutlineV43.kt")
+    and 'if(emphasis)1.4.dp else .8.dp' in read(src+"MonarchOutlineV43.kt")
+    and '.monarchOutline(shape,pressed=pressed)' in read(src+"Design.kt")
+    and '.monarchOutline(shape,focused=focused)' in read(src+"Design.kt")
+    and '.monarchOutline(shape,active=selected,pressed=pressed)' in read(src+"Design.kt")
+    and '.monarchPressable(' in read(src+"EclipseComponents.kt")
+    and '.monarchOutline(' in read(src+"Overlays.kt")
+    and '.monarchPressable(' in read(src+"MonarchMissionsV42.kt"),
  "pruebas de catálogo":(R/"app/src/test/java/com/huntersystem/app/Hunter2000CatalogTest.kt").is_file(),
 }
 errors=[name for name,ok in checks.items() if not ok]
