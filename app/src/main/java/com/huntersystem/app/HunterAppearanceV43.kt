@@ -141,7 +141,11 @@ internal fun HunterAppearancePreview(mode:String,outline:String){
      HText("2 completados",size=12,color=c.muted)
     }
    }
-   HChip("Ventana seleccionada",selected=true){}
+   val selectedShape=RoundedCornerShape(13.dp)
+   Box(Modifier.clip(selectedShape).background(c.selected)
+    .monarchOutline(selectedShape,active=true).padding(10.dp)){
+    HText("Ventana seleccionada",size=13,bold=true,color=c.outlineAccent)
+   }
   }
  }
 }

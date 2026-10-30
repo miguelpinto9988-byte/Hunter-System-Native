@@ -2,8 +2,13 @@ package com.huntersystem.app
 
 import org.junit.Assert.*
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /** La apariencia nunca depende del nivel, del registro ni del catálogo. */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk=[35])
 class HunterAppearanceV43Test {
  @Test fun onlyTwoModesAndExactlyFiveBorderColors() {
   assertEquals("light",HunterAppearanceV43.mode("light"))

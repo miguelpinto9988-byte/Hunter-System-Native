@@ -242,11 +242,16 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
    }
    HunterProfileSection(12,"Rendimiento visual",
     "Personaliza la apariencia del sistema y su rendimiento."){
-    HunterModePicker(values["theme"]?:"dark"){values["theme"]=it}
+    // Vista previa inmediata sin sobrescribir el perfil hasta guardar.
+    androidx.compose.runtime.CompositionLocalProvider(
+     LocalHunter provides HunterColors(HunterAppearanceV43.tokens(
+      values["theme"]?:"dark",values["outlineColor"]?:"eclipse"))){
+     HunterModePicker(values["theme"]?:"dark"){values["theme"]=it}
      HunterOutlinePicker(values["outlineColor"]?:"eclipse",values["theme"]?:"dark"){
       values["outlineColor"]=it
      }
      HunterAppearancePreview(values["theme"]?:"dark",values["outlineColor"]?:"eclipse")
+    }
     for((id,label)in listOf(
       "max" to "Máxima calidad",
       "balanced" to "Equilibrado",
