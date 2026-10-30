@@ -49,7 +49,8 @@ checks={
       'biblioteca-lunar','palacio-submarino','reino-de-las-nubes',
       'ciudadela-boreal','trono-volcanico','santuario-de-bambu',
       'jardin-sagrado','templo-del-ocaso')),
- "panel usa selección guardada":'profileMonarchHunterArtwork(appearance.s("collection"' in dashboard
+ "panel usa selección guardada":'val hunterArtwork = profileMonarchHunterArtwork(' in dashboard
+     and 'appearance.s("collection","hunter")' in dashboard
      and 'chosenSceneArtwork(selectedScene)' in dashboard,
  "guardar perfil nuevo y editado":profile.count('ui.profileSaved()')==2
      and 'fun profileSaved()' in screens and 'tab="home"' in screens,
