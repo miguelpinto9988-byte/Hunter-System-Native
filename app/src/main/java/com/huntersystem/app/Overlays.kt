@@ -42,7 +42,9 @@ import kotlin.math.*
        }
     }
  }
- Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(top=18.dp,bottom=20.dp),verticalArrangement=Arrangement.spacedBy(16.dp)){key(overlay){when(overlay.type){
+ Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+    .padding(top=if(overlay.type=="session")10.dp else 18.dp,bottom=20.dp),
+    verticalArrangement=Arrangement.spacedBy(if(overlay.type=="session")12.dp else 16.dp)){key(overlay){when(overlay.type){
  "exercise"->ExerciseDetail(ui,overlay.data.s("id"))
  "mission"->{val date=overlay.data.s("date",today());Eyebrow(date);MissionContent(ui,date)}
  "mission-calendar"->{Eyebrow("CALENDARIO DE MISIONES");Heading("Selecciona una fecha",size=28);MonarchMissionsCalendar(ui)}
@@ -177,7 +179,7 @@ import kotlin.math.*
      onRestart={running=false;remaining=step.i("seconds")},
      onMirror={mirror=!mirror},onSpeed={speed=it})
  if(step.s("kind")=="exercise"&&!preview&&date==today())
-     HButton("REGISTRAR ESTA SERIE",Modifier.fillMaxWidth()){
+     HButton("✓ COMPLETAR Y REGISTRAR",Modifier.fillMaxWidth(),primary=true){
          running=false
          ui.attempt{s.log(date);ui.open("series",obj(
              "date" to date,"itemIndex" to step.i("itemIndex"),
@@ -188,7 +190,7 @@ import kotlin.math.*
      HButton("‹ Anterior",Modifier.weight(1f),enabled=index>0){
          running=false;index--;remaining=steps[index].i("seconds");pending=false
      }
-     HButton("Siguiente ›",Modifier.weight(1f),primary=true){
+     HButton("Siguiente ›",Modifier.weight(1f)){
          running=false
          val done=preview||step.s("kind")!="exercise"||
              s.logs.o(date).a("items").optJSONObject(step.i("itemIndex"))
@@ -200,7 +202,7 @@ import kotlin.math.*
          }
      }
  }
- if(!preview&&date==today())HButton("Detener por molestias",Modifier.fillMaxWidth()){
+ if(!preview&&date==today())GuidedSessionStopButton{
      running=false;ui.open("pain",obj("date" to date))
  }
 }

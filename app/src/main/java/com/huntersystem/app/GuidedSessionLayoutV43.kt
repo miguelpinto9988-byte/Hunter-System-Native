@@ -1,5 +1,7 @@
 package com.huntersystem.app
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -9,6 +11,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 
 /** Formateo independiente del texto, seguro para valores de temporizador restaurados. */
@@ -24,22 +30,25 @@ internal fun guidedSessionProgress(total:Int,remaining:Int):Float =
 @Composable
 internal fun GuidedSessionHeader(preview:Boolean,title:String,index:Int,total:Int){
     val c=LocalHunter.current
-    Column(Modifier.fillMaxWidth(),verticalArrangement=Arrangement.spacedBy(8.dp)){
+    val safeTotal=total.coerceAtLeast(1)
+    val current=index.coerceIn(1,safeTotal)
+    Column(Modifier.fillMaxWidth(),verticalArrangement=Arrangement.spacedBy(10.dp)){
         Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
             horizontalArrangement=Arrangement.spacedBy(12.dp)){
             Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(4.dp)){
-                Eyebrow(if(preview)"VISTA PREVIA" else "SESIÓN GUIADA")
-                Heading(title,size=26)
+                Eyebrow(if(preview)"VISTA PREVIA" else "ENTRENAMIENTO EN CURSO")
+                Heading(title,size=24)
             }
-            val chip=RoundedCornerShape(14.dp)
-            Box(Modifier.clip(chip).background(c.input)
-                .border(1.dp,c.accent.copy(alpha=.55f),chip)
-                .padding(horizontal=12.dp,vertical=10.dp)){
-                HText("${index.coerceAtMost(total)}/$total",size=15,bold=true,color=c.accent)
+            val shape=RoundedCornerShape(14.dp)
+            Column(Modifier.clip(shape).background(c.accent.copy(alpha=.10f))
+                .border(1.dp,c.accent.copy(alpha=.65f),shape)
+                .padding(horizontal=12.dp,vertical=8.dp),
+                horizontalAlignment=Alignment.End){
+                HText("${current} / ${total}",size=17,bold=true,color=c.accent)
+                HText("PASO ACTUAL",size=10,color=c.muted)
             }
         }
-        HProgress(index.toFloat()/total.coerceAtLeast(1))
-        HText("PASO ${index.coerceAtMost(total)} DE $total",size=12,color=c.muted,bold=true)
+        HProgress(index.toFloat()/safeTotal)
     }
 }
 
@@ -50,9 +59,9 @@ internal fun GuidedSessionDemo(
 ){
     BoxWithConstraints(Modifier.fillMaxWidth()){
         val demoHeight=when {
-            maxWidth<350.dp -> 198
-            maxWidth<440.dp -> 230
-            else -> 295
+            maxWidth<350.dp -> 225
+            maxWidth<440.dp -> 265
+            else -> 310
         }
         MonarchExerciseStage(name,demo,running,speed,mirror,
             height=demoHeight,showProgress=false)
@@ -61,30 +70,33 @@ internal fun GuidedSessionDemo(
 
 /** Temporizador, objetivo y progreso del intervalo en una sola tarjeta compacta. */
 @Composable
-internal fun GuidedSessionTimer(
-    remaining:Int,totalSeconds:Int,summary:String,running:Boolean
-){
+internal fun GuidedSessionTimer(remaining:Int,totalSeconds:Int,summary:String,running:Boolean){
     val c=LocalHunter.current
-    val shape=RoundedCornerShape(19.dp)
-    Column(Modifier.fillMaxWidth().clip(shape)
+    val progress=guidedSessionProgress(totalSeconds,remaining)
+    val shape=RoundedCornerShape(22.dp)
+    Row(Modifier.fillMaxWidth().clip(shape)
         .background(Brush.horizontalGradient(listOf(c.surface,c.panel)))
-        .border(1.dp,c.line,shape)
-        .padding(horizontal=16.dp,vertical=12.dp),
-        verticalArrangement=Arrangement.spacedBy(10.dp)){
-        Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
-            horizontalArrangement=Arrangement.spacedBy(12.dp)){
-            Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(2.dp)){
-                Eyebrow("TIEMPO RESTANTE")
-                Heading(guidedSessionClock(remaining),size=46)
+        .border(1.dp,c.accent.copy(alpha=.30f),shape)
+        .padding(horizontal=13.dp,vertical=12.dp),
+        verticalAlignment=Alignment.CenterVertically,
+        horizontalArrangement=Arrangement.spacedBy(16.dp)){
+        Box(Modifier.size(110.dp),contentAlignment=Alignment.Center){
+            Canvas(Modifier.fillMaxSize().padding(4.dp)){
+                val stroke=Stroke(width=7.dp.toPx(),cap=StrokeCap.Round)
+                drawArc(c.line,-90f,360f,false,style=stroke)
+                drawArc(c.accent,-90f,360f*progress,false,style=stroke)
             }
-            Column(Modifier.weight(1f),horizontalAlignment=Alignment.End,
-                verticalArrangement=Arrangement.spacedBy(6.dp)){
-                HText(summary,size=14,bold=true,maxLines=3)
-                HText(if(running)"EN CURSO" else "EN PAUSA",size=12,
-                    color=if(running)c.accent else c.muted,bold=true)
+            Column(horizontalAlignment=Alignment.CenterHorizontally){
+                Heading(guidedSessionClock(remaining),size=29)
+                HText("RESTANTE",size=10,color=c.muted,bold=true)
             }
         }
-        HProgress(guidedSessionProgress(totalSeconds,remaining))
+        Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(7.dp)){
+            Eyebrow("TIEMPO DE LA SERIE")
+            HText(summary,size=15,bold=true,maxLines=3)
+            HText(if(running)"● EN CURSO" else "Ⅱ EN PAUSA",size=12,
+                color=if(running)c.accent else c.muted)
+        }
     }
 }
 
@@ -98,10 +110,10 @@ internal fun GuidedSessionPlaybackControls(
     Column(Modifier.fillMaxWidth(),verticalArrangement=Arrangement.spacedBy(8.dp)){
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
             HButton(if(running)"Ⅱ PAUSAR" else "▶ REPRODUCIR",
-                Modifier.weight(1.5f),primary=true){onToggle()}
+                Modifier.weight(1.7f),primary=true){onToggle()}
             HButton("↺ REINICIAR",Modifier.weight(1f)){onRestart()}
         }
-        HText("AJUSTES DE LA DEMOSTRACIÓN",size=12,color=c.muted,bold=true)
+        HText("OPCIONES DE VISUALIZACIÓN",size=12,color=c.muted,bold=true)
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),
             verticalAlignment=Alignment.Bottom){
             HSelect("Velocidad",speed.toString(),
@@ -110,5 +122,19 @@ internal fun GuidedSessionPlaybackControls(
             HButton(if(mirror)"⇄ ESPEJO ✓" else "⇄ ESPEJO",
                 Modifier.weight(1f)){onMirror()}
         }
+    }
+}
+
+/** Botón de seguridad con tratamiento visual separado de la navegación. */
+@Composable
+internal fun GuidedSessionStopButton(onStop:()->Unit){
+    val warning=Color(0xFFFF8A9C)
+    val shape=RoundedCornerShape(16.dp)
+    Box(Modifier.fillMaxWidth().defaultMinSize(minHeight=54.dp).clip(shape)
+        .background(warning.copy(alpha=.07f))
+        .border(1.dp,warning.copy(alpha=.7f),shape)
+        .clickable(role=Role.Button,onClick=onStop)
+        .padding(14.dp),contentAlignment=Alignment.Center){
+        HText("Detener por molestias",size=15,bold=true,color=warning)
     }
 }
