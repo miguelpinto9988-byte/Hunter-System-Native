@@ -32,7 +32,9 @@ check(not (ASSETS / "exercise_thumbnails").exists(), "Miniaturas no solicitadas"
 for title in ["IGRIS", "IRON", "TANK", "BERU", "DOKJA KIM"]:
     check('"'+title+'"' in companion, f"Falta {title}")
 check('"visualQuality"' in profile, "No se guarda el modo único de calidad")
-check("ThemeGallery(" in profile, "Selector de cinco colores desconectado")
+check('HunterModePicker(values["theme"]' in profile and
+      'HunterOutlinePicker(values["outlineColor"]' in profile,
+      "Temas y contornos independientes no conectados")
 check("MonarchCompanionPicker(" in profile, "Selector no conectado a Perfil")
 check("MonarchCompanionOptions(" not in profile, "Opciones visuales duplicadas en Perfil")
 check("MonarchAccentPicker(" not in profile, "Selector de acentos adicional visible")
@@ -40,7 +42,9 @@ check("MonarchFloatingCompanion(ui,modifier)" in main, "Flotante nativo no actua
 check("LocalVisualTier.current" in companion, "Presencia flotante no responde a calidad")
 check("CompanionDialogue.message(" in coach, "Panel guía sin interpretación contextual")
 check('ui33/companion-${companionKey(ui.store.profile)}.webp' in dashboard, "Dashboard no usa avatar escogido")
-check("accentHex(accentId,t.accent)" in themes and "themeAccent" in design, "Acento no aplicado")
+check('HunterAppearanceV43.tokens(mode,border)' in design and
+      'c.outlineAccent.copy(alpha=.96f)' in (K/"MonarchOutlineV43.kt").read_text(),
+      "Color de contorno no aplicado a los marcos")
 check(any(x in gradle for x in ['versionName = "42.7-monarca-fase8"','versionName = "42.8-monarca-fase9"','versionName = "42.9-monarca-fase10"']), "Versión inferior a fase 08")
 check("Auditoria Monarca V42 fase 08" in ci, "CI no incluye auditoría 08")
 check(any(x in ci for x in ["Hunter-System-V42-Monarca-Fase08-APK","Hunter-System-V42-Monarca-Fase09-APK","Hunter-System-V42-Monarca-Fase10-APK"]), "Nombre artefacto incorrecto")

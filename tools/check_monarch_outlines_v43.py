@@ -11,7 +11,7 @@ checks = {
     "espesor reposo 0.8 dp": "if(emphasis)1.4.dp else .8.dp" in FILES.get("MonarchOutlineV43.kt", ""),
     "color normal sutil y acento activo": all(
         fragment in FILES.get("MonarchOutlineV43.kt", "")
-        for fragment in ("lerp(c.line,c.accent,.16f)", "c.accent.copy(alpha=.96f)")),
+        for fragment in ("lerp(c.line,c.outlineAccent,.16f)", "c.outlineAccent.copy(alpha=.96f)")),
     "transición 170 ms y movimiento reducido": all(
         fragment in FILES.get("MonarchOutlineV43.kt", "")
         for fragment in ("tween(170)", "if(reduced)snap()", "animateDpAsState", "animateColorAsState")),
