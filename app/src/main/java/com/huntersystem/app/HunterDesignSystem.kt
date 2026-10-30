@@ -112,11 +112,7 @@ fun MonarchThemePicker(current: String, onChange: (String) -> Unit) {
                         Modifier.weight(1f)
                             .clip(shape)
                             .background(c.input)
-                            .border(
-                                1.dp,
-                                if (active) c.accent else c.line,
-                                shape
-                            )
+                            .monarchOutline(shape,active=active)
                             .selectable(
                                 selected=active,
                                 role=Role.RadioButton,
@@ -149,7 +145,7 @@ fun MonarchThemePicker(current: String, onChange: (String) -> Unit) {
             verticalAlignment=Alignment.CenterVertically) {
             Box(Modifier.size(34.dp).clip(CircleShape)
                 .background(parseColor(preview.accent))
-                .border(1.dp,c.line,CircleShape))
+                .monarchOutline(CircleShape))
             Column(Modifier.weight(1f)) {
                 HText("Vista previa: " + preview.label,size=16,bold=true)
                 HText("Pulsa «Guardar perfil» para aplicar el tema.",
@@ -191,8 +187,7 @@ fun MonarchAccentPicker(current:String,onChange:(String)->Unit){
                     val color=parseColor(accent.hex.ifBlank{HunterDesignSystem.themes.first().accent})
                     Row(Modifier.weight(1f).clip(RoundedCornerShape(12.dp))
                         .background(c.input)
-                        .border(if(active)2.dp else 1.dp,
-                            if(active)c.accent else c.line,RoundedCornerShape(12.dp))
+                        .monarchOutline(RoundedCornerShape(12.dp),active=active)
                         .selectable(active,role=Role.RadioButton,
                             onClick={onChange(accent.id)})
                         .padding(vertical=10.dp,horizontal=8.dp),

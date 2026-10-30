@@ -112,7 +112,7 @@ internal fun HunterProfileCardPreview(
   val compact=maxWidth<380.dp
   Box(Modifier.fillMaxWidth().height(if(compact)450.dp else 494.dp)
    .clip(shape).background(colors.bg)
-   .border(1.dp,colors.accent.copy(alpha=.85f),shape)
+   .monarchOutline(shape)
    .semantics{contentDescription="Vista previa de Sistema Monarca, cazador "+name}){
    AssetImage(chosenSceneArtwork(scene),Modifier.matchParentSize(),ContentScale.Crop,
     description=null,alignment=Alignment.Center)

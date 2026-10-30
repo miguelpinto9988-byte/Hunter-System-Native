@@ -73,7 +73,7 @@ fun MonarchDashboardHero(ui: NativeUi, stats: JSONObject) {
                 if(expansive)520.dp else if(compact)420.dp else 468.dp)
             .clip(shape)
             .background(Brush.verticalGradient(listOf(c.surface,c.bg)))
-            .border(1.dp,c.accent.copy(alpha=.66f),shape)) {
+            .monarchOutline(shape)) {
             AssetImage(chosenSceneArtwork(selectedScene),Modifier.matchParentSize(),
                 ContentScale.Crop,description=null)
             // Protagonista vertical HD en toda la altura; no una miniatura lateral.
@@ -282,7 +282,7 @@ fun MonarchDashboardWeek(ui: NativeUi) {
                     .defaultMinSize(minHeight = 78.dp)
                     .clip(shape)
                     .background(if (selected) c.selected else c.input)
-                    .border(1.dp, if (selected) c.accent else c.line, shape)
+                    .monarchOutline(shape,active=selected)
                     .clickable(role = Role.Button) {
                         ui.open("mission", obj("date" to dateString))
                     }

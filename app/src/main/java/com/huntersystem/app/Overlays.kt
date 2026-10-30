@@ -18,7 +18,7 @@ import org.json.JSONArray
 import java.time.LocalDate
 import kotlin.math.*
 
-@Composable fun OverlayRoot(ui:NativeUi,overlay:Overlay){val c=LocalHunter.current;Dialog(onDismissRequest={ui.back()},properties=DialogProperties(usePlatformDefaultWidth=false,decorFitsSystemWindows=true)){Box(Modifier.fillMaxWidth().fillMaxHeight(.96f).padding(horizontal=10.dp,vertical=8.dp).clip(RoundedCornerShape(HunterDesignSystem.Dimensions.cornerDialog)).background(Brush.verticalGradient(listOf(c.surface,c.panel))).border(1.dp,c.line,RoundedCornerShape(HunterDesignSystem.Dimensions.cornerDialog))){
+@Composable fun OverlayRoot(ui:NativeUi,overlay:Overlay){val c=LocalHunter.current;Dialog(onDismissRequest={ui.back()},properties=DialogProperties(usePlatformDefaultWidth=false,decorFitsSystemWindows=true)){Box(Modifier.fillMaxWidth().fillMaxHeight(.96f).padding(horizontal=10.dp,vertical=8.dp).clip(RoundedCornerShape(HunterDesignSystem.Dimensions.cornerDialog)).background(Brush.verticalGradient(listOf(c.surface,c.panel))).monarchOutline(RoundedCornerShape(HunterDesignSystem.Dimensions.cornerDialog))){
  HunterFlatBackground(Modifier.matchParentSize())
  Column(Modifier.fillMaxSize().padding(16.dp)){
  if(overlay.type=="session"){
