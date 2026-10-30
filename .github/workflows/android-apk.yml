@@ -120,6 +120,9 @@ jobs:
       - name: Crear matriz de inspección SVG (todas las filas pendientes)
         run: python3 tools/generate_svg_qa_queue.py --output "$RUNNER_TEMP/hunter-svg-2000-qa-pendiente.csv"
 
+      - name: Validar motor de alarmas V43.12
+        run: python3 tools/check_hunter_alarms.py
+
       - name: Pruebas Kotlin y Compose
         run: bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest
 

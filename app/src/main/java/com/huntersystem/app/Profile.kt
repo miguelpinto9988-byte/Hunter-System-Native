@@ -87,7 +87,7 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
   if(selectedEquipment=="body")p.put("load",0.0)
   if(old==null||arr(injuries).toString()!=old.a("injuries").toString())p.put("limits",injuries.any{it.s("stage")!="past"})
   val appearance=obj("collection" to values["collection33"],"scene" to values["scene33"])
-  s.saveProfile(p,appearance,ui.pendingAvatar);initialValues.clear();initialValues.putAll(values);ui.pendingAvatar=null;ReminderScheduler.schedule(s.context,s.state.o("reminders"));CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true));ui.profileSaved();ui.message("Perfil guardado. Tu planificación ya está aplicada en el Panel.")
+  s.saveProfile(p,appearance,ui.pendingAvatar);initialValues.clear();initialValues.putAll(values);ui.pendingAvatar=null;HunterAlarms.sync(s);CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true));ui.profileSaved();ui.message("Perfil guardado. Tu planificación ya está aplicada en el Panel.")
  }}
  SceneColumn(ui,showHeader=false){
   if(old!=null)HButton("← VOLVER AL PANEL"){ui.closeProfile()}
@@ -170,7 +170,7 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
    }
   }
   HPanel{Heading("Copia de seguridad",size=29);HText("Guarda tu perfil, calendario y registros en un archivo.",size=16,color=LocalHunter.current.muted);HButton("Exportar copia de seguridad"){ui.export()};HButton("Restaurar copia"){ui.import()}}
-  HPanel{Heading("Entrenadores y contenido",size=29);HCheck("Actualizar entrenadores automáticamente",s.state.b("creatorAuto",true)){s.state.put("creatorAuto",!s.state.b("creatorAuto",true));s.save();CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true))};HButton("Actualizar ahora"){ui.open("creator-refresh")};HButton("Recordatorios del sistema"){ui.open("reminders")};HButton("Fuentes y publicaciones"){ui.open("sources")};HText("Hunter System · Eclipse 41.0",size=14,color=LocalHunter.current.muted)}
+  HPanel{Heading("Entrenadores y contenido",size=29);HCheck("Actualizar entrenadores automáticamente",s.state.b("creatorAuto",true)){s.state.put("creatorAuto",!s.state.b("creatorAuto",true));s.save();CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true))};HButton("Actualizar ahora"){ui.open("creator-refresh")};HButton("Alarmas del cazador"){ui.open("reminders")};HButton("Fuentes y publicaciones"){ui.open("sources")};HText("Hunter System · Eclipse 41.0",size=14,color=LocalHunter.current.muted)}
  }
 }
 val zoneLabels=linkedMapOf("neck" to "Cuello","shoulder" to "Hombro","elbow" to "Codo","wrist" to "Muñeca o mano","back" to "Espalda","hip" to "Cadera","knee" to "Rodilla","ankle" to "Tobillo o pie","other" to "Otra zona / no sé")
