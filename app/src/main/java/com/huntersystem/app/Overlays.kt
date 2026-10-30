@@ -21,7 +21,16 @@ import kotlin.math.*
 @Composable fun OverlayRoot(ui:NativeUi,overlay:Overlay){val c=LocalHunter.current;Dialog(onDismissRequest={ui.back()},properties=DialogProperties(usePlatformDefaultWidth=false,decorFitsSystemWindows=true)){Box(Modifier.fillMaxWidth().fillMaxHeight(.96f).padding(horizontal=10.dp,vertical=8.dp).clip(RoundedCornerShape(HunterDesignSystem.Dimensions.cornerDialog)).background(Brush.verticalGradient(listOf(c.surface,c.panel))).border(1.dp,c.line,RoundedCornerShape(HunterDesignSystem.Dimensions.cornerDialog))){
  HunterFlatBackground(Modifier.matchParentSize())
  Column(Modifier.fillMaxSize().padding(16.dp)){
- Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){HButton("‹"){ui.back()};OriginalSvg("decor/crest.svg",Modifier.width(72.dp).height(22.dp),accent=c.hex("accent"),metal=c.hex("metal26"),ornament=c.hex("ornament26"));HButton("×"){ui.stack.clear()}}
+ if(overlay.type=="session"){
+  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
+      verticalAlignment=Alignment.CenterVertically){
+      HButton("‹ VOLVER"){ui.back()}
+      Eyebrow("ENTRENAMIENTO EN CURSO")
+      HButton("×"){ui.stack.clear()}
+  }
+ }else{
+  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){HButton("‹"){ui.back()};OriginalSvg("decor/crest.svg",Modifier.width(72.dp).height(22.dp),accent=c.hex("accent"),metal=c.hex("metal26"),ornament=c.hex("ornament26"));HButton("×"){ui.stack.clear()}}
+ }
  if(overlay.type in listOf("confirm-finish","delete-goal","confirm-import")){
     Row(Modifier.fillMaxWidth().padding(vertical=10.dp),
        verticalAlignment=Alignment.CenterVertically,
@@ -136,22 +145,62 @@ import kotlin.math.*
  fun persist(){if(!preview){val all=s.state.o("guidedSessions");all.put(date,obj("nativeSignature" to signature,"index" to latestIndex,"remaining" to latestRemaining,"mode22" to p.s("blockMode22","exercise")));s.state.put("guidedSessions",all);s.save()}}
  val lifecycle=LocalLifecycleOwner.current.lifecycle;DisposableEffect(lifecycle,signature){val observer=LifecycleEventObserver{_,event->if(event==Lifecycle.Event.ON_STOP){running=false;persist()}};lifecycle.addObserver(observer);onDispose{lifecycle.removeObserver(observer);persist()}}
  LaunchedEffect(running,index){while(running&&remaining>0){delay(1000);remaining--;if(remaining==0){running=false;TimerSound.play(s.context)}}}
- Eyebrow(if(preview)"VISTA PREVIA DE LA SESIÓN" else "SESIÓN GUIADA · $date");Heading(day.s("title",day.s("name")),size=31);HProgress(index.toFloat()/steps.size);HText("Paso ${min(index+1,steps.size)} de ${steps.size}",size=15,color=LocalHunter.current.muted)
- if(index>=steps.size){Heading("Secuencia terminada",size=32)
- HText(CompanionDialogue.message(s.profile,LocalVisualTier.current,DialogueContext(
-  DialogueMoment.COMPLETED,group=GroupEvolution.sessionGroup(day,s.profile,s.catalog)?:"")),
-  size=15,color=LocalHunter.current.muted)
- HNotice("El registro se completa únicamente con las series o misiones que confirmes.");if(!preview&&date==today())HButton("Revisar y completar sesión",primary=true){ui.open("record",obj("date" to date))};return}
- val step=steps[index];Heading(step.s("label"),size=28);val e=s.catalog.byId[step.s("id")]
- if(e!=null&&step.s("kind")=="exercise")HText(CompanionDialogue.message(s.profile,LocalVisualTier.current,
-  DialogueContext(DialogueMoment.EXERCISE,group=e.type,exercise=e.name,target=step.i("target"),
-   set=step.i("setIndex")+1,sets=step.i("sets"),seconds=e.unit=="sec",cue=e.raw.s("cue"))),
-  size=15,color=LocalHunter.current.muted)
- if(e!=null)MonarchExerciseStage(e.name,e.demo,running,speed,mirror,height=310,showProgress=false)
- Heading("${remaining/60}:${(remaining%60).toString().padStart(2,'0')}",size=58);if(step.s("kind")=="exercise")HText("Serie ${step.i("setIndex")+1}/${step.i("sets")} · ${step.i("target")} ${if(step.s("unit")=="sec")"segundos" else "repeticiones"}${if(e?.sides==true)" por lado" else ""}",bold=true)
- MonarchPlaybackControls(running,speed,mirror,onToggle={running=!running},onRestart={running=false;remaining=step.i("seconds")},onMirror={mirror=!mirror},onSpeed={speed=it})
- if(step.s("kind")=="exercise"&&!preview&&date==today())HButton("Registrar esta serie",Modifier.fillMaxWidth()){running=false;ui.attempt{s.log(date);ui.open("series",obj("date" to date,"itemIndex" to step.i("itemIndex"),"setIndex" to step.i("setIndex")))}}
+
+ GuidedSessionHeader(preview,day.s("title",day.s("name")),min(index+1,steps.size),steps.size)
+ if(index>=steps.size){
+     Heading("Secuencia terminada",size=30)
+     HText(CompanionDialogue.message(s.profile,LocalVisualTier.current,DialogueContext(
+         DialogueMoment.COMPLETED,group=GroupEvolution.sessionGroup(day,s.profile,s.catalog)?:"")),
+         size=15,color=LocalHunter.current.muted)
+     HNotice("El registro se completa únicamente con las series o misiones que confirmes.")
+     if(!preview&&date==today())HButton("Revisar y completar sesión",
+         Modifier.fillMaxWidth(),primary=true){ui.open("record",obj("date" to date))}
+     return
+ }
+ val step=steps[index]
+ val e=s.catalog.byId[step.s("id")]
+ Heading(step.s("label"),size=25)
+ if(e!=null&&step.s("kind")=="exercise"){
+     HText(CompanionDialogue.message(s.profile,LocalVisualTier.current,
+         DialogueContext(DialogueMoment.EXERCISE,group=e.type,exercise=e.name,
+             target=step.i("target"),set=step.i("setIndex")+1,
+             sets=step.i("sets"),seconds=e.unit=="sec",cue=e.raw.s("cue"))),
+         size=14,color=LocalHunter.current.muted,maxLines=3)
+ }
+ if(e!=null)GuidedSessionDemo(e.name,e.demo,running,speed,mirror)
+ val summary=if(step.s("kind")=="exercise")
+     "SERIE ${step.i("setIndex")+1}/${step.i("sets")} · ${step.i("target")} ${if(step.s("unit")=="sec")"segundos" else "repeticiones"}${if(e?.sides==true)" por lado" else ""}"
+     else "INTERVALO DE RECUPERACIÓN"
+ GuidedSessionTimer(remaining,step.i("seconds"),summary,running)
+ GuidedSessionPlaybackControls(running,speed,mirror,
+     onToggle={running=!running},
+     onRestart={running=false;remaining=step.i("seconds")},
+     onMirror={mirror=!mirror},onSpeed={speed=it})
+ if(step.s("kind")=="exercise"&&!preview&&date==today())
+     HButton("REGISTRAR ESTA SERIE",Modifier.fillMaxWidth()){
+         running=false
+         ui.attempt{s.log(date);ui.open("series",obj(
+             "date" to date,"itemIndex" to step.i("itemIndex"),
+             "setIndex" to step.i("setIndex")))}
+     }
  if(pending)HNotice("La serie sigue pendiente. Pulsa de nuevo «Siguiente» para avanzar sin registrarla.")
- Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){HButton("‹ Anterior",Modifier.weight(1f),enabled=index>0){running=false;index--;remaining=steps[index].i("seconds");pending=false};HButton("Siguiente ›",Modifier.weight(1f)){running=false;val done=preview||step.s("kind")!="exercise"||s.logs.o(date).a("items").optJSONObject(step.i("itemIndex"))?.a("actual")?.optJSONObject(step.i("setIndex"))?.b("done")==true;if(!done&&!pending)pending=true else{index++;remaining=steps.getOrNull(index)?.i("seconds")?:0;pending=false;persist()}}}
- if(!preview&&date==today())HButton("Detener por molestias"){running=false;ui.open("pain",obj("date" to date))}
+ Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+     HButton("‹ Anterior",Modifier.weight(1f),enabled=index>0){
+         running=false;index--;remaining=steps[index].i("seconds");pending=false
+     }
+     HButton("Siguiente ›",Modifier.weight(1f),primary=true){
+         running=false
+         val done=preview||step.s("kind")!="exercise"||
+             s.logs.o(date).a("items").optJSONObject(step.i("itemIndex"))
+                 ?.a("actual")?.optJSONObject(step.i("setIndex"))?.b("done")==true
+         if(!done&&!pending)pending=true
+         else{
+             index++;remaining=steps.getOrNull(index)?.i("seconds")?:0
+             pending=false;persist()
+         }
+     }
+ }
+ if(!preview&&date==today())HButton("Detener por molestias",Modifier.fillMaxWidth()){
+     running=false;ui.open("pain",obj("date" to date))
+ }
 }
