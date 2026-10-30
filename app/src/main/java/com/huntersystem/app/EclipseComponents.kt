@@ -107,60 +107,108 @@ val profileColorThemes=listOf("eclipse","ice","aurora","ceniza","amanecer")
 }
 
 // Local art selections used by both the picker and home.
+/** Respeta selecciones V33 previas y las cuatro portadas del perfil V43.12. */
 fun chosenHunterArtwork(collection:String,gender:String):String{
- val actual=if(collection=="alternate")listOf("hunter","reader","regressor")[(java.time.LocalDate.now().toEpochDay()%3).toInt()] else collection
- return "ui34/"+when(actual){"reader"->"reader-e.webp";"regressor"->"regressor-e.webp";else->if(gender=="female")"hunter-female-e.webp" else "hunter-male-e.webp"}
+ val choice=if(collection=="alternate")
+   listOf("hunter","reader","regressor")[(java.time.LocalDate.now().toEpochDay()%3).toInt()]
+  else collection
+ return "ui34/"+when(choice){
+  "reader"->"reader-e.webp"
+  "regressor"->"regressor-e.webp"
+  "hunter-female"->"hunter-female-e.webp"
+  "hunter-male"->"hunter-male-e.webp"
+  else->if(gender=="female")"hunter-female-e.webp" else "hunter-male-e.webp"
+ }
 }
+internal val hunterProfileSceneChoices=listOf(
+ "biblioteca-lunar" to "Biblioteca lunar",
+ "palacio-submarino" to "Palacio submarino",
+ "reino-de-las-nubes" to "Ciudad celestial",
+ "ciudadela-boreal" to "Ciudadela nevada",
+ "trono-volcanico" to "Trono volcánico",
+ "santuario-de-bambu" to "Santuario lunar",
+ "jardin-sagrado" to "Jardín sagrado",
+ "templo-del-ocaso" to "Templo del ocaso"
+)
 fun chosenSceneArtwork(scene:String):String{
- val index=when(scene){"sanctuary"->0;"journey"->1;else->(java.time.LocalDate.now().toEpochDay()%2).toInt()}
- return "ui33/scene-e-$index.webp"
+ if(hunterProfileSceneChoices.any{it.first==scene})
+  return "hunter-scenes-hd/"+scene+".webp"
+ // Compatibilidad con escenas guardadas en versiones anteriores.
+ val index=when(scene){
+  "sanctuary"->0
+  "journey"->1
+  else->(java.time.LocalDate.now().toEpochDay()%2).toInt()
+ }
+ return "ui33/scene-e-"+index+".webp"
 }
 @Composable fun HunterPicker(selected:String,gender:String,onSelect:(String)->Unit){
  val c=LocalHunter.current
- SectionTitle("Elige tu cazador","Desliza para ver los personajes",Sigil.Profile)
- val choices=listOf("hunter" to "Cazador","reader" to "Kim Dokja","regressor" to "Junghyeok Yu","alternate" to "Alternar")
- Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp)){
-  for((key,label)in choices){val active=selected==key
-   Column(Modifier.width(138.dp).clip(RoundedCornerShape(18.dp))
+ val choices=listOf(
+  Triple("reader","Reader","EL OBSERVADOR"),
+  Triple("regressor","Regressor","EL QUE RETROCEDE"),
+  Triple("hunter-male","Cazador","EL QUE ASCIENDE"),
+  Triple("hunter-female","Cazadora","LA QUE DESAFÍA")
+ )
+ HText("Desliza para descubrir los cuatro protagonistas.",size=13,color=c.muted)
+ Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+  horizontalArrangement=Arrangement.spacedBy(10.dp)){
+  for((key,label,subtitle)in choices){
+   val active=selected==key||
+    (selected=="hunter"&&key==if(gender=="female")"hunter-female" else "hunter-male")
+   val shape=RoundedCornerShape(16.dp)
+   Column(Modifier.width(138.dp).clip(shape)
     .background(if(active)c.selected else c.input)
-    .border(if(active)2.dp else 1.dp,if(active)c.accent else c.line,RoundedCornerShape(18.dp))
+    .border(if(active)2.dp else 1.dp,if(active)c.accent else c.line,shape)
     .clickable(role=Role.RadioButton){onSelect(key)}
-    .semantics{this.selected=active;contentDescription="Cazador $label"}
-    .padding(9.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(7.dp)){
-    Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(12.dp)).background(c.panel),contentAlignment=Alignment.BottomCenter){
-     AssetImage(chosenHunterArtwork(key,gender),Modifier.fillMaxWidth().fillMaxHeight(.96f),description="Ilustración de $label")
+    .semantics{this.selected=active;contentDescription="Cazador "+label}
+    .padding(8.dp),horizontalAlignment=Alignment.CenterHorizontally,
+    verticalArrangement=Arrangement.spacedBy(6.dp)){
+    Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(11.dp))
+     .background(c.panel),contentAlignment=Alignment.BottomCenter){
+     AssetImage(chosenHunterArtwork(key,gender),
+      Modifier.fillMaxWidth().fillMaxHeight(.99f),ContentScale.Crop,
+      description="Ilustración de "+label)
     }
-    HText(label,size=13,bold=active,maxLines=1)
-    HunterIcon(if(active)Sigil.Check else Sigil.Plus,Modifier.size(15.dp),if(active)c.accent else c.muted)
+    HText(label,size=14,bold=active,maxLines=1,color=if(active)c.accent else c.text)
+    HText(subtitle,size=10,color=c.muted,maxLines=1)
+    HunterIcon(if(active)Sigil.Check else Sigil.Plus,Modifier.size(15.dp),
+      if(active)c.accent else c.muted)
    }
   }
  }
 }
-@Composable fun BackgroundPicker(selected:String,collection:String,gender:String,onSelect:(String)->Unit){
+
+@Composable fun BackgroundPicker(
+ selected:String,collection:String,gender:String,onSelect:(String)->Unit
+){
  val c=LocalHunter.current
- SectionTitle("Elige tu fondo","Desliza para ver los escenarios",Sigil.Layers)
- val choices=listOf("auto" to "Alternar cada día","sanctuary" to "Santuarios y portales","journey" to "Viajes y constelaciones")
- Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp)){
-  for((key,label)in choices){val active=selected==key
-   Column(Modifier.width(168.dp).clip(RoundedCornerShape(18.dp))
+ HText("Desliza para explorar los escenarios HD. Cada uno es un lugar diferente.",
+  size=13,color=c.muted)
+ val choices=listOf("auto" to "Alternar cada día")+hunterProfileSceneChoices
+ Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+  horizontalArrangement=Arrangement.spacedBy(10.dp)){
+  for((key,label)in choices){
+   val active=selected==key
+   val shape=RoundedCornerShape(16.dp)
+   Column(Modifier.width(144.dp).clip(shape)
     .background(if(active)c.selected else c.input)
-    .border(if(active)2.dp else 1.dp,if(active)c.accent else c.line,RoundedCornerShape(18.dp))
+    .border(if(active)2.dp else 1.dp,if(active)c.accent else c.line,shape)
     .clickable(role=Role.RadioButton){onSelect(key)}
-    .semantics{this.selected=active;contentDescription="Fondo $label"}
-    .padding(8.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(7.dp)){
-    AssetImage(chosenSceneArtwork(key),Modifier.fillMaxWidth().height(105.dp).clip(RoundedCornerShape(12.dp)),ContentScale.Crop,description="Escenario $label")
-    HText(label,size=13,bold=active,maxLines=1)
-    HunterIcon(if(active)Sigil.Check else Sigil.Plus,Modifier.size(15.dp),if(active)c.accent else c.muted)
+    .semantics{this.selected=active;contentDescription="Ambiente "+label}
+    .padding(7.dp),horizontalAlignment=Alignment.CenterHorizontally,
+    verticalArrangement=Arrangement.spacedBy(7.dp)){
+    Box(Modifier.fillMaxWidth().height(162.dp).clip(RoundedCornerShape(11.dp))
+     .background(c.panel)){
+     AssetImage(chosenSceneArtwork(key),Modifier.matchParentSize(),
+      ContentScale.Crop,description="Ambiente "+label)
+     if(active)Box(Modifier.align(Alignment.TopEnd).padding(5.dp)
+      .background(c.accent,RoundedCornerShape(9.dp)).padding(4.dp)){
+      HText("✓",size=12,bold=true,color=c.bg)
+     }
+    }
+    HText(label,size=12,bold=active,maxLines=2)
    }
   }
- }
- HText("Vista previa de tu cazador y fondo",size=15,color=c.muted)
- Box(Modifier.fillMaxWidth().height(218.dp).clip(RoundedCornerShape(18.dp))
-  .border(1.dp,c.line,RoundedCornerShape(18.dp))
-  .semantics{contentDescription="Vista previa del cazador y fondo"},contentAlignment=Alignment.BottomCenter){
-  AssetImage(chosenSceneArtwork(selected),Modifier.fillMaxSize(),ContentScale.Crop)
-  Box(Modifier.fillMaxSize().background(Brush.verticalGradient(listOf(Color.Transparent,c.bg.copy(alpha=.25f)))))
-  AssetImage(chosenHunterArtwork(collection,gender),Modifier.fillMaxWidth(.62f).fillMaxHeight(.96f),description="Cazador seleccionado")
  }
 }
 @Composable fun RelicViewer(){

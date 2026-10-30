@@ -36,6 +36,22 @@ internal fun monarchHunterHeroArtwork(gender:String,rank:String):String {
 }
 
 /**
+ * El personaje guardado en Perfil gobierna también el arte del Panel.
+ * Para los rangos siguientes se reutilizan ilustraciones existentes.
+ */
+internal fun profileMonarchHunterArtwork(collection:String,gender:String,rank:String):String{
+ val safe=rank.lowercase().takeIf{it in setOf("e","d","c","b","a","s")} ?: "e"
+ return when(collection){
+  "reader"->"ui34/reader-"+safe+".webp"
+  "regressor"->"ui34/regressor-e.webp"
+  "hunter-male"->monarchHunterHeroArtwork("male",rank)
+  "hunter-female"->monarchHunterHeroArtwork("female",rank)
+  "alternate"->chosenHunterArtwork("alternate",gender)
+  else->monarchHunterHeroArtwork(gender,rank)
+ }
+}
+
+/**
  * Fase 04: dashboard Monarca. Solo lee NativeStore y enlaza acciones existentes.
  * No altera el perfil, las sesiones, las estadísticas, las restricciones ni el catálogo.
  */
@@ -48,7 +64,9 @@ fun MonarchDashboardHero(ui: NativeUi, stats: JSONObject) {
     val xp = stats.i("xp").coerceAtLeast(0)
     val xpInLevel = xp % 300
     val rank = rankKey(level)
-    val hunterArtwork = monarchHunterHeroArtwork(profile.s("gender"), rank)
+    val appearance=store.state.o("appearance33")
+    val hunterArtwork = profileMonarchHunterArtwork(appearance.s("collection","hunter"),profile.s("gender"),rank)
+    val selectedScene=appearance.s("scene","auto")
     val name = profile.s("name", "Cazador").ifBlank { "Cazador" }.take(36)
     val shape = RoundedCornerShape(26.dp)
 
@@ -60,8 +78,13 @@ fun MonarchDashboardHero(ui: NativeUi, stats: JSONObject) {
         Box(Modifier.fillMaxWidth().clip(shape)
             .background(Brush.linearGradient(listOf(c.surface, c.panel, c.bg)))
             .border(1.dp, c.accent.copy(alpha = .48f), shape)) {
-            AssetImage(chosenSceneArtwork(store.state.o("appearance33").s("scene","auto")),
-                Modifier.matchParentSize().graphicsLayer{alpha=.18f},ContentScale.Crop)
+            AssetImage(chosenSceneArtwork(selectedScene),
+                Modifier.matchParentSize().graphicsLayer{
+                  alpha=if(hunterProfileSceneChoices.any{it.first==selectedScene}) .74f else .18f
+                },ContentScale.Crop)
+            Box(Modifier.matchParentSize().background(Brush.horizontalGradient(listOf(
+                c.bg.copy(alpha=.93f),c.bg.copy(alpha=.60f),Color.Transparent
+            ))))
             // Solo la cuadrícula discreta original; sin halos ni círculos
             // detrás del cazador. La ilustración conserva su transparencia.
             Canvas(Modifier.matchParentSize()) {

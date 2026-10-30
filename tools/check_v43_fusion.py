@@ -11,7 +11,8 @@ checks={
  "identidad Eclipse":(R/(src+"EclipseVisuals.kt")).is_file(),
  "componentes Eclipse":(R/(src+"EclipseComponents.kt")).is_file(),
  "composición Monarca":(R/(src+"MonarchDashboardV42.kt")).is_file(),
- "cazador sin circulos en tarjeta de evolucion":'val hunterArtwork = monarchHunterHeroArtwork(profile.s("gender"), rank)' in read(src+"MonarchDashboardV42.kt")
+ "cazador sin circulos en tarjeta de evolucion":'val hunterArtwork = profileMonarchHunterArtwork(' in read(src+"MonarchDashboardV42.kt")
+    and 'monarchHunterHeroArtwork(profile.s("gender"), rank)' not in read(src+"MonarchDashboardV42.kt")
     and 'AssetImage(\n                            hunterArtwork' in read(src+"MonarchDashboardV42.kt")
     and 'drawCircle(' not in read(src+"MonarchDashboardV42.kt").split("fun MonarchDashboardHero(",1)[1].split("fun MonarchDashboardWelcome(",1)[0]
     and 'ui33/companion-$companion.webp' not in read(src+"MonarchDashboardV42.kt").split("fun MonarchDashboardHero(",1)[1].split("fun MonarchDashboardWelcome(",1)[0],

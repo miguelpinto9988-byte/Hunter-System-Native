@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.*
@@ -89,89 +90,198 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
   val appearance=obj("collection" to values["collection33"],"scene" to values["scene33"])
   s.saveProfile(p,appearance,ui.pendingAvatar);initialValues.clear();initialValues.putAll(values);ui.pendingAvatar=null;HunterAlarms.sync(s);CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true));ui.profileSaved();ui.message("Perfil guardado. Tu planificación ya está aplicada en el Panel.")
  }}
+ var profileStage by rememberSaveable{mutableIntStateOf(0)}
+ // Los campos y el guardado son comunes a las tres etapas; navegar entre ellas
+ // nunca genera un perfil nuevo ni descarta ediciones todavía sin guardar.
+ key(profileStage){
  SceneColumn(ui,showHeader=false){
   if(old!=null)HButton("← VOLVER AL PANEL"){ui.closeProfile()}
-  Eyebrow("HUNTER SYSTEM  ·  PERFIL DEL CAZADOR")
-  Heading(if(old==null)"Crea tu perfil" else "Tu perfil de cazador")
-  HText(
-   if(old==null)"Configura tu perfil para entrar por primera vez al sistema. Al guardar se generará tu semana y se abrirá el Panel."
-   else "Edita tu configuración en esta pantalla independiente. Al guardar regresarás al Panel con el plan actualizado.",
-   color=LocalHunter.current.muted
-  )
-  for((sectionIndex,sec)in form.withIndex()){
-   if(sectionIndex==1)HPanel{ThemeGallery(values["theme"]?:"eclipse"){values["theme"]=it}}
-   HPanel{
-   val title=when(sectionIndex){3->"Personaliza tu semana";form.lastIndex->"Lesiones y salud";else->sec.s("title")}
-   if(sectionIndex==form.lastIndex){Row(Modifier.fillMaxWidth().clickable{expanded["health"]=expanded["health"]!=true},horizontalArrangement=Arrangement.SpaceBetween){Heading(title,size=30);HText(if(expanded["health"]==true)"−" else "+",size=28)};HText(if(injuries.isEmpty())"Sin lesiones registradas · tocar para editar" else "${injuries.size} zonas registradas · tocar para editar",size=15,color=LocalHunter.current.muted);if(expanded["health"]!=true)return@HPanel}else Heading(title,size=30)
-   if(sectionIndex==0){Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(14.dp)){Avatar(ui.pendingAvatar?:s.state.s("avatar"),values["name"]?:"C",Modifier.size(72.dp));Column(verticalArrangement=Arrangement.spacedBy(6.dp)){HButton("Elegir fotografía"){ui.chooseAvatar()};HText("Se guarda en este dispositivo",size=14,color=LocalHunter.current.muted)}}}
-   val done=mutableSetOf<String>()
-   for(f in sec.a("fields").objects()){
-    val name=f.s("name");val type=f.s("type");if(name in listOf("age","height","weight")){if(name!="age")continue;Row(horizontalArrangement=Arrangement.spacedBy(9.dp)){for(k in listOf("age","height","weight"))HInput(values[k]?:"",{values[k]=it},fieldLabels[k]?:k,Modifier.weight(1f),number=true)};continue}
-    if(name=="r_noImpact")HButton("Restricciones e indicaciones adicionales ▾",Modifier.fillMaxWidth()){expanded["restrictions"]=expanded["restrictions"]!=true}
-    if((name.startsWith("r_")||name in listOf("recommendations","approved","translated"))&&expanded["restrictions"]!=true)continue
-    val key=name
-    val label=fieldLabels[name]?:f.s("label").substringBefore("Seleccionado").trim()
-    when{
-     name=="equipment"->{
-      HSelect(label,values[name]?:"body",f.a("options").objects().map{it.s("value") to it.s("label")}){values[name]=it}
-      ProfileEquipmentOptions(values[name]?:"body",values,expanded,s.catalog)
-     }
-     name=="companionCharacter"->{if(!done.add(name))continue;MonarchCompanionPicker(values[name]?:"knight"){values[name]=it}}
-     type=="radio"->{
-      if(!done.add(name))continue
-      val opts=sec.a("fields").objects().filter{it.s("name")==name}.map{
-       it.s("value") to when(it.s("value")){
-        "challenges"->"Desafíos diarios";"routines"->"Rutinas completas";else->it.s("label")
-       }
-      }
-      Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
-       for((choice,text)in opts)
-        HButton(text,Modifier.weight(1f),primary=values[name]==choice){values[name]=choice}
-      }
-     }
-     type=="checkbox"->HCheck(label,values[key]=="true"){values[key]=(values[key]!="true").toString()}
-     type=="select"->HSelect(label,values[name]?:"",f.a("options").objects().map{it.s("value") to it.s("label")}){v->values[name]=v;if(name=="goalGroup")manualGoalGroup=true;if(name=="difficulty")values["restSeconds"]=mapOf("basic" to "30","intermediate" to "60","advanced" to "90")[v]?:"30"}
-     else->HInput(values[name]?:"",{values[name]=it},label,number=type=="number",multiline=type=="textarea")
-    }
-    if(name=="finalGoal"&&!values[name].isNullOrBlank()){val result=s.goals.interpret(values[name]?:"",values["goalGroup"]?:"habit");val group=s.catalog.editorial.o("goalGroups").o(result.s("primary"));HNotice(group.s("name","Constancia y bienestar")+" · "+s.catalog.editorial.o("goalPlans").o(result.s("target")).s("why"))}
-   }
+  HunterProfileBanner(isNew=old==null,stage=profileStage)
+  HunterProfileStageTabs(profileStage){profileStage=it}
 
-   if(sectionIndex==3){
+  if(profileStage==0){
+   HunterProfileSection(1,"Identidad del cazador",
+    "Cada historia comienza con un nombre."){
+    Row(verticalAlignment=Alignment.CenterVertically,
+     horizontalArrangement=Arrangement.spacedBy(12.dp)){
+     Avatar(ui.pendingAvatar?:s.state.s("avatar"),values["name"]?:"C",Modifier.size(72.dp))
+     Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(6.dp)){
+      Eyebrow("AVATAR DEL PERFIL")
+      HText("Personaliza tu fotografía. Se guarda solo en este dispositivo.",
+       size=13,color=LocalHunter.current.muted)
+      HButton("Cambiar fotografía ↗"){ui.chooseAvatar()}
+     }
+    }
+    HunterProfileFields(form[0],setOf("name","age","height","weight"),
+     values,expanded,s){manualGoalGroup=true}
+   }
+   HunterProfileSection(2,"Escoge tu cazador",
+    "El protagonista de tu propia evolución. Desliza para escoger."){
+    HunterPicker(values["collection33"]?:"hunter",values["gender"]?:"unspecified"){choice->
+     values["collection33"]=choice
+     if(choice=="hunter-male")values["gender"]="male"
+     if(choice=="hunter-female")values["gender"]="female"
+    }
+    HunterProfileFields(form[1],setOf("gender"),values,expanded,s){manualGoalGroup=true}
+   }
+   HunterProfileSection(3,"Personalización del entorno",
+    "Lugares mágicos para la tarjeta Monarca, sin ajustes adicionales."){
+    BackgroundPicker(values["scene33"]?:"auto",
+     values["collection33"]?:"hunter",values["gender"]?:"unspecified"){
+       values["scene33"]=it
+     }
+   }
+   HunterProfileSection(4,"Vista previa",
+    "Así se mostrará la tarjeta de tu cazador en Sistema Monarca."){
+    HunterProfileCardPreview(
+     collection=values["collection33"]?:"hunter",
+     gender=values["gender"]?:"unspecified",
+     scene=values["scene33"]?:"auto",
+     name=values["name"]?:"Cazador",
+     level=s.stats().i("level",1),xp=s.stats().i("xp"))
+   }
+   HButton("CONTINUAR AL PLAN  →",Modifier.fillMaxWidth(),primary=true){
+    profileStage=1
+   }
+  } else if(profileStage==1){
+   HunterProfileSection(5,"Objetivo de tu historia",
+    "Tus metas determinan tu ruta de entrenamiento."){
+    HunterProfileFields(form[2],setOf("goalGroup","finalGoal"),
+     values,expanded,s){manualGoalGroup=true}
+   }
+   HunterProfileSection(6,"Nivel y modalidad",
+    "Escoge un punto de partida adecuado para ti."){
+    Eyebrow("NIVEL DE ENTRENAMIENTO")
+    HunterProfileFields(form[2],setOf("difficulty"),
+     values,expanded,s){manualGoalGroup=true}
+    Eyebrow("MODALIDAD")
+    HunterProfileFields(form[3],setOf("trainingMode"),
+     values,expanded,s){manualGoalGroup=true}
+    // El descanso pertenece al nivel y la modalidad, no al calendario.
     HSelect("Descanso entre series",values["restSeconds"]?:"30",
-     listOf("30" to "30 segundos","60" to "60 segundos","90" to "90 segundos")){values["restSeconds"]=it}
+     listOf("30" to "30 segundos","60" to "60 segundos","90" to "90 segundos")){
+      values["restSeconds"]=it
+     }
+   }
+   HunterProfileSection(7,"Tu calendario",
+    "Selecciona tus días principales; el descanso también cuenta."){
     V39WeekPicker(week,focus,onChanged={})
     if(values["trainingMode"]=="challenges"){
      HSelect("Número de misiones diarias",values["dailyMissions"]?:"3",
-      (1..7).map{it.toString() to (if(it==1)"1 misión" else "$it misiones")}){values["dailyMissions"]=it}
+      (1..7).map{it.toString() to (if(it==1)"1 misión" else it.toString()+" misiones")}){
+        values["dailyMissions"]=it
+       }
     }
    }
-   if(sectionIndex==1){
-    HunterPicker(values["collection33"]?:"hunter",values["gender"]?:"unspecified"){values["collection33"]=it}
-    BackgroundPicker(values["scene33"]?:"auto",values["collection33"]?:"hunter",values["gender"]?:"unspecified"){values["scene33"]=it}
+   HunterProfileSection(8,"Equipo disponible",
+    "Solo se propondrán ejercicios compatibles con lo que tengas."){
+    HunterProfileFields(form[2],setOf("equipment"),
+     values,expanded,s){manualGoalGroup=true}
    }
-   if(sectionIndex==form.lastIndex){Heading("Zonas e historial",size=26);for((i,injury)in injuries.withIndex()){Row(verticalAlignment=Alignment.CenterVertically){HText("${zoneLabels[injury.s("zone")]?:injury.s("zone")} · ${typeLabels[injury.s("type")]?:injury.s("type")} · ${if(injury.s("stage")=="past")"Anterior" else "Actual"}",Modifier.weight(1f),size=16);HButton("×"){injuries.removeAt(i)}}};HSelect("Zona",injuryZone,zoneLabels.toList()){injuryZone=it};HSelect("Tipo",injuryType,typeLabels.toList()){injuryType=it};Chips(listOf("current" to "Actual","past" to "Anterior"),injuryStage){injuryStage=it};HButton("+ Añadir zona"){injuries+=obj("zone" to injuryZone,"type" to injuryType,"stage" to injuryStage)};HText("El filtro por zonas no constituye un diagnóstico ni un programa de rehabilitación.",size=14,color=LocalHunter.current.muted)}
-   }
-  }
-  HButton("Guardar perfil",Modifier.fillMaxWidth(),primary=true){saveProfile()}
-  HPanel{
-   Heading("Rendimiento visual",size=29)
-   HText("Un solo ajuste para imágenes, partículas, animaciones y mensajes del compañero.",size=16,color=LocalHunter.current.muted)
-   for((id,label)in listOf(
-    "max" to "Máxima calidad","balanced" to "Equilibrado","saver" to "Ahorro de energía"
-   )){
-    HButton(label,Modifier.fillMaxWidth(),primary=visualTier(s).id==id){
-     s.state.put("visualQuality",id);s.save()
+   HunterProfileSection(9,"Salud y limitaciones",
+    "Apartado privado y desplegable, sin sobrecargar el perfil."){
+    Row(Modifier.fillMaxWidth().clickable{
+      expanded["health"]=expanded["health"]!=true
+     },horizontalArrangement=Arrangement.SpaceBetween,
+     verticalAlignment=Alignment.CenterVertically){
+     HText("Indicaciones y restricciones",size=17,bold=true)
+     HText(if(expanded["health"]==true)"−" else "＋",size=24,
+      color=LocalHunter.current.accent)
+    }
+    HText(if(injuries.isEmpty())"Sin zonas registradas · tocar para editar"
+      else injuries.size.toString()+" zonas registradas · tocar para editar",
+      size=13,color=LocalHunter.current.muted)
+    if(expanded["health"]==true){
+     HunterProfileFields(form.last(),
+      form.last().a("fields").objects().map{it.s("name")}.toSet(),
+      values,expanded,s){manualGoalGroup=true}
+     Heading("Zonas e historial",size=23)
+     for((i,injury)in injuries.withIndex()){
+      Row(verticalAlignment=Alignment.CenterVertically){
+       HText((zoneLabels[injury.s("zone")]?:injury.s("zone"))+" · "+
+        (typeLabels[injury.s("type")]?:injury.s("type"))+" · "+
+        (if(injury.s("stage")=="past")"Anterior" else "Actual"),
+        Modifier.weight(1f),size=15)
+       HButton("×"){injuries.removeAt(i)}
+      }
+     }
+     HSelect("Zona",injuryZone,zoneLabels.toList()){injuryZone=it}
+     HSelect("Tipo",injuryType,typeLabels.toList()){injuryType=it}
+     Chips(listOf("current" to "Actual","past" to "Anterior"),injuryStage){
+       injuryStage=it
+     }
+     HButton("+ Añadir zona"){
+      injuries+=obj("zone" to injuryZone,"type" to injuryType,"stage" to injuryStage)
+     }
+     HText("El filtro por zonas no constituye un diagnóstico ni un programa de rehabilitación.",
+      size=13,color=LocalHunter.current.muted)
     }
    }
-   when(visualTier(s)){
-    VisualTier.MAX->HText("Imágenes hasta 4K si el archivo y la pantalla lo permiten; más partículas, efectos y orientación contextual detallada.",size=15,color=LocalHunter.current.muted)
-    VisualTier.BALANCED->HText("Imágenes hasta Full HD, efectos moderados y mensajes adaptados a la misión y al ejercicio.",size=15,color=LocalHunter.current.muted)
-    VisualTier.SAVER->HText("Imágenes hasta HD, efectos mínimos y mensajes breves predefinidos. Se respetan los ajustes de animación del dispositivo.",size=15,color=LocalHunter.current.muted)
+   HButton("CONTINUAR AL SISTEMA  →",Modifier.fillMaxWidth(),primary=true){
+    profileStage=2
    }
+   HButton("← MI CAZADOR",Modifier.fillMaxWidth()){profileStage=0}
+  } else {
+   HunterProfileSection(10,"Tu compañero",
+    "Desliza horizontalmente y selecciona tu acompañante."){
+    // Se reutiliza el carrusel horizontal EXISTENTE, sin crear uno diferente.
+    MonarchCompanionPicker(values["companionCharacter"]?:"knight"){
+      values["companionCharacter"]=it
+    }
+   }
+   HunterProfileSection(11,"Alarmas del cazador",
+    "Organiza tus avisos sin saturar la edición del perfil."){
+    HText("Personaliza las alarmas y sus días desde la pantalla dedicada.",
+      size=15,color=LocalHunter.current.muted)
+    HButton("Abrir mis alarmas  ↗",Modifier.fillMaxWidth()){
+      ui.open("reminders")
+    }
+   }
+   HunterProfileSection(12,"Rendimiento visual",
+    "Personaliza la apariencia del sistema y su rendimiento."){
+    ThemeGallery(values["theme"]?:"eclipse"){values["theme"]=it}
+    for((id,label)in listOf(
+      "max" to "Máxima calidad",
+      "balanced" to "Equilibrado",
+      "saver" to "Ahorro de energía")){
+     HButton(label,Modifier.fillMaxWidth(),primary=visualTier(s).id==id){
+      s.state.put("visualQuality",id);s.save()
+     }
+    }
+    when(visualTier(s)){
+     VisualTier.MAX->HText("Imágenes detalladas y animaciones según las preferencias del dispositivo.",
+      size=14,color=LocalHunter.current.muted)
+     VisualTier.BALANCED->HText("Calidad y rendimiento equilibrados.",
+      size=14,color=LocalHunter.current.muted)
+     VisualTier.SAVER->HText("Efectos reducidos para mejorar fluidez y ahorrar energía.",
+      size=14,color=LocalHunter.current.muted)
+    }
+   }
+   HunterProfileSection(13,"Copia y privacidad",
+    "Tu progreso se conserva en tu dispositivo."){
+    HText("Guarda tu perfil, calendario y registros en un archivo local.",
+     size=15,color=LocalHunter.current.muted)
+    HButton("Exportar copia de seguridad",Modifier.fillMaxWidth()){ui.export()}
+    HButton("Restaurar copia",Modifier.fillMaxWidth()){ui.import()}
+    HText("ENTRENADORES Y CONTENIDO",size=14,bold=true,
+     color=LocalHunter.current.accent)
+    HCheck("Actualizar entrenadores automáticamente",s.state.b("creatorAuto",true)){
+     s.state.put("creatorAuto",!s.state.b("creatorAuto",true))
+     s.save()
+     CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true))
+    }
+    HButton("Actualizar publicaciones",Modifier.fillMaxWidth()){ui.open("creator-refresh")}
+    HButton("Fuentes y publicaciones",Modifier.fillMaxWidth()){ui.open("sources")}
+   }
+   HButton(if(old==null)"CREAR MI PERFIL  →" else "GUARDAR MI PERFIL  →",
+    Modifier.fillMaxWidth(),primary=true){saveProfile()}
+   HButton("← MI PLAN",Modifier.fillMaxWidth()){profileStage=1}
+   HText("Al guardar regresarás al Panel principal, tanto si creas tu perfil como si lo editas.",
+    size=13,color=LocalHunter.current.muted)
   }
-  HPanel{Heading("Copia de seguridad",size=29);HText("Guarda tu perfil, calendario y registros en un archivo.",size=16,color=LocalHunter.current.muted);HButton("Exportar copia de seguridad"){ui.export()};HButton("Restaurar copia"){ui.import()}}
-  HPanel{Heading("Entrenadores y contenido",size=29);HCheck("Actualizar entrenadores automáticamente",s.state.b("creatorAuto",true)){s.state.put("creatorAuto",!s.state.b("creatorAuto",true));s.save();CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true))};HButton("Actualizar ahora"){ui.open("creator-refresh")};HButton("Alarmas del cazador"){ui.open("reminders")};HButton("Fuentes y publicaciones"){ui.open("sources")};HText("Hunter System · Eclipse 41.0",size=14,color=LocalHunter.current.muted)}
+ }
  }
 }
+
 val zoneLabels=linkedMapOf("neck" to "Cuello","shoulder" to "Hombro","elbow" to "Codo","wrist" to "Muñeca o mano","back" to "Espalda","hip" to "Cadera","knee" to "Rodilla","ankle" to "Tobillo o pie","other" to "Otra zona / no sé")
 val typeLabels=linkedMapOf("muscle" to "Muscular","tendon" to "Tendón","joint" to "Articulación o ligamento","bone" to "Fractura / lesión ósea","surgery" to "Después de una cirugía","unknown" to "Sin diagnóstico / otra")
