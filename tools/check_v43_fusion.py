@@ -49,6 +49,12 @@ checks={
     and 'MonarchMissionCatalog.offerFor(store,sunday,zone)' in read(src+"MonarchSpecialMissionUI.kt")
     and 'enabled=reason==null&&consent' in read(src+"MonarchSpecialMissionUI.kt"),
  "objetivos desplegables":'detailsExpanded' in read(src+"MonarchSpecialMissionUI.kt") and 'recordMonarchProgress' in read(src+"MonarchSpecialMissionUI.kt") and 'MonarchBossMissionArtwork(' in read(src+"MonarchSpecialMissionUI.kt"),
+ "arte de jefes a sangre en tarjeta completa":'Modifier.matchParentSize()' in read(src+"MonarchSpecialMissionUI.kt")
+    and 'MonarchBossMissionArtwork(' in read(src+"MonarchSpecialMissionUI.kt")
+    and 'Spacer(Modifier.height(162.dp))' in read(src+"MonarchSpecialMissionUI.kt")
+    and 'height(188.dp)' not in read(src+"MonarchSpecialMissionUI.kt")
+    and 'HPanel(padding=16)' not in read(src+"MonarchSpecialMissionUI.kt")
+    and 'Brush.verticalGradient' in read(src+"MonarchSpecialMissionUI.kt"),
  "temas conjuntos":'"constellation"' in read(src+"HunterDesignSystem.kt") and '"ice"' in read(src+"HunterDesignSystem.kt"),
  "splash animado":(R/"app/src/main/java/com/huntersystem/app/HunterAnimatedBootArtwork.kt").is_file() and (R/"app/src/main/assets/monarch_splash_background.webp").is_file() and "HunterAnimatedBootArtwork(" in read(src+"MonarchNavigationV42.kt"),
  "catálogo ampliable":'catalog-hunter2000-extra.json' in read(src+"Catalog.kt"),

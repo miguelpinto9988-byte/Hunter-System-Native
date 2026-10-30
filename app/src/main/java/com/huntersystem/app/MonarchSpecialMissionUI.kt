@@ -48,8 +48,17 @@ fun MonarchSpecialMissionsPanel(ui:NativeUi) {
  val m=(ms/60000L)%60
  val deadlineText=d.toString()+" d  "+h.toString()+" h  "+m.toString()+" min"
  var detailsExpanded by rememberSaveable(current.weekStart){mutableStateOf(false)}
- HPanel(padding=16){
-  MonarchBossMissionArtwork(mission.id, mission.title, current.cycleWeek, status)
+ val missionShape=RoundedCornerShape(24.dp)
+ // La ilustración es el fondo de la tarjeta COMPLETA, no una miniatura independiente.
+ Box(Modifier.fillMaxWidth().clip(missionShape)
+   .background(Color(0xFF070D1D))
+   .border(1.dp,colors.accent.copy(alpha=.42f),missionShape)){
+  MonarchBossMissionArtwork(
+   mission.id,mission.title,current.cycleWeek,status,Modifier.matchParentSize())
+  Column(Modifier.fillMaxWidth().padding(16.dp),
+   verticalArrangement=Arrangement.spacedBy(HunterDesignSystem.Dimensions.spacing)){
+   // Reserva el encabezado del jefe, pero la imagen sigue por debajo de toda la misión.
+   Spacer(Modifier.height(162.dp))
   Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
    verticalAlignment=Alignment.CenterVertically){
    Eyebrow("EVENTO SEMANAL · MISIÓN MONARCA")
@@ -122,11 +131,14 @@ fun MonarchSpecialMissionsPanel(ui:NativeUi) {
     }
    }
   }
+  }
  }
 }
 
 @Composable
-private fun MonarchBossMissionArtwork(id:String,title:String,week:Int,status:String){
+private fun MonarchBossMissionArtwork(
+ id:String,title:String,week:Int,status:String,modifier:Modifier=Modifier
+){
  val boss=when(id){
   "guardia"->"IGRIS · COMANDANTE CARMESÍ"
   "fortaleza"->"BERU · REY HORMIGA"
@@ -137,17 +149,23 @@ private fun MonarchBossMissionArtwork(id:String,title:String,week:Int,status:Str
   "fortaleza"->Color(0xFFA999FF)
   else->Color(0xFFC6B2FF)
  }
- val shape=RoundedCornerShape(16.dp)
- Box(Modifier.fillMaxWidth().height(188.dp).clip(shape).background(Color(0xFF090E23))){
-  // Arte exclusivo de la tarjeta de Misiones Monarca; no es un wallpaper global.
-  AssetImage("monarch-boss-original/"+id+".jpg",Modifier.fillMaxSize(),
+ // Una capa única, recortada por los límites del contenedor de la misión.
+ // Se adapta al tamaño cerrado o expandido y conserva la imagen de cada jefe.
+ Box(modifier.background(Color(0xFF070D1D))){
+  AssetImage("monarch-boss-original/"+id+".jpg",Modifier.matchParentSize(),
    scale=ContentScale.Crop,alignment=Alignment.TopCenter,
-   description="Imagen promocional original de "+boss)
-  Box(Modifier.fillMaxSize().background(
-   Brush.horizontalGradient(listOf(Color(0xE8080D1B),Color(0xA40A1027),Color(0x00080D1B)))
-  ))
-  Column(Modifier.align(Alignment.CenterStart).fillMaxWidth(.72f).padding(14.dp),
-   verticalArrangement=Arrangement.spacedBy(6.dp)){
+   description=null)
+  // Gradientes cinematográficos: parte superior visible, parte inferior legible.
+  Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(
+   Color(0x2C060A18),Color(0x82070D1C),
+   Color(0xDA060C1C),Color(0xF5060B18)
+  ))))
+  Box(Modifier.matchParentSize().background(Brush.horizontalGradient(listOf(
+   Color(0xD9080D1B),Color(0x7D0A1027),Color(0x12080D1B)
+  ))))
+  Column(Modifier.align(Alignment.TopStart).fillMaxWidth(.79f)
+   .padding(start=19.dp,top=19.dp),
+   verticalArrangement=Arrangement.spacedBy(8.dp)){
    Text("JEFE SEMANAL  ·  CICLO "+week+"/4",color=accent,
     fontFamily=Barlow,fontSize=11.sp,fontWeight=FontWeight.Bold)
    Text(title,color=Color(0xFFF5F7FF),fontFamily=Barlow,fontSize=25.sp,
@@ -162,8 +180,9 @@ private fun MonarchBossMissionArtwork(id:String,title:String,week:Int,status:Str
     "stopped"->"DETENIDA"
     else->"DISPONIBLE"
    },
-   modifier=Modifier.align(Alignment.BottomEnd).padding(12.dp)
-    .clip(RoundedCornerShape(9.dp)).background(Color(0xDD0A1027)).padding(horizontal=9.dp,vertical=5.dp),
+   modifier=Modifier.align(Alignment.TopEnd).padding(top=143.dp,end=14.dp)
+    .clip(RoundedCornerShape(9.dp))
+    .background(Color(0xE20A1027)).padding(horizontal=9.dp,vertical=5.dp),
    fontFamily=Barlow,fontSize=10.sp,fontWeight=FontWeight.Bold,color=accent)
  }
 }
