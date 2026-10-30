@@ -39,13 +39,21 @@ check(all(f'MonarchDestination("{name}"' in navigation
 check('setOf("objectives","stats","profile")' in navigation and 'Abrir perfil' in screens,
       "Perfil debe permanecer accesible desde el avatar")
 for name in ("MonarchBootScreen", "MonarchBottomNavigation",
-             "MonarchNavigationRail", "MonarchScreenTransition",
-             "MonarchRecoveryScreen"):
+             "MonarchScreenTransition", "MonarchRecoveryScreen"):
     check(f"fun {name}(" in navigation, f"Falta componente {name}")
 check('MonarchScreenTransition(if(hasProfile)ui.tab else "profile"' in main, "No está conectado el host de transición seguro")
 check("rememberSaveableStateHolder()" in main, "Las rutas no conservan su estado guardable")
-check("MonarchNavigationRail(ui)" in main, "No hay rail de navegación en tablet")
-check("MonarchBottomNavigation(ui)" in main, "No hay navegación inferior móvil")
+check('if(hasProfile&&store.readError==null)MonarchBottomNavigation(ui)' in main,
+      "La navegación inferior debe permanecer también en tablets")
+forbidden = ("HunterSideMenu", "ModalNavigationDrawer", "ModalDrawerSheet",
+             "rememberDrawerState", "DrawerValue", "openMenu",
+             "MonarchNavigationRail", "tabletWidthDp")
+check(not (src / "HunterSideMenu.kt").exists(),
+      "No debe existir el archivo del menú lateral")
+for source in src.rglob("*.kt"):
+    code = source.read_text(encoding="utf-8")
+    check(not any(symbol in code for symbol in forbidden),
+          f"Persisten componentes de menú lateral en {source.name}")
 check("MonarchBootScreen(error)" in main, "No se sustituyó carga inicial")
 check("MonarchRecoveryScreen(ui,store.readError!!)" in main,
       "No hay recuperación de guardados corruptos")
