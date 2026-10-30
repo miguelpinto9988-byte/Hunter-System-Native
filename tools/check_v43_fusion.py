@@ -13,7 +13,7 @@ checks={
  "composición Monarca":(R/(src+"MonarchDashboardV42.kt")).is_file(),
  "cazador sin circulos en tarjeta de evolucion":'val hunterArtwork = profileMonarchHunterArtwork(' in read(src+"MonarchDashboardV42.kt")
     and 'monarchHunterHeroArtwork(profile.s("gender"), rank)' not in read(src+"MonarchDashboardV42.kt")
-    and ('AssetImage(\n                            hunterArtwork' in read(src+"MonarchDashboardV42.kt") or 'AssetImage(hunterArtwork,' in read(src+"MonarchDashboardV42.kt"))
+    and ('AssetImage(\n                            hunterArtwork' in read(src+"MonarchDashboardV42.kt") or 'AssetImage(hunterArtwork,' in read(src+"MonarchDashboardV42.kt") or 'HunterEvolutionImage(appearance.s("collection","hunter"),profile.s("gender"),rank,hunterArtwork,' in read(src+"MonarchDashboardV42.kt"))
     and 'drawCircle(' not in read(src+"MonarchDashboardV42.kt").split("fun MonarchDashboardHero(",1)[1].split("fun MonarchDashboardWelcome(",1)[0]
     and 'ui33/companion-$companion.webp' not in read(src+"MonarchDashboardV42.kt").split("fun MonarchDashboardHero(",1)[1].split("fun MonarchDashboardWelcome(",1)[0],
  "portal Eclipse retirado":'FusionEclipsePortal()' not in read(src+"Screens.kt") and not (R/"app/src/main/assets/eclipse/portal.webp").exists(),
