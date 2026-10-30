@@ -136,22 +136,6 @@ fun chosenSceneArtwork(scene:String):String{
   }
  }
 }
-/** Los fondos de escena fueron retirados de TODAS las pantallas, incluido Perfil. */
-@Composable fun BackgroundPicker(selected:String,collection:String,gender:String,onSelect:(String)->Unit) {
- val c=LocalHunter.current
- SectionTitle("Fondo limpio del sistema","Sin ilustraciones detrás de las pantallas",Sigil.Layers)
- HText("El fondo oscuro uniforme se aplica al panel, misiones, rutinas, ejercicios, progreso y perfil.",
-     size=14,color=c.muted)
- Box(Modifier.fillMaxWidth().height(230.dp).clip(RoundedCornerShape(18.dp))
-     .background(Brush.verticalGradient(listOf(c.panel,c.bg)))
-     .border(1.dp,c.line,RoundedCornerShape(18.dp))
-     .semantics{contentDescription="Vista previa del cazador con fondo limpio"},
-     contentAlignment=Alignment.BottomEnd) {
-     AssetImage(resolvedHunterArtwork(collection,gender),
-         Modifier.fillMaxWidth(.62f).fillMaxHeight(.95f),
-         ContentScale.Fit,description="Cazador seleccionado",alignment=Alignment.BottomCenter)
- }
-}
 @Composable fun RelicViewer(){
  Eyebrow("SALA DE EVOLUCIÓN");Heading("El núcleo de tu poder")
  RelicScene(Modifier.fillMaxWidth().height(340.dp),interactive=true)

@@ -40,8 +40,12 @@ val prepareHunterHd = tasks.register<org.gradle.api.tasks.Exec>("prepareHunterHd
     workingDir = rootProject.projectDir
     commandLine("python3", "tools/prepare_hunter_hd.py")
 }
+val prepareHunterScenes = tasks.register<org.gradle.api.tasks.Exec>("prepareHunterScenes") {
+    workingDir = rootProject.projectDir
+    commandLine("python3", "tools/prepare_hunter_scenes.py")
+}
 tasks.configureEach {
     if (name.startsWith("merge") && name.endsWith("Assets")) {
-        dependsOn(prepareHunterHd)
+        dependsOn(prepareHunterHd,prepareHunterScenes)
     }
 }

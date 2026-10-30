@@ -40,6 +40,10 @@ fun MonarchDashboardHero(ui: NativeUi, stats: JSONObject) {
     val collection = appearance.s("collection", "hunter")
     val gender = profile.s("gender", "unspecified")
     val artwork = resolvedHunterArtwork(collection, gender, rank)
+    val scene = appearance.s("scene","auto")
+    val lighting = appearance.s("lighting","original")
+    val atmosphere = appearance.s("atmosphere","serene")
+    val frame = appearance.s("frame","monarch")
     val artworkTitle = hunterPortraitTitle(collection, gender)
     val name = profile.s("name", "Cazador").ifBlank { "Cazador" }.take(36)
     val shape = RoundedCornerShape(26.dp)
@@ -56,43 +60,13 @@ fun MonarchDashboardHero(ui: NativeUi, stats: JSONObject) {
         Box(
             Modifier.fillMaxWidth().height(heroHeight).clip(shape)
                 .background(Color(0xFF050E20))
-                .border(1.dp, c.accent.copy(alpha = .65f), shape)
+                .border(1.dp, monarchSceneFrameColor(frame,c.accent).copy(alpha = .75f), shape)
         ) {
-            // Escenario azul cinematográfico recortado por el marco de la tarjeta.
-            AssetImage(
-                "ui33/scene-${rank.lowercase()}-0.webp",
-                Modifier.matchParentSize().graphicsLayer { alpha = .83f },
-                ContentScale.Crop,
-                description = null
+            MonarchCardArtwork(
+                scene=scene,collection=collection,gender=gender,rank=rank,
+                lighting=lighting,atmosphere=atmosphere,
+                modifier=Modifier.matchParentSize()
             )
-            Box(Modifier.matchParentSize().background(
-                Brush.horizontalGradient(listOf(
-                    Color(0xE9051024), Color(0xB5061430), Color(0x4D07162E)
-                ))
-            ))
-            // Ilustración a sangre: no limitarla a la pequeña columna lateral.
-            // Deja que la capa del cazador atraviese el centro, como en la referencia.
-            AssetImage(
-                artwork,
-                Modifier.align(Alignment.CenterEnd)
-                    .fillMaxHeight(1f)
-                    .fillMaxWidth(if (expansive) .72f else .83f),
-                ContentScale.Crop,
-                description = "Cazador $artworkTitle, rango $rank, seleccionado en Perfil",
-                alignment = Alignment.TopEnd
-            )
-            // El texto sigue legible sobre la capa de personaje.
-            Box(Modifier.matchParentSize().background(
-                Brush.horizontalGradient(listOf(
-                    Color(0xEE061124), Color(0xBB061124),
-                    Color(0x33061124), Color.Transparent
-                ))
-            ))
-            Box(Modifier.matchParentSize().background(
-                Brush.verticalGradient(listOf(
-                    Color(0x1A050B19), Color.Transparent, Color(0xC0050A18)
-                ))
-            ))
 
             Column(
                 Modifier.fillMaxSize().padding(

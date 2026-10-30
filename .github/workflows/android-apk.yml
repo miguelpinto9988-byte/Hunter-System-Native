@@ -72,6 +72,11 @@ jobs:
       - name: Generar retratos HD 720 px y optimizar evoluciones E-S
         run: python3 tools/prepare_hunter_hd.py
 
+      - name: Extraer y validar los ocho fondos HD de perfil
+        run: |
+          python3 tools/prepare_hunter_scenes.py
+          python3 tools/check_hunter_scenes.py
+
       - name: Comprobar ausencia de miniaturas
         run: python3 tools/verificar_sin_miniaturas.py
 
@@ -127,6 +132,9 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew --no-daemon :app:assembleRelease
+
+      - name: Verificar nuevos escenarios HD dentro de APK
+        run: python3 tools/check_hunter_scenes.py --apk
 
       - name: Verificar 2000 SVG en la APK y ausencia de Rive
         run: |
