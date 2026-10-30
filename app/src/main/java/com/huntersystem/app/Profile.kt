@@ -145,7 +145,7 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
     }
    }
    if(sectionIndex==1){
-    HunterPicker(values["collection33"]?:"hunter",values["gender"]?:"unspecified"){values["collection33"]=it}
+    HunterPicker(values["collection33"]?:"hunter",values["gender"]?:"unspecified"){collection,gender->values["collection33"]=collection;values["gender"]=gender}
     HunterSceneCustomizer(
        scene=values["scene33"]?:"auto",
        collection=values["collection33"]?:"hunter",

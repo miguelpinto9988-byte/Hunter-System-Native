@@ -115,23 +115,41 @@ fun chosenSceneArtwork(scene:String):String{
  val index=when(scene){"sanctuary"->0;"journey"->1;else->(java.time.LocalDate.now().toEpochDay()%2).toInt()}
  return "ui33/scene-e-$index.webp"
 }
-@Composable fun HunterPicker(selected:String,gender:String,onSelect:(String)->Unit){
+@Composable fun HunterPicker(
+ selected:String,gender:String,onSelect:(String,String)->Unit
+){
  val c=LocalHunter.current
- SectionTitle("Elige tu cazador","Desliza para ver los personajes",Sigil.Profile)
- val choices=listOf("hunter" to "Cazador","reader" to "Kim Dokja","regressor" to "Junghyeok Yu","alternate" to "Alternar")
- Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp)){
-  for((key,label)in choices){val active=selected==key
+ SectionTitle("Escoge tu cazador","Selecciona uno de los cuatro protagonistas",Sigil.Profile)
+ val choices=listOf(
+  Triple("reader","","Kim Dokja"),
+  Triple("regressor","","Yoo Joonghyuk"),
+  Triple("hunter","male","Cazador"),
+  Triple("hunter","female","Cazadora")
+ )
+ Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+  horizontalArrangement=Arrangement.spacedBy(10.dp)){
+  for((key,genderOption,label)in choices){
+   val shownGender=if(genderOption.isBlank())gender else genderOption
+   val active=selected==key &&
+      (genderOption.isBlank() || shownGender==if(gender=="female")"female" else "male")
    Column(Modifier.width(138.dp).clip(RoundedCornerShape(18.dp))
-    .background(if(active)c.selected else c.input)
-    .border(if(active)2.dp else 1.dp,if(active)c.accent else c.line,RoundedCornerShape(18.dp))
-    .clickable(role=Role.RadioButton){onSelect(key)}
-    .semantics{this.selected=active;contentDescription="Cazador $label"}
-    .padding(9.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(7.dp)){
-    Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(12.dp)).background(c.panel),contentAlignment=Alignment.BottomCenter){
-     AssetImage(resolvedHunterArtwork(key,gender),Modifier.fillMaxWidth().fillMaxHeight(.96f),description="Ilustración de $label")
+     .background(if(active)c.selected else c.input)
+     .border(if(active)2.dp else 1.dp,
+       if(active)c.accent else c.line,RoundedCornerShape(18.dp))
+     .clickable(role=Role.RadioButton){onSelect(key,shownGender)}
+     .semantics{this.selected=active;contentDescription="Cazador $label"}
+     .padding(9.dp),horizontalAlignment=Alignment.CenterHorizontally,
+     verticalArrangement=Arrangement.spacedBy(7.dp)){
+    Box(Modifier.fillMaxWidth().height(145.dp)
+      .clip(RoundedCornerShape(12.dp)).background(c.panel),
+      contentAlignment=Alignment.BottomCenter){
+     AssetImage(resolvedHunterArtwork(key,shownGender),
+      Modifier.fillMaxWidth().fillMaxHeight(.96f),
+      description="Ilustración de $label")
     }
     HText(label,size=13,bold=active,maxLines=1)
-    HunterIcon(if(active)Sigil.Check else Sigil.Plus,Modifier.size(15.dp),if(active)c.accent else c.muted)
+    HunterIcon(if(active)Sigil.Check else Sigil.Plus,
+      Modifier.size(15.dp),if(active)c.accent else c.muted)
    }
   }
  }
