@@ -39,39 +39,21 @@ internal fun monarchScenePath(scene:String,rank:String="E"):String =
   "hunter-scenes-hd/$scene.webp"
  else "ui33/scene-${rank.lowercase().takeIf{it in setOf("e","d","c","b","a","s")} ?: "e"}-0.webp"
 
-internal fun monarchSceneFrameColor(frame:String,base:Color):Color=when(frame){
- "eclipse"->Color(0xFF9661F7)
- "crystal"->Color(0xFF8BE5EF)
- else->base
-}
-
 /** Capas idénticas para la vista previa y la tarjeta real de Sistema Monarca. */
 @Composable
 internal fun MonarchCardArtwork(
  scene:String,collection:String,gender:String,rank:String,
- lighting:String,atmosphere:String,modifier:Modifier=Modifier
+ modifier:Modifier=Modifier
 ){
  val art=resolvedHunterArtwork(collection,gender,rank)
  Box(modifier.background(Color(0xFF060E1E))){
   AssetImage(monarchScenePath(scene,rank),
    Modifier.matchParentSize(),ContentScale.Crop,description=null,
    alignment=Alignment.CenterEnd)
-  val tint=when(lighting){
-   "moon"->Color(0x282B66D9)
-   "dawn"->Color(0x36E6B26B)
-   "dusk"->Color(0x3A9D4978)
-   else->Color.Transparent
-  }
-  if(lighting!="original")Box(Modifier.matchParentSize().background(tint))
   AssetImage(art,Modifier.align(Alignment.CenterEnd)
     .fillMaxHeight().fillMaxWidth(.83f),ContentScale.Crop,
     description=null,alignment=Alignment.TopEnd)
-  val overlay=when(atmosphere){
-   "mystic"->Color(0x391C2A67)
-   "dramatic"->Color(0x6206081A)
-   else->Color(0x18050E1D)
-  }
-  Box(Modifier.matchParentSize().background(overlay))
+  Box(Modifier.matchParentSize().background(Color(0x18050E1D)))
   // Protege el bloque de nivel sin cubrir el escenario y personaje de la derecha.
   Box(Modifier.matchParentSize().background(Brush.horizontalGradient(listOf(
    Color(0xF2050E20),Color(0xC8071429),Color(0x34061120),Color.Transparent
@@ -85,10 +67,8 @@ internal fun MonarchCardArtwork(
 @Composable
 internal fun HunterSceneCustomizer(
  scene:String,collection:String,gender:String,
- lighting:String,atmosphere:String,frame:String,
  name:String,level:Int,xp:Int,
- onScene:(String)->Unit,onLighting:(String)->Unit,
- onAtmosphere:(String)->Unit,onFrame:(String)->Unit
+ onScene:(String)->Unit
 ){
  val c=LocalHunter.current
  Spacer(Modifier.height(9.dp))
@@ -118,22 +98,9 @@ internal fun HunterSceneCustomizer(
    }
   }
  }
- Spacer(Modifier.height(8.dp))
- Heading("Ajustes del entorno",size=23)
- HSelect("Iluminación",lighting,listOf(
-  "original" to "Original","moon" to "Luna llena",
-  "dawn" to "Amanecer","dusk" to "Atardecer"
- ),onChange=onLighting)
- HSelect("Atmósfera",atmosphere,listOf(
-  "serene" to "Serena","mystic" to "Mística","dramatic" to "Dramática"
- ),onChange=onAtmosphere)
- HSelect("Marco",frame,listOf(
-  "monarch" to "Monarca","eclipse" to "Eclipse","crystal" to "Cristal"
- ),onChange=onFrame)
- Spacer(Modifier.height(8.dp))
+ Spacer(Modifier.height(10.dp))
  SectionTitle("Vista previa","Así quedará tu cazador en Sistema Monarca.",Sigil.Layers)
- HunterMonarchCardPreview(scene,collection,gender,lighting,atmosphere,frame,
-   name,level,xp)
+ HunterMonarchCardPreview(scene,collection,gender,name,level,xp)
  HText("Los fondos generales de las demás pantallas permanecen limpios.",
    size=13,color=c.muted)
 }
@@ -141,7 +108,6 @@ internal fun HunterSceneCustomizer(
 @Composable
 internal fun HunterMonarchCardPreview(
  scene:String,collection:String,gender:String,
- lighting:String,atmosphere:String,frame:String,
  name:String,level:Int,xp:Int
 ){
  val c=LocalHunter.current
@@ -149,8 +115,8 @@ internal fun HunterMonarchCardPreview(
  val shape=RoundedCornerShape(23.dp)
  Box(Modifier.fillMaxWidth().height(405.dp).clip(shape)
   .background(c.panel)
-  .border(2.dp,monarchSceneFrameColor(frame,c.accent),shape)){
-  MonarchCardArtwork(scene,collection,gender,rank,lighting,atmosphere,
+  .border(2.dp,c.accent,shape)){
+  MonarchCardArtwork(scene,collection,gender,rank,
    Modifier.matchParentSize())
   Column(Modifier.fillMaxSize().padding(15.dp),
    verticalArrangement=Arrangement.spacedBy(10.dp)){

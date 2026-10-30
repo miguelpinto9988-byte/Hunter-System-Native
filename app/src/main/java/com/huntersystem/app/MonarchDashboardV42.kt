@@ -41,9 +41,6 @@ fun MonarchDashboardHero(ui: NativeUi, stats: JSONObject) {
     val gender = profile.s("gender", "unspecified")
     val artwork = resolvedHunterArtwork(collection, gender, rank)
     val scene = appearance.s("scene","auto")
-    val lighting = appearance.s("lighting","original")
-    val atmosphere = appearance.s("atmosphere","serene")
-    val frame = appearance.s("frame","monarch")
     val artworkTitle = hunterPortraitTitle(collection, gender)
     val name = profile.s("name", "Cazador").ifBlank { "Cazador" }.take(36)
     val shape = RoundedCornerShape(26.dp)
@@ -60,11 +57,10 @@ fun MonarchDashboardHero(ui: NativeUi, stats: JSONObject) {
         Box(
             Modifier.fillMaxWidth().height(heroHeight).clip(shape)
                 .background(Color(0xFF050E20))
-                .border(1.dp, monarchSceneFrameColor(frame,c.accent).copy(alpha = .75f), shape)
+                .border(1.dp, c.accent.copy(alpha = .75f), shape)
         ) {
             MonarchCardArtwork(
                 scene=scene,collection=collection,gender=gender,rank=rank,
-                lighting=lighting,atmosphere=atmosphere,
                 modifier=Modifier.matchParentSize()
             )
 

@@ -23,8 +23,18 @@ profile=(ROOT/"app/src/main/java/com/huntersystem/app/Profile.kt").read_text()
 dashboard=(ROOT/"app/src/main/java/com/huntersystem/app/MonarchDashboardV42.kt").read_text()
 global_wallpaper=(ROOT/"app/src/main/java/com/huntersystem/app/HunterRealmWallpaper.kt").read_text()
 assert all('HunterScene("'+n+'"' in scene for n in NAMES)
-assert all(x in profile for x in ('HunterSceneCustomizer(',
- 'onScene={values["scene33"]=it}', '"lighting33"','"atmosphere33"','"frame33"'))
+assert all(x in profile for x in ('HunterPicker(', 'HunterSceneCustomizer(',
+ 'onScene={values["scene33"]=it}'))
+# La galería de escenarios se conserva; los tres controles redundantes se retiran.
+for deprecated in ('Ajustes del entorno', 'HSelect("Iluminación"',
+                   'HSelect("Atmósfera"', 'HSelect("Marco"',
+                   'lighting33', 'atmosphere33', 'frame33',
+                   'onLighting', 'onAtmosphere', 'onFrame',
+                   'monarchSceneFrameColor('):
+ assert not any(deprecated in code for code in (scene,profile,dashboard)), deprecated
+assert 'SectionTitle("Vista previa"' in scene
+assert "HunterMonarchCardPreview(" in scene
+assert 'monarchScenePath(scene,rank)' in scene
 assert "MonarchCardArtwork(" in dashboard and 'appearance.s("scene","auto")' in dashboard
 assert "AssetImage(" not in global_wallpaper
 if "--apk" in sys.argv:
@@ -37,4 +47,4 @@ if "--apk" in sys.argv:
    with Image.open(BytesIO(raw)) as im:assert im.size==(960,720),name
  print("APK verificada: ocho escenas HD empaquetadas.")
 else:
- print("Galería HD, vista previa y ajustes persistentes verificados.")
+ print("Galería HD, selección y vista previa verificados; sin controles de entorno.")

@@ -14,7 +14,7 @@ private val fieldLabels=mapOf("name" to "Nombre de cazador","age" to "Edad","hei
 private val healthFields=setOf("pain","acute","special","recommendations","approved","translated","redFlags")
 @Composable fun ProfileScreen(ui:NativeUi){val s=ui.store;val old=s.profile;val form=s.catalog.profileForm.objects();val fields=form.flatMap{it.a("fields").objects()}
  val values=remember(old==null){mutableStateMapOf<String,String>().apply{
-  val defaults=mapOf("gender" to "unspecified","theme" to "eclipse","difficulty" to "basic","goalGroup" to "habit","goal" to "general","frequency" to "2","equipment" to "body","restSeconds" to "30","dailyMissions" to "3","blockMode22" to "exercise","collection33" to "hunter","scene33" to "auto","lighting33" to "original","atmosphere33" to "serene","frame33" to "monarch","trainingMode" to "challenges","companionCharacter" to "knight","trainingScale" to "1","pain" to "none")
+  val defaults=mapOf("gender" to "unspecified","theme" to "eclipse","difficulty" to "basic","goalGroup" to "habit","goal" to "general","frequency" to "2","equipment" to "body","restSeconds" to "30","dailyMissions" to "3","blockMode22" to "exercise","collection33" to "hunter","scene33" to "auto","trainingMode" to "challenges","companionCharacter" to "knight","trainingScale" to "1","pain" to "none")
   putAll(defaults)
   // Only visible fields belong to profile-form.json. Load historical settings
   // explicitly so removing obsolete form controls cannot discard saved preferences.
@@ -48,9 +48,6 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
   }
   put("collection33",s.state.o("appearance33").s("collection","hunter"))
   put("scene33",s.state.o("appearance33").s("scene","auto"))
-   put("lighting33",s.state.o("appearance33").s("lighting","original"))
-   put("atmosphere33",s.state.o("appearance33").s("atmosphere","serene"))
-   put("frame33",s.state.o("appearance33").s("frame","monarch"))
  }}
  val initialValues=remember(old==null){mutableStateMapOf<String,String>().apply{putAll(values)}}
  val injuries=remember(old==null){mutableStateListOf<JSONObject>().apply{addAll(old?.a("injuries")?.objects()?.map{it.copyJson()}?:emptyList())}}
@@ -62,15 +59,13 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
  fun saveProfile(){ui.attempt{
   // Appearance-only changes must leave the training profile and its plan intact.
   val visualOnly=old!=null&&
-   values.all{(k,v)->k in listOf("theme","collection33","scene33","lighting33","atmosphere33","frame33")||v==initialValues[k]}&&
+   values.all{(k,v)->k in listOf("theme","collection33","scene33")||v==initialValues[k]}&&
    week.toList()==old.a("weekPlan").strings()&&focus.toList()==old.a("weekFocus").strings()&&
    arr(injuries).toString()==old.a("injuries").toString()&&
    manualGoalGroup==old.b("manualGoalGroupNative")
   if(visualOnly){
    s.updateAppearanceOnly(values["theme"]?:"eclipse",
-    obj("collection" to values["collection33"],"scene" to values["scene33"],
-      "lighting" to values["lighting33"],"atmosphere" to values["atmosphere33"],
-      "frame" to values["frame33"]),ui.pendingAvatar)
+    obj("collection" to values["collection33"],"scene" to values["scene33"]),ui.pendingAvatar)
    initialValues.clear();initialValues.putAll(values);ui.pendingAvatar=null
    ui.open("saved",obj("title" to "Apariencia guardada",
     "body" to "Se actualizó la apariencia sin cambiar objetivos, equipo ni entrenamiento."))
@@ -91,9 +86,7 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
   p.put("step",values["step"]=="true")
   if(selectedEquipment=="body")p.put("load",0.0)
   if(old==null||arr(injuries).toString()!=old.a("injuries").toString())p.put("limits",injuries.any{it.s("stage")!="past"})
-  val appearance=obj("collection" to values["collection33"],"scene" to values["scene33"],
-    "lighting" to values["lighting33"],"atmosphere" to values["atmosphere33"],
-    "frame" to values["frame33"])
+  val appearance=obj("collection" to values["collection33"],"scene" to values["scene33"])
   s.saveProfile(p,appearance,ui.pendingAvatar);initialValues.clear();initialValues.putAll(values);ui.pendingAvatar=null;ReminderScheduler.schedule(s.context,s.state.o("reminders"));CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true));ui.open("saved",obj("title" to "Configuración guardada","body" to "Tu acompañante aplicó la interpretación local de tus preferencias. Se revisó el plan de la semana actual. Los registros realizados se conservan."))
  }}
  SceneColumn(ui){Eyebrow("CAZADOR · CONFIGURACIÓN");Heading(if(old==null)"Crea tu perfil" else "Tu perfil de cazador");HText("Tu objetivo, nivel, equipo y calendario ajustan la selección de ejercicios.",color=LocalHunter.current.muted)
@@ -150,15 +143,9 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
        scene=values["scene33"]?:"auto",
        collection=values["collection33"]?:"hunter",
        gender=values["gender"]?:"unspecified",
-       lighting=values["lighting33"]?:"original",
-       atmosphere=values["atmosphere33"]?:"serene",
-       frame=values["frame33"]?:"monarch",
        name=values["name"]?.ifBlank{"Cazador"}?:"Cazador",
        level=s.stats().i("level",1),xp=s.stats().i("xp"),
-       onScene={values["scene33"]=it},
-       onLighting={values["lighting33"]=it},
-       onAtmosphere={values["atmosphere33"]=it},
-       onFrame={values["frame33"]=it}
+       onScene={values["scene33"]=it}
       )
    }
    if(sectionIndex==form.lastIndex){Heading("Zonas e historial",size=26);for((i,injury)in injuries.withIndex()){Row(verticalAlignment=Alignment.CenterVertically){HText("${zoneLabels[injury.s("zone")]?:injury.s("zone")} · ${typeLabels[injury.s("type")]?:injury.s("type")} · ${if(injury.s("stage")=="past")"Anterior" else "Actual"}",Modifier.weight(1f),size=16);HButton("×"){injuries.removeAt(i)}}};HSelect("Zona",injuryZone,zoneLabels.toList()){injuryZone=it};HSelect("Tipo",injuryType,typeLabels.toList()){injuryType=it};Chips(listOf("current" to "Actual","past" to "Anterior"),injuryStage){injuryStage=it};HButton("+ Añadir zona"){injuries+=obj("zone" to injuryZone,"type" to injuryType,"stage" to injuryStage)};HText("El filtro por zonas no constituye un diagnóstico ni un programa de rehabilitación.",size=14,color=LocalHunter.current.muted)}
