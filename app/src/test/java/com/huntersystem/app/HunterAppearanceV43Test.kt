@@ -24,12 +24,27 @@ class HunterAppearanceV43Test {
    for(swatch in HunterAppearanceV43.outlines){
     val changed=HunterAppearanceV43.tokens(mode,swatch.id)
     for(key in listOf("--mode","--bg","--panel","--surface","--input",
-      "--line","--text","--muted","--accent","--secondary33","--selected33")){
+      "--line","--text","--muted","--selected33")){
      assertEquals("Color $key in $mode",original.getString(key),changed.getString(key))
     }
-    assertEquals(HunterAppearanceV43.borderHex(mode,swatch.id),
-      changed.getString("--outlineAccent"))
+    val expected=HunterAppearanceV43.borderHex(mode,swatch.id)
+    assertEquals(expected,changed.getString("--outlineAccent"))
+    assertEquals(expected,changed.getString("--accent"))
+    assertEquals(HunterAppearanceV43.accentShade(expected,mode=="light"),
+      changed.getString("--secondary33"))
    }
+  }
+ }
+
+ @Test fun allFiveChoicesUpdateHighlightColorsWithoutChangingSurfaces() {
+  for(mode in listOf("light","dark")){
+   val expected=HunterAppearanceV43.outlines.map{
+    HunterAppearanceV43.tokens(mode,it.id).getString("--accent")
+   }
+   assertEquals(5,expected.distinct().size)
+   assertEquals(expected,HunterAppearanceV43.outlines.map{
+    HunterAppearanceV43.tokens(mode,it.id).getString("--outlineAccent")
+   })
   }
  }
 

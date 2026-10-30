@@ -26,6 +26,9 @@ checks = {
     "rutinas pulsables": ".monarchPressable(" in FILES.get("MonarchRoutinesV42.kt", ""),
     "navegación": ".monarchOutline(shape,active=selected,pressed=pressed)" in FILES.get("MonarchNavigationV42.kt", ""),
     "selectores": ".monarchPressable(" in FILES.get("EclipseComponents.kt", ""),
+    "mismo color en contornos y textos destacados": '"--accent" to selectedAccent' in FILES.get("HunterAppearanceV43.kt","") and
+      '"--outlineAccent" to selectedAccent' in FILES.get("HunterAppearanceV43.kt","") and
+      'val selectedAccent=borderHex(currentMode,outline(outlineValue))' in FILES.get("HunterAppearanceV43.kt",""),
     "sin perder datos": all(x in FILES.get("Design.kt", "") for x in ("onClick:()->Unit", "enabled:Boolean", "onValueChange=onChange")),
 }
 stats = {

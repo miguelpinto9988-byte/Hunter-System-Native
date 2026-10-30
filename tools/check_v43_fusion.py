@@ -105,6 +105,11 @@ checks={
     and '.put("outlineColor",HunterAppearanceV43.outline(outlineColor))' in read(src+"NativeStore.kt")
     and 'HunterAppearanceV43.tokens(mode,border)' in read(src+"Design.kt")
     and 'c.outlineAccent.copy(alpha=.96f)' in read(src+"MonarchOutlineV43.kt"),
+ "mismo acento para letras y marcos":'val selectedAccent=borderHex(currentMode,outline(outlineValue))' in read(src+"HunterAppearanceV43.kt")
+    and '"--accent" to selectedAccent' in read(src+"HunterAppearanceV43.kt")
+    and '"--outlineAccent" to selectedAccent' in read(src+"HunterAppearanceV43.kt")
+    and 'color=LocalHunter.current.accent' in read(src+"Design.kt")
+    and 'c.outlineAccent.copy(alpha=.96f)' in read(src+"MonarchOutlineV43.kt"),
  "pruebas de catálogo":(R/"app/src/test/java/com/huntersystem/app/Hunter2000CatalogTest.kt").is_file(),
 }
 errors=[name for name,ok in checks.items() if not ok]

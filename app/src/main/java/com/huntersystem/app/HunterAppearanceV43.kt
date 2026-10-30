@@ -41,9 +41,22 @@ internal object HunterAppearanceV43 {
   val swatch=outlines.firstOrNull{it.id==outline}?:outlines.first()
   return if(mode=="light")swatch.light else swatch.dark
  }
+ // Segunda tonalidad derivada del mismo color, sin acentos ajenos al perfil.
+ fun accentShade(hex:String,light:Boolean):String{
+  val value=hex.removePrefix("#").toInt(16)
+  val target=if(light)0x243454 else 0xDCE7FF
+  val fraction=if(light).15 else .12
+  fun channel(shift:Int):Int{
+   val from=(value shr shift) and 255
+   val to=(target shr shift) and 255
+   return (from+(to-from)*fraction).toInt().coerceIn(0,255)
+  }
+  return "#%02X%02X%02X".format(channel(16),channel(8),channel(0))
+ }
  fun tokens(modeValue:String?,outlineValue:String?):JSONObject{
   val bright=mode(modeValue)=="light"
   val currentMode=if(bright)"light" else "dark"
+  val selectedAccent=borderHex(currentMode,outline(outlineValue))
   return obj(
    "--mode" to currentMode,
    "--bg" to if(bright)"#F5F7FC" else "#090D16",
@@ -53,10 +66,10 @@ internal object HunterAppearanceV43 {
    "--line" to if(bright)"#B4C0D2" else "#40506A",
    "--text" to if(bright)"#18243B" else "#EBF1FE",
    "--muted" to if(bright)"#59677D" else "#ADBDD3",
-   "--accent" to if(bright)"#325B9C" else "#A9C8F7",
-   "--secondary33" to if(bright)"#758DBB" else "#6D83A7",
+   "--accent" to selectedAccent,
+   "--secondary33" to accentShade(selectedAccent,bright),
    "--selected33" to if(bright)"#E6EAF3" else "#273348",
-   "--outlineAccent" to borderHex(currentMode,outline(outlineValue))
+   "--outlineAccent" to selectedAccent
   )
  }
 }
@@ -89,7 +102,7 @@ internal fun HunterModePicker(selected:String,onSelect:(String)->Unit){
 internal fun HunterOutlinePicker(selected:String,mode:String,onSelect:(String)->Unit){
  val c=LocalHunter.current
  HText("COLOR DE CONTORNOS",size=15,bold=true)
- HText("El color elegido se aplica a los marcos de las ventanas y se resalta al pulsar.",
+ HText("El color elegido se aplica a marcos, títulos destacados, iconos, botones y barras.",
   size=13,color=c.muted)
  for(group in HunterAppearanceV43.outlines.chunked(3)){
   Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
@@ -121,14 +134,14 @@ internal fun HunterAppearancePreview(mode:String,outline:String){
  CompositionLocalProvider(LocalHunter provides palette){
   val c=LocalHunter.current
   HText("VISTA PREVIA",size=15,bold=true)
-  HText("Así se verán los contornos de las ventanas al guardar.",size=13,color=c.muted)
+  HText("Vista previa de marcos y textos destacados. Se aplicará al guardar.",size=13,color=c.muted)
   HPanel(padding=14,decor=false){
    Row(verticalAlignment=Alignment.CenterVertically){
     Column(Modifier.weight(1f)){
-     HText("◆ SISTEMA MONARCA",size=15,bold=true)
+     HText("◆ SISTEMA MONARCA",size=15,bold=true,color=c.accent)
      HText(if(c.isLight)"Modo claro" else "Modo oscuro",size=13,color=c.muted)
     }
-    HText("RANGO E",size=13,color=c.outlineAccent,bold=true)
+    HText("RANGO E",size=13,color=c.accent,bold=true)
    }
    HProgress(.56f)
    Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
