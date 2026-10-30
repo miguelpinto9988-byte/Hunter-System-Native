@@ -34,22 +34,28 @@ class HunterProfileRedesignTest {
    }
   }
  }
- @Test fun fourUpdatedPortraitsAreBundled(){
+ @Test fun restoredHdArtworkIsUsedInBothCards(){
   val context=ApplicationProvider.getApplicationContext<Context>()
-  for(key in listOf("reader","regressor","hunter-male","hunter-female")){
-   val path=chosenHunterArtwork(key,"unspecified")
-   assertEquals("hunter-profile-portraits-v43/"+key+".webp",path)
-   context.assets.open(path).use { input->
-    val bytes=ByteArray(12)
-    assertEquals(12,input.read(bytes))
-    assertEquals("RIFF",String(bytes.copyOfRange(0,4),Charsets.US_ASCII))
-    assertEquals("WEBP",String(bytes.copyOfRange(8,12),Charsets.US_ASCII))
+  val expected=mapOf(
+   "reader" to "ui34/reader-d.webp",
+   "regressor" to "ui34/regressor-e.webp",
+   "hunter-male" to "ui34/hunter-male-e.webp",
+   "hunter-female" to "ui34/hunter-female-e.webp"
+  )
+  for((key,path)in expected){
+   assertEquals(path,chosenHunterArtwork(key,"unspecified"))
+   assertEquals(path,profileMonarchHunterArtwork(key,"unspecified","E"))
+   context.assets.open(path).use{input->
+    val signature=ByteArray(12)
+    assertEquals(12,input.read(signature))
+    assertEquals("RIFF",String(signature.copyOfRange(0,4),Charsets.US_ASCII))
+    assertEquals("WEBP",String(signature.copyOfRange(8,12),Charsets.US_ASCII))
    }
   }
  }
  @Test fun previousVisualValuesRemainCompatible(){
-  assertEquals("hunter-profile-portraits-v43/hunter-female.webp",chosenHunterArtwork("hunter","female"))
-  assertEquals("hunter-profile-portraits-v43/hunter-male.webp",chosenHunterArtwork("hunter","unspecified"))
-  assertEquals("hunter-profile-portraits-v43/reader.webp",chosenHunterArtwork("reader","unspecified"))
+  assertEquals("ui34/hunter-female-e.webp",chosenHunterArtwork("hunter","female"))
+  assertEquals("ui34/hunter-male-e.webp",chosenHunterArtwork("hunter","unspecified"))
+  assertEquals("ui34/reader-d.webp",chosenHunterArtwork("reader","unspecified"))
  }
 }

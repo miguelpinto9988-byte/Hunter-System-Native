@@ -33,14 +33,17 @@ checks={
      'fun MonarchCompanionPicker(' in companions and
      '.horizontalScroll(rememberScrollState())' in companions,
  "vista previa seleccionada":'HunterProfileCardPreview(' in profile and
-     'chosenHunterArtwork(collection,gender)' in layout and
+     'profileMonarchHunterArtwork(collection,gender,rank)' in layout and
      'chosenSceneArtwork(scene)' in layout,
- "retratos v43 nuevos, sin recorte":all(
-     (root/"app/src/main/assets/hunter-profile-portraits-v43"/(name+".webp")).is_file()
-     and (root/"app/src/main/assets/hunter-profile-portraits-v43"/(name+".webp")).read_bytes()[:4]==b"RIFF"
-     for name in ("reader","regressor","hunter-male","hunter-female"))
+ "ilustraciones originales HD sin recorte":all(
+     (root/"app/src/main/assets/ui34"/name).is_file()
+     for name in ("reader-d.webp","regressor-e.webp","hunter-male-e.webp","hunter-female-e.webp"))
+     and 'height(278.dp)' in pickers
      and 'ContentScale.Fit' in pickers.split('@Composable fun HunterPicker(',1)[1].split('@Composable fun BackgroundPicker(',1)[0]
      and 'ContentScale.Crop' not in pickers.split('@Composable fun HunterPicker(',1)[1].split('@Composable fun BackgroundPicker(',1)[0],
+ "sincronización HD entre perfil y Monarca":'profileMonarchHunterArtwork(collection,gender,rank)' in layout
+     and 'profileMonarchHunterArtwork(' in dashboard
+     and 'chosenHunterArtwork(collection,gender)' in dashboard,
  "8 escenarios HD":len(list((root/"app/src/main/assets/hunter-scenes-hd").glob("*.webp")))==8
      and all(key in pickers for key in (
       'biblioteca-lunar','palacio-submarino','reino-de-las-nubes',

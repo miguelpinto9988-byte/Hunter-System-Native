@@ -108,19 +108,22 @@ val profileColorThemes=listOf("eclipse","ice","aurora","ceniza","amanecer")
 
 // Local art selections used by both the picker and home.
 /** Respeta selecciones V33 previas y las cuatro portadas del perfil V43.12. */
+/**
+ * Ilustraciones verticales originales de calidad alta.
+ * Se eliminan los retratos V43 de baja resolución del selector.
+ */
 fun chosenHunterArtwork(collection:String,gender:String):String{
  val selected=if(collection=="alternate")
-  listOf("hunter","reader","regressor")[(java.time.LocalDate.now().toEpochDay()%3).toInt()]
+   listOf("hunter","reader","regressor")[(java.time.LocalDate.now().toEpochDay()%3).toInt()]
   else collection
- val portrait=when(selected){
-  "reader"->"reader"
-  "regressor"->"regressor"
-  "hunter-female"->"hunter-female"
-  "hunter-male"->"hunter-male"
-  else->if(gender=="female")"hunter-female" else "hunter-male"
+ return when(selected){
+  // El lector con abrigo y fragmentos es el arte Monarca solicitado.
+  "reader"->"ui34/reader-d.webp"
+  "regressor"->"ui34/regressor-e.webp"
+  "hunter-male"->"ui34/hunter-male-e.webp"
+  "hunter-female"->"ui34/hunter-female-e.webp"
+  else->if(gender=="female")"ui34/hunter-female-e.webp" else "ui34/hunter-male-e.webp"
  }
- // Retratos actualizados del prototipo V43.12; sin dependencia de la colección antigua ui34.
- return "hunter-profile-portraits-v43/"+portrait+".webp"
 }
 internal val hunterProfileSceneChoices=listOf(
  "biblioteca-lunar" to "Biblioteca lunar",
@@ -158,7 +161,7 @@ fun chosenSceneArtwork(scene:String):String{
    val active=selected==key||
     (selected=="hunter"&&key==if(gender=="female")"hunter-female" else "hunter-male")
    val shape=RoundedCornerShape(18.dp)
-   Column(Modifier.width(174.dp).clip(shape)
+   Column(Modifier.width(204.dp).clip(shape)
     .background(if(active)c.selected else c.input)
     .border(if(active)2.dp else 1.dp,if(active)c.accent else c.line,shape)
     .clickable(role=Role.RadioButton){onSelect(key)}
@@ -166,11 +169,11 @@ fun chosenSceneArtwork(scene:String):String{
     .padding(10.dp),horizontalAlignment=Alignment.CenterHorizontally,
     verticalArrangement=Arrangement.spacedBy(8.dp)){
     // Fit respeta toda la ilustración incluso en teléfonos estrechos.
-    Box(Modifier.fillMaxWidth().height(148.dp).clip(RoundedCornerShape(12.dp))
+    Box(Modifier.fillMaxWidth().height(278.dp).clip(RoundedCornerShape(12.dp))
      .background(c.panel),contentAlignment=Alignment.Center){
      AssetImage(chosenHunterArtwork(key,gender),
-      Modifier.fillMaxSize().padding(5.dp),ContentScale.Fit,
-      description="Retrato completo de "+label,alignment=Alignment.Center)
+      Modifier.fillMaxSize().padding(3.dp),ContentScale.Fit,
+      description="Ilustración HD completa de "+label,alignment=Alignment.Center)
     }
     HText(label,size=15,bold=true,maxLines=1,color=if(active)c.accent else c.text)
     HText(subtitle,size=10,color=c.muted,maxLines=1)

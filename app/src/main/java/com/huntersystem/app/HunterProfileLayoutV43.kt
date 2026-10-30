@@ -110,17 +110,17 @@ internal fun HunterProfileCardPreview(
  val shape=RoundedCornerShape(22.dp)
  BoxWithConstraints(Modifier.fillMaxWidth()){
   val compact=maxWidth<380.dp
-  Box(Modifier.fillMaxWidth().height(if(compact)366.dp else 420.dp)
+  Box(Modifier.fillMaxWidth().height(if(compact)450.dp else 494.dp)
    .clip(shape).background(colors.bg)
    .border(1.dp,colors.accent.copy(alpha=.85f),shape)
    .semantics{contentDescription="Vista previa de Sistema Monarca, cazador "+name}){
    AssetImage(chosenSceneArtwork(scene),Modifier.matchParentSize(),ContentScale.Crop,
     description=null,alignment=Alignment.Center)
-   AssetImage(chosenHunterArtwork(collection,gender),
-    Modifier.align(Alignment.BottomEnd).fillMaxWidth(.78f).fillMaxHeight(.96f),
+   AssetImage(profileMonarchHunterArtwork(collection,gender,rank),
+    Modifier.align(Alignment.BottomEnd).fillMaxWidth(.89f).fillMaxHeight(.96f),
     ContentScale.Fit,description=null,alignment=Alignment.BottomEnd)
    Box(Modifier.matchParentSize().background(Brush.horizontalGradient(listOf(
-    Color(0xF2080E1F),Color(0xD10A1429),Color(0x47071225),Color.Transparent
+    Color(0xFA080E1F),Color(0xDB0A1429),Color(0x33071225),Color.Transparent
    ))))
    Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(
     Color(0x40050C1C),Color.Transparent,Color(0xCF070F20)

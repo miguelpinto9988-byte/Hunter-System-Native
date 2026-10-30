@@ -41,16 +41,11 @@ internal fun monarchHunterHeroArtwork(gender:String,rank:String):String {
  */
 internal fun profileMonarchHunterArtwork(collection:String,gender:String,rank:String):String{
  val safe=rank.lowercase().takeIf{it in setOf("e","d","c","b","a","s")} ?: "e"
- return when(collection){
-  "reader"->"ui34/reader-"+safe+".webp"
-  "regressor"->"ui34/regressor-e.webp"
-  "hunter-male"->monarchHunterHeroArtwork("male",rank)
-  "hunter-female"->monarchHunterHeroArtwork("female",rank)
-  "alternate"->chosenHunterArtwork("alternate",gender)
-  else->monarchHunterHeroArtwork(gender,rank)
- }
+ // La portada Monarca del nivel inicial coincide con el selector HD.
+ // En Reader se conservan las variantes HD por rango al evolucionar.
+ return if(collection=="reader" && safe!="e")"ui34/reader-"+safe+".webp"
+  else chosenHunterArtwork(collection,gender)
 }
-
 /**
  * Fase 04: dashboard Monarca. Solo lee NativeStore y enlaza acciones existentes.
  * No altera el perfil, las sesiones, las estadísticas, las restricciones ni el catálogo.
@@ -64,81 +59,68 @@ fun MonarchDashboardHero(ui: NativeUi, stats: JSONObject) {
     val xp = stats.i("xp").coerceAtLeast(0)
     val xpInLevel = xp % 300
     val rank = rankKey(level)
-    val appearance=store.state.o("appearance33")
-    val hunterArtwork = profileMonarchHunterArtwork(appearance.s("collection","hunter"),profile.s("gender"),rank)
-    val selectedScene=appearance.s("scene","auto")
+    val appearance = store.state.o("appearance33")
+    val hunterArtwork = profileMonarchHunterArtwork(
+        appearance.s("collection","hunter"),profile.s("gender"),rank)
+    val selectedScene = appearance.s("scene","auto")
     val name = profile.s("name", "Cazador").ifBlank { "Cazador" }.take(36)
     val shape = RoundedCornerShape(26.dp)
 
     BoxWithConstraints(Modifier.fillMaxWidth()) {
         val expansive = maxWidth >= 680.dp
         val compact = maxWidth < 355.dp
-        val artWidth = if (expansive) 300.dp else if (compact) 128.dp else 154.dp
-        val artHeight = if (expansive) 282.dp else 212.dp
-        Box(Modifier.fillMaxWidth().clip(shape)
-            .background(Brush.linearGradient(listOf(c.surface, c.panel, c.bg)))
-            .border(1.dp, c.accent.copy(alpha = .48f), shape)) {
-            AssetImage(chosenSceneArtwork(selectedScene),
-                Modifier.matchParentSize().graphicsLayer{
-                  alpha=if(hunterProfileSceneChoices.any{it.first==selectedScene}) .74f else .18f
-                },ContentScale.Crop)
+        Box(Modifier.fillMaxWidth().height(
+                if(expansive)520.dp else if(compact)420.dp else 468.dp)
+            .clip(shape)
+            .background(Brush.verticalGradient(listOf(c.surface,c.bg)))
+            .border(1.dp,c.accent.copy(alpha=.66f),shape)) {
+            AssetImage(chosenSceneArtwork(selectedScene),Modifier.matchParentSize(),
+                ContentScale.Crop,description=null)
+            // Protagonista vertical HD en toda la altura; no una miniatura lateral.
+            AssetImage(hunterArtwork,
+                Modifier.align(Alignment.BottomEnd)
+                    .fillMaxWidth(if(expansive).68f else .88f)
+                    .fillMaxHeight(.96f),
+                ContentScale.Fit,description="Cazador Monarca · rango $rank",
+                alignment=Alignment.BottomEnd)
             Box(Modifier.matchParentSize().background(Brush.horizontalGradient(listOf(
-                c.bg.copy(alpha=.93f),c.bg.copy(alpha=.60f),Color.Transparent
-            ))))
-            // Solo la cuadrícula discreta original; sin halos ni círculos
-            // detrás del cazador. La ilustración conserva su transparencia.
-            Canvas(Modifier.matchParentSize()) {
-                for (n in 0..5) {
-                    val y = (n + 1) * size.height / 7f
-                    drawLine(c.line.copy(alpha = .14f),
-                        Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx())
-                }
-            }
-            Column(Modifier.fillMaxWidth().padding(18.dp),
-                verticalArrangement = Arrangement.spacedBy(13.dp)) {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically) {
+                c.bg.copy(alpha=.99f),c.bg.copy(alpha=.92f),
+                c.bg.copy(alpha=.28f),Color.Transparent))))
+            Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(
+                Color.Transparent,Color.Transparent,c.bg.copy(alpha=.89f)))))
+            Column(Modifier.fillMaxSize().padding(if(compact)15.dp else 20.dp),
+                verticalArrangement=Arrangement.spacedBy(12.dp)) {
+                Row(Modifier.fillMaxWidth(),
+                    horizontalArrangement=Arrangement.SpaceBetween,
+                    verticalAlignment=Alignment.CenterVertically) {
                     Eyebrow("◆  SISTEMA MONARCA")
-                    HText("RANGO $rank", size = 14, color = c.accent, bold = true)
+                    HText("RANGO $rank",size=14,color=c.accent,bold=true)
                 }
-                Row(Modifier.fillMaxWidth().height(artHeight),
-                    verticalAlignment = Alignment.CenterVertically) {
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(9.dp)) {
-                        HText("TU EVOLUCIÓN", size = 12, color = c.accent, bold = true)
-                        Heading("NIVEL\n" + level.toString().padStart(2, '0'),
-                            size = if (expansive) 50 else if (compact) 34 else 39)
-                        HText(name, size = if (compact) 15 else 17,
-                            color = c.text, bold = true, maxLines = 2)
-                        HText("Cada sesión cuenta.", size = 14,
-                            color = c.muted, maxLines = 2)
-                        HText("EVOLUCIONAR  ↗",
-                            modifier = Modifier.clickable(role = Role.Button) {
-                                ui.open("evolution")
-                            }, size = 13, bold = true, color = c.accent)
-                    }
-                    Box(Modifier.width(artWidth).fillMaxHeight(),
-                        contentAlignment = Alignment.BottomCenter) {
-                        AssetImage(
-                            hunterArtwork,
-                            Modifier.fillMaxSize(),
-                            ContentScale.Fit,
-                            description = "Cazador de tu perfil · rango $rank",
-                            alignment = Alignment.BottomCenter
-                        )
-                    }
+                Column(Modifier.weight(1f)
+                    .fillMaxWidth(if(expansive).47f else .53f),
+                    verticalArrangement=Arrangement.spacedBy(if(compact)9.dp else 13.dp)){
+                    HText("TU EVOLUCIÓN",size=13,color=c.accent,bold=true)
+                    Heading("NIVEL\n"+level.toString().padStart(2,'0'),
+                        size=if(expansive)54 else if(compact)35 else 43)
+                    HText(name,size=if(compact)16 else 19,bold=true,maxLines=2)
+                    HText("Cada sesión cuenta.",size=14,color=c.muted,maxLines=2)
+                    HText("EVOLUCIONAR  ↗",size=13,bold=true,color=c.accent,
+                        modifier=Modifier.clickable(role=Role.Button){
+                            ui.open("evolution")
+                        })
                 }
                 Row(Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween) {
-                    HText("EXPERIENCIA", color = c.muted, size = 13, bold = true)
-                    HText("$xp XP", color = c.accent, size = 15, bold = true)
+                    horizontalArrangement=Arrangement.SpaceBetween){
+                    HText("EXPERIENCIA",color=c.text,size=13,bold=true)
+                    HText("$xp XP",color=c.accent,size=15,bold=true)
                 }
-                HProgress(xpInLevel / 300f)
+                HProgress(xpInLevel/300f)
                 HText("$xpInLevel / 300 XP hacia el siguiente nivel",
-                    size = 13, color = c.muted)
+                    size=13,color=c.muted)
             }
             Box(Modifier.fillMaxWidth().height(3.dp).align(Alignment.TopCenter)
-                .background(Brush.horizontalGradient(
-                    listOf(Color.Transparent, c.accent, c.secondary, Color.Transparent))))
+                .background(Brush.horizontalGradient(listOf(
+                    Color.Transparent,c.accent,c.secondary,Color.Transparent))))
         }
     }
 }
