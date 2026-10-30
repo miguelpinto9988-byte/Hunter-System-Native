@@ -116,7 +116,7 @@ internal fun HunterProfileCardPreview(
    .semantics{contentDescription="Vista previa de Sistema Monarca, cazador "+name}){
    AssetImage(chosenSceneArtwork(scene),Modifier.matchParentSize(),ContentScale.Crop,
     description=null,alignment=Alignment.Center)
-   AssetImage(profileMonarchHunterArtwork(collection,gender,rank),
+   HunterEvolutionImage(collection,gender,rank,profileMonarchHunterArtwork(collection,gender,rank),
     Modifier.align(Alignment.BottomEnd).fillMaxWidth(.89f).fillMaxHeight(.96f),
     ContentScale.Fit,description=null,alignment=Alignment.BottomEnd)
    Box(Modifier.matchParentSize().background(Brush.horizontalGradient(listOf(

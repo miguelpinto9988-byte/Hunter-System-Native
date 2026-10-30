@@ -77,7 +77,7 @@ fun MonarchDashboardHero(ui: NativeUi, stats: JSONObject) {
             AssetImage(chosenSceneArtwork(selectedScene),Modifier.matchParentSize(),
                 ContentScale.Crop,description=null)
             // Protagonista vertical HD en toda la altura; no una miniatura lateral.
-            AssetImage(hunterArtwork,
+            HunterEvolutionImage(appearance.s("collection","hunter"),profile.s("gender"),rank,hunterArtwork,
                 Modifier.align(Alignment.BottomEnd)
                     .fillMaxWidth(if(expansive).68f else .88f)
                     .fillMaxHeight(.96f),

@@ -171,7 +171,7 @@ fun chosenSceneArtwork(scene:String):String{
     // Fit respeta toda la ilustración incluso en teléfonos estrechos.
     Box(Modifier.fillMaxWidth().height(278.dp).clip(RoundedCornerShape(12.dp))
      .background(c.panel),contentAlignment=Alignment.Center){
-     AssetImage(chosenHunterArtwork(key,gender),
+     HunterEvolutionImage(key,gender,"e",chosenHunterArtwork(key,gender),
       Modifier.fillMaxSize().padding(3.dp),ContentScale.Fit,
       description="Ilustración HD completa de "+label,alignment=Alignment.Center)
     }
