@@ -109,16 +109,18 @@ val profileColorThemes=listOf("eclipse","ice","aurora","ceniza","amanecer")
 // Local art selections used by both the picker and home.
 /** Respeta selecciones V33 previas y las cuatro portadas del perfil V43.12. */
 fun chosenHunterArtwork(collection:String,gender:String):String{
- val choice=if(collection=="alternate")
-   listOf("hunter","reader","regressor")[(java.time.LocalDate.now().toEpochDay()%3).toInt()]
+ val selected=if(collection=="alternate")
+  listOf("hunter","reader","regressor")[(java.time.LocalDate.now().toEpochDay()%3).toInt()]
   else collection
- return "ui34/"+when(choice){
-  "reader"->"reader-e.webp"
-  "regressor"->"regressor-e.webp"
-  "hunter-female"->"hunter-female-e.webp"
-  "hunter-male"->"hunter-male-e.webp"
-  else->if(gender=="female")"hunter-female-e.webp" else "hunter-male-e.webp"
+ val portrait=when(selected){
+  "reader"->"reader"
+  "regressor"->"regressor"
+  "hunter-female"->"hunter-female"
+  "hunter-male"->"hunter-male"
+  else->if(gender=="female")"hunter-female" else "hunter-male"
  }
+ // Retratos actualizados del prototipo V43.12; sin dependencia de la colección antigua ui34.
+ return "hunter-profile-portraits-v43/"+portrait+".webp"
 }
 internal val hunterProfileSceneChoices=listOf(
  "biblioteca-lunar" to "Biblioteca lunar",
@@ -151,33 +153,33 @@ fun chosenSceneArtwork(scene:String):String{
  )
  HText("Desliza para descubrir los cuatro protagonistas.",size=13,color=c.muted)
  Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-  horizontalArrangement=Arrangement.spacedBy(10.dp)){
+  horizontalArrangement=Arrangement.spacedBy(12.dp)){
   for((key,label,subtitle)in choices){
    val active=selected==key||
     (selected=="hunter"&&key==if(gender=="female")"hunter-female" else "hunter-male")
-   val shape=RoundedCornerShape(16.dp)
-   Column(Modifier.width(138.dp).clip(shape)
+   val shape=RoundedCornerShape(18.dp)
+   Column(Modifier.width(174.dp).clip(shape)
     .background(if(active)c.selected else c.input)
     .border(if(active)2.dp else 1.dp,if(active)c.accent else c.line,shape)
     .clickable(role=Role.RadioButton){onSelect(key)}
     .semantics{this.selected=active;contentDescription="Cazador "+label}
-    .padding(8.dp),horizontalAlignment=Alignment.CenterHorizontally,
-    verticalArrangement=Arrangement.spacedBy(6.dp)){
-    Box(Modifier.fillMaxWidth().height(145.dp).clip(RoundedCornerShape(11.dp))
-     .background(c.panel),contentAlignment=Alignment.BottomCenter){
+    .padding(10.dp),horizontalAlignment=Alignment.CenterHorizontally,
+    verticalArrangement=Arrangement.spacedBy(8.dp)){
+    // Fit respeta toda la ilustración incluso en teléfonos estrechos.
+    Box(Modifier.fillMaxWidth().height(148.dp).clip(RoundedCornerShape(12.dp))
+     .background(c.panel),contentAlignment=Alignment.Center){
      AssetImage(chosenHunterArtwork(key,gender),
-      Modifier.fillMaxWidth().fillMaxHeight(.99f),ContentScale.Crop,
-      description="Ilustración de "+label)
+      Modifier.fillMaxSize().padding(5.dp),ContentScale.Fit,
+      description="Retrato completo de "+label,alignment=Alignment.Center)
     }
-    HText(label,size=14,bold=active,maxLines=1,color=if(active)c.accent else c.text)
+    HText(label,size=15,bold=true,maxLines=1,color=if(active)c.accent else c.text)
     HText(subtitle,size=10,color=c.muted,maxLines=1)
-    HunterIcon(if(active)Sigil.Check else Sigil.Plus,Modifier.size(15.dp),
-      if(active)c.accent else c.muted)
+    HunterIcon(if(active)Sigil.Check else Sigil.Plus,Modifier.size(17.dp),
+     if(active)c.accent else c.muted)
    }
   }
  }
 }
-
 @Composable fun BackgroundPicker(
  selected:String,collection:String,gender:String,onSelect:(String)->Unit
 ){

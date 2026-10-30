@@ -34,9 +34,22 @@ class HunterProfileRedesignTest {
    }
   }
  }
+ @Test fun fourUpdatedPortraitsAreBundled(){
+  val context=ApplicationProvider.getApplicationContext<Context>()
+  for(key in listOf("reader","regressor","hunter-male","hunter-female")){
+   val path=chosenHunterArtwork(key,"unspecified")
+   assertEquals("hunter-profile-portraits-v43/"+key+".webp",path)
+   context.assets.open(path).use { input->
+    val bytes=ByteArray(12)
+    assertEquals(12,input.read(bytes))
+    assertEquals("RIFF",String(bytes.copyOfRange(0,4),Charsets.US_ASCII))
+    assertEquals("WEBP",String(bytes.copyOfRange(8,12),Charsets.US_ASCII))
+   }
+  }
+ }
  @Test fun previousVisualValuesRemainCompatible(){
-  assertEquals("ui34/hunter-female-e.webp",chosenHunterArtwork("hunter","female"))
-  assertEquals("ui34/hunter-male-e.webp",chosenHunterArtwork("hunter","unspecified"))
-  assertEquals("ui34/reader-e.webp",chosenHunterArtwork("reader","unspecified"))
+  assertEquals("hunter-profile-portraits-v43/hunter-female.webp",chosenHunterArtwork("hunter","female"))
+  assertEquals("hunter-profile-portraits-v43/hunter-male.webp",chosenHunterArtwork("hunter","unspecified"))
+  assertEquals("hunter-profile-portraits-v43/reader.webp",chosenHunterArtwork("reader","unspecified"))
  }
 }

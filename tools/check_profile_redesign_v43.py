@@ -35,6 +35,12 @@ checks={
  "vista previa seleccionada":'HunterProfileCardPreview(' in profile and
      'chosenHunterArtwork(collection,gender)' in layout and
      'chosenSceneArtwork(scene)' in layout,
+ "retratos v43 nuevos, sin recorte":all(
+     (root/"app/src/main/assets/hunter-profile-portraits-v43"/(name+".webp")).is_file()
+     and (root/"app/src/main/assets/hunter-profile-portraits-v43"/(name+".webp")).read_bytes()[:4]==b"RIFF"
+     for name in ("reader","regressor","hunter-male","hunter-female"))
+     and 'ContentScale.Fit' in pickers.split('@Composable fun HunterPicker(',1)[1].split('@Composable fun BackgroundPicker(',1)[0]
+     and 'ContentScale.Crop' not in pickers.split('@Composable fun HunterPicker(',1)[1].split('@Composable fun BackgroundPicker(',1)[0],
  "8 escenarios HD":len(list((root/"app/src/main/assets/hunter-scenes-hd").glob("*.webp")))==8
      and all(key in pickers for key in (
       'biblioteca-lunar','palacio-submarino','reino-de-las-nubes',
