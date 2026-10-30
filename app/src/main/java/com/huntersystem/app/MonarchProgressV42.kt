@@ -230,7 +230,7 @@ private fun MonarchAchievementGrid(ui:NativeUi,stats:JSONObject){
             for(badge in row) HPanel(Modifier.weight(1f),padding=12,decor=false){
                 Box(Modifier.size(38.dp).clip(RoundedCornerShape(12.dp))
                     .background(if(badge.achieved)c.accent.copy(alpha=.18f) else c.input)
-                    .border(1.dp,if(badge.achieved)c.accent else c.line,
+                    .monarchOutline(
                         RoundedCornerShape(12.dp)),contentAlignment=Alignment.Center){
                     HText(if(badge.achieved)"✦" else "◇",size=23,
                         color=if(badge.achieved)c.accent else c.muted)
@@ -318,7 +318,7 @@ fun MonarchProgressScreen(ui:NativeUi){
                 }
                 Box(Modifier.size(58.dp).clip(CircleShape)
                     .background(c.accent.copy(alpha=.13f))
-                    .border(2.dp,c.accent,CircleShape),
+                    .monarchOutline(CircleShape,active=true),
                     contentAlignment=Alignment.Center){
                     HText(rankKey(all.i("level",1)),size=28,color=c.accent,bold=true)
                 }

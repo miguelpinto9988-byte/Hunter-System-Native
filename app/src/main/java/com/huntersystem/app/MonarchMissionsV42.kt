@@ -133,8 +133,7 @@ private fun MonarchMissionsWeek(ui:NativeUi, selected:String, onSelect:(String)-
                 Column(Modifier.weight(1f).defaultMinSize(minHeight=91.dp)
                     .clip(shape)
                     .background(if(isSelected)c.selected else c.input)
-                    .border(if(isSelected)1.5.dp else .8.dp,
-                        if(isSelected)c.accent else c.line,shape)
+                    .monarchOutline(shape,active=isSelected)
                     .clickable(role=Role.Button){onSelect(date)}
                     .semantics { contentDescription = "${names[i]}, ${style.title}, ${if(complete)"completado" else missionState(s.logs.optJSONObject(date),date)}" }
                     .padding(horizontal=1.dp,vertical=9.dp),
@@ -279,7 +278,7 @@ private fun MonarchMissionExercise(
     val shape=RoundedCornerShape(17.dp)
     Column(Modifier.fillMaxWidth().clip(shape)
         .background(colors.input)
-        .border(1.dp,colors.line,shape)
+        .monarchOutline(shape)
         .padding(13.dp),verticalArrangement=Arrangement.spacedBy(9.dp)) {
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(9.dp),
             verticalAlignment=Alignment.CenterVertically) {
@@ -327,7 +326,7 @@ private fun MonarchMissionCheck(
         horizontalArrangement=Arrangement.spacedBy(12.dp)) {
         Box(Modifier.size(25.dp).clip(RoundedCornerShape(7.dp))
             .background(if(done)c.accent else c.surface)
-            .border(1.dp,if(done)c.accent else c.line,RoundedCornerShape(7.dp)),
+            .monarchOutline(RoundedCornerShape(7.dp),active=done),
             contentAlignment=Alignment.Center) {
             if(done)HText("✓",size=18,color=c.bg,bold=true)
         }
@@ -437,7 +436,7 @@ fun MonarchMissionsCalendar(ui:NativeUi) {
                             .defaultMinSize(minHeight=55.dp)
                             .clip(shape)
                             .background(if(current)c.selected else c.input)
-                            .border(1.dp,if(current)c.accent else c.line,shape)
+                            .monarchOutline(shape,active=current)
                             .clickable(role=Role.Button) {
                                 ui.open("mission",obj("date" to date))
                             }

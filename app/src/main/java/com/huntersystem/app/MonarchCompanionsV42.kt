@@ -70,7 +70,7 @@ fun MonarchCompanionPicker(selected:String, onSelected:(String)->Unit) {
         Row(
             Modifier.fillMaxWidth().clip(hero)
                 .background(Brush.horizontalGradient(listOf(c.panel,c.surface)))
-                .border(1.dp,c.accent.copy(alpha=.45f),hero)
+                .monarchOutline(hero)
                 .padding(13.dp),
             verticalAlignment=Alignment.CenterVertically,
             horizontalArrangement=Arrangement.spacedBy(14.dp)
@@ -94,8 +94,7 @@ fun MonarchCompanionPicker(selected:String, onSelected:(String)->Unit) {
                 Column(
                     Modifier.width(108.dp).clip(shape)
                         .background(if(active)c.selected else c.input)
-                        .border(if(active)2.dp else 1.dp,
-                            if(active)c.accent else c.line,shape)
+                        .monarchOutline(shape,active=active)
                         .selectable(selected=active,role=Role.RadioButton,
                             onClick={onSelected(item.id)})
                         .padding(8.dp),

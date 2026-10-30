@@ -143,7 +143,7 @@ private fun MonarchBossMissionCard(
  val shape=RoundedCornerShape(HunterDesignSystem.Dimensions.cornerCard)
  Box(Modifier.fillMaxWidth().clip(shape)
   .background(Brush.verticalGradient(listOf(colors.surface,colors.panel)))
-  .border(1.dp,colors.accent.copy(alpha=.50f),shape)){
+  .monarchOutline(shape)){
   // Todas las misiones (Igris, Beru y Baran) comparten el fondo a
   // tamaño COMPLETO. matchParentSize toma la altura final del contenido,
   // incluso cuando se despliegan los objetivos; no deja cortes a mitad.
