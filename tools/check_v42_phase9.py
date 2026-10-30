@@ -32,7 +32,7 @@ for label, fragment in [
     ("Gráfico por intervalos", "fun MonarchProgressTrend("),
     ("Distribución por actividad", "fun MonarchKindDistribution("),
     ("Logros objetivos", "fun MonarchAchievementGrid("),
-    ("Evolución de rangos", "fun MonarchEvolutionScreen("),
+    ("Lectura de XP y rangos", 'HText("RANGO ${rankKey(all.i("level",1))}'),
     ("Estadísticas sin valores simulados", 's.logs.entries()'),
     ("Solo series finalizadas reales", 'x.a("actual").objects().count{it.b("done")}'),
     ("Distinción confirmación rápida", "quickCompletions"),
@@ -42,8 +42,11 @@ for label, fragment in [
 ]:
     check(fragment in progress, label)
 check("MonarchProgressScreen(ui)" in screens, "Estadísticas no conectadas")
-check("MonarchHomeProgressStrip(ui)" in screens, "Inicio no usa evolución")
-check("MonarchEvolutionScreen(ui)" in evolution, "Evolución no conectada")
+check("MonarchHomeProgressStrip(ui)" in screens, "Inicio no muestra progreso")
+check("fun MonarchEvolutionScreen(" not in progress and
+      "MonarchEvolutionScreen(ui)" not in evolution and
+      'ui.open("evolution")' not in screens,
+      "La ventana de evolución retirada sigue siendo accesible")
 check('"xp" to xp' in store and '"level" to 1+xp/300' in store,
       "Fórmula original de XP no preservada")
 check(any(x in gradle for x in ['versionName = "42.8-monarca-fase9"','versionName = "42.9-monarca-fase10"']), "Versión inferior a 42.8")
