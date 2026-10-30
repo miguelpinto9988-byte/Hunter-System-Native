@@ -44,6 +44,14 @@ checks={
  "sincronización HD entre perfil y Monarca":'profileMonarchHunterArtwork(collection,gender,rank)' in layout
      and 'profileMonarchHunterArtwork(' in dashboard
      and 'chosenHunterArtwork(collection,gender)' in dashboard,
+ "24 evoluciones restauradas E-S en GitHub":all(
+     (lambda data:data[:4]==b"RIFF" and data[8:12]==b"WEBP")(
+         (root/"app/src/main/assets/hunter-evolutions-v43"/f"{name}-{rank}.webp").read_bytes())
+     for name in ("reader","regressor","hunter-male","hunter-female")
+     for rank in "edcbas")
+     and 'HunterEvolutionImage(' in pickers
+     and 'HunterEvolutionImage(' in layout
+     and 'HunterEvolutionImage(' in dashboard,
  "8 escenarios HD":len(list((root/"app/src/main/assets/hunter-scenes-hd").glob("*.webp")))==8
      and all(key in pickers for key in (
       'biblioteca-lunar','palacio-submarino','reino-de-las-nubes',
