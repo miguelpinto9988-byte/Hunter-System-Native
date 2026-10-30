@@ -45,46 +45,26 @@ class MainActivity:ComponentActivity(){
 fun HunterRoot(ui:NativeUi){
     val store=ui.store
     store.revision.intValue
-    val colors=LocalHunter.current
     val hasProfile=store.profile!=null
     BackHandler(ui.stack.isNotEmpty()||ui.library.isNotBlank()||(hasProfile&&ui.tab!="home")){
         ui.back()
     }
-    val drawer=rememberDrawerState(initialValue=DrawerValue.Closed)
-    val scope=rememberCoroutineScope()
-    ui.openMenu={scope.launch{drawer.open()}}
-    ModalNavigationDrawer(
-        drawerState=drawer,
-        gesturesEnabled=hasProfile,
-        scrimColor=androidx.compose.ui.graphics.Color(0xB4040710),
-        drawerContent={
-            ModalDrawerSheet(
-                modifier=Modifier.width(304.dp),
-                drawerContainerColor=androidx.compose.ui.graphics.Color(0xFF050A1B)
-            ){
-                HunterSideMenu(ui){scope.launch{drawer.close()}}
-            }
-        }
-    ){
-    BoxWithConstraints(Modifier.fillMaxSize()){
-        val tablet=maxWidth>=MonarchNavigation.tabletWidthDp.dp
-        Scaffold(containerColor=androidx.compose.ui.graphics.Color.Transparent,bottomBar={
-            if(hasProfile&&store.readError==null&&!tablet)MonarchBottomNavigation(ui)
-        }){insets->
-            Box(Modifier.fillMaxSize().padding(insets)){
-                HunterRealmWallpaper(
-                    if(store.readError!=null) "recovery" else if(hasProfile) ui.tab else "profile",
-                    Modifier.matchParentSize()
-                )
-            Row(Modifier.fillMaxSize()){
-                if(hasProfile&&store.readError==null&&tablet)MonarchNavigationRail(ui)
-                Box(Modifier.weight(1f).fillMaxHeight()){
-                    if(store.readError!=null){
-                        MonarchRecoveryScreen(ui,store.readError!!)
-                    }else{
-                        val saveableScreens=rememberSaveableStateHolder()
-                        MonarchScreenTransition(if(hasProfile)ui.tab else "profile",Modifier.fillMaxSize()){route->
-                            saveableScreens.SaveableStateProvider(route){
+    // La navegación de Hunter System es únicamente inferior, también en tabletas.
+    Scaffold(containerColor=androidx.compose.ui.graphics.Color.Transparent,bottomBar={
+        if(hasProfile&&store.readError==null)MonarchBottomNavigation(ui)
+    }){insets->
+        Box(Modifier.fillMaxSize().padding(insets)){
+            HunterRealmWallpaper(
+                if(store.readError!=null)"recovery" else if(hasProfile)ui.tab else "profile",
+                Modifier.matchParentSize()
+            )
+            Box(Modifier.fillMaxSize()){
+                if(store.readError!=null){
+                    MonarchRecoveryScreen(ui,store.readError!!)
+                }else{
+                    val saveableScreens=rememberSaveableStateHolder()
+                    MonarchScreenTransition(if(hasProfile)ui.tab else "profile",Modifier.fillMaxSize()){route->
+                        saveableScreens.SaveableStateProvider(route){
                             when(route){
                                 "home"->HomeScreen(ui)
                                 "plan"->PlanScreen(ui)
@@ -94,18 +74,15 @@ fun HunterRoot(ui:NativeUi){
                                 "stats"->ProgressScreen(ui)
                                 else->ProfileScreen(ui)
                             }
-                            }
                         }
                     }
-                    if(hasProfile&&ui.tab!="profile"&&store.readError==null){
-                        FloatingCompanion(ui,Modifier.align(Alignment.BottomEnd)
-                            .padding(end=14.dp,bottom=12.dp))
-                    }
+                }
+                if(hasProfile&&ui.tab!="profile"&&store.readError==null){
+                    FloatingCompanion(ui,Modifier.align(Alignment.BottomEnd)
+                        .padding(end=14.dp,bottom=12.dp))
                 }
             }
-            }
         }
-    }
     }
     if(ui.stack.isNotEmpty())OverlayRoot(ui,ui.stack.last())
 }

@@ -28,9 +28,14 @@ checks={
     and 'HunterPngIcon(' in read(src+"MonarchRoutinesV42.kt")
     and 'HunterPngIcon(' in read(src+"MonarchProgressV42.kt")
     and 'HunterPngIcon(' in read(src+"Screens.kt"),
- "menu lateral PNG":(R/(src+"HunterSideMenu.kt")).is_file()
-    and 'ModalNavigationDrawer(' in read(src+"MainActivity.kt")
-    and 'HunterSideMenu(ui)' in read(src+"MainActivity.kt"),
+ "navegación exclusivamente inferior":not (R/(src+"HunterSideMenu.kt")).exists()
+    and all(symbol not in (R/src).joinpath("MainActivity.kt").read_text(encoding="utf8")
+      for symbol in ("ModalNavigationDrawer","ModalDrawerSheet","DrawerValue","rememberDrawerState","MonarchNavigationRail"))
+    and all(symbol not in read(src+"MonarchNavigationV42.kt")
+      for symbol in ("MonarchNavigationRail","tabletWidthDp","vertical:Boolean"))
+    and all(symbol not in read(src+"Screens.kt")
+      for symbol in ("openMenu","Abrir menú lateral"))
+    and 'if(hasProfile&&store.readError==null)MonarchBottomNavigation(ui)' in read(src+"MainActivity.kt"),
  "recompensa real":'if(!log.b("complete")) return' in read(src+"HunterMissionCompletedCard.kt")
     and 'HunterMissionCompletedCard(ui,selected)' in read(src+"MonarchMissionsV42.kt"),
  "portadas originales descargables":(R/"tools/download_monarch_boss_originals.py").is_file()
