@@ -74,7 +74,8 @@ check('it.open("academy")' in dashboard and
 check('companionKey(ui.store.profile)' in dashboard and
       'fun MonarchDashboardCompanion(' in dashboard,
       "El panel de acompañante debe seguir usando el personaje seleccionado en Perfil")
-check('profileMonarchHunterArtwork(appearance.s("collection","hunter"),profile.s("gender"),rank)' in dashboard and
+check('val hunterArtwork = profileMonarchHunterArtwork(' in dashboard and
+      'appearance.s("collection","hunter"),profile.s("gender"),rank)' in dashboard and
       'fun profileMonarchHunterArtwork(collection:String,gender:String,rank:String)' in dashboard and
       'val folder=if(safeRank=="e")"ui34" else "ui33"' in dashboard and
       'return "$folder/hunter-$body-$safeRank.webp"' in dashboard,
