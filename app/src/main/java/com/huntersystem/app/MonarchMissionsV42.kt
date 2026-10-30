@@ -133,8 +133,7 @@ private fun MonarchMissionsWeek(ui:NativeUi, selected:String, onSelect:(String)-
                 Column(Modifier.weight(1f).defaultMinSize(minHeight=91.dp)
                     .clip(shape)
                     .background(if(isSelected)c.selected else c.input)
-                    .monarchOutline(shape,active=isSelected)
-                    .clickable(role=Role.Button){onSelect(date)}
+                    .monarchPressable(shape,active=isSelected,role=Role.Button){onSelect(date)}
                     .semantics { contentDescription = "${names[i]}, ${style.title}, ${if(complete)"completado" else missionState(s.logs.optJSONObject(date),date)}" }
                     .padding(horizontal=1.dp,vertical=9.dp),
                     horizontalAlignment=Alignment.CenterHorizontally,
@@ -436,8 +435,7 @@ fun MonarchMissionsCalendar(ui:NativeUi) {
                             .defaultMinSize(minHeight=55.dp)
                             .clip(shape)
                             .background(if(current)c.selected else c.input)
-                            .monarchOutline(shape,active=current)
-                            .clickable(role=Role.Button) {
+                            .monarchPressable(shape,active=current,role=Role.Button) {
                                 ui.open("mission",obj("date" to date))
                             }
                             .semantics {

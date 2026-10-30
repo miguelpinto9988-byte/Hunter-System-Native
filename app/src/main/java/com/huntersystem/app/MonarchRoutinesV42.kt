@@ -134,8 +134,7 @@ private fun MonarchRoutineModeCard(title:String,subtitle:String,tag:String,count
     val shape=RoundedCornerShape(23.dp)
     Box(Modifier.fillMaxWidth().clip(shape)
         .background(Brush.linearGradient(listOf(c.surface,c.panel,c.input)))
-        .monarchOutline(shape)
-        .clickable(role=Role.Button,onClick=onClick)
+        .monarchPressable(shape,role=Role.Button,onClick=onClick)
         .semantics { contentDescription="$title, $subtitle. Abrir biblioteca." }
         .padding(21.dp)){
         Column(verticalArrangement=Arrangement.spacedBy(10.dp)){
@@ -262,8 +261,7 @@ fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->Unit){
                     Box(Modifier.weight(1f).defaultMinSize(minHeight=58.dp)
                         .clip(shape)
                         .background(if(active)tint.copy(alpha=.19f) else c.input)
-                        .monarchOutline(shape,active=active)
-                        .clickable(role=Role.Checkbox){
+                        .monarchPressable(shape,active=active,role=Role.Checkbox){
                             if(!selected.remove(entry.key))selected.add(entry.key)
                         }
                         .semantics{contentDescription="${entry.value}, ${if(active)"seleccionado" else "sin seleccionar"}"}

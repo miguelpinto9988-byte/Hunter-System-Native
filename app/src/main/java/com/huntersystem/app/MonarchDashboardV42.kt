@@ -282,8 +282,7 @@ fun MonarchDashboardWeek(ui: NativeUi) {
                     .defaultMinSize(minHeight = 78.dp)
                     .clip(shape)
                     .background(if (selected) c.selected else c.input)
-                    .monarchOutline(shape,active=selected)
-                    .clickable(role = Role.Button) {
+                    .monarchPressable(shape,active=selected,role=Role.Button) {
                         ui.open("mission", obj("date" to dateString))
                     }
                     .semantics {

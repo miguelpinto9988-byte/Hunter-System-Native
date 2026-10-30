@@ -77,8 +77,7 @@ val profileColorThemes=listOf("eclipse","ice","aurora","ceniza","amanecer")
  for(row in themes.chunked(2))Row(horizontalArrangement=Arrangement.spacedBy(10.dp)){
   for(theme in row){val c=eclipseColors(theme.id);val chosen=selected==theme.id
    Row(Modifier.weight(1f).clip(RoundedCornerShape(16.dp)).background(c.panel)
-    .monarchOutline(RoundedCornerShape(16.dp),active=chosen)
-    .clickable(role=Role.RadioButton){onSelect(theme.id)}
+    .monarchPressable(RoundedCornerShape(16.dp),active=chosen,role=Role.RadioButton){onSelect(theme.id)}
     .semantics{this.selected=chosen;contentDescription="Tema ${theme.name}"}
     .padding(horizontal=12.dp,vertical=14.dp),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)){
     Box(Modifier.size(25.dp).clip(CircleShape).background(c.accent))
@@ -95,8 +94,7 @@ val profileColorThemes=listOf("eclipse","ice","aurora","ceniza","amanecer")
  Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(10.dp)){
   for((id,key,name)in characters){val active=id==selected;val c=LocalHunter.current
    Column(Modifier.width(112.dp).clip(RoundedCornerShape(20.dp)).background(if(active)c.selected else c.input)
-    .monarchOutline(RoundedCornerShape(20.dp),active=active)
-    .clickable(role=Role.RadioButton){onSelect(id)}.semantics{this.selected=active;contentDescription="Acompañante $name"}.padding(10.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(8.dp)){
+    .monarchPressable(RoundedCornerShape(20.dp),active=active,role=Role.RadioButton){onSelect(id)}.semantics{this.selected=active;contentDescription="Acompañante $name"}.padding(10.dp),horizontalAlignment=Alignment.CenterHorizontally,verticalArrangement=Arrangement.spacedBy(8.dp)){
     AssetImage("ui33/companion-$key.webp",Modifier.height(120.dp).fillMaxWidth())
     HText(name,size=13,bold=true)
     HunterIcon(if(active)Sigil.Check else Sigil.Plus,Modifier.size(16.dp),if(active)c.accent else c.muted)
@@ -163,8 +161,7 @@ fun chosenSceneArtwork(scene:String):String{
    val shape=RoundedCornerShape(18.dp)
    Column(Modifier.width(204.dp).clip(shape)
     .background(if(active)c.selected else c.input)
-    .monarchOutline(shape,active=active)
-    .clickable(role=Role.RadioButton){onSelect(key)}
+    .monarchPressable(shape,active=active,role=Role.RadioButton){onSelect(key)}
     .semantics{this.selected=active;contentDescription="Cazador "+label}
     .padding(10.dp),horizontalAlignment=Alignment.CenterHorizontally,
     verticalArrangement=Arrangement.spacedBy(8.dp)){
@@ -197,8 +194,7 @@ fun chosenSceneArtwork(scene:String):String{
    val shape=RoundedCornerShape(16.dp)
    Column(Modifier.width(144.dp).clip(shape)
     .background(if(active)c.selected else c.input)
-    .monarchOutline(shape,active=active)
-    .clickable(role=Role.RadioButton){onSelect(key)}
+    .monarchPressable(shape,active=active,role=Role.RadioButton){onSelect(key)}
     .semantics{this.selected=active;contentDescription="Ambiente "+label}
     .padding(7.dp),horizontalAlignment=Alignment.CenterHorizontally,
     verticalArrangement=Arrangement.spacedBy(7.dp)){

@@ -231,7 +231,7 @@ private fun MonarchAchievementGrid(ui:NativeUi,stats:JSONObject){
                 Box(Modifier.size(38.dp).clip(RoundedCornerShape(12.dp))
                     .background(if(badge.achieved)c.accent.copy(alpha=.18f) else c.input)
                     .monarchOutline(
-                        RoundedCornerShape(12.dp)),contentAlignment=Alignment.Center){
+                        RoundedCornerShape(12.dp),active=badge.achieved),contentAlignment=Alignment.Center){
                     HText(if(badge.achieved)"✦" else "◇",size=23,
                         color=if(badge.achieved)c.accent else c.muted)
                 }
