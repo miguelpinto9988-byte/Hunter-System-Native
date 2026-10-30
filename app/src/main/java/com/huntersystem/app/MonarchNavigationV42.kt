@@ -3,6 +3,8 @@ package com.huntersystem.app
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.*
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -58,7 +60,7 @@ fun MonarchBootScreen(error:String?,retry:()->Unit){
                     .systemBarsPadding().padding(start=26.dp,end=26.dp,bottom=30.dp)
                     .fillMaxWidth().clip(RoundedCornerShape(18.dp))
                     .background(Color(0xF2111627))
-                    .border(1.dp,Color(0xFF2C98CE),RoundedCornerShape(18.dp))
+                    .monarchOutline(RoundedCornerShape(18.dp))
                     .padding(20.dp),
                 horizontalAlignment=Alignment.CenterHorizontally,
                 verticalArrangement=Arrangement.spacedBy(12.dp)
@@ -89,15 +91,18 @@ private fun MonarchNavItem(
      animationSpec=if(LocalMonarchMotion.current.reduced)snap() else tween(180),
      label="nav-tint")
  val shape=RoundedCornerShape(18.dp)
+ val interaction=remember{MutableInteractionSource()}
+ val pressed by interaction.collectIsPressedAsState()
  val item=Modifier
      .clip(shape)
      .background(if(selected)c.selected else Color.Transparent)
-     .border(1.dp,if(selected)c.accent.copy(alpha=.56f) else Color.Transparent,shape)
+     .monarchOutline(shape,active=selected,pressed=pressed)
      .semantics(mergeDescendants=true){
          contentDescription=destination.title+(if(selected)", seleccionada" else "")
          this.selected=selected
      }
-     .clickable(role=Role.Tab,onClick=onSelect)
+     .clickable(interactionSource=interaction,indication=LocalIndication.current,
+       role=Role.Tab,onClick=onSelect)
  Column(item.fillMaxWidth().fillMaxHeight().padding(vertical=5.dp),
      horizontalAlignment=Alignment.CenterHorizontally,
      verticalArrangement=Arrangement.spacedBy(4.dp)){
@@ -112,7 +117,7 @@ fun MonarchBottomNavigation(ui:NativeUi){
     val c=LocalHunter.current
     Row(Modifier.fillMaxWidth()
         .background(Brush.verticalGradient(listOf(c.surface,c.panel)))
-        .border(1.dp,c.line)
+        .border(.8.dp,c.line.copy(alpha=.68f))
         .navigationBarsPadding().height(86.dp).padding(horizontal=6.dp,vertical=5.dp),
         verticalAlignment=Alignment.CenterVertically,
         horizontalArrangement=Arrangement.spacedBy(3.dp)){

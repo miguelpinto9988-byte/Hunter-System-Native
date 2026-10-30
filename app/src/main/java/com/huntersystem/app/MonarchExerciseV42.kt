@@ -35,7 +35,7 @@ fun MonarchExerciseStage(
     val frame=RoundedCornerShape(24.dp)
     Column(Modifier.fillMaxWidth().clip(frame)
         .background(Brush.verticalGradient(listOf(c.surface,c.panel)))
-        .border(1.dp,c.accent.copy(alpha=.38f),frame)
+        .monarchOutline(frame)
         .padding(12.dp),verticalArrangement=Arrangement.spacedBy(9.dp)){
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
             verticalAlignment=Alignment.CenterVertically){

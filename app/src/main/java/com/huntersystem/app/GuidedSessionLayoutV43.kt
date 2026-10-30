@@ -41,7 +41,7 @@ internal fun GuidedSessionHeader(preview:Boolean,title:String,index:Int,total:In
             }
             val shape=RoundedCornerShape(14.dp)
             Column(Modifier.clip(shape).background(c.accent.copy(alpha=.10f))
-                .border(1.dp,c.accent.copy(alpha=.65f),shape)
+                .monarchOutline(shape)
                 .padding(horizontal=12.dp,vertical=8.dp),
                 horizontalAlignment=Alignment.End){
                 HText("${current} / ${total}",size=17,bold=true,color=c.accent)
@@ -76,7 +76,7 @@ internal fun GuidedSessionTimer(remaining:Int,totalSeconds:Int,summary:String,ru
     val shape=RoundedCornerShape(22.dp)
     Row(Modifier.fillMaxWidth().clip(shape)
         .background(Brush.horizontalGradient(listOf(c.surface,c.panel)))
-        .border(1.dp,c.accent.copy(alpha=.30f),shape)
+        .monarchOutline(shape)
         .padding(horizontal=13.dp,vertical=12.dp),
         verticalAlignment=Alignment.CenterVertically,
         horizontalArrangement=Arrangement.spacedBy(16.dp)){

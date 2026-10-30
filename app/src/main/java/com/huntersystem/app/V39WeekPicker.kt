@@ -75,7 +75,7 @@ fun V39WeekPicker(
                     Modifier.weight(1f)
                         .clip(RoundedCornerShape(12.dp))
                         .background(active.accent.copy(alpha = .21f))
-                        .border(1.dp, active.accent.copy(alpha = .90f), RoundedCornerShape(12.dp))
+                        .monarchOutline(RoundedCornerShape(12.dp))
                         .semantics { contentDescription = "$label: ${active.title}. Pulsar para cambiar" }
                         .clickable {
                             active.next().update(day, week, focus)
