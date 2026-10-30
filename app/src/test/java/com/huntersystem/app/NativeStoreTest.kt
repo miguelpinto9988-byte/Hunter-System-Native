@@ -44,7 +44,19 @@ class NativeStoreTest {
   }
  }
 
- @Test fun reminderTimesRespectChosenDays(){val r=obj("enabled" to true,"mode" to "daily","time" to "18:00","days" to arr(listOf(1)));val next=ReminderScheduler.next(r,ZonedDateTime.parse("2026-10-23T19:00:00-05:00[America/Lima]"));assertEquals("2026-10-26T18:00-05:00[America/Lima]",next.toString());r.put("mode","interval").put("start","09:00").put("end","20:00").put("interval",3);assertEquals("2026-10-26T18:00-05:00[America/Lima]",ReminderScheduler.next(r,ZonedDateTime.parse("2026-10-26T17:00:00-05:00[America/Lima]")).toString())}
+ @Test fun reminderTimesRespectChosenDays(){
+  val old=obj("enabled" to true,"mode" to "daily","time" to "18:00",
+   "days" to arr(listOf(1)))
+  val monday=ZonedDateTime.parse("2026-10-23T19:00:00-05:00[America/Lima]")
+  val alarms=HunterAlarms.legacy(old)
+  assertEquals("2026-10-26T18:00-05:00[America/Lima]",
+   HunterAlarms.next(alarms.single(),monday).toString())
+  old.put("mode","interval").put("start","09:00").put("end","20:00").put("interval",3)
+  val migrated=HunterAlarms.legacy(old)
+  val mondayAfternoon=ZonedDateTime.parse("2026-10-26T17:00:00-05:00[America/Lima]")
+  assertEquals("2026-10-26T18:00-05:00[America/Lima]",
+   migrated.mapNotNull{HunterAlarms.next(it,mondayAfternoon)}.minOrNull().toString())
+ }
  @Test fun roundsKeepExerciseOrderAndOnlyRestBetweenRounds(){val s=store();val p=s.adjusted().put("blockMode22","rounds");val d=obj("items" to arr(listOf(obj("id" to "chair","sets" to 2,"target" to 6),obj("id" to "row","sets" to 2,"target" to 6))));val steps=s.planner.steps(d,p);assertEquals(listOf("chair","row","chair","row"),steps.filter{it.s("kind")=="exercise"}.map{it.s("id")});assertEquals(1,steps.count{it.s("kind")=="rest"})}
  @Test fun pauseOnlyChangesPendingDaysAndCanResume(){val s=store();val tomorrow=plus(today(),1);s.toggleMission(today(),0);val original=s.day(today()).toString();s.review("pausar");assertEquals(original,s.day(today()).toString());assertEquals(0,s.day(tomorrow).a("items").length());s.review("mantener");assertTrue(s.day(tomorrow).a("items").length()>0);assertEquals(original,s.day(today()).toString())}
 
