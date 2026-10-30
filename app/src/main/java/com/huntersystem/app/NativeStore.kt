@@ -29,10 +29,10 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
   val out=catalog.defaultState.copyJson();for((k,v)in data.entries())out.put(k,v);return out
  }
  fun restore(data:JSONObject){val checked=validateBackup(data);state=checked;readError=null;save();refreshWeek()}
- fun updateAppearanceOnly(theme:String,appearance:JSONObject,avatar:String?=null){
+ fun updateAppearanceOnly(theme:String,appearance:JSONObject,avatar:String?=null,outlineColor:String="eclipse"){
   val existing=profile?:error("Perfil no disponible")
   // Visual-only changes cannot silently re-interpret goals or rewrite training settings.
-  state.put("profile",existing.copyJson().put("theme",theme))
+  state.put("profile",existing.copyJson().put("theme",theme).put("outlineColor",HunterAppearanceV43.outline(outlineColor)))
   state.put("appearance33",appearance.copyJson())
   avatar?.let{state.put("avatar",it)}
   save()

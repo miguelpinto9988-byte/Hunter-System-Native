@@ -15,7 +15,7 @@ private val fieldLabels=mapOf("name" to "Nombre de cazador","age" to "Edad","hei
 private val healthFields=setOf("pain","acute","special","recommendations","approved","translated","redFlags")
 @Composable fun ProfileScreen(ui:NativeUi){val s=ui.store;val old=s.profile;val form=s.catalog.profileForm.objects();val fields=form.flatMap{it.a("fields").objects()}
  val values=remember(old==null){mutableStateMapOf<String,String>().apply{
-  val defaults=mapOf("gender" to "unspecified","theme" to "eclipse","difficulty" to "basic","goalGroup" to "habit","goal" to "general","frequency" to "2","equipment" to "body","restSeconds" to "30","dailyMissions" to "3","blockMode22" to "exercise","collection33" to "hunter","scene33" to "auto","trainingMode" to "challenges","companionCharacter" to "knight","trainingScale" to "1","pain" to "none")
+  val defaults=mapOf("gender" to "unspecified","theme" to "dark","outlineColor" to "eclipse","difficulty" to "basic","goalGroup" to "habit","goal" to "general","frequency" to "2","equipment" to "body","restSeconds" to "30","dailyMissions" to "3","blockMode22" to "exercise","collection33" to "hunter","scene33" to "auto","trainingMode" to "challenges","companionCharacter" to "knight","trainingScale" to "1","pain" to "none")
   putAll(defaults)
   // Only visible fields belong to profile-form.json. Load historical settings
   // explicitly so removing obsolete form controls cannot discard saved preferences.
@@ -35,7 +35,9 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
    else if(!containsKey(name))put(name,value.ifBlank{f.a("options").objects().firstOrNull()?.s("value")?:""})
   }
   if(old!=null){
-   put("theme",resolveV39Theme(old.s("theme"),old.s("gender")))
+   put("theme",HunterAppearanceV43.mode(old.s("theme")))
+    put("outlineColor",HunterAppearanceV43.outline(old.s("outlineColor",
+      HunterAppearanceV43.originalOutline(old.s("theme")))))
    for(name in listOf("restSeconds","dailyMissions","load","trainingScale","frequency","goal","blockMode22")){
     old.opt(name)?.takeUnless{it==JSONObject.NULL}?.let{put(name,it.toString())}
    }
@@ -60,13 +62,14 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
  fun saveProfile(){ui.attempt{
   // Appearance-only changes must leave the training profile and its plan intact.
   val visualOnly=old!=null&&
-   values.all{(k,v)->k in listOf("theme","collection33","scene33")||v==initialValues[k]}&&
+   values.all{(k,v)->k in listOf("theme","outlineColor","collection33","scene33")||v==initialValues[k]}&&
    week.toList()==old.a("weekPlan").strings()&&focus.toList()==old.a("weekFocus").strings()&&
    arr(injuries).toString()==old.a("injuries").toString()&&
    manualGoalGroup==old.b("manualGoalGroupNative")
   if(visualOnly){
-   s.updateAppearanceOnly(values["theme"]?:"eclipse",
-    obj("collection" to values["collection33"],"scene" to values["scene33"]),ui.pendingAvatar)
+   s.updateAppearanceOnly(values["theme"]?:"dark",
+    obj("collection" to values["collection33"],"scene" to values["scene33"]),
+    ui.pendingAvatar,outlineColor=values["outlineColor"]?:"eclipse")
    initialValues.clear();initialValues.putAll(values);ui.pendingAvatar=null
    ui.profileSaved()
    ui.message("Apariencia guardada. Regresaste al Panel.")
@@ -239,7 +242,11 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
    }
    HunterProfileSection(12,"Rendimiento visual",
     "Personaliza la apariencia del sistema y su rendimiento."){
-    ThemeGallery(values["theme"]?:"eclipse"){values["theme"]=it}
+    HunterModePicker(values["theme"]?:"dark"){values["theme"]=it}
+     HunterOutlinePicker(values["outlineColor"]?:"eclipse",values["theme"]?:"dark"){
+      values["outlineColor"]=it
+     }
+     HunterAppearancePreview(values["theme"]?:"dark",values["outlineColor"]?:"eclipse")
     for((id,label)in listOf(
       "max" to "Máxima calidad",
       "balanced" to "Equilibrado",

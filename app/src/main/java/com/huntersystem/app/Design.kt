@@ -38,7 +38,7 @@ import kotlin.math.*
 
 val Barlow=FontFamily(Font(R.font.barlow),Font(R.font.barlow_semibold,FontWeight.SemiBold))
 fun parseColor(value:String):Color{if(value.startsWith("#"))return Color(android.graphics.Color.parseColor(value));val n=Regex("[-+]?[0-9]*\\.?[0-9]+").findAll(value).map{it.value.toFloat()}.toList();if(n.size<3)return Color.White;val h=((n[0]%360)+360)%360/60;val s=n[1]/100;val l=n[2]/100;val c=(1-abs(2*l-1))*s;val x=c*(1-abs(h%2-1));val m=l-c/2;val rgb=when(h.toInt()){0->floatArrayOf(c,x,0f);1->floatArrayOf(x,c,0f);2->floatArrayOf(0f,c,x);3->floatArrayOf(0f,x,c);4->floatArrayOf(x,0f,c);else->floatArrayOf(c,0f,x)};return Color(rgb[0]+m,rgb[1]+m,rgb[2]+m,if(n.size>3)n[3] else 1f)}
-data class HunterColors(val data:JSONObject){fun color(key:String)=parseColor(data.s("--$key","#ffffff"));val bg=color("bg");val panel=color("panel");val surface=color("surface");val input=color("input");val line=color("line");val text=color("text");val muted=color("muted");val accent=color("accent");val secondary=color("secondary33");val selected=color("selected33");fun hex(key:String)="#%06x".format(color(key).toArgb()and 0xffffff)}
+data class HunterColors(val data:JSONObject){fun color(key:String)=parseColor(data.s("--$key","#ffffff"));val bg=color("bg");val panel=color("panel");val surface=color("surface");val input=color("input");val line=color("line");val text=color("text");val muted=color("muted");val accent=color("accent");val secondary=color("secondary33");val selected=color("selected33");val outlineAccent=parseColor(data.s("--outlineAccent",data.s("--accent","#6487FF")));val isLight=data.s("--mode")=="light";fun hex(key:String)="#%06x".format(color(key).toArgb()and 0xffffff)}
 val LocalHunter=staticCompositionLocalOf{HunterColors(JSONObject())}
 /** Paletas oficiales del rediseño V39, independientes de temas históricos.
  * Se preservan los demás tokens y las funciones del catálogo existente.
@@ -58,16 +58,21 @@ fun resolveV39Theme(value:String?,gender:String=""):String=when(value?.lowercase
 @Composable fun HunterTheme(store:NativeStore,content: @Composable () -> Unit){
  store.revision.intValue
  val p=store.profile
- val theme=resolveV39Theme(p?.s("theme"),p?.s("gender")?:"")
- val colors=HunterColors(v39VisualTokens(theme,store.catalog.design.o("colors").o(theme),p?.s("themeAccent","default")?:"default"))
+ val mode=HunterAppearanceV43.mode(p?.s("theme"))
+ val border=p?.s("outlineColor")?.takeIf{it.isNotBlank()}
+     ?:HunterAppearanceV43.originalOutline(p?.s("theme"))
+ val colors=HunterColors(HunterAppearanceV43.tokens(mode,border))
  val tier=visualTier(store)
  val motion=LocalMonarchMotion.current
  val enabled=motion.copy(reduced=motion.reduced||tier==VisualTier.SAVER)
  CompositionLocalProvider(LocalHunter provides colors,LocalVisualTier provides tier,LocalMonarchMotion provides enabled,LocalMotionEnabled provides !enabled.reduced,
   LocalVisualPreferences provides store.state.o("eclipseAppearance")){
   MaterialTheme(
-   colorScheme=darkColorScheme(primary=colors.accent,onPrimary=colors.bg,surface=colors.panel,
-    onSurface=colors.text,background=colors.bg,onBackground=colors.text,outline=colors.line),
+   colorScheme=(if(mode=="light")lightColorScheme(
+     primary=colors.accent,onPrimary=Color.White,surface=colors.panel,
+     onSurface=colors.text,background=colors.bg,onBackground=colors.text,outline=colors.line)
+    else darkColorScheme(primary=colors.accent,onPrimary=colors.bg,surface=colors.panel,
+     onSurface=colors.text,background=colors.bg,onBackground=colors.text,outline=colors.line)),
    typography=Typography(bodyLarge=TextStyle(fontFamily=Barlow,fontSize=18.sp),
     labelLarge=TextStyle(fontFamily=Barlow,fontSize=17.sp))
   ){content()}

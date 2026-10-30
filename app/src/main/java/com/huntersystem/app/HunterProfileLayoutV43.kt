@@ -32,8 +32,7 @@ internal fun HunterProfileStageTabs(stage:Int,onSelect:(Int)->Unit){
    val shape=RoundedCornerShape(14.dp)
    Column(Modifier.weight(1f).clip(shape)
     .background(if(active)colors.selected else colors.panel)
-    .border(if(active)2.dp else 1.dp,if(active)colors.accent else colors.line,shape)
-    .clickable(role=Role.Tab){onSelect(index)}
+    .monarchPressable(shape,active=active,role=Role.Tab){onSelect(index)}
     .semantics{selected=active;contentDescription="Etapa "+(index+1)+": "+title}
     .padding(vertical=13.dp,horizontal=4.dp),
     horizontalAlignment=Alignment.CenterHorizontally,
@@ -51,7 +50,7 @@ internal fun HunterProfileBanner(isNew:Boolean,stage:Int){
  val shape=RoundedCornerShape(24.dp)
  Box(Modifier.fillMaxWidth().clip(shape)
   .background(Brush.horizontalGradient(listOf(colors.panel,colors.surface,colors.bg)))
-  .border(1.dp,colors.accent.copy(alpha=.48f),shape)){
+  .monarchOutline(shape)){
   Column(Modifier.fillMaxWidth().padding(horizontal=20.dp,vertical=19.dp),
    verticalArrangement=Arrangement.spacedBy(7.dp)){
    Row(verticalAlignment=Alignment.CenterVertically,
@@ -120,10 +119,11 @@ internal fun HunterProfileCardPreview(
     Modifier.align(Alignment.BottomEnd).fillMaxWidth(.89f).fillMaxHeight(.96f),
     ContentScale.Fit,description=null,alignment=Alignment.BottomEnd)
    Box(Modifier.matchParentSize().background(Brush.horizontalGradient(listOf(
-    Color(0xFA080E1F),Color(0xDB0A1429),Color(0x33071225),Color.Transparent
+    colors.bg.copy(alpha=.99f),colors.bg.copy(alpha=.89f),
+     colors.bg.copy(alpha=.20f),Color.Transparent
    ))))
    Box(Modifier.matchParentSize().background(Brush.verticalGradient(listOf(
-    Color(0x40050C1C),Color.Transparent,Color(0xCF070F20)
+    colors.bg.copy(alpha=.24f),Color.Transparent,colors.bg.copy(alpha=.84f)
    ))))
    Column(Modifier.fillMaxSize().padding(if(compact)14.dp else 19.dp),
     verticalArrangement=Arrangement.spacedBy(8.dp)){
