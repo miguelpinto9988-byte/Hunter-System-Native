@@ -138,8 +138,7 @@ internal fun HunterProfileCardPreview(
      Heading("NIVEL\n"+levelSafe.toString().padStart(2,'0'),size=if(compact)34 else 43)
      HText(name.ifBlank{"Cazador"}.take(34),size=17,bold=true,maxLines=2)
      HText("Cada sesión cuenta.",size=13,color=colors.text.copy(alpha=.8f))
-     HText("EVOLUCIONAR  ↗",size=13,bold=true,color=colors.accent)
-    }
+         }
     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
      HText("EXPERIENCIA",size=12,bold=true,color=colors.text)
      HText(xpSafe.toString()+" XP",size=14,bold=true,color=colors.accent)

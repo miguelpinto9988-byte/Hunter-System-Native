@@ -73,6 +73,17 @@ checks={
  "catálogo ampliable":'catalog-hunter2000-extra.json' in read(src+"Catalog.kt"),
  "restricción QA":'approvedForAutoplan' in read(src+"Rules.kt"),
  "artefacto V43":'Hunter-System-V43-12-Monarca-Eclipse-APK' in read(".github/workflows/android-apk.yml"),
+ "sin ventana Evolucionar Monarca":all(
+     'EVOLUCIONAR' not in read(src+name)
+     for name in ("MonarchDashboardV42.kt","HunterProfileLayoutV43.kt"))
+     and '"evolution"->' not in read(src+"Overlays.kt")
+     and 'fun MonarchEvolutionScreen(' not in read(src+"MonarchProgressV42.kt")
+     and 'fun Evolution(ui:NativeUi)' not in read(src+"Supplement.kt")
+     and all('ui.open("evolution")' not in f.read_text(encoding="utf8")
+             for f in (R/src).glob("*.kt"))
+     and 'if(type=="evolution")return' in read(src+"Screens.kt")
+     and 'HProgress(xpInLevel/300f)' in read(src+"MonarchDashboardV42.kt")
+     and 'HunterEvolutionImage(' in read(src+"MonarchDashboardV42.kt"),
  "pruebas de catálogo":(R/"app/src/test/java/com/huntersystem/app/Hunter2000CatalogTest.kt").is_file(),
 }
 errors=[name for name,ok in checks.items() if not ok]

@@ -104,10 +104,6 @@ fun MonarchDashboardHero(ui: NativeUi, stats: JSONObject) {
                         size=if(expansive)54 else if(compact)35 else 43)
                     HText(name,size=if(compact)16 else 19,bold=true,maxLines=2)
                     HText("Cada sesión cuenta.",size=14,color=c.muted,maxLines=2)
-                    HText("EVOLUCIONAR  ↗",size=13,bold=true,color=c.accent,
-                        modifier=Modifier.clickable(role=Role.Button){
-                            ui.open("evolution")
-                        })
                 }
                 Row(Modifier.fillMaxWidth(),
                     horizontalArrangement=Arrangement.SpaceBetween){

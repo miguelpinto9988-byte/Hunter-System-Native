@@ -306,9 +306,9 @@ fun MonarchProgressScreen(ui:NativeUi){
                 Heading("Tu evolución",size=34)
                 HText("Datos reales de tus sesiones",size=14,color=c.muted)
             }
-            HChip("RANGO ${rankKey(all.i("level",1))}",true){ui.open("evolution")}
+            HText("RANGO ${rankKey(all.i("level",1))}",size=15,color=c.accent,bold=true)
         }
-        HPanel(onClick={ui.open("evolution")},padding=16){
+        HPanel(padding=16){
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
                 verticalAlignment=Alignment.CenterVertically){
                 Column(Modifier.weight(1f)){
@@ -324,7 +324,7 @@ fun MonarchProgressScreen(ui:NativeUi){
                 }
             }
             HProgress((all.i("xp")%300)/300f)
-            HText("${all.i("xp")%300} / 300 XP al siguiente nivel · Ver rangos ↗",
+            HText("${all.i("xp")%300} / 300 XP al siguiente nivel",
                 size=13,color=c.muted)
         }
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
@@ -405,64 +405,4 @@ fun MonarchProgressScreen(ui:NativeUi){
             "una sesión. Los datos no enviados a los registros no se estiman.",
             size=13,color=c.muted)
     }
-}
-
-@Composable
-fun MonarchEvolutionScreen(ui:NativeUi){
-    val s=ui.store
-    s.revision.intValue
-    val stats=s.stats()
-    val level=stats.i("level",1)
-    val xp=stats.i("xp")
-    val rank=rankKey(level)
-    val c=LocalHunter.current
-    Eyebrow("ARCHIVO DE RANGOS MONARCA")
-    Heading("El despertar del cazador",size=32)
-    HPanel(padding=18){
-        Eyebrow("ESTADO ACTUAL")
-        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
-            verticalAlignment=Alignment.CenterVertically){
-            Heading("RANGO $rank",size=32)
-            Heading("NV. $level",size=24)
-        }
-        HProgress((xp%300)/300f)
-        HText("${xp%300} / 300 XP para subir de nivel · ${xp} XP total",
-            size=14,color=c.muted)
-        HText("El rango cambia cada cinco niveles. Solo se consideran misiones "+
-            "registradas en el dispositivo.",size=13,color=c.muted)
-    }
-    val ranks=s.catalog.design.a("ranks").objects()
-    val char=if(s.profile?.s("gender")=="female")"hunter-female" else "hunter-male"
-    for((index,entry)in ranks.withIndex()){
-        val key=entry.s("key",listOf("E","D","C","B","A","S").getOrElse(index){"S"})
-        val accessible=listOf("E","D","C","B","A","S").indexOf(key) <=
-            listOf("E","D","C","B","A","S").indexOf(rank)
-        HPanel(padding=16,decor=accessible){
-            Row(verticalAlignment=Alignment.CenterVertically,
-                horizontalArrangement=Arrangement.spacedBy(14.dp)){
-                Box(Modifier.size(56.dp).clip(RoundedCornerShape(15.dp))
-                    .background(if(accessible)c.accent.copy(alpha=.15f) else c.input)
-                    .border(1.dp,if(accessible)c.accent else c.line,
-                        RoundedCornerShape(15.dp)),contentAlignment=Alignment.Center){
-                    HText(key,size=28,bold=true,
-                        color=if(accessible)c.accent else c.muted)
-                }
-                Column(Modifier.weight(1f)){
-                    Eyebrow(if(key==rank)"RANGO ACTUAL" else
-                        if(accessible)"ALCANZADO" else "POR DESBLOQUEAR")
-                    Heading(entry.s("name"),size=23)
-                    HText("Desde el nivel ${entry.i("min",1)} · ${entry.i("xp")} XP",
-                        size=14,color=c.muted)
-                }
-            }
-            if(key==rank){
-                AssetImage("ui33/$char-${key.lowercase()}.webp",
-                    Modifier.fillMaxWidth().height(180.dp))
-            }
-            if(entry.s("detail").isNotBlank())HText(entry.s("detail"),
-                size=14,color=c.muted)
-        }
-    }
-    HNotice("Los rangos y emblemas representan progreso de entrenamiento registrado, "+
-        "no una evaluación clínica ni un reconocimiento externo.")
 }

@@ -68,7 +68,11 @@ class NativeUi(val store:NativeStore){
   library=""
   stack.clear()
  }
- fun open(type:String,data:JSONObject=JSONObject()){stack+=Overlay(type,data)}
+ // La antigua ventana de rangos ya no está disponible.
+ fun open(type:String,data:JSONObject=JSONObject()){
+  if(type=="evolution")return
+  stack+=Overlay(type,data)
+ }
  fun back(){
   when{
    stack.isNotEmpty()->stack.removeAt(stack.lastIndex)
@@ -100,8 +104,7 @@ fun rankKey(level:Int)=listOf("E","D","C","B","A","S")[((level-1)/5).coerceIn(0,
    Heading("HUNTER SYSTEM",size=28)
    Eyebrow("SISTEMA DE SOMBRAS")
   }
-  HText(rank,size=22,bold=true,color=LocalHunter.current.accent,
-    modifier=Modifier.clickable{ui.open("evolution")})
+  HText(rank,size=22,bold=true,color=LocalHunter.current.accent)
   Avatar(s.state.s("avatar"),s.profile?.s("name")?:"C",
     Modifier.size(36.dp).clickable{ui.go("profile")}.semantics{
       contentDescription="Abrir perfil"
@@ -141,7 +144,7 @@ fun HomeScreen(ui:NativeUi) {
 }
 @Composable fun Hero(ui:NativeUi,stats:JSONObject){val s=ui.store;val p=s.profile?:JSONObject();val c=LocalHunter.current;val rank=rankKey(stats.i("level",1)).lowercase();val appearance=s.state.o("appearance33");var collection=appearance.s("collection","hunter");if(collection=="alternate")collection=listOf("hunter","reader","regressor")[(LocalDate.now().toEpochDay()%3).toInt()];val char=if(collection=="hunter")"hunter-"+if(p.s("gender")=="female")"female" else "male" else collection;val path="${char}-$rank.webp";val art=remember(path){if(runCatching{s.context.assets.open("ui34/$path").close()}.isSuccess)"ui34/$path" else "ui33/$path"};val scene=when(appearance.s("scene","auto")){"sanctuary"->0;"journey"->1;else->((LocalDate.now().toEpochDay()-LocalDate.of(2026,1,1).toEpochDay())%2).toInt()}
  Box(Modifier.fillMaxWidth().height(420.dp)){Box(Modifier.fillMaxWidth().height(350.dp).align(Alignment.BottomCenter).clip(RoundedCornerShape(9.dp)).border(1.dp,c.line,RoundedCornerShape(9.dp))){AssetImage("ui33/scene-$rank-$scene.webp",Modifier.fillMaxSize(),ContentScale.Crop);Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(listOf(c.input,c.input.copy(alpha=.85f),c.input.copy(alpha=.25f)))))};AssetImage(art,Modifier.align(Alignment.TopEnd).offset(x=3.dp).fillMaxWidth(.58f).fillMaxHeight(),ContentScale.Crop,alignment=Alignment.TopCenter)
- Column(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(350.dp).padding(22.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Eyebrow("SISTEMA EN LÍNEA");Eyebrow("RANGO ${rank.uppercase()}")};HText("${p.s("name","Cazador")} · ${s.catalog.editorial.o("goalPlans").o(p.s("finalTarget","general")).s("name","Tu siguiente nivel")}",Modifier.fillMaxWidth(.64f),size=14);Heading("SUPERA\nTUS LÍMITES.",size=46);HText("Una misión a la vez. Tu próximo nivel empieza hoy.",Modifier.fillMaxWidth(.60f),size=16,color=c.muted);Spacer(Modifier.weight(1f));Column(Modifier.fillMaxWidth(.65f),verticalArrangement=Arrangement.spacedBy(5.dp)){HText("NIVEL ${stats.i("level",1).toString().padStart(2,'0')}",bold=true,size=16);HText("RANGO ${rank.uppercase()} · ${s.catalog.design.a("ranks").objects().firstOrNull{it.s("key")==rank.uppercase()}?.s("name")?.uppercase()}",size=12);HProgress((stats.i("xp")%300)/300f);HText("${stats.i("xp")%300} / 300 XP",size=13,color=c.muted)}};HText("${rank.uppercase()}  EVOLUCIÓN ⟶",Modifier.align(Alignment.BottomEnd).padding(15.dp).clickable{ui.open("evolution")},size=12,color=c.accent)
+ Column(Modifier.align(Alignment.BottomStart).fillMaxWidth().height(350.dp).padding(22.dp),verticalArrangement=Arrangement.spacedBy(12.dp)){Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Eyebrow("SISTEMA EN LÍNEA");Eyebrow("RANGO ${rank.uppercase()}")};HText("${p.s("name","Cazador")} · ${s.catalog.editorial.o("goalPlans").o(p.s("finalTarget","general")).s("name","Tu siguiente nivel")}",Modifier.fillMaxWidth(.64f),size=14);Heading("SUPERA\nTUS LÍMITES.",size=46);HText("Una misión a la vez. Tu próximo nivel empieza hoy.",Modifier.fillMaxWidth(.60f),size=16,color=c.muted);Spacer(Modifier.weight(1f));Column(Modifier.fillMaxWidth(.65f),verticalArrangement=Arrangement.spacedBy(5.dp)){HText("NIVEL ${stats.i("level",1).toString().padStart(2,'0')}",bold=true,size=16);HText("RANGO ${rank.uppercase()} · ${s.catalog.design.a("ranks").objects().firstOrNull{it.s("key")==rank.uppercase()}?.s("name")?.uppercase()}",size=12);HProgress((stats.i("xp")%300)/300f);HText("${stats.i("xp")%300} / 300 XP",size=13,color=c.muted)}}
 }}
 @Composable fun MissionCompanion(ui:NativeUi){HPanel(padding=12,onClick={ui.open("coach")}){Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(14.dp)){AssetImage("ui33/companion-${companionKey(ui.store.profile)}.webp",Modifier.width(67.dp).height(88.dp));Column{Eyebrow("IA DE MISIÓN");Heading(companionName(ui.store.profile),size=26);HText("La misma IA que elegiste en Perfil",size=14,color=LocalHunter.current.muted)}}}}
 @Composable fun MissionLaunch(ui:NativeUi){val s=ui.store;val d=s.day(today());val l=s.logs.optJSONObject(today());val total=d.a("items").length()+d.a("tasks").length();HPanel{Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){Eyebrow("MISIÓN DIARIA DISPONIBLE");HText("${(s.fraction(l)*total).toInt()}/$total",size=16)};Heading(d.s("title"),size=33);HText("Una ventana. Tus objetivos. Cada casilla cuenta.",size=16,color=LocalHunter.current.muted);HButton("ABRIR VENTANA DE MISIONES →",Modifier.fillMaxWidth(),primary=true){ui.open("mission",obj("date" to today()))};HButton("✎ Personalizar la misión"){ui.open("custom",obj("date" to today()))}}}
