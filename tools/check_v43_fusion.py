@@ -24,11 +24,10 @@ checks={
     and "HunterFlatBackground(Modifier.matchParentSize())" in read(src+"Overlays.kt")
     and "LocalHunter.current.bg" in read(src+"HunterFlatBackground.kt")
     and "AssetImage(" not in read(src+"HunterFlatBackground.kt"),
- "biblioteca iconos SVG 2D":(R/(src+"HunterPngLibrary.kt")).is_file()
-    and len(list((R/"app/src/main/assets/hunter-icons").glob("*.svg")))==49
-    and not (R/"app/src/main/assets/hunter-png/icons").exists()
-    and 'painterResource(id=hunterIconDrawableId(key))' in read(src+"HunterPngLibrary.kt")
-    and len(list((R/"app/src/main/res/drawable").glob("hunter_icon_*.xml")))==49
+ "biblioteca iconos Pixel Art PNG":(R/(src+"HunterPngLibrary.kt")).is_file()
+    and len(list((R/"app/src/main/res/drawable-nodpi").glob("hunter_pixel_*.png")))==49
+    and 'bitmap=ImageBitmap.imageResource(id=hunterIconDrawableId(key))' in read(src+"HunterPngLibrary.kt")
+    and 'hunterPixelPngResources' in read(src+"HunterPngLibrary.kt")
     and 'HunterPngIcon(' in read(src+"MonarchRoutinesV42.kt")
     and 'HunterPngIcon(' in read(src+"MonarchProgressV42.kt")
     and 'HunterPngIcon(' in read(src+"Screens.kt"),
@@ -113,5 +112,5 @@ checks={
  "pruebas de catálogo":(R/"app/src/test/java/com/huntersystem/app/Hunter2000CatalogTest.kt").is_file(),
 }
 errors=[name for name,ok in checks.items() if not ok]
-print(json.dumps({"version":"43.12-monarca-eclipse-pixel-2d","checks":checks,"status":"ERROR" if errors else "OK","errors":errors},ensure_ascii=False,indent=2))
+print(json.dumps({"version":"43.12-monarca-eclipse-pixel-png","checks":checks,"status":"ERROR" if errors else "OK","errors":errors},ensure_ascii=False,indent=2))
 if errors:raise SystemExit(1)

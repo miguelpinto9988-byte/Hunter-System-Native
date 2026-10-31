@@ -12,18 +12,18 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** Prueba de visualización real: no basta con que los SVG estén empaquetados. */
+/** Prueba de visualización real: comprueba que todos los PNG renderizan píxeles visibles. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk=[35])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class HunterMinimalIconResolutionTest {
-    @Test fun all49NativeVectorsActuallyPaintVisiblePixels() {
+    @Test fun all49NativePngsActuallyPaintVisiblePixels() {
         val context=ApplicationProvider.getApplicationContext<Context>()
-        assertEquals(49,hunterNativeVectorResources.size)
+        assertEquals(49,hunterPixelPngResources.size)
         val missing=mutableListOf<String>()
-        for ((name,id) in hunterNativeVectorResources) {
+        for ((name,id) in hunterPixelPngResources) {
             val drawable=requireNotNull(context.getDrawable(id)) {
-                "No existe el vector Android del ícono $name"
+                "No existe el PNG Android del ícono $name"
             }
             val output=Bitmap.createBitmap(96,96,Bitmap.Config.ARGB_8888)
             drawable.setBounds(0,0,96,96)
@@ -33,16 +33,16 @@ class HunterMinimalIconResolutionTest {
             if (pixels.none { Color.alpha(it)>0 }) missing+=name
             output.recycle()
         }
-        assertTrue("Vectores que no dibujan píxeles: ${missing.joinToString()}", missing.isEmpty())
+        assertTrue("PNG que no dibujan píxeles: ${missing.joinToString()}", missing.isEmpty())
     }
 
-    @Test fun everySemanticIconPointsToANativeVector() {
-        assertEquals(R.drawable.hunter_icon_home,hunterIconDrawableId("panel"))
-        assertEquals(R.drawable.hunter_icon_quest,hunterIconDrawableId("missions"))
-        assertEquals(R.drawable.hunter_icon_calendar,hunterIconDrawableId("routines"))
-        assertEquals(R.drawable.hunter_icon_dumbbell,hunterIconDrawableId("exercises"))
-        assertEquals(R.drawable.hunter_icon_week_core,hunterIconDrawableId("week_core"))
-        assertEquals(R.drawable.hunter_icon_week_lower,hunterIconDrawableId("week_lower"))
-        assertEquals(R.drawable.hunter_icon_lightning,hunterIconDrawableId("unknown_key"))
+    @Test fun everySemanticIconPointsToANativePng() {
+        assertEquals(R.drawable.hunter_pixel_home,hunterIconDrawableId("panel"))
+        assertEquals(R.drawable.hunter_pixel_quest,hunterIconDrawableId("missions"))
+        assertEquals(R.drawable.hunter_pixel_calendar,hunterIconDrawableId("routines"))
+        assertEquals(R.drawable.hunter_pixel_dumbbell,hunterIconDrawableId("exercises"))
+        assertEquals(R.drawable.hunter_pixel_week_core,hunterIconDrawableId("week_core"))
+        assertEquals(R.drawable.hunter_pixel_week_lower,hunterIconDrawableId("week_lower"))
+        assertEquals(R.drawable.hunter_pixel_lightning,hunterIconDrawableId("unknown_key"))
     }
 }
