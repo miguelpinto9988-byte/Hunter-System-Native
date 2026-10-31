@@ -4,10 +4,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.res.imageResource
 
 /** Los identificadores del perfil y de la navegación se mantienen intactos. */
-private val iconToSvg = mapOf(
+private val iconToPng = mapOf(
     "panel" to "home",
     "missions" to "quest",
     "routines" to "calendar",
@@ -86,67 +88,62 @@ private val iconToSvg = mapOf(
     "week_cardio" to "week_cardio"
 )
 
-/**
- * Íconos SOLIDO MINIMALISTA como VectorDrawable nativo.
- * Nada de carga asíncrona, Canvas Bitmap ni errores ignorados: Android
- * resuelve, mide y pinta el recurso en cada fotograma, incluso sin conexión.
- * Los SVG originales transparentes se conservan como fuentes editables.
- */
-internal val hunterNativeVectorResources:Map<String,Int> = mapOf(
-    "add" to R.drawable.hunter_icon_add,
-    "back" to R.drawable.hunter_icon_back,
-    "bell" to R.drawable.hunter_icon_bell,
-    "book" to R.drawable.hunter_icon_book,
-    "calendar" to R.drawable.hunter_icon_calendar,
-    "chart" to R.drawable.hunter_icon_chart,
-    "chat" to R.drawable.hunter_icon_chat,
-    "check" to R.drawable.hunter_icon_check,
-    "checklist" to R.drawable.hunter_icon_checklist,
-    "chest" to R.drawable.hunter_icon_chest,
-    "clock" to R.drawable.hunter_icon_clock,
-    "close" to R.drawable.hunter_icon_close,
-    "crown" to R.drawable.hunter_icon_crown,
-    "crystal" to R.drawable.hunter_icon_crystal,
-    "download" to R.drawable.hunter_icon_download,
-    "dumbbell" to R.drawable.hunter_icon_dumbbell,
-    "edit" to R.drawable.hunter_icon_edit,
-    "fire" to R.drawable.hunter_icon_fire,
-    "gear" to R.drawable.hunter_icon_gear,
-    "heart" to R.drawable.hunter_icon_heart,
-    "home" to R.drawable.hunter_icon_home,
-    "leaf" to R.drawable.hunter_icon_leaf,
-    "lightning" to R.drawable.hunter_icon_lightning,
-    "lock" to R.drawable.hunter_icon_lock,
-    "next" to R.drawable.hunter_icon_next,
-    "pause" to R.drawable.hunter_icon_pause,
-    "play" to R.drawable.hunter_icon_play,
-    "portal" to R.drawable.hunter_icon_portal,
-    "profile" to R.drawable.hunter_icon_profile,
-    "quest" to R.drawable.hunter_icon_quest,
-    "refresh" to R.drawable.hunter_icon_refresh,
-    "remove" to R.drawable.hunter_icon_remove,
-    "rest" to R.drawable.hunter_icon_rest,
-    "search" to R.drawable.hunter_icon_search,
-    "shield" to R.drawable.hunter_icon_shield,
-    "sliders" to R.drawable.hunter_icon_sliders,
-    "star" to R.drawable.hunter_icon_star,
-    "swords" to R.drawable.hunter_icon_swords,
-    "target" to R.drawable.hunter_icon_target,
-    "trash" to R.drawable.hunter_icon_trash,
-    "trophy" to R.drawable.hunter_icon_trophy,
-    "upload" to R.drawable.hunter_icon_upload,
-    "warning" to R.drawable.hunter_icon_warning,
-    "week_cardio" to R.drawable.hunter_icon_week_cardio,
-    "week_core" to R.drawable.hunter_icon_week_core,
-    "week_lower" to R.drawable.hunter_icon_week_lower,
-    "week_mobility" to R.drawable.hunter_icon_week_mobility,
-    "week_rest" to R.drawable.hunter_icon_week_rest,
-    "week_upper" to R.drawable.hunter_icon_week_upper
+/** Iconografía Pixel Art original, PNG RGBA transparente empaquetado sin red. */
+internal val hunterPixelPngResources:Map<String,Int> = mapOf(
+    "add" to R.drawable.hunter_pixel_add,
+    "back" to R.drawable.hunter_pixel_back,
+    "bell" to R.drawable.hunter_pixel_bell,
+    "book" to R.drawable.hunter_pixel_book,
+    "calendar" to R.drawable.hunter_pixel_calendar,
+    "chart" to R.drawable.hunter_pixel_chart,
+    "chat" to R.drawable.hunter_pixel_chat,
+    "check" to R.drawable.hunter_pixel_check,
+    "checklist" to R.drawable.hunter_pixel_checklist,
+    "chest" to R.drawable.hunter_pixel_chest,
+    "clock" to R.drawable.hunter_pixel_clock,
+    "close" to R.drawable.hunter_pixel_close,
+    "crown" to R.drawable.hunter_pixel_crown,
+    "crystal" to R.drawable.hunter_pixel_crystal,
+    "download" to R.drawable.hunter_pixel_download,
+    "dumbbell" to R.drawable.hunter_pixel_dumbbell,
+    "edit" to R.drawable.hunter_pixel_edit,
+    "fire" to R.drawable.hunter_pixel_fire,
+    "gear" to R.drawable.hunter_pixel_gear,
+    "heart" to R.drawable.hunter_pixel_heart,
+    "home" to R.drawable.hunter_pixel_home,
+    "leaf" to R.drawable.hunter_pixel_leaf,
+    "lightning" to R.drawable.hunter_pixel_lightning,
+    "lock" to R.drawable.hunter_pixel_lock,
+    "next" to R.drawable.hunter_pixel_next,
+    "pause" to R.drawable.hunter_pixel_pause,
+    "play" to R.drawable.hunter_pixel_play,
+    "portal" to R.drawable.hunter_pixel_portal,
+    "profile" to R.drawable.hunter_pixel_profile,
+    "quest" to R.drawable.hunter_pixel_quest,
+    "refresh" to R.drawable.hunter_pixel_refresh,
+    "remove" to R.drawable.hunter_pixel_remove,
+    "rest" to R.drawable.hunter_pixel_rest,
+    "search" to R.drawable.hunter_pixel_search,
+    "shield" to R.drawable.hunter_pixel_shield,
+    "sliders" to R.drawable.hunter_pixel_sliders,
+    "star" to R.drawable.hunter_pixel_star,
+    "swords" to R.drawable.hunter_pixel_swords,
+    "target" to R.drawable.hunter_pixel_target,
+    "trash" to R.drawable.hunter_pixel_trash,
+    "trophy" to R.drawable.hunter_pixel_trophy,
+    "upload" to R.drawable.hunter_pixel_upload,
+    "warning" to R.drawable.hunter_pixel_warning,
+    "week_cardio" to R.drawable.hunter_pixel_week_cardio,
+    "week_core" to R.drawable.hunter_pixel_week_core,
+    "week_lower" to R.drawable.hunter_pixel_week_lower,
+    "week_mobility" to R.drawable.hunter_pixel_week_mobility,
+    "week_rest" to R.drawable.hunter_pixel_week_rest,
+    "week_upper" to R.drawable.hunter_pixel_week_upper
 )
 
 internal fun hunterIconDrawableId(key:String):Int {
-    val graphic=iconToSvg[key] ?: "lightning"
-    return hunterNativeVectorResources[graphic] ?: R.drawable.hunter_icon_lightning
+    val graphic=iconToPng[key] ?: "lightning"
+    return hunterPixelPngResources[graphic] ?: R.drawable.hunter_pixel_lightning
 }
 
 /** API pública histórica para no alterar las pantallas ni las rutinas. */
@@ -157,10 +154,11 @@ fun HunterPngIcon(
     contentDescription:String?=null
 ){
     Image(
-        painter=painterResource(id=hunterIconDrawableId(key)),
+        bitmap=ImageBitmap.imageResource(id=hunterIconDrawableId(key)),
         contentDescription=contentDescription,
         modifier=modifier,
-        contentScale=ContentScale.Fit
+        contentScale=ContentScale.Fit,
+        filterQuality=FilterQuality.None
     )
 }
 

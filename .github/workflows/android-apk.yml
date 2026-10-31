@@ -66,7 +66,7 @@ jobs:
       - name: Quitar fondos de sombras y validar fondos planos
         run: python3 tools/check_plain_backgrounds.py
 
-      - name: Verificar biblioteca exclusiva SVG Pixel 2D
+      - name: Verificar biblioteca Pixel Art PNG RGBA
         run: python3 tools/check_pixel_icons.py
 
       - name: Comprobar ausencia de miniaturas
@@ -169,16 +169,13 @@ jobs:
             assert not any(p.startswith('assets/hunter-png/wallpapers/') for p in names),'Persisten fondos PNG de sombras'
             assert not any(p.startswith('assets/realm-art/') for p in names),'Persisten fondos SVG antiguos'
             assert not any(p.startswith('assets/hunter-png/icons/') for p in names),'Persisten iconos PNG antiguos'
-            icon_sources=list((source/'hunter-icons').glob('*.svg'))
-            expected_icons={'assets/hunter-icons/'+p.name for p in icon_sources}
-            packaged_icons={p for p in names if p.startswith('assets/hunter-icons/')}
-            assert len(expected_icons)==49,('Cantidad incorrecta de iconos SVG',len(expected_icons))
-            assert packaged_icons==expected_icons,('Los SVG de la APK no coinciden',len(packaged_icons))
-            import xml.etree.ElementTree as ET
-            for path in sorted(packaged_icons):
-              root=ET.fromstring(z.read(path))
-              assert root.tag=='{http://www.w3.org/2000/svg}svg',path
-            print('Fondo plano sin arte de sombras, 49 iconos SVG y cero iconos PNG antiguos')
+            png_sources=list(pathlib.Path('app/src/main/res/drawable-nodpi').glob('hunter_pixel_*.png'))
+            assert len(png_sources)==49,('Cantidad de iconos PNG',len(png_sources))
+            packaged_pngs={p.rsplit('/',1)[-1] for p in names if p.endswith('.png') and 'hunter_pixel_' in p}
+            expected_pngs={p.name for p in png_sources}
+            assert expected_pngs==packaged_pngs,('Iconos PNG no empaquetados',len(packaged_pngs),len(expected_pngs))
+            assert any(p.endswith('/app_icon_pixel.png') for p in names),'Falta el icono de la aplicación'
+            print('49 PNG Pixel Art de interfaz y lanzador empaquetados')
             extra=json.loads(z.read('assets/catalog-hunter2000-extra.json'))
             assert len(extra)==800 and all(x.get('approvedForAutoplan') is False and x.get('autoProgressionApproved') is False for x in extra)
             print('APK verificada: 2000 SVG íntegros, 0 Rive, 800 fichas sin QA ni planificación automática')

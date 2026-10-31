@@ -174,7 +174,7 @@ object HunterAlarms {
   val dismissPi=request(context,DISMISS,item.id)
   val message=item.detail.ifBlank{"Revisa tus misiones y elige cómo continuar."}
   val notification=Notification.Builder(context,if(item.tone=="soft")CH_SOFT else CH_HIGH)
-   .setSmallIcon(R.drawable.notification_icon)
+   .setSmallIcon(R.drawable.notification_icon_pixel)
    .setContentTitle("Hunter System · "+item.title)
    .setContentText(message)
    .setStyle(Notification.BigTextStyle().bigText(message))
@@ -184,8 +184,8 @@ object HunterAlarms {
    .setContentIntent(content)
    .setWhen(System.currentTimeMillis())
    .setAutoCancel(true)
-   .addAction(Notification.Action.Builder(R.drawable.notification_icon,"Posponer 10 min",snoozePi).build())
-   .addAction(Notification.Action.Builder(R.drawable.notification_icon,"Descartar",dismissPi).build())
+   .addAction(Notification.Action.Builder(R.drawable.notification_icon_pixel,"Posponer 10 min",snoozePi).build())
+   .addAction(Notification.Action.Builder(R.drawable.notification_icon_pixel,"Descartar",dismissPi).build())
    .build()
   context.getSystemService(NotificationManager::class.java).notify(notificationId(item.id),notification)
  }
