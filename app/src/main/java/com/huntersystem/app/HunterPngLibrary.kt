@@ -1,12 +1,13 @@
 package com.huntersystem.app
 
-import androidx.compose.foundation.Image
+import android.content.Context
+import android.graphics.Color
+import android.graphics.drawable.BitmapDrawable
+import android.view.View
+import android.widget.ImageView
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.graphics.FilterQuality
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.viewinterop.AndroidView
 
 /** Los identificadores del perfil y de la navegación se mantienen intactos. */
 private val iconToPng = mapOf(
@@ -146,20 +147,53 @@ internal fun hunterIconDrawableId(key:String):Int {
     return hunterPixelPngResources[graphic] ?: R.drawable.hunter_pixel_lightning
 }
 
-/** API pública histórica para no alterar las pantallas ni las rutinas. */
+/** Un ImageView real, como en Agenda Clara, resuelve cada PNG con R.drawable.
+ * No se crea dibujo mediante Canvas, XML vectorial ni tintes que alteren la imagen.
+ * Desactivar el filtro evita difuminar los píxeles al mostrar tamaños pequeños.
+ */
+internal fun updateHunterNativeIcon(view: ImageView, drawableId: Int, description: String?) {
+    if (view.tag != drawableId) {
+        view.setImageResource(drawableId)
+        view.tag = drawableId
+    }
+    view.imageTintList = null
+    (view.drawable as? BitmapDrawable)?.setFilterBitmap(false)
+    view.scaleType = ImageView.ScaleType.FIT_CENTER
+    view.contentDescription = description
+    view.importantForAccessibility = if (description == null)
+        View.IMPORTANT_FOR_ACCESSIBILITY_NO else View.IMPORTANT_FOR_ACCESSIBILITY_YES
+}
+
+internal fun nativeHunterIconView(
+    context: Context,
+    drawableId: Int,
+    description: String?
+): ImageView = ImageView(context).apply {
+    setBackgroundColor(Color.TRANSPARENT)
+    updateHunterNativeIcon(this, drawableId, description)
+}
+
+@Composable
+private fun HunterNativePngImage(
+    drawableId: Int,
+    modifier: Modifier,
+    contentDescription: String?
+) {
+    AndroidView(
+        factory = { context -> nativeHunterIconView(context, drawableId, contentDescription) },
+        modifier = modifier,
+        update = { view -> updateHunterNativeIcon(view, drawableId, contentDescription) }
+    )
+}
+
+/** API histórica: las pantallas y claves semánticas permanecen intactas. */
 @Composable
 fun HunterPngIcon(
-    key:String,
-    modifier:Modifier=Modifier,
-    contentDescription:String?=null
-){
-    Image(
-        bitmap=ImageBitmap.imageResource(id=hunterIconDrawableId(key)),
-        contentDescription=contentDescription,
-        modifier=modifier,
-        contentScale=ContentScale.Fit,
-        filterQuality=FilterQuality.None
-    )
+    key: String,
+    modifier: Modifier = Modifier,
+    contentDescription: String? = null
+) {
+    HunterNativePngImage(hunterIconDrawableId(key), modifier, contentDescription)
 }
 
 /** Variantes de selección extraídas de la lámina Pixel Art aprobada.
@@ -174,6 +208,10 @@ private val hunterSelectedNavResources: Map<String, Int> = mapOf(
     "profile" to R.drawable.hunter_nav_profile
 )
 
+internal fun hunterNavigationDrawableId(key: String, selected: Boolean): Int =
+    if (selected) hunterSelectedNavResources[key] ?: hunterIconDrawableId(key)
+    else hunterIconDrawableId(key)
+
 @Composable
 fun HunterNavigationPngIcon(
     key: String,
@@ -181,14 +219,10 @@ fun HunterNavigationPngIcon(
     modifier: Modifier = Modifier,
     contentDescription: String? = null
 ) {
-    val id = if (selected) hunterSelectedNavResources[key] ?: hunterIconDrawableId(key)
-             else hunterIconDrawableId(key)
-    Image(
-        bitmap = ImageBitmap.imageResource(id = id),
-        contentDescription = contentDescription,
-        modifier = modifier,
-        contentScale = ContentScale.Fit,
-        filterQuality = FilterQuality.None
+    HunterNativePngImage(
+        hunterNavigationDrawableId(key, selected),
+        modifier,
+        contentDescription
     )
 }
 

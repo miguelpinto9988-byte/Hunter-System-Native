@@ -26,7 +26,8 @@ checks={
     and "AssetImage(" not in read(src+"HunterFlatBackground.kt"),
  "biblioteca iconos Pixel Art PNG":(R/(src+"HunterPngLibrary.kt")).is_file()
     and len(list((R/"app/src/main/res/drawable-nodpi").glob("hunter_pixel_*.png")))==49
-    and 'bitmap=ImageBitmap.imageResource(id=hunterIconDrawableId(key))' in read(src+"HunterPngLibrary.kt")
+    and 'view.setImageResource(drawableId)' in read(src+"HunterPngLibrary.kt")
+    and 'AndroidView(' in read(src+"HunterPngLibrary.kt")
     and 'hunterPixelPngResources' in read(src+"HunterPngLibrary.kt")
     and 'HunterPngIcon(' in read(src+"MonarchRoutinesV42.kt")
     and 'HunterPngIcon(' in read(src+"MonarchProgressV42.kt")
