@@ -37,13 +37,18 @@ jobs:
             mkdir -p preview-android
             ./gradlew :app:assembleDebug --no-daemon
             adb install -r app/build/outputs/apk/debug/app-debug.apk
+            cat > preview-android/perfil-demo.json <<'JSON'
+            {"profile":{"name":"Cazador","age":18,"height":170,"weight":70,"gender":"male","finalGoal":"Mantener constancia semanal","goalGroup":"build","finalTarget":"strength","experience":"beginner","weekPlan":["rest","train","rest","train","rest","train","rest"],"weekFocus":["upper","upper","upper","lower","upper","core","upper"],"minutes":20,"frequency":3},"logs":{},"cycles":[]}
+            JSON
+            adb push preview-android/perfil-demo.json /data/local/tmp/hunter-preview-profile.json
+            adb shell run-as com.huntersystem.app sh -c "'cat /data/local/tmp/hunter-preview-profile.json > files/hunter-system-native.json'"
             adb shell pm grant com.huntersystem.app android.permission.POST_NOTIFICATIONS || true
             adb shell am start -n com.huntersystem.app/.MainActivity
             sleep 22
             adb exec-out screencap -p > preview-android/01-app-recién-abierta.png
             adb shell uiautomator dump /sdcard/window.xml || true
             adb pull /sdcard/window.xml preview-android/ui-dump.xml || true
-            adb shell input tap 540 1700
+            adb shell input tap 540 2180
             sleep 4
             adb exec-out screencap -p > preview-android/02-interaccion.png
             adb shell uiautomator dump /sdcard/window2.xml || true
