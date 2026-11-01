@@ -1,8 +1,7 @@
 package com.huntersystem.app
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Canvas
+import android.graphics.BitmapFactory
 import android.graphics.Color
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.*
@@ -22,18 +21,17 @@ class HunterMinimalIconResolutionTest {
         assertEquals(49,hunterPixelPngResources.size)
         val missing=mutableListOf<String>()
         for ((name,id) in hunterPixelPngResources) {
-            val drawable=requireNotNull(context.getDrawable(id)) {
-                "No existe el PNG Android del ícono $name"
+            val output=requireNotNull(BitmapFactory.decodeResource(context.resources,id)) {
+                "No se pudo decodificar PNG RGBA del ícono $name"
             }
-            val output=Bitmap.createBitmap(96,96,Bitmap.Config.ARGB_8888)
-            drawable.setBounds(0,0,96,96)
-            drawable.draw(Canvas(output))
-            val pixels=IntArray(96*96)
-            output.getPixels(pixels,0,96,0,0,96,96)
-            if (pixels.none { Color.alpha(it)>0 }) missing+=name
+            val pixels=IntArray(output.width*output.height)
+            output.getPixels(pixels,0,output.width,0,0,output.width,output.height)
+            if (pixels.none { Color.alpha(it)>0 } ||
+                pixels.all { Color.alpha(it)==255 } ||
+                Color.alpha(output.getPixel(0,0))!=0) missing+=name
             output.recycle()
         }
-        assertTrue("PNG que no dibujan píxeles: ${missing.joinToString()}", missing.isEmpty())
+        assertTrue("PNG sin alfa correcto o sin píxeles visibles: ${missing.joinToString()}", missing.isEmpty())
     }
 
     @Test fun everySemanticIconPointsToANativePng() {

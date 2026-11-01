@@ -162,6 +162,36 @@ fun HunterPngIcon(
     )
 }
 
+/** Variantes de selección extraídas de la lámina Pixel Art aprobada.
+ * La navegación dibuja exclusivamente bitmaps PNG (sin Canvas ni VectorDrawable).
+ */
+private val hunterSelectedNavResources: Map<String, Int> = mapOf(
+    "panel" to R.drawable.hunter_nav_home,
+    "missions" to R.drawable.hunter_nav_quest,
+    "routines" to R.drawable.hunter_nav_calendar,
+    "exercises" to R.drawable.hunter_nav_dumbbell,
+    "progress" to R.drawable.hunter_nav_chart,
+    "profile" to R.drawable.hunter_nav_profile
+)
+
+@Composable
+fun HunterNavigationPngIcon(
+    key: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    contentDescription: String? = null
+) {
+    val id = if (selected) hunterSelectedNavResources[key] ?: hunterIconDrawableId(key)
+             else hunterIconDrawableId(key)
+    Image(
+        bitmap = ImageBitmap.imageResource(id = id),
+        contentDescription = contentDescription,
+        modifier = modifier,
+        contentScale = ContentScale.Fit,
+        filterQuality = FilterQuality.None
+    )
+}
+
 /** Clave adaptativa basada en el contenido REAL de la rutina y sus categorías. */
 fun hunterRoutinePngKey(title:String,category:String=""):String{
     val text=(title+" "+category).lowercase()

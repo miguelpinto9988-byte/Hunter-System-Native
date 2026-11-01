@@ -1,54 +1,123 @@
 #!/usr/bin/env python3
-"""Auditoría completa de la biblioteca Pixel Art PNG transparente V43.12."""
-import hashlib, re, struct, subprocess, sys, tempfile, zlib
+"""Audita los 57 PNG originales y transparentes de Hunter System V43.12.
+
+No genera ni pinta iconos: comprueba los recursos PNG ya integrados en Android.
+"""
 from pathlib import Path
-R=Path(__file__).resolve().parents[1]
-SOURCE=R/"app/src/main/java/com/huntersystem/app"
-DRAW=R/"app/src/main/res/drawable-nodpi"
-LIB=(SOURCE/"HunterPngLibrary.kt").read_text(encoding="utf8")
-errors=[]
-files=sorted(DRAW.glob("hunter_pixel_*.png"))
-if len(files)!=49:errors.append(f"Se esperaban 49 PNG y hay {len(files)}")
-for f in files+[DRAW/"app_icon_pixel.png",DRAW/"notification_icon_pixel.png"]:
-    if not f.is_file():errors.append("Falta: "+f.name);continue
-    raw=f.read_bytes()
-    if raw[:8]!=b"\x89PNG\r\n\x1a\n":errors.append("Firma PNG inválida: "+f.name);continue
-    width,height,depth,ctype=struct.unpack(">IIBB",raw[16:26])
-    if (width,height,depth,ctype)!=(256,256,8,6):errors.append(f"PNG no es RGBA 256: {f.name}")
-    pos=8;parts=[]
-    while pos<len(raw):
-        n=int.from_bytes(raw[pos:pos+4],"big");kind=raw[pos+4:pos+8]
-        if kind==b"IDAT":parts.append(raw[pos+8:pos+8+n])
-        pos+=12+n
+import re
+import struct
+import sys
+import zlib
+
+ROOT = Path(__file__).resolve().parents[1]
+DRAW = ROOT / "app/src/main/res/drawable-nodpi"
+SOURCE = ROOT / "app/src/main/java/com/huntersystem/app"
+errors = []
+
+
+def paeth(a, b, c):
+    p = a + b - c
+    da, db, dc = abs(p-a), abs(p-b), abs(p-c)
+    return a if da <= db and da <= dc else b if db <= dc else c
+
+
+def alpha_summary(path):
+    data = path.read_bytes()
+    if not data.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise ValueError("firma PNG inválida")
+    offset = 8
+    chunks = []
+    width = height = depth = color = None
+    while offset + 12 <= len(data):
+        size = int.from_bytes(data[offset:offset+4], "big")
+        kind = data[offset+4:offset+8]
+        payload = data[offset+8:offset+8+size]
+        if kind == b"IHDR":
+            width, height, depth, color = struct.unpack(">IIBB", payload[:10])
+        if kind == b"IDAT":
+            chunks.append(payload)
+        offset += 12 + size
+        if kind == b"IEND":
+            break
+    if (width, height, depth, color) != (256, 256, 8, 6):
+        raise ValueError(f"se requiere RGBA de 256 px; recibido {(width,height,depth,color)}")
+    raw = zlib.decompress(b"".join(chunks))
+    stride = width * 4
+    if len(raw) != height * (stride+1):
+        raise ValueError("datos PNG truncados o tamaño de scanline erróneo")
+    prev = bytearray(stride)
+    zero = visible = False
+    corner = None
+    offset = 0
+    for y in range(height):
+        filt = raw[offset]
+        offset += 1
+        row = bytearray(raw[offset:offset+stride])
+        offset += stride
+        for i in range(stride):
+            a = row[i-4] if i >= 4 else 0
+            b = prev[i]
+            c = prev[i-4] if i >= 4 else 0
+            delta = (0 if filt == 0 else a if filt == 1 else b if filt == 2 else
+                     (a+b)//2 if filt == 3 else paeth(a,b,c) if filt == 4 else None)
+            if delta is None:
+                raise ValueError(f"filtro PNG {filt} no permitido")
+            row[i] = (row[i] + delta) & 255
+        if y == 0:
+            corner = row[3]
+        for v in row[3::4]:
+            zero |= v == 0
+            visible |= v > 0
+        prev = row
+    if corner != 0:
+        raise ValueError("la esquina superior izquierda no es transparente")
+    if not zero or not visible:
+        raise ValueError("icono completamente opaco o invisible")
+
+
+icons = sorted(DRAW.glob("hunter_pixel_*.png"))
+selected = sorted(DRAW.glob("hunter_nav_*.png"))
+if len(icons) != 49:
+    errors.append(f"49 iconos funcionales requeridos, hallados {len(icons)}")
+if len(selected) != 6:
+    errors.append(f"6 variantes de navegación requeridas, halladas {len(selected)}")
+for path in icons + selected + [DRAW/"app_icon_pixel.png",DRAW/"notification_icon_pixel.png"]:
+    if not path.is_file():
+        errors.append("Falta " + path.name)
+        continue
     try:
-        scan=zlib.decompress(b"".join(parts))
-        if not any(scan[row*(1+4*width)+1+4*x+3]==0 for row in range(height) for x in range(width)):
-            errors.append("El fondo no es transparente: "+f.name)
-        if not any(scan[row*(1+4*width)+1+4*x+3]>0 for row in range(height) for x in range(width)):
-            errors.append("Icono totalmente invisible: "+f.name)
-    except Exception as e:errors.append(f"PNG inválido {f.name}: {e}")
-mapping=dict(re.findall(r'"([a-z_]+)"\s+to\s+"([a-z_]+)"',LIB))
-native=dict(re.findall(r'"([a-z_]+)"\s+to\s+R\.drawable\.hunter_pixel_([a-z_]+)',LIB))
-if len(mapping)!=76:errors.append(f"Claves funcionales: {len(mapping)}, esperadas 76")
-if len(native)!=49:errors.append(f"Recursos PNG: {len(native)}, esperados 49")
-for key,name in mapping.items():
+        alpha_summary(path)
+    except Exception as e:
+        errors.append(f"{path.name}: {e}")
+
+library = (SOURCE/"HunterPngLibrary.kt").read_text(encoding="utf-8")
+mapping = dict(re.findall(r'"([a-z_]+)"\s+to\s+"([a-z_]+)"', library))
+native = dict(re.findall(r'"([a-z_]+)"\s+to\s+R\.drawable\.hunter_pixel_([a-z_]+)', library))
+if len(mapping) != 76:
+    errors.append(f"Se esperan 76 claves semánticas, hay {len(mapping)}")
+if len(native) != 49:
+    errors.append(f"Se esperan 49 recursos PNG, hay {len(native)}")
+for key, name in mapping.items():
     if name not in native or not (DRAW/("hunter_pixel_"+name+".png")).is_file():
-        errors.append(f"Sin PNG: {key} -> {name}")
-if 'bitmap=ImageBitmap.imageResource(id=hunterIconDrawableId(key))' not in LIB or 'filterQuality=FilterQuality.None' not in LIB:
-    errors.append("Compose no carga PNG pixel-perfect")
-if 'R.drawable.notification_icon_pixel' not in (SOURCE/"HunterAlarms.kt").read_text():
-    errors.append("Las alarmas no usan PNG nuevo")
-if '@drawable/app_icon_pixel' not in (R/"app/src/main/AndroidManifest.xml").read_text():
-    errors.append("Launcher no usa PNG nuevo")
-# El generador es determinista. Valida correspondencia byte a byte.
-with tempfile.TemporaryDirectory() as tmp:
-    ret=subprocess.run([sys.executable,str(R/"tools/build_hunter_pixel_icons.py"),"--output",tmp,"--scale","4","--verify"],capture_output=True,text=True)
-    if ret.returncode:errors.append("Generador falló: "+ret.stderr[-400:])
-    else:
-        for f in files:
-            expected=Path(tmp)/f.name
-            if hashlib.sha256(expected.read_bytes()).digest()!=hashlib.sha256(f.read_bytes()).digest():
-                errors.append("Fuente y recurso divergen: "+f.name)
+        errors.append(f"Falta PNG semántico {key}: {name}")
+for name in ("home","quest","calendar","dumbbell","chart","profile"):
+    if f"R.drawable.hunter_nav_{name}" not in library:
+        errors.append("Variante seleccionada no mapeada: " + name)
+if "bitmap=ImageBitmap.imageResource(id=hunterIconDrawableId(key))" not in library:
+    errors.append("Compose no carga PNG desde recursos nativos")
+if "filterQuality=FilterQuality.None" not in library:
+    errors.append("El escalado de iconos no conserva los píxeles")
+navigation = (SOURCE/"MonarchNavigationV42.kt").read_text(encoding="utf-8")
+if "HunterNavigationPngIcon(monarchPngDestination(destination.id), selected" not in navigation:
+    errors.append("La navegación no usa PNG normal y seleccionado")
+glyph = (SOURCE/"MonarchV42.kt").read_text(encoding="utf-8")
+if "Canvas(" in glyph or "HunterPngIcon(monarchGlyphPixelKey(kind), modifier, kind)" not in glyph:
+    errors.append("Los accesos rápidos del Panel deben usar PNG, no Canvas")
+if "R.drawable.notification_icon_pixel" not in (SOURCE/"HunterAlarms.kt").read_text():
+    errors.append("Las notificaciones no usan el PNG")
+if '@drawable/app_icon_pixel' not in (ROOT/"app/src/main/AndroidManifest.xml").read_text():
+    errors.append("El icono launcher no usa PNG")
 if errors:
-    print("\n".join("ERROR: "+e for e in errors));sys.exit(1)
-print("OK: 49 PNG RGBA transparentes, 76 alias, generador reproducible, Compose, launcher y notificaciones")
+    print("\n".join("ERROR: " + e for e in errors))
+    sys.exit(1)
+print("OK: 49 PNG RGBA + 6 variantes seleccionadas + iconos launcher/notificación; 76 claves y alfa auténtico.")
