@@ -42,7 +42,7 @@ jobs:
             {"profile":{"name":"Cazador","age":18,"height":170,"weight":70,"gender":"male","finalGoal":"Mantener constancia semanal","goalGroup":"build","finalTarget":"strength","experience":"beginner","weekPlan":["rest","train","rest","train","rest","train","rest"],"weekFocus":["upper","upper","upper","lower","upper","core","upper"],"minutes":20,"frequency":3},"logs":{},"cycles":[]}
             JSON
             adb push preview-android/perfil-demo.json /data/local/tmp/hunter-preview-profile.json
-            adb shell run-as com.huntersystem.app sh -c "'cat /data/local/tmp/hunter-preview-profile.json > files/hunter-system-native.json'"
+            adb shell run-as com.huntersystem.app mkdir -p files\n            adb shell run-as com.huntersystem.app sh -c "'cat /data/local/tmp/hunter-preview-profile.json > files/hunter-system-native.json'"
             adb shell pm grant com.huntersystem.app android.permission.POST_NOTIFICATIONS || true
             adb shell am start -n com.huntersystem.app/.MainActivity
             sleep 22
