@@ -35,7 +35,8 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
           script: |
             mkdir -p preview-android
-            ./gradlew :app:assembleDebug --no-daemon
+            python3 tools/download_monarch_boss_originals.py
+            bash ./gradlew :app:assembleDebug --no-daemon
             adb install -r app/build/outputs/apk/debug/app-debug.apk
             cat > preview-android/perfil-demo.json <<'JSON'
             {"profile":{"name":"Cazador","age":18,"height":170,"weight":70,"gender":"male","finalGoal":"Mantener constancia semanal","goalGroup":"build","finalTarget":"strength","experience":"beginner","weekPlan":["rest","train","rest","train","rest","train","rest"],"weekFocus":["upper","upper","upper","lower","upper","core","upper"],"minutes":20,"frequency":3},"logs":{},"cycles":[]}
