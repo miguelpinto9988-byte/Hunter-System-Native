@@ -1,13 +1,12 @@
 package com.huntersystem.app
 
-import android.content.Context
-import android.graphics.Color
-import android.graphics.drawable.BitmapDrawable
-import android.view.View
-import android.widget.ImageView
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.viewinterop.AndroidView
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.imageResource
 
 /** Los identificadores del perfil y de la navegación se mantienen intactos. */
 private val iconToPng = mapOf(
@@ -147,46 +146,27 @@ internal fun hunterIconDrawableId(key:String):Int {
     return hunterPixelPngResources[graphic] ?: R.drawable.hunter_pixel_lightning
 }
 
-/** Un ImageView real, como en Agenda Clara, resuelve cada PNG con R.drawable.
- * No se crea dibujo mediante Canvas, XML vectorial ni tintes que alteren la imagen.
- * Desactivar el filtro evita difuminar los píxeles al mostrar tamaños pequeños.
+/** Recursos nativos R.drawable, equivalentes al mecanismo de Agenda Clara.
+ * En una interfaz Compose, Image con ImageBitmap es la opción nativa y evita
+ * un AndroidView / ImageView adicional por cada ícono.
+ * El recurso original es PNG RGBA; no se rasterizan vectores ni se dibuja Canvas.
  */
-internal fun updateHunterNativeIcon(view: ImageView, drawableId: Int, description: String?) {
-    if (view.tag != drawableId) {
-        view.setImageResource(drawableId)
-        view.tag = drawableId
-    }
-    view.imageTintList = null
-    (view.drawable as? BitmapDrawable)?.setFilterBitmap(false)
-    view.scaleType = ImageView.ScaleType.FIT_CENTER
-    view.contentDescription = description
-    view.importantForAccessibility = if (description == null)
-        View.IMPORTANT_FOR_ACCESSIBILITY_NO else View.IMPORTANT_FOR_ACCESSIBILITY_YES
-}
-
-internal fun nativeHunterIconView(
-    context: Context,
-    drawableId: Int,
-    description: String?
-): ImageView = ImageView(context).apply {
-    setBackgroundColor(Color.TRANSPARENT)
-    updateHunterNativeIcon(this, drawableId, description)
-}
-
 @Composable
 private fun HunterNativePngImage(
     drawableId: Int,
     modifier: Modifier,
     contentDescription: String?
 ) {
-    AndroidView(
-        factory = { context -> nativeHunterIconView(context, drawableId, contentDescription) },
+    Image(
+        bitmap = ImageBitmap.imageResource(id = drawableId),
+        contentDescription = contentDescription,
         modifier = modifier,
-        update = { view -> updateHunterNativeIcon(view, drawableId, contentDescription) }
+        contentScale = ContentScale.Fit,
+        filterQuality = FilterQuality.None
     )
 }
 
-/** API histórica: las pantallas y claves semánticas permanecen intactas. */
+/** API histórica: mantiene las claves y las pantallas existentes. */
 @Composable
 fun HunterPngIcon(
     key: String,
@@ -197,7 +177,7 @@ fun HunterPngIcon(
 }
 
 /** Variantes de selección extraídas de la lámina Pixel Art aprobada.
- * La navegación dibuja exclusivamente bitmaps PNG (sin Canvas ni VectorDrawable).
+ * La navegación usa exclusivamente los recursos PNG RGBA (sin Canvas personalizado ni VectorDrawable).
  */
 private val hunterSelectedNavResources: Map<String, Int> = mapOf(
     "panel" to R.drawable.hunter_nav_home,

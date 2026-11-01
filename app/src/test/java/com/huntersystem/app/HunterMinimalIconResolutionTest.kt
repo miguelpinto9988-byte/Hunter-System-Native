@@ -34,26 +34,28 @@ class HunterMinimalIconResolutionTest {
         assertTrue("PNG sin alfa correcto o sin píxeles visibles: ${missing.joinToString()}", missing.isEmpty())
     }
 
-    @Test fun agendaClaraStyleImageViewUsesUntintedTransparentPngs() {
+    @Test fun allSelectedNavigationVariantsAreDirectPngResources() {
         val context=ApplicationProvider.getApplicationContext<Context>()
-        val ids = hunterPixelPngResources.values + listOf(
+        val ids=listOf(
             R.drawable.hunter_nav_home, R.drawable.hunter_nav_quest,
             R.drawable.hunter_nav_calendar, R.drawable.hunter_nav_dumbbell,
             R.drawable.hunter_nav_chart, R.drawable.hunter_nav_profile
         )
         for (id in ids) {
-            val view=nativeHunterIconView(context,id,"Ícono de prueba")
-            val drawable=view.drawable
-            assertTrue("La imagen debe ser un PNG BitmapDrawable", drawable is android.graphics.drawable.BitmapDrawable)
-            assertNull("Sin tinte artificial",view.imageTintList)
-            assertFalse("Sin filtrado borroso", (drawable as android.graphics.drawable.BitmapDrawable).isFilterBitmap)
-            assertEquals(android.widget.ImageView.ScaleType.FIT_CENTER,view.scaleType)
-            assertEquals(android.view.View.IMPORTANT_FOR_ACCESSIBILITY_YES,view.importantForAccessibility)
+            val value=android.util.TypedValue()
+            context.resources.getValue(id,value,true)
+            assertTrue("Debe ser un archivo PNG, no XML vectorial",value.string.toString().endsWith(".png"))
+            val bitmap=requireNotNull(BitmapFactory.decodeResource(context.resources,id))
+            assertEquals(256,bitmap.width)
+            assertEquals(256,bitmap.height)
+            assertEquals("La esquina debe tener transparencia",0,Color.alpha(bitmap.getPixel(0,0)))
+            assertTrue("El icono no debe ser invisible", (0 until bitmap.width).any {
+                x -> (0 until bitmap.height).any { y -> Color.alpha(bitmap.getPixel(x,y))>0 }
+            })
+            bitmap.recycle()
         }
         assertEquals(R.drawable.hunter_nav_home,hunterNavigationDrawableId("panel",true))
         assertEquals(R.drawable.hunter_pixel_home,hunterNavigationDrawableId("panel",false))
-        val decorative=nativeHunterIconView(context,R.drawable.hunter_pixel_home,null)
-        assertEquals(android.view.View.IMPORTANT_FOR_ACCESSIBILITY_NO,decorative.importantForAccessibility)
     }
 
     @Test fun everySemanticIconPointsToANativePng() {

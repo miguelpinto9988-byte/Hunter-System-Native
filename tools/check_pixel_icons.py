@@ -103,16 +103,18 @@ for key, name in mapping.items():
 for name in ("home","quest","calendar","dumbbell","chart","profile"):
     if f"R.drawable.hunter_nav_{name}" not in library:
         errors.append("Variante seleccionada no mapeada: " + name)
-if "AndroidView(" not in library or "view.setImageResource(drawableId)" not in library:
-    errors.append("La iconografía debe usar ImageView nativo con R.drawable, igual que Agenda Clara")
-if "setFilterBitmap(false)" not in library:
-    errors.append("El escalado de los PNG no preserva los bordes Pixel Art")
-if "view.imageTintList = null" not in library:
-    errors.append("Los tintes podrían modificar los colores originales de los PNG")
+if "ImageBitmap.imageResource(id = drawableId)" not in library:
+    errors.append("La iconografía Compose no carga el PNG desde R.drawable")
+if "filterQuality = FilterQuality.None" not in library:
+    errors.append("El escalado de los PNG no preserva bordes Pixel Art")
+if "contentScale = ContentScale.Fit" not in library:
+    errors.append("Los PNG pueden quedar recortados")
+if "AndroidView(" in library or "Canvas(" in library or "ImageView(" in library:
+    errors.append("Los iconos deben utilizar exclusivamente Image de Compose, sin wrapper View ni Canvas manual")
 if "HunterNativePngImage(hunterIconDrawableId(key), modifier, contentDescription)" not in library:
-    errors.append("Las claves funcionales no están conectadas al visor PNG nativo")
+    errors.append("Las claves funcionales no están conectadas al PNG")
 if "hunterNavigationDrawableId(key, selected)" not in library:
-    errors.append("La navegación seleccionada no carga sus PNG correspondientes")
+    errors.append("La navegación seleccionada no carga los PNG correspondientes")
 navigation = (SOURCE/"MonarchNavigationV42.kt").read_text(encoding="utf-8")
 if "HunterNavigationPngIcon(monarchPngDestination(destination.id), selected" not in navigation:
     errors.append("La navegación no usa PNG normal y seleccionado")
