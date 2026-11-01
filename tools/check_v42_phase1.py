@@ -33,7 +33,7 @@ screen = (SRC / "Screens.kt").read_text(encoding="utf-8")
 main = (SRC / "MainActivity.kt").read_text(encoding="utf-8")
 check("MonarchHero(ui,stats)" in screen, "El Inicio todavía no utiliza el nuevo piloto")
 navigation = (SRC / "MonarchNavigationV42.kt")
-check("MonarchGlyph(id" in main or (navigation.is_file() and ("MonarchGlyph(destination.id" in navigation.read_text(encoding="utf-8") or 'HunterPngIcon(monarchPngDestination(destination.id)' in navigation.read_text(encoding="utf-8"))), "La navegación no usa iconografía Monarca")
+check("MonarchGlyph(id" in main or (navigation.is_file() and ("MonarchGlyph(destination.id" in navigation.read_text(encoding="utf-8") or 'HunterNavigationPngIcon(monarchPngDestination(destination.id)' in navigation.read_text(encoding="utf-8"))), "La navegación no usa iconografía Monarca")
 check("V39Artwork(" not in screen, "Se ha reincorporado el cargador de miniaturas")
 result = {
     "version": "42.0-monarca-fase1",
