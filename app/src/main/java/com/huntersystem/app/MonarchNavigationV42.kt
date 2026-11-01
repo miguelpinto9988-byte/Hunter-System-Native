@@ -96,18 +96,18 @@ private fun MonarchNavItem(
  val item=Modifier
      .clip(shape)
      .background(if(selected)c.selected else Color.Transparent)
-     .monarchOutline(shape,active=selected,pressed=pressed)
+     
      .semantics(mergeDescendants=true){
          contentDescription=destination.title+(if(selected)", seleccionada" else "")
          this.selected=selected
      }
      .clickable(interactionSource=interaction,indication=LocalIndication.current,
        role=Role.Tab,onClick=onSelect)
- Column(item.fillMaxWidth().fillMaxHeight().padding(vertical=5.dp),
+ Column(item.fillMaxWidth().fillMaxHeight().padding(vertical=3.dp),
      horizontalAlignment=Alignment.CenterHorizontally,
-     verticalArrangement=Arrangement.spacedBy(4.dp)){
-     HunterNavigationPngIcon(monarchPngDestination(destination.id), selected, Modifier.size(44.dp), destination.title)
-     HText(destination.title,size=11,bold=selected,color=tint,maxLines=1)
+     verticalArrangement=Arrangement.spacedBy(2.dp)){
+     HunterNavigationPngIcon(monarchPngDestination(destination.id), selected, Modifier.size(52.dp), destination.title)
+     HText(destination.title,size=12,bold=selected,color=tint,maxLines=1)
  }
 }
 
@@ -118,7 +118,7 @@ fun MonarchBottomNavigation(ui:NativeUi){
     Row(Modifier.fillMaxWidth()
         .background(Brush.verticalGradient(listOf(c.surface,c.panel)))
         .border(.8.dp,c.line.copy(alpha=.68f))
-        .navigationBarsPadding().height(86.dp).padding(horizontal=6.dp,vertical=5.dp),
+        .navigationBarsPadding().height(92.dp).padding(horizontal=6.dp,vertical=5.dp),
         verticalAlignment=Alignment.CenterVertically,
         horizontalArrangement=Arrangement.spacedBy(3.dp)){
         for(destination in MonarchNavigation.tabs){
