@@ -90,7 +90,7 @@ class Planner(val catalog:Catalog,val rules:Rules){
     -(if(e.id in previous)22 else 0)
     -min(20,planned.filter{distance(it.date,date)<=6&&it.group==e.group}.sumOf{it.sets}*2)
     +supportScore(e,p)+metadataScore(e,p,kind)
-    +(rules.score(e,p,kind,emptyList())/5).coerceIn(-25,25)
+    +(rules.score(e,p,kind,emptyList())/5.0).coerceIn(-25.0,25.0).roundToInt()
    ).coerceIn(-90,65)
   }
   val candidateFresh=source.all().any{item->
