@@ -39,11 +39,11 @@ jobs:
               continue
             fi
             sha="$(git rev-parse "refs/remotes/origin/$branch")"
-            existing="$(gh api "/repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.sha' 2>/dev/null || true)"
+            existing="$(git ls-remote --refs origin "refs/tags/$tag" | awk '{print $1}')"
             if [[ -z "$existing" ]]; then
-              gh api --method POST "/repos/$GITHUB_REPOSITORY/git/refs" \
-                -f "ref=refs/tags/$tag" -f "sha=$sha" >/dev/null
-              existing="$(gh api "/repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.sha')"
+              git tag "$tag" "$sha"
+              git push origin "refs/tags/$tag"
+              existing="$(git ls-remote --refs origin "refs/tags/$tag" | awk '{print $1}')"
             fi
             if [[ "$existing" != "$sha" ]]; then
               echo "::error::Tag $tag does not match $branch, refusing to delete"
