@@ -29,6 +29,7 @@ jobs:
             "redesign/v39-eclipse-aurora-ceniza-amanecer|archive/retired-scenes/v39-eclipse-aurora-ceniza-amanecer"
             "redesign/v40-premium-compose-20261024|archive/retired-scenes/v40-premium-compose-20261024"
             "redesign/v41-full-concept-20261024|archive/retired-scenes/v41-full-concept-20261024"
+            "feature/agenda-clara-png-rendering-parity|archive/retired-scenes/agenda-clara-png-parity"
           )
           total=0
           for item in "${pairs[@]}"; do
