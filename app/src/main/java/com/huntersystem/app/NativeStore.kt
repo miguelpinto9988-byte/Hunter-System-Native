@@ -145,7 +145,7 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
   val c=state.a("cycles").objects().lastOrNull()?:return
   val rs=c.a("reviews");rs.put(obj("date" to today(),"action" to action));c.put("reviews",rs)
   for(d in c.a("days").objects().filter{it.s("date")>=today()&&!locked(it)}){
-   if(action=="pausar"){d.put("items",JSONArray());d.put("kind","rest");d.put("title","Revisión de indicaciones");d.put("tasks",arr(listOf(obj("id" to "coach-review","text" to "Revisar el dolor y las indicaciones antes de volver a entrenar","done" to false))))}
+   if(action=="pausar"){d.put("items",JSONArray());d.put("kind","rest");d.put("title","Revisión de indicaciones");d.put("tasks",arr(listOf(obj("id" to "coach-review","text" to "Revisar el dolor y las indicaciones antes de volver a entrenar","done" to false))));d.remove("progressSettingsHash");d.remove("progressCatalogHash");d.remove("progressCategory")}
    else if(action=="reducir"){for(x in d.a("items").objects()){val e=catalog.byId[x.s("id")]?:continue;x.put("target",max(if(e.unit=="sec")1 else 1,floor(x.n("target")*.8).toInt()))};d.put("reviewReducedNative",true)}
   }
   if(action=="mantener")c.remove("nativeKey")
