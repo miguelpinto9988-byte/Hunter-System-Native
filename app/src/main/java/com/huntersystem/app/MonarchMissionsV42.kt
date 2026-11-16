@@ -381,6 +381,19 @@ private fun MonarchMissionsProgress(ui:NativeUi) {
             size=15,color=c.muted)
         HText("Porcentaje solo entre actividades evaluadas. Las pendientes no reducen el resultado.",
             size=13,color=c.muted)
+        val todayCategory=HunterCategory.parse(s.day(today()).s("progressCategory"))
+        if(todayCategory!=null&&todayCategory!=HunterCategory.REST){
+            val history=HunterProgressBridge.history(s.logs,s.state.a("hunterPhases"))
+            val review=HunterProgressRules.weekly(history,LocalDate.parse(today()),todayCategory)
+            HText("Revisión de "+todayCategory.title+": "+review.explanation,
+                size=13,color=c.muted)
+            val phase=history.phase(todayCategory)
+            HText("Fase técnica: "+(phase+1)+"/3. No representa capacidad física.",
+                size=13,color=c.muted)
+            if(phase>0)HButton("REVERTIR ÚLTIMA FASE TÉCNICA",Modifier.fillMaxWidth()){
+                ui.attempt{s.revertTechnicalPhase(todayCategory)}
+            }
+        }
         HButton("REVISIÓN DE MI SEMANA  ↗",Modifier.fillMaxWidth()) {
             ui.open("review")
         }
