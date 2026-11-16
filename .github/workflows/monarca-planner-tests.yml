@@ -3,16 +3,16 @@ on:
   push:
     branches: [main]
     paths:
-      - "app/src/main/java/com/huntersystem/app/monarca/**"
-      - "app/src/main/java/com/huntersystem/app/Monarca*.kt"
+      - "app/src/main/java/com/huntersystem/app/planning/**"
+      - "app/src/main/java/com/huntersystem/app/MonarchPlanning*.kt"
       - "app/src/main/java/com/huntersystem/app/NativeStore.kt"
       - "app/src/main/java/com/huntersystem/app/Monarch*.kt"
-      - "app/src/test/java/com/huntersystem/app/monarca/**"
-      - ".github/workflows/monarca-engine.yml"
+      - "app/src/test/java/com/huntersystem/app/planning/**"
+      - ".github/workflows/monarca-planner-tests.yml"
   pull_request:
     paths:
       - "app/**"
-      - ".github/workflows/monarca-engine.yml"
+      - ".github/workflows/monarca-planner-tests.yml"
   workflow_dispatch:
 
 permissions:
