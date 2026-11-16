@@ -34,6 +34,18 @@ fun AsterionMissionSection(ui: NativeUi, date: String) {
         Heading(if (mission.category == null) "Descanso programado"
             else mission.category.code.replace('_', ' '), size = 23)
         HText(mission.explanation, size = 14, color = LocalHunter.current.muted)
+        current.checkpoint?.let { checkpoint ->
+            HText("Hito técnico: día " + checkpoint.day +
+                " · decisión " + checkpoint.decision.name.lowercase().replace('_', ' ') +
+                " · fase " + checkpoint.phase.phase,
+                size = 12, color = LocalHunter.current.muted)
+            if (checkpoint.decision == TechnicalDecision.ADVANCE_PHASE &&
+                mission.category != null && date == today()) {
+                HButton("ACEPTAR FASE TÉCNICA OPCIONAL", Modifier.fillMaxWidth()) {
+                    ui.attempt { progress.acceptPhase(mission.category, checkpoint) }
+                }
+            }
+        }
         val note = if (current.goal.recognized)
             "Objetivo reconocido: " + current.goal.tags.joinToString(", ")
             else "Objetivo personal conservado; no hay afinidad reconocida."
@@ -49,6 +61,14 @@ fun AsterionMissionSection(ui: NativeUi, date: String) {
             HText("Estado: " + (status?.status?.name ?: "PENDING") +
                 ". Referencias numéricas sujetas a validación y consentimiento.",
                 size = 12, color = LocalHunter.current.muted)
+            current.volume[id]?.let { recommendation ->
+                HText(if (recommendation.reference == null)
+                    recommendation.explanation
+                else "Referencia orientativa: " + recommendation.sets + " series · " +
+                    recommendation.reference + " " + recommendation.unit?.name +
+                    ". " + recommendation.explanation,
+                    size = 12, color = LocalHunter.current.muted)
+            }
             if (date == today()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                     HButton("COMPLETADA", Modifier.weight(1f)) {
