@@ -97,7 +97,7 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
   val choice=p.a("weekPlan").optString(weekday(date),"rest")
   val progress=MonarchProgressRepository(this)
   val old=allDays().firstOrNull{it.s("date")==date}
-  val pinned=old?.takeIf{it.s("kind")!="rest"&&it.a("items").length()>0&&
+  val pinned=progress.monarchPinned(localDate) ?: old?.takeIf{it.s("kind")!="rest"&&it.a("items").length()>0&&
    it.s("progressCategory").isNotBlank()&&it.s("progressSettingsHash").isNotBlank()}?.let{
    com.huntersystem.app.planning.DailyMission(localDate,category,
     it.s("progressSettingsHash"),it.s("progressCatalogHash"),
