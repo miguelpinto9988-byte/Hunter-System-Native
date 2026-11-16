@@ -369,7 +369,7 @@ object HunterProgressRules {
             if (pool.isEmpty()) return@repeat
             fun score(v: HunterVariant): Int {
                 var n = intent.tags.count { it in v.tags } * 50
-                if (v.id in recent) n -= 18
+                if (review.decision == HunterReview.VARIAR && v.id in recent) n -= 18
                 n -= selected.count { it.typeId == v.typeId } * 35
                 if (selected.isNotEmpty() && selected.any { it.typeId != v.typeId }) n += 1
                 if (simple) n -= v.technicalLevel * 22
