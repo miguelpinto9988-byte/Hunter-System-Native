@@ -1,0 +1,29 @@
+name: Retirar rama temporal consolidada
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/remove-merged-consolidation.yml"
+permissions:
+  contents: write
+jobs:
+  remove-merged:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Comprobar fusion y eliminar solo rama temporal
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          target="integration/monarca-eclipse-asterion-consolidation"
+          git fetch --no-tags origin "+refs/heads/$target:refs/remotes/origin/$target"
+          git merge-base --is-ancestor "refs/remotes/origin/$target" HEAD || {
+            echo "::error::La rama no esta completamente fusionada. No borrar."
+            exit 1
+          }
+          gh api --method DELETE "/repos/$GITHUB_REPOSITORY/git/refs/heads/$target" >/dev/null
+          echo "Rama temporal fusionada y eliminada: $target" >> "$GITHUB_STEP_SUMMARY"
