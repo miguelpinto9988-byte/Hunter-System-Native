@@ -37,4 +37,4 @@ jobs:
           "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
       - uses: gradle/actions/setup-gradle@v4
       - name: Compile and run isolated rules tests
-        run: bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest --tests "com.huntersystem.app.asterion.AsterionRulesTest"
+        run: bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest --tests "com.huntersystem.app.asterion.AsterionRulesTest" --tests "com.huntersystem.app.AsterionPersistenceTest"
