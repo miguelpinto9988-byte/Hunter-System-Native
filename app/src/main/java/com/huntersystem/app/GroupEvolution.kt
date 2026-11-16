@@ -113,7 +113,8 @@ object GroupEvolution {
  }
 
  fun apply(e:Exercise,item:JSONObject,adjustment:Adjustment):JSONObject {
-  if(adjustment.steps==0||item.i("target")<1||exerciseGroup(e)!=adjustment.group)return item
+  // Effort alone is never authorization to raise volume. Keep only conservative reductions.
+  if(adjustment.steps>=0||item.i("target")<1||exerciseGroup(e)!=adjustment.group)return item
   val out=item.copyJson()
   val unit=out.s("unit",e.unit)
   val base=out.i("target")
