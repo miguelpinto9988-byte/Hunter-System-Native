@@ -25,7 +25,7 @@ class GroupEvolutionTest {
   assertEquals(2,upper.lastRpe)
  }
  @Test fun globalRpeNeverCreatesCategoryProgression(){
-  val global=record("2026-10-26","upper",1).remove("categoryRpe")
+  val global=record("2026-10-26","upper",1).apply{remove("categoryRpe")}
   val logs=records(global)
   assertEquals(0,GroupEvolution.evaluate(logs,"2026-10-28","upper",profile,catalog).steps)
   assertEquals(0,GroupEvolution.feedback(logs,"2026-10-28","upper",profile,catalog).avg.toInt())
