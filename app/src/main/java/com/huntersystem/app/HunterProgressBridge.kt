@@ -116,8 +116,9 @@ object HunterProgressBridge {
             for (item in details) {
                 val id = item.s("id")
                 if (id.isBlank() || group == null) continue
+                val confirmedSets = item.a("actual").objects().count { it.b("done") }
                 val done = item.b("missionState") || item.b("selfReported") ||
-                    item.a("actual").objects().any { it.b("done") }
+                    (item.i("sets") > 0 && confirmedSets >= item.i("sets"))
                 val explicit = item.s("progressStatus")
                 val state = when {
                     explicit == "SKIPPED" -> HunterStatus.SKIPPED
@@ -140,7 +141,8 @@ object HunterProgressBridge {
                     ?.takeIf { it != HunterCategory.REST }
                 efforts += HunterEffort(date, explicitCategory, rpe,
                     log.b("complete") && details.any { it.b("missionState") ||
-                        it.b("selfReported") || it.a("actual").objects().any { a -> a.b("done") } },
+                        it.b("selfReported") || (it.i("sets") > 0 &&
+                        it.a("actual").objects().count { a -> a.b("done") } >= it.i("sets")) },
                     log.b("pain") || log.b("fatigue"))
             }
         }
