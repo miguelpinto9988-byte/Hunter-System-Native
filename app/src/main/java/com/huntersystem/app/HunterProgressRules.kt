@@ -241,7 +241,7 @@ object HunterProgressRules {
         items.count { it.status == HunterStatus.SKIPPED }, items.count { it.status == HunterStatus.PENDING }
     )
 
-    private fun eligible(v: HunterVariant, p: HunterSettings): Boolean {
+    fun eligible(v: HunterVariant, p: HunterSettings): Boolean {
         if (!v.automaticEligible || v.supervisionRequired || v.technicalLevel !in 1..3) return false
         if (v.id in p.blockedIds || v.tags.any(p.blockedTags::contains)) return false
         if (!p.equipment.containsAll(v.equipment)) return false
