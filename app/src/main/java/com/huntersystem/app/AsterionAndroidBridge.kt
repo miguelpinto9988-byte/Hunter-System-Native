@@ -272,6 +272,18 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
         r.put("phases", entries)
         write(r)
     }
+    /** Reversión explícita sin borrar hitos anteriores ni historial por categoría. */
+    fun revertPhase(category: Category): Boolean {
+        val current = phases()[category] ?: return false
+        if (current.phase == 0) return false
+        val r = root()
+        val phases = r.o("phases")
+        phases.put(category.code, obj("phase" to current.phase - 1,
+            "lastChange" to LocalDate.now().toString()))
+        r.put("phases", phases)
+        write(r)
+        return true
+    }
     fun volume(): List<VolumeObservation> = root().a("volume").objects().mapNotNull { row ->
         runCatching {
             VolumeObservation(row.s("id"), LocalDate.parse(row.s("date")),
