@@ -133,13 +133,23 @@ object AsterionProfileAdapter {
 class AsterionProgressRepository(private val store: NativeStore) : VolumeProfileInterface {
     /** Solo lee referencias ya validadas y entregadas por una integración externa. */
     override fun find(variantId: String): VolumeProfile? {
-        val record = root().o("validatedVolumeProfiles").optJSONObject(variantId)
-            ?: return null
+        val exercise = store.catalog.byId[variantId] ?: return null
+        // Fuente primaria: metadatos de la misma variante en el catálogo externo.
+        // Fuente importada: exige identidad y revisión del proveedor verificables.
+        val catalogProfile = exercise.raw.optJSONObject("volumeProfile")
+        val record = if (catalogProfile?.b("validated") == true) catalogProfile
+            else root().o("validatedVolumeProfiles").optJSONObject(variantId) ?: return null
         return runCatching {
             require(record.b("validated") && record.s("variantId") == variantId)
+            require(catalogProfile === record ||
+                (record.s("sourceId").isNotBlank() &&
+                 record.s("sourceRevision").isNotBlank()))
             require(record.has("minimum") && record.has("maximum") &&
                 record.has("permittedIncrement"))
-            VolumeProfile(variantId, VolumeUnit.valueOf(record.s("unit")),
+            val unit = VolumeUnit.valueOf(record.s("unit"))
+            require(unit == (if (exercise.unit == "sec") VolumeUnit.SECONDS
+                             else VolumeUnit.REPETITIONS))
+            VolumeProfile(variantId, unit,
                 record.i("initialSets").takeIf { record.has("initialSets") },
                 record.i("initialValue").takeIf { record.has("initialValue") },
                 record.i("minimum"), record.i("maximum"),
