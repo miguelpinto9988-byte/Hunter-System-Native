@@ -57,6 +57,15 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
   val ap=adjusted();for((date,v)in logs.entries()){val l=v as? JSONObject?:continue;if(date<today()||l.b("complete"))continue;for(x in l.a("items").objects()){val e=catalog.byId[x.s("id")]?:continue;if(!rules.compatible(e,ap)){x.put("archived",true);x.put("archiveReason","Perfil actualizado: revisar compatibilidad antes de continuar.")}}}
   save();refreshWeek()
  }
+ fun revertTechnicalPhase(category:HunterCategory){
+  require(category!=HunterCategory.REST)
+  val history=HunterProgressBridge.history(logs,state.a("hunterPhases"))
+  val phase=history.phase(category)
+  if(phase==0)return
+  val phases=state.a("hunterPhases")
+  phases.put(obj("category" to category.code,"phase" to phase-1,"date" to today()))
+  state.put("hunterPhases",phases);save();refreshWeek()
+ }
  fun activeLog(l:JSONObject?)=l!=null&&(l.b("complete")||l.b("manual")||l.b("pain")||l.b("fatigue")||l.b("selfReported")||l.a("missionTasks").objects().any{it.b("done")}||l.a("items").objects().any{it.b("missionState")||it.b("selfReported")||it.a("actual").objects().any{a->a.b("done")}})
  fun locked(day:JSONObject)=day.b("customized")||day.b("reviewReducedNative")||day.has("routineId")||day.b("creatorAssigned")||day.b("manual")||activeLog(logs.optJSONObject(day.s("date")))||day.a("tasks").objects().any{it.b("done")}
  fun allDays()=state.a("cycles").objects().flatMap{it.a("days").objects()}
