@@ -312,16 +312,16 @@ private fun MonarchMissionExercise(
         if(!readOnly&&!inactive){
             HButton(if(skipped)"VOLVER A PENDIENTE" else "OMITIR ACTIVIDAD"){
                 ui.attempt{s.setMissionStatus(date,index,
-                    if(skipped)com.huntersystem.app.asterion.ParticipationStatus.PENDING
-                    else com.huntersystem.app.asterion.ParticipationStatus.SKIPPED)}
+                    if(skipped)com.huntersystem.app.planning.ParticipationStatus.PENDING
+                    else com.huntersystem.app.planning.ParticipationStatus.SKIPPED)}
             }
             var progressNote by remember(date,e.id){mutableStateOf(item.s("progressNote"))}
             HInput(progressNote,{progressNote=it},"Observación opcional",multiline=true)
             HButton("GUARDAR OBSERVACIÓN"){
                 ui.attempt{s.setMissionStatus(date,index,when{
-                    skipped->com.huntersystem.app.asterion.ParticipationStatus.SKIPPED
-                    checked->com.huntersystem.app.asterion.ParticipationStatus.COMPLETED
-                    else->com.huntersystem.app.asterion.ParticipationStatus.PENDING
+                    skipped->com.huntersystem.app.planning.ParticipationStatus.SKIPPED
+                    checked->com.huntersystem.app.planning.ParticipationStatus.COMPLETED
+                    else->com.huntersystem.app.planning.ParticipationStatus.PENDING
                 },progressNote)}
             }
         }
@@ -365,10 +365,10 @@ private fun MonarchMissionsProgress(ui:NativeUi) {
     val c=LocalHunter.current
     val todayLocal=LocalDate.parse(today())
     val monday=todayLocal.minusDays((todayLocal.dayOfWeek.value-1).toLong())
-    val records=AsterionProgressRepository(s).plannedParticipation().filter {
+    val records=MonarchProgressRepository(s).plannedParticipation().filter {
         !it.date.isBefore(monday) && !it.date.isAfter(todayLocal)
     }
-    val summary=com.huntersystem.app.asterion.ProgressSummary.calculate(records)
+    val summary=com.huntersystem.app.planning.ProgressSummary.calculate(records)
     HPanel(padding=17) {
         Eyebrow("03  ·  PARTICIPACIÓN SEMANAL")
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
