@@ -380,3 +380,45 @@ private fun AsterionVolumeEditor(
             saved.quantityPerSet + " " + saved.unit.name, size = 12,
             color = LocalHunter.current.muted)
 }
+
+
+/** Misma misión fijada que ve la pantalla Misiones; nunca genera un segundo plan. */
+@Composable
+fun AsterionHomeSummary(ui: NativeUi) {
+    val store = ui.store
+    val revision = store.revision.intValue
+    val date = LocalDate.now()
+    val coordinator = remember(store) { AsterionTrainingSessionCoordinator(store) }
+    var mission by remember(date) { mutableStateOf<DailyMission?>(null) }
+    LaunchedEffect(revision, date) {
+        mission = runCatching { coordinator.current(date)?.mission }.getOrNull()
+    }
+    val progress = coordinator.progress
+    val records = remember(revision) { progress.plannedParticipation(date) }
+    val completed = mission?.ids?.count { id ->
+        records.any { it.date == date && it.variantId == id &&
+            it.status == ParticipationStatus.COMPLETED }
+    } ?: 0
+    val monday = date.minusDays((date.dayOfWeek.value - 1).toLong())
+    val summary = ProgressSummary.calculate(records.filter {
+        !it.date.isBefore(monday) && !it.date.isAfter(date)
+    })
+    HPanel(padding = 18) {
+        Eyebrow("MISIÓN PRINCIPAL · ASTERION")
+        val active = mission
+        Heading(if (active?.category == null) "Descanso del día"
+            else active.category.code.replace('_', ' '), size = 26)
+        HText(active?.explanation ?: "Sin propuesta disponible.",
+            size = 14, color = LocalHunter.current.muted)
+        HText("Actividades completadas hoy: " + completed + " de " +
+            (active?.ids?.size ?: 0), size = 15)
+        HText("Participación semanal evaluada: " + summary.label +
+            " · " + summary.pending + " pendientes", size = 13,
+            color = LocalHunter.current.muted)
+        HText("Puedes descansar o mantener una alternativa más sencilla. No hay aumentos automáticos.",
+            size = 12, color = LocalHunter.current.muted)
+        HButton("ABRIR MISIÓN DE HOY", Modifier.fillMaxWidth(), primary = true) {
+            ui.open("mission", obj("date" to date.toString()))
+        }
+    }
+}
