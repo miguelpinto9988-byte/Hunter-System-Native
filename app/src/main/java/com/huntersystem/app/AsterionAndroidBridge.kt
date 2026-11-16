@@ -116,7 +116,7 @@ object AsterionProfileAdapter {
         }.toSet()
         return runCatching {
             TrainingProfile(experience, since, week, declared, restrictions,
-                p.s("intensityPreference") == "low",
+                p.s("intensityPreference", "baja") in listOf("low", "baja"),
                 p.i("dailyMissions", 3).coerceIn(1, 7),
                 p.i("minutes", 20).coerceAtLeast(1),
                 p.s("custom_goal", p.s("finalGoal")), p.s("goal", "general"),
