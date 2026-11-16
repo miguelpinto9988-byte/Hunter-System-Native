@@ -10,6 +10,59 @@ class ParityTest {
  fun canonical(v:Any?):Any?=when(v){is JSONObject->v.entries().associate{it.first to canonical(it.second)}.toSortedMap();is JSONArray->(0 until v.length()).map{canonical(v.opt(it))};is Number->v.toDouble();JSONObject.NULL->null;else->v}
  @Test fun classificationAndDoses(){val selected=listOf("chair","goblet","row").map{c.byId[it]!!};for(test in rows("groups")){val p=test.o("p");for(row in test.a("rows").objects()){val e=c.byId[row.s("id")]!!;val label=p.s("difficulty")+"/"+e.id;assertEquals(label,row.a("reasons").strings(),r.groupReasons(e,p));for((i,kind)in listOf("strength","cardio","recovery").withIndex()){assertEquals(label,row.a("scores").optDouble(i),r.score(e,p,kind,selected),.001);val x=obj("id" to e.id,"sets" to 3,"target" to 40,"rest" to 10,"safetyNote" to "BASE");assertEquals(label,canonical(row.a("doses").getJSONObject(i)),canonical(r.groupDose(e,p,kind,x,JSONObject(),"2026-10-20")))}}}}
  @Test fun compatibilityPools(){for(test in rows("groups")){val p=test.o("p");for(kind in listOf("strength","cardio","recovery")){val actual=r.pool(p,kind).map{it.id};val expected=test.o("pools").a(kind).strings();assertEquals("${p.s("difficulty")} ${p.o("health")} $kind missing=${expected-actual.toSet()} extra=${actual-expected.toSet()}",expected,actual)}}}
- @Test fun missionSelection(){for(test in rows("missions")){val p=test.o("p");val actual=planner.choose(p,test.s("kind"),test.s("seed"),JSONObject(),test.s("date"));val expected=test.o("result");assertEquals(test.s("seed"),canonical(expected.a("items")),canonical(actual.a("items")));for(own in test.a("own").objects()){assertEquals("own ${test.s("seed")} ${own.s("id")}",canonical(own.o("dose")),canonical(planner.libraryDose(c.byId[own.s("id")]!!,p,test.s("kind"))))}}}
- @Test fun independentLibrary(){for(test in rows("library")){val expected=test.optJSONObject("result");val actual=planner.generateRoutine(test.s("mode"),test.o("category").s("id"),test.i("level"),0,test.o("range").s("id"),1,test.o("p"),JSONObject(),test.s("date"));val label="${test.s("mode")} ${test.o("category").s("id")} ${test.i("level")} ${test.o("range").s("id")}";assertEquals(label,expected==null,actual==null);if(expected!=null&&actual!=null){assertEquals(label,canonical(expected.a("items")),canonical(actual.a("items")));assertEquals(label,expected.i("minutes"),actual.i("minutes"))}}}
+ @Test fun missionSelection(){
+  for(test in rows("missions")){
+   val p=test.o("p")
+   val day=test.s("date")
+   val kind=test.s("kind")
+   val selected=planner.choose(p,kind,test.s("seed"),JSONObject(),day)
+   val again=planner.choose(p,kind,test.s("seed"),JSONObject(),day)
+   val items=selected.a("items").objects()
+   assertEquals(test.s("seed"),canonical(itemsToArray(items)),canonical(again.a("items")))
+   assertEquals(items.size,items.map{it.s("id")}.toSet().size)
+   val profile=MonarchProfileAdapter.from(p,java.time.LocalDate.parse(day))!!
+   val source=MonarchActivitySource(c,r,p)
+   for(item in items){
+    val e=c.byId[item.s("id")]!!
+    val metadata=source.byId(e.id)!!
+    assertTrue(test.s("seed")+"/"+e.id,
+     com.huntersystem.app.planning.EligibilityPolicy.compatible(metadata,profile))
+    assertTrue(r.compatible(e,p))
+    assertTrue(item.i("sets")>=1&&item.i("target")>=1)
+   }
+   for(own in test.a("own").objects()){
+    assertEquals("own "+test.s("seed")+"/"+own.s("id"),
+     canonical(own.o("dose")),
+     canonical(planner.libraryDose(c.byId[own.s("id")]!!,p,kind)))
+   }
+  }
+ }
+ private fun itemsToArray(items:List<JSONObject>)=arr(items)
+ @Test fun independentLibrary(){
+  for(test in rows("library")){
+   val type=test.o("category").s("id")
+   val level=test.i("level")
+   val p=test.o("p")
+   val date=test.s("date")
+   val actual=planner.generateRoutine(test.s("mode"),type,level,0,
+    test.o("range").s("id"),1,p,JSONObject(),date)?:continue
+   val repeated=planner.generateRoutine(test.s("mode"),type,level,0,
+    test.o("range").s("id"),1,p,JSONObject(),date)
+   assertEquals(canonical(actual.a("items")),canonical(repeated?.a("items")))
+   val adjusted=p.copyJson().put("difficulty",listOf("basic","intermediate","advanced")[level])
+   val profile=MonarchProfileAdapter.from(adjusted,java.time.LocalDate.parse(date))!!
+   val source=MonarchActivitySource(c,r,adjusted)
+   val items=actual.a("items").objects()
+   assertTrue(items.isNotEmpty())
+   assertEquals(items.size,items.map{it.s("id")}.toSet().size)
+   for(item in items){
+    val e=c.byId[item.s("id")]!!
+    val metadata=source.byId(e.id)!!
+    assertTrue(com.huntersystem.app.planning.EligibilityPolicy.compatible(
+     metadata,profile,if(level==0)2 else 3))
+    assertTrue(r.compatible(e,adjusted))
+    assertTrue(item.i("sets")>=1&&item.i("target")>=1)
+   }
+  }
+ }
 }
