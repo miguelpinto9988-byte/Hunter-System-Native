@@ -272,6 +272,7 @@ private fun MonarchMissionExercise(
     val doneSets=item.a("actual").objects().count{it.b("done")}
     val prescribed=item.i("sets").coerceAtLeast(0)
     val reported=item.b("missionState")||item.b("selfReported")
+    val skipped=item.s("progressStatus")=="SKIPPED"
     val checked=reported||(prescribed>0&&doneSets>=prescribed)
     val inactive=item.b("archived")
     val shape=RoundedCornerShape(17.dp)
@@ -298,11 +299,17 @@ private fun MonarchMissionExercise(
             size=13,color=colors.accent)
         if(reported)HText("Confirmación manual. No se registraron series automáticamente.",
             size=13,color=colors.muted)
+        if(skipped)HText("Actividad omitida voluntariamente; no se considera completada.",
+            size=13,color=colors.muted)
         MonarchMissionCheck(
             label=if(checked)"Actividad completada" else "Marcar ejercicio como realizado",
             done=checked,enabled=!readOnly&&!inactive,
             subtitle=if(readOnly)"Solo lectura" else if(inactive)"Actividad archivada" else ""
         ) {ui.attempt{s.toggleMission(date,index)}}
+        if(!readOnly&&!inactive)HButton(if(skipped)"VOLVER A PENDIENTE" else "OMITIR ACTIVIDAD"){
+            ui.attempt{s.setMissionStatus(date,index,
+                if(skipped)HunterStatus.PENDING else HunterStatus.SKIPPED)}
+        }
     }
 }
 
@@ -344,22 +351,36 @@ private fun MonarchMissionsProgress(ui:NativeUi) {
     val monday=todayLocal.minusDays((todayLocal.dayOfWeek.value-1).toLong())
     val eligible=(0L..6L).map{monday.plusDays(it).toString()}
         .filter{it<=today()&&s.day(it).s("kind")!="rest"}
-    val completed=eligible.count{s.logs.o(it).b("complete")}
-    val inProgress=eligible.count{
-        val log=s.logs.optJSONObject(it)
-        log!=null&&!log.b("complete")&&!log.b("pain")
+    val planned=eligible.flatMap{date->
+        val log=s.logs.optJSONObject(date)
+        val stored=log?.a("items")?.objects()?:emptyList()
+        s.day(date).a("items").objects().map{item->
+            val matching=stored.firstOrNull{it.s("id")==item.s("id")}
+            val status=when{
+                matching?.s("progressStatus")=="SKIPPED"->HunterStatus.SKIPPED
+                matching!=null&&(matching.b("missionState")||matching.b("selfReported")||
+                    matching.a("actual").objects().any{it.b("done")})->HunterStatus.COMPLETED
+                else->HunterStatus.PENDING
+            }
+            HunterActivityRecord(LocalDate.parse(date),item.s("id"),
+                HunterCategory.parse(s.day(date).s("progressCategory"))?:HunterCategory.UPPER,status)
+        }
     }
-    val fraction=if(eligible.isEmpty())0f else completed.toFloat()/eligible.size
+    val summary=HunterProgressRules.summary(planned)
     HPanel(padding=17) {
-        Eyebrow("03  ·  AVANCE SEMANAL")
+        Eyebrow("03  ·  PARTICIPACIÓN SEMANAL")
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
             verticalAlignment=Alignment.CenterVertically) {
             Heading("Tu progreso",size=25)
-            HText("$completed / ${eligible.size}",size=19,color=c.accent,bold=true)
+            HText(summary.percentage?.let{it.toString()+" %"}?:"Sin datos",
+                size=19,color=c.accent,bold=true)
         }
-        HProgress(fraction)
-        HText("$completed días completados · $inProgress en curso",
+        summary.percentage?.let{HProgress(it/100f)}
+        HText(summary.completed.toString()+" completadas · "+
+            summary.skipped+" omitidas · "+summary.pending+" pendientes",
             size=15,color=c.muted)
+        HText("Porcentaje solo entre actividades evaluadas. Las pendientes no reducen el resultado.",
+            size=13,color=c.muted)
         HButton("REVISIÓN DE MI SEMANA  ↗",Modifier.fillMaxWidth()) {
             ui.open("review")
         }
