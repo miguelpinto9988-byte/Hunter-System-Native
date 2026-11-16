@@ -126,38 +126,68 @@ fun AsterionMissionSection(ui: NativeUi, date: String) {
 
 @Composable
 fun AsterionProgressSection(ui: NativeUi) {
-    val s = ui.store
-    val revision = s.revision.intValue
-    val records = remember(revision) { AsterionProgressRepository(s).participation() }
-    val efforts = remember(revision) { AsterionProgressRepository(s).efforts() }
+    val store = ui.store
+    val revision = store.revision.intValue
+    val progress = remember(store) { AsterionProgressRepository(store) }
+    var window by remember { mutableIntStateOf(7) }
     val date = LocalDate.now()
-    val pending = remember(revision) {
-        val pinned = AsterionProgressRepository(s).pinned(date)
-        pinned?.ids?.filterNot { id -> records.any { it.date == date && it.variantId == id } }
-            ?.mapNotNull { id -> pinned.category?.let { Participation(date, id, it, ParticipationStatus.PENDING) } }
-            ?: emptyList()
+    val records = remember(revision) { progress.plannedParticipation() }
+    val efforts = remember(revision) { progress.efforts() }
+    val visible = records.filter {
+        !it.date.isAfter(date) && (window == 0 || !it.date.isBefore(date.minusDays((window - 1).toLong())))
     }
-    val summary = ProgressSummary.calculate(records + pending)
+    val summary = ProgressSummary.calculate(visible)
+    val weeklyMonday = date.minusDays((date.dayOfWeek.value - 1).toLong())
+    val weekly = ProgressSummary.calculate(records.filter {
+        !it.date.isBefore(weeklyMonday) && !it.date.isAfter(date)
+    })
     HPanel(padding = 16) {
-        Eyebrow("ASTERION · PARTICIPACIÓN POR ACTIVIDAD")
+        Eyebrow("ASTERION · PARTICIPACIÓN REAL")
+        Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            HChip("7 DÍAS", window == 7, Modifier.weight(1f)) { window = 7 }
+            HChip("30 DÍAS", window == 30, Modifier.weight(1f)) { window = 30 }
+            HChip("TODO", window == 0, Modifier.weight(1f)) { window = 0 }
+        }
         Heading(summary.label, size = 28)
         HText("Planificadas: " + summary.planned + " · Completadas: " +
             summary.completed + " · Omitidas: " + summary.skipped +
             " · Pendientes: " + summary.pending, size = 14)
-        HText("Porcentaje calculado solo con completadas y omitidas; las pendientes no cuentan.",
-            size = 12, color = LocalHunter.current.muted)
+        HText("Las pendientes no se consideran incumplimientos. Tasa semanal: " +
+            weekly.label, size = 12, color = LocalHunter.current.muted)
         Category.values().forEach { category ->
-            val count = records.count { it.category == category &&
+            val count = visible.count { it.category == category &&
                 it.status == ParticipationStatus.COMPLETED }
-            val ratings = efforts.filter { it.category == category }
-            val average = ratings.map { it.rpe }.takeIf { it.isNotEmpty() }?.average()
+            val categoryRatings = efforts.filter { it.category == category && it.date <= date &&
+                (window == 0 || !it.date.isBefore(date.minusDays((window - 1).toLong()))) }
+            val mean = categoryRatings.map { it.rpe }.takeIf { it.isNotEmpty() }?.average()
+            val review = WeeklyCategoryChallengePolicy.review(efforts, date, category)
             HText(category.code.replace('_', ' ') + ": " + count +
-                " completadas · esfuerzo: " +
-                (average?.let { "%.1f".format(it) + "/10" } ?: "sin datos"),
+                " completadas · esfuerzo " +
+                (mean?.let { "%.1f".format(it) + "/10" } ?: "sin datos") +
+                " · revisión " + review.name.lowercase().replace('_', ' '),
                 size = 13, color = LocalHunter.current.muted)
         }
-        HText("Los registros globales antiguos permanecen separados. Las referencias de volumen no se calculan sin parámetros validados.",
+        val globalEfforts = efforts.filter { it.category == null }
+        val first = globalEfforts.minOfOrNull { it.date } ?: date
+        val global = EffortReviewEngine.review(first, date, globalEfforts)
+        HText("Ciclo de RPE global: día " + global.cycleDay + "/21 · " +
+            global.observations + " valoraciones · " +
+            (global.average?.let { "%.1f".format(it) + "/10" } ?: "sin datos suficientes"),
+            size = 13, color = LocalHunter.current.muted)
+        HText("El RPE global heredado es descriptivo y nunca se traslada a una categoría.",
             size = 12, color = LocalHunter.current.muted)
+        if (visible.isNotEmpty()) {
+            Eyebrow("RESULTADOS POR FECHA · ÚLTIMOS REGISTROS")
+            visible.sortedWith(compareByDescending<Participation> { it.date }
+                .thenBy { it.variantId }).take(12).forEach { entry ->
+                HText(entry.date.toString() + " · " +
+                    (store.catalog.byId[entry.variantId]?.name ?: entry.variantId) +
+                    " · " + entry.status.name.lowercase() +
+                    (if (entry.interrupted) " · interrumpida" else ""),
+                    size = 12, color = LocalHunter.current.muted)
+            }
+        } else HText("Sin actividades registradas para el período seleccionado.",
+            size = 13, color = LocalHunter.current.muted)
     }
 }
 
