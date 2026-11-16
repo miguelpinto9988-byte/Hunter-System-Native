@@ -23,6 +23,7 @@ import java.time.ZoneId
 @Composable
 fun MonarchSpecialMissionsPanel(ui:NativeUi) {
  val store=ui.store
+ AsterionMonarchSection(ui)
  store.revision.intValue
  val colors=LocalHunter.current
  val zone=remember{ZoneId.systemDefault()}
