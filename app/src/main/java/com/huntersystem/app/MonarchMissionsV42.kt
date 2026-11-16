@@ -174,7 +174,13 @@ fun MonarchMissionContent(ui:NativeUi,date:String) {
         val progress=(fraction*100f).roundToInt()
         val hasWorkout=items.isNotEmpty() && day.s("kind")!="rest"
         val canStart=date==today()&&!readOnly&&hasWorkout
-        HPanel(padding=18) {
+        // Una sola misión visible. Las sesiones manuales y los registros ya
+        // iniciados siguen usando su historial y reproductor original.
+        val unified = date==today() && AsterionProfileAdapter.from(s)!=null &&
+            !s.activeLog(log) && !day.b("customized") &&
+            !day.has("routineId") && !day.b("creatorAssigned") && !day.b("manual")
+        if(unified) AsterionMissionSection(ui,date)
+        else HPanel(padding=18) {
             Row(Modifier.fillMaxWidth(),
                 horizontalArrangement=Arrangement.SpaceBetween,
                 verticalAlignment=Alignment.CenterVertically) {
@@ -210,7 +216,6 @@ fun MonarchMissionContent(ui:NativeUi,date:String) {
                 if(day.s("kind")=="rest")"Día de descanso elegido en tu calendario."
                 else "Esta misión todavía no tiene ejercicios compatibles. Revisa tu Perfil."
             )
-            AsterionMissionSection(ui,date)
             if(items.isNotEmpty()) {
                 Eyebrow("EJERCICIOS DE LA MISIÓN")
                 items.forEachIndexed { index,item ->
