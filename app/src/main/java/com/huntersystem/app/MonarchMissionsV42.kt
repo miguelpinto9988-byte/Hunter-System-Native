@@ -174,13 +174,8 @@ fun MonarchMissionContent(ui:NativeUi,date:String) {
         val progress=(fraction*100f).roundToInt()
         val hasWorkout=items.isNotEmpty() && day.s("kind")!="rest"
         val canStart=date==today()&&!readOnly&&hasWorkout
-        // Una sola misión visible. Las sesiones manuales y los registros ya
-        // iniciados siguen usando su historial y reproductor original.
-        val unified = date==today() && AsterionProfileAdapter.from(s)!=null &&
-            !s.activeLog(log) && !day.b("customized") &&
-            !day.has("routineId") && !day.b("creatorAssigned") && !day.b("manual")
-        if(unified) AsterionMissionSection(ui,date)
-        else HPanel(padding=18) {
+        // La misma sesión nativa se muestra, ejecuta y registra en todos los casos.
+        HPanel(padding=18) {
             Row(Modifier.fillMaxWidth(),
                 horizontalArrangement=Arrangement.SpaceBetween,
                 verticalAlignment=Alignment.CenterVertically) {
@@ -236,6 +231,7 @@ fun MonarchMissionContent(ui:NativeUi,date:String) {
                     ) {ui.attempt{s.toggleTask(date,index)}}
                 }
             }
+            MonarchTechnicalSection(ui,date)
             HText("Las casillas confirman actividades realizadas; no añaden series, repeticiones ni cargas. Para registrar cantidades utiliza «Registro detallado».",
                 size=13,color=c.muted)
             if(canStart) {
@@ -312,6 +308,7 @@ private fun MonarchMissionExercise(
         ) {ui.attempt{s.toggleMission(date,index)}}
         if(skipped)HText("Actividad omitida voluntariamente; no cuenta como completada.",
             size=12,color=colors.muted)
+        if(date==today()&&checked&&!skipped)MonarchVolumeEditor(ui,date,e.id)
         if(!readOnly&&!inactive){
             HButton(if(skipped)"VOLVER A PENDIENTE" else "OMITIR ACTIVIDAD"){
                 ui.attempt{s.setMissionStatus(date,index,
