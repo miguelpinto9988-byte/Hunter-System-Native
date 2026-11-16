@@ -374,13 +374,22 @@ data class MonarchPlan(val start: LocalDate, val accepted: Boolean, val days: Li
 object MonarchChallengePlanner {
     fun propose(start: LocalDate, accepted: Boolean, profile: TrainingProfile,
                 repository: ActivityRepositoryInterface, efforts: List<EffortObservation>,
-                preferred: List<Category> = emptyList()): MonarchPlan {
+                preferred: List<Category> = emptyList(),
+                previousUsed: Set<String> = emptySet()): MonarchPlan {
         if (!accepted || profile.weekly.all { it == 5 }) return MonarchPlan(start, accepted, emptyList())
         val days = (0L..4L).map { start.plusDays(it) }.map { day ->
             val normal = DailyMissionPlanner.plan(day, profile, repository, efforts)
             if (normal.category == null || normal.ids.isEmpty()) normal else {
                 // Un jefe solo puede ordenar categorías, jamás suprimir elegibilidad.
-                normal.copy(explanation = normal.explanation +
+                // El enfoque y el historial solo modifican orden y diversidad,
+                // jamás la categoría del día, el filtro técnico ni el equipamiento.
+                val ids = normal.ids.sortedWith(compareBy<String> {
+                    if (it in previousUsed) 1 else 0
+                }.thenBy { ProfileSignature.stable(
+                    if (normal.category in preferred) "monarca-enfoque|" + start
+                    else "monarca-estable|" + start, it
+                ) })
+                normal.copy(ids = ids, explanation = normal.explanation +
                     if (normal.category in preferred) " Categoría de enfoque Monarca." else "")
             }
         }
