@@ -327,6 +327,21 @@ fun MonarchProgressScreen(ui:NativeUi){
             HText("${all.i("xp")%300} / 300 XP al siguiente nivel",
                 size=13,color=c.muted)
         }
+        s.profile?.let{profile->
+            val start=runCatching{LocalDate.parse(profile.s("experienceStartedAt"))}
+                .getOrElse{LocalDate.parse(today())}
+            val history=HunterProgressBridge.history(s.logs,s.state.a("hunterPhases"))
+            val review=HunterProgressRules.global(history,start,LocalDate.parse(today()))
+            HPanel(padding=14){
+                Eyebrow("REVISIÓN GLOBAL DE ESFUERZO · 21 DÍAS")
+                HText("Día "+review.dayOfCycle+"/21 · Próximo hito: "+review.nextMilestone,
+                    size=15,color=c.muted)
+                HText(review.mean?.let{"Media declarada: "+String.format(java.util.Locale.ROOT,"%.1f",it)+
+                    "/10 · "+review.observations+" registros"}?:"Sin datos suficientes",
+                    size=15,color=c.text)
+                HText(review.explanation,size=13,color=c.muted)
+            }
+        }
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
             for((num,label)in listOf(7 to "7 DÍAS",30 to "30 DÍAS",90 to "90 DÍAS")){
                 HChip(label,days==num,Modifier.weight(1f)){days=num}
