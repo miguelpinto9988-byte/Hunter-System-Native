@@ -359,7 +359,7 @@ private fun MonarchMissionsProgress(ui:NativeUi) {
             val status=when{
                 matching?.s("progressStatus")=="SKIPPED"->HunterStatus.SKIPPED
                 matching!=null&&(matching.b("missionState")||matching.b("selfReported")||
-                    matching.a("actual").objects().any{it.b("done")})->HunterStatus.COMPLETED
+                    matching.i("sets")>0&&matching.a("actual").objects().count{it.b("done")}>=matching.i("sets"))->HunterStatus.COMPLETED
                 else->HunterStatus.PENDING
             }
             HunterActivityRecord(LocalDate.parse(date),item.s("id"),
