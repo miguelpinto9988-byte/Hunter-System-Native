@@ -345,27 +345,27 @@ private fun MonarchMissionCheck(
 @Composable
 private fun MonarchMissionsProgress(ui:NativeUi) {
     val s=ui.store
+    s.revision.intValue
     val c=LocalHunter.current
     val todayLocal=LocalDate.parse(today())
     val monday=todayLocal.minusDays((todayLocal.dayOfWeek.value-1).toLong())
-    val eligible=(0L..6L).map{monday.plusDays(it).toString()}
-        .filter{it<=today()&&s.day(it).s("kind")!="rest"}
-    val completed=eligible.count{s.logs.o(it).b("complete")}
-    val inProgress=eligible.count{
-        val log=s.logs.optJSONObject(it)
-        log!=null&&!log.b("complete")&&!log.b("pain")
+    val records=AsterionProgressRepository(s).plannedParticipation().filter {
+        !it.date.isBefore(monday) && !it.date.isAfter(todayLocal)
     }
-    val fraction=if(eligible.isEmpty())0f else completed.toFloat()/eligible.size
+    val summary=com.huntersystem.app.asterion.ProgressSummary.calculate(records)
     HPanel(padding=17) {
-        Eyebrow("03  ·  AVANCE SEMANAL")
+        Eyebrow("03  ·  PARTICIPACIÓN SEMANAL")
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
             verticalAlignment=Alignment.CenterVertically) {
             Heading("Tu progreso",size=25)
-            HText("$completed / ${eligible.size}",size=19,color=c.accent,bold=true)
+            HText(summary.label,size=17,color=c.accent,bold=true)
         }
-        HProgress(fraction)
-        HText("$completed días completados · $inProgress en curso",
+        summary.percent?.let{HProgress(it/100f)}
+        HText(summary.completed.toString()+" completadas · "+
+            summary.skipped+" omitidas · "+summary.pending+" pendientes",
             size=15,color=c.muted)
+        HText("Tasa solo entre actividades completadas u omitidas. Descanso y pendientes no se penalizan.",
+            size=13,color=c.muted)
         HButton("REVISIÓN DE MI SEMANA  ↗",Modifier.fillMaxWidth()) {
             ui.open("review")
         }
