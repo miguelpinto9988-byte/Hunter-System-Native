@@ -94,7 +94,22 @@ object AsterionProfileAdapter {
  * Datos aislados bajo asterionV1, dentro del AtomicFile existente: conservan el
  * backup histórico, y la lectura nunca convierte RPE global antiguo en RPE por categoría.
  */
-class AsterionProgressRepository(private val store: NativeStore) {
+class AsterionProgressRepository(private val store: NativeStore) : VolumeProfileInterface {
+    /** Solo lee referencias ya validadas y entregadas por una integración externa. */
+    override fun find(variantId: String): VolumeProfile? {
+        val record = root().o("validatedVolumeProfiles").optJSONObject(variantId)
+            ?: return null
+        return runCatching {
+            require(record.b("validated") && record.s("variantId") == variantId)
+            require(record.has("minimum") && record.has("maximum") &&
+                record.has("permittedIncrement"))
+            VolumeProfile(variantId, VolumeUnit.valueOf(record.s("unit")),
+                record.i("initialSets").takeIf { record.has("initialSets") },
+                record.i("initialValue").takeIf { record.has("initialValue") },
+                record.i("minimum"), record.i("maximum"),
+                record.i("permittedIncrement"), record.b("automaticReviewEligible"))
+        }.getOrNull()
+    }
     private fun root(): JSONObject = store.state.o("asterionV1")
     private fun write(root: JSONObject) {
         store.state.put("asterionV1", root)
@@ -241,10 +256,8 @@ class AsterionTrainingSessionCoordinator(private val store: NativeStore) {
         val profile = AsterionProfileAdapter.from(store) ?: return null
         val source = AsterionActivitySource(store)
         val result = CoordinatedTrainingEngine.evaluate(date, profile, source,
-            progress.efforts(), progress.phases(), object : VolumeProfileInterface {
-                override fun find(variantId: String): VolumeProfile? = null
-                // Se conectará una fuente numérica validada; nunca fabricar referencias.
-            }, progress.volume(), progress.blocks(), progress.pinned(date))
+            progress.efforts(), progress.phases(), progress,
+            progress.volume(), progress.blocks(), progress.pinned(date))
         if (progress.pinned(date) != result.mission && date == LocalDate.now())
             progress.pin(result.mission)
         return result
