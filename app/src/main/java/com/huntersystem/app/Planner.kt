@@ -46,7 +46,7 @@ class Planner(val catalog:Catalog,val rules:Rules){
    if(low)target=if(e.unit=="sec")15 else 6;
    // La meta inicial no se incrementa por observaciones de esfuerzo.
    if(!low&&!p.o("health").b("special")&&!p.o("health").b("acute")){if(kind=="strength"){if((weekly.first[e.group]?:0)>=12)sets=min(sets,2);if(p.s("goal")=="strength")rest=max(rest,100)}}
-   if(e.raw.o("metadata3812").b("usable")&&!low&&!rules.active(p)&&kind=="strength"&&e.unit!="sec"){when(p.s("goal")){"strength"->{target=target.coerceIn(6,10);rest=max(90,rest)};"muscle"->{target=target.coerceIn(8,12);rest=max(60,rest)};"endurance"->};sets=sets.coerceIn(1,3)}
+   if(e.raw.o("metadata3812").b("usable")&&!low&&!rules.active(p)&&kind=="strength"&&e.unit!="sec"){when(p.s("goal")){"strength"->{target=target.coerceIn(6,10);rest=max(90,rest)};"muscle"->{target=target.coerceIn(8,12);rest=max(60,rest)}};sets=sets.coerceIn(1,3)}
    val item=obj("id" to e.id,"sets" to sets,"target" to target,"rest" to rest,"dynamic381" to true,"originDate381" to date,"preview2D381" to e.demo,"noAutoLoad" to low,"safetyNote" to if(status.reduced)"Dosis inicial conservadora; interrumpe si hay dolor nuevo o empeoramiento." else "Respeta técnica y recuperaciones.")
    // Revisiones semanales solo alteran selección equivalente, jamás dosis de forma automática.
    GroupEvolution.apply(e,cap(e,p,rules.groupDose(e,p,kind,item,logs,date,status,groupFeedback.strain),logs,date,status,groupFeedback),permittedEvolution)
