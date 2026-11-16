@@ -41,6 +41,15 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
   val q=p.copyJson();for((k,range)in mapOf("age" to 13.0..100.0,"height" to 100.0..250.0,"weight" to 30.0..350.0)){val n=q.n(k,Double.NaN);require(n in range){"Revisa "+mapOf("age" to "la edad","height" to "la estatura","weight" to "el peso")[k]};q.put(k,n)};require(q.s("name").isNotBlank()){ "Escribe tu nombre de cazador" }
   q.put("name",q.s("name").take(60));q.put("finalGoal",q.s("finalGoal").take(300));q.put("custom_goal",q.s("finalGoal").take(500));q.put("experienceStartedAt",if(profile==null||profile!!.s("difficulty")!=q.s("difficulty"))today() else profile!!.s("experienceStartedAt",today()));q.put("minutes",q.i("minutes",20));q.put("dailyMissions",q.i("dailyMissions",3).coerceIn(1,7));q.put("frequency",q.i("frequency",2));q.put("experience",if(level(q)==0)"beginner" else "regular");q.put("load",q.n("load").coerceIn(0.0,200.0));q.put("trainingScale",q.n("trainingScale",1.0).coerceIn(.4,1.0))
   if(q.a("weekPlan").length()!=7)q.put("weekPlan",arr(listOf("rest","train","rest","train","rest","rest","rest")));if(q.a("weekFocus").length()!=7)q.put("weekFocus",arr(List(7){"upper"}))
+   q.put("weekCategories",arr((0..6).map{i->
+    val j=(i+1)%7
+    when(q.a("weekPlan").optString(j,"rest")){
+     "train"->HunterCategory.parse(q.a("weekFocus").optString(j,"upper"))?.code?:HunterCategory.UPPER.code
+     "cardio"->HunterCategory.CARDIO.code
+     "mobility"->HunterCategory.MOBILITY.code
+     else->HunterCategory.REST.code
+    }
+   }))
   val interpreted=goals.apply(q,q.b("manualGoalGroupNative"));if(interpreted.o("interpretation374").b("medical"))require(rules.injuries(interpreted).isNotEmpty()||interpreted.o("health").b("special")){"Tu meta menciona dolor o lesión. Completa Lesiones y salud antes de guardar el plan."}
   for(d in allDays().filter{it.s("date")>=today()&&!activeLog(logs.optJSONObject(it.s("date")))})d.remove("reviewReducedNative")
   state.put("profile",interpreted);appearance?.let{state.put("appearance33",it.copyJson())};avatar?.let{state.put("avatar",it)}
