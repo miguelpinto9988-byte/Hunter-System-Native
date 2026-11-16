@@ -176,9 +176,9 @@ data class HunterHistory(
         efforts.filterNot { it.date == item.date && it.category == item.category } + item)
     fun recordVolume(item: HunterVolume): HunterHistory = copy(volumes =
         volumes.filterNot { it.date == item.date && it.variantId == item.variantId && it.unit == item.unit } + item)
-    fun phase(category: HunterCategory) = phaseChanges.filter { it.category == category }.maxWithOrNull(
-        compareBy<HunterPhaseChange> { it.date }.thenBy { it.phase }
-    )?.phase ?: 0
+    fun phase(category: HunterCategory) = phaseChanges.withIndex().filter { it.value.category == category }
+        .maxWithOrNull(compareBy<IndexedValue<HunterPhaseChange>> { it.value.date }.thenBy { it.index })
+        ?.value?.phase ?: 0
     fun total(variantId: String, unit: HunterUnit): Double? {
         val rows = volumes.filter { it.variantId == variantId && it.unit == unit && it.completed && !it.interrupted }
         return rows.takeIf { it.isNotEmpty() }?.sumOf { it.sets * it.amountPerSet }
@@ -337,6 +337,15 @@ object HunterProgressRules {
             HunterExperience.AVANZADO -> listOf(.33, .55, .75)[history.phase(category)]
         }
         val selected = mutableListOf<HunterVariant>()
+        val equivalent = if (review.decision == HunterReview.VARIAR) {
+            val lastCompleted = history.activities.filter { it.category == category &&
+                it.status == HunterStatus.COMPLETED && it.date < date }.maxByOrNull { it.date }
+            val old = lastCompleted?.let { catalog.variant(it.variantId) }
+            if (old == null) null else candidates.firstOrNull { it.id != old.id &&
+                it.typeId == old.typeId && it.technicalLevel == old.technicalLevel &&
+                it.intensity == old.intensity && it.unit == old.unit }
+        } else null
+        if (equivalent != null) selected += equivalent
         val recent = history.activities.filter { it.category == category &&
             it.status == HunterStatus.COMPLETED && it.date < date && it.date >= date.minusDays(21) }
             .map { it.variantId }.toSet()
@@ -345,7 +354,7 @@ object HunterProgressRules {
         val previousVariant = previous?.let { catalog.variant(it.variantId) }
         val simple = last?.rpe?.let { it >= 8 } == true || last?.interrupted == true
         val desiredLevel3 = (maxCount * technicalMix).roundToInt()
-        repeat(maxCount) {
+        repeat((maxCount - selected.size).coerceAtLeast(0)) {
             val pool = candidates.filterNot { v -> selected.any { it.id == v.id } }
             if (pool.isEmpty()) return@repeat
             fun score(v: HunterVariant): Int {
