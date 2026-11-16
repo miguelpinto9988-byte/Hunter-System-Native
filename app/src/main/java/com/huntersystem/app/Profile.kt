@@ -15,7 +15,7 @@ private val fieldLabels=mapOf("name" to "Nombre de cazador","age" to "Edad","hei
 private val healthFields=setOf("pain","acute","special","recommendations","approved","translated","redFlags")
 @Composable fun ProfileScreen(ui:NativeUi){val s=ui.store;val old=s.profile;val form=s.catalog.profileForm.objects();val fields=form.flatMap{it.a("fields").objects()}
  val values=remember(old==null){mutableStateMapOf<String,String>().apply{
-  val defaults=mapOf("gender" to "unspecified","theme" to "dark","outlineColor" to "eclipse","difficulty" to "basic","goalGroup" to "habit","goal" to "general","frequency" to "2","equipment" to "body","restSeconds" to "30","dailyMissions" to "3","blockMode22" to "exercise","collection33" to "hunter","scene33" to "auto","trainingMode" to "challenges","companionCharacter" to "knight","trainingScale" to "1","pain" to "none")
+  val defaults=mapOf("gender" to "unspecified","theme" to "dark","outlineColor" to "eclipse","difficulty" to "basic","goalGroup" to "habit","goal" to "general","frequency" to "2","equipment" to "body","restSeconds" to "30","intensityPreference" to "baja","dailyMissions" to "3","blockMode22" to "exercise","collection33" to "hunter","scene33" to "auto","trainingMode" to "challenges","companionCharacter" to "knight","trainingScale" to "1","pain" to "none")
   putAll(defaults)
   // Only visible fields belong to profile-form.json. Load historical settings
   // explicitly so removing obsolete form controls cannot discard saved preferences.
@@ -38,7 +38,7 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
    put("theme",HunterAppearanceV43.mode(old.s("theme")))
     put("outlineColor",HunterAppearanceV43.outline(old.s("outlineColor",
       HunterAppearanceV43.originalOutline(old.s("theme")))))
-   for(name in listOf("restSeconds","dailyMissions","load","trainingScale","frequency","goal","blockMode22")){
+   for(name in listOf("restSeconds","intensityPreference","dailyMissions","load","trainingScale","frequency","goal","blockMode22")){
     old.opt(name)?.takeUnless{it==JSONObject.NULL}?.let{put(name,it.toString())}
    }
    put("bench",old.b("bench").toString())
@@ -151,6 +151,8 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
     "Tus metas determinan tu ruta de entrenamiento."){
     HunterProfileFields(form[2],setOf("goalGroup","finalGoal"),
      values,expanded,s){manualGoalGroup=true}
+    val intention=HunterProgressRules.interpret(values["finalGoal"]?:"")
+    HText(intention.explanation,size=13,color=LocalHunter.current.muted)
    }
    HunterProfileSection(6,"Nivel y modalidad",
     "Escoge un punto de partida adecuado para ti."){
@@ -164,6 +166,10 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
     HSelect("Descanso entre series",values["restSeconds"]?:"30",
      listOf("30" to "30 segundos","60" to "60 segundos","90" to "90 segundos")){
       values["restSeconds"]=it
+     }
+    HSelect("Intensidad orientativa",values["intensityPreference"]?:"baja",
+     listOf("baja" to "Baja","moderada" to "Moderada")){
+      values["intensityPreference"]=it
      }
    }
    HunterProfileSection(7,"Tu calendario",
