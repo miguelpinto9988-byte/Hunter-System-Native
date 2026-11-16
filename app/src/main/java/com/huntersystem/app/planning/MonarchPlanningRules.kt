@@ -61,6 +61,8 @@ interface ActivityRepositoryInterface {
     /** La revisión cambia cuando cambia cualquier metadato de elegibilidad o relación. */
     val revision: String
     fun all(): List<ActivityMetadata>
+    fun verified(): List<ActivityMetadata> = all().also(ActivityCatalogValidator::verify)
+    fun signature(): String = ProfileSignature.source(all()) + ":" + revision
     fun byId(id: String): ActivityMetadata? = all().firstOrNull { it.id == id }
     fun categories(): List<Category> = Category.values().toList()
     fun families(category: Category): List<String> =
@@ -303,8 +305,8 @@ object DailyMissionPlanner {
              excludedIds: Set<String> = emptySet()): DailyMission {
         val category = profile.category(date)
         val profileHash = ProfileSignature.of(profile)
-        val rows = repository.all().also { ActivityCatalogValidator.verify(it) }
-        val catalogHash = ProfileSignature.source(rows) + ":" + repository.revision
+        val rows = repository.verified()
+        val catalogHash = repository.signature()
         val previous = pinned?.takeIf {
             it.date == date && it.category == category && it.profileHash == profileHash &&
                 it.catalogHash == catalogHash && it.ids.distinct().size == it.ids.size &&
