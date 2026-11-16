@@ -175,6 +175,20 @@ class HunterProgressRulesTest {
         assertEquals(0,state.phase(HunterCategory.UPPER))
     }
 
+    @Test fun interruptionWithoutRpeIsNotFabricatedAsEffortAndLimitsNextSession() {
+        val settings = settings()
+        val interrupted = HunterHistory(interruptions = listOf(
+            HunterInterruption(monday,HunterCategory.UPPER)))
+        val result = HunterProgressRules.propose(settings, monday.plusDays(2),
+            catalog(variant("synthetic-one"),variant("synthetic-two")),interrupted)
+        assertEquals(1,result.ids.size)
+        assertNull(HunterProgressRules.recentEffort(interrupted,monday.plusDays(2),HunterCategory.UPPER))
+        val weekly = HunterProgressRules.weekly(interrupted.copy(efforts=listOf(
+            HunterEffort(monday.minusDays(7),HunterCategory.UPPER,2,true))),
+            monday.plusDays(2),HunterCategory.UPPER)
+        assertEquals(HunterReview.RECUPERAR,weekly.decision)
+    }
+
     @Test fun summaryUsesEvaluatedOnlyAndNoDataIsNotZero() {
         val a = HunterActivityRecord(monday,"a",HunterCategory.UPPER,HunterStatus.PENDING)
         val empty = HunterProgressRules.summary(listOf(a))
