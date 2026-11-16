@@ -73,7 +73,19 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
  fun day(date:String)=allDays().firstOrNull{it.s("date")==date}?:previews.getOrPut(date){makeDay(date)}
  fun mutableDay(date:String):JSONObject{LocalDate.parse(date);allDays().firstOrNull{it.s("date")==date}?.let{return it};val start=LocalDate.parse(date).minusDays((LocalDate.parse(date).dayOfWeek.value-1).toLong()).toString();val cycles=state.a("cycles");var cycle=cycles.objects().firstOrNull{it.s("start")==start};if(cycle==null){cycle=obj("start" to start,"index" to cycles.length()+1,"days" to arr((0L..6L).map{day(plus(start,it)).copyJson()}));cycles.put(cycle);state.put("cycles",cycles)};return cycle.a("days").objects().first{it.s("date")==date}}
  fun log(date:String=today()):JSONObject{require(date==today()){ "El registro de series está disponible en la fecha de hoy" };logs.optJSONObject(date)?.let{return it};val d=day(date);val l=obj("date" to date,"kind" to d.s("kind"),"trainingGroup" to (GroupEvolution.sessionGroup(d,profile,catalog)?:""),"items" to arr(d.a("items").objects().map{x->x.copyJson().put("actual",arr((0 until x.i("sets")).map{obj("done" to false,"value" to x.i("target"),"kg" to 0)}))}),"missionTasks" to d.a("tasks").copyJson(),"complete" to false,"pain" to false,"rpe" to 0,"notes" to "");val logs=state.o("logs");logs.put(date,l);state.put("logs",logs);save();return l}
- fun toggleMission(date:String,index:Int){val l=log(date);require(!l.b("complete")&&!l.b("pain")){"La sesión está cerrada"};val x=l.a("items").getJSONObject(index);require(!x.b("archived")){x.s("archiveReason")};val e=catalog.byId[x.s("id")]?:error("Ejercicio desconocido");require(rules.compatible(e,adjusted())){"Revisa la compatibilidad del ejercicio en Perfil"};x.put("missionState",!x.b("missionState"));save()}
+ fun toggleMission(date:String,index:Int){val l=log(date);require(!l.b("complete")&&!l.b("pain")){"La sesión está cerrada"};val x=l.a("items").getJSONObject(index);require(!x.b("archived")){x.s("archiveReason")};val e=catalog.byId[x.s("id")]?:error("Ejercicio desconocido");require(rules.compatible(e,adjusted())){"Revisa la compatibilidad del ejercicio en Perfil"};x.put("missionState",!x.b("missionState"));x.put("progressStatus",if(x.b("missionState"))"COMPLETED" else "PENDING");save()}
+ fun setMissionStatus(date:String,index:Int,status:com.huntersystem.app.asterion.ParticipationStatus,note:String?=null){
+  val l=log(date)
+  require(!l.b("complete")&&!l.b("pain")){"Sesión cerrada"}
+  val item=l.a("items").getJSONObject(index)
+  require(!item.b("archived")){"Ejercicio archivado"}
+  val e=catalog.byId[item.s("id")]?:error("Ejercicio no disponible")
+  require(rules.compatible(e,adjusted())){"Revisa las restricciones del perfil"}
+  item.put("progressStatus",status.name)
+  item.put("missionState",status==com.huntersystem.app.asterion.ParticipationStatus.COMPLETED)
+  if(note!=null)item.put("progressNote",note.take(1000))
+  save()
+ }
  fun toggleTask(date:String,index:Int){val l=log(date);require(!l.b("complete")&&!l.b("pain"));val x=l.a("missionTasks").getJSONObject(index);x.put("done",!x.b("done"));save()}
  fun confirmSet(date:String,itemIndex:Int,setIndex:Int,value:Double,kg:Double,done:Boolean=true){val l=log(date);require(!l.b("complete")&&!l.b("pain")){"La sesión está cerrada"};val x=l.a("items").getJSONObject(itemIndex);require(!x.b("archived")){x.s("archiveReason")};val e=catalog.byId[x.s("id")]?:error("Ejercicio desconocido");require(rules.compatible(e,adjusted())){"Revisa la compatibilidad del ejercicio en Perfil"};require(value.isFinite()&&value>0&&value<=if(x.s("unit",e.unit)=="sec")3600 else 300);require(kg.isFinite()&&kg in 0.0..200.0);val actual=x.a("actual");require(setIndex in 0 until x.i("sets"));actual.put(setIndex,obj("done" to done,"value" to value,"kg" to if(e.equipment=="body")0 else kg));x.put("actual",actual);save()}
  fun feedback(date:String,rpe:Int,notes:String){require(rpe in 0..10);val l=log(date);require(!l.b("complete"));l.put("rpe",rpe);l.put("notes",notes.take(3000));save()}
