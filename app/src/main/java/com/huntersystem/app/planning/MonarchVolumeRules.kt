@@ -1,4 +1,4 @@
-package com.huntersystem.app.asterion
+package com.huntersystem.app.planning
 
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -129,36 +129,5 @@ object RoutineParticipation {
         Pair<Set<LocalDate>, Int> {
         if (!completedByUser || date in currentDays) return currentDays to 0
         return (currentDays + date) to 10
-    }
-}
-data class CoordinatedResult(
-    val mission: DailyMission, val adaptation: Adaptation?,
-    val checkpoint: TechnicalCheckpoint?, val volume: Map<String, VolumeRecommendation>,
-    val goal: GoalInterpretation
-)
-/** El coordinador consulta: no concede XP, no aplica referencias y no registra actividad. */
-object CoordinatedTrainingEngine {
-    fun evaluate(date: LocalDate, profile: TrainingProfile,
-                 activities: ActivityRepositoryInterface,
-                 efforts: List<EffortObservation>, phases: Map<Category, TechnicalPhase>,
-                 volumeProfiles: VolumeProfileInterface,
-                 volumeHistory: List<VolumeObservation>, blocks: Map<String, String>,
-                 pinned: DailyMission? = null): CoordinatedResult {
-        val category = profile.category(date)
-        val mission = DailyMissionPlanner.plan(date, profile, activities, efforts, phases, pinned)
-        val checkpoint = category?.let {
-            TechnicalCheckpointPolicy.review(profile, it, date, efforts,
-                phases[it] ?: TechnicalPhase())
-        }
-        val recommendations = mission.ids.mapNotNull { id ->
-            val metadata = activities.byId(id) ?: return@mapNotNull null
-            val block = blocks[id] ?: VolumeResetPolicy.block(
-                metadata.category, id, profile.experience, profile.experienceStart)
-            id to VolumeProgressionEngine.review(date, metadata, volumeProfiles.find(id),
-                volumeHistory, block, efforts)
-        }.toMap()
-        return CoordinatedResult(mission,
-            category?.let { CategoryEffortPolicy.decide(efforts, date, it) },
-            checkpoint, recommendations, PersonalGoalInterpreter.interpret(profile.customGoal))
     }
 }

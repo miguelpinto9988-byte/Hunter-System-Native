@@ -1,4 +1,4 @@
-package com.huntersystem.app.asterion
+package com.huntersystem.app.planning
 
 import java.security.MessageDigest
 import java.text.Normalizer
@@ -61,6 +61,8 @@ interface ActivityRepositoryInterface {
     /** La revisión cambia cuando cambia cualquier metadato de elegibilidad o relación. */
     val revision: String
     fun all(): List<ActivityMetadata>
+    fun verified(): List<ActivityMetadata> = all().also(ActivityCatalogValidator::verify)
+    fun signature(): String = ProfileSignature.source(all()) + ":" + revision
     fun byId(id: String): ActivityMetadata? = all().firstOrNull { it.id == id }
     fun categories(): List<Category> = Category.values().toList()
     fun families(category: Category): List<String> =
@@ -269,7 +271,8 @@ data class DailyMission(
 )
 object DeterministicSelection {
     fun select(rows: List<ActivityMetadata>, count: Int, seed: String,
-               goalTags: Set<String>, experience: Experience, phase: Int): List<ActivityMetadata> {
+               goalTags: Set<String>, experience: Experience, phase: Int,
+               historicalPriority: Map<String, Int> = emptyMap()): List<ActivityMetadata> {
         val selected = mutableListOf<ActivityMetadata>()
         val target = MissionDifficultyMixPolicy.levelThreeTarget(experience, phase)
         val maxThree = (count * target / 100.0).roundToInt()
@@ -280,6 +283,7 @@ object DeterministicSelection {
             val three = selected.count { it.technicalLevel == 3 }
             val ranked = remaining.sortedWith(
                 compareByDescending<ActivityMetadata> { item ->
+                    (historicalPriority[item.id] ?: 0) +
                     (if (item.tags.any { it in goalTags }) 100 else 0) +
                     (if (selected.none { it.familyId == item.familyId }) 40 else 0) +
                     (if (selected.none { it.typeId == item.typeId }) 20 else 0) +
@@ -296,11 +300,13 @@ object DeterministicSelection {
 object DailyMissionPlanner {
     fun plan(date: LocalDate, profile: TrainingProfile, repository: ActivityRepositoryInterface,
              efforts: List<EffortObservation>, phases: Map<Category, TechnicalPhase> = emptyMap(),
-             pinned: DailyMission? = null): DailyMission {
+             pinned: DailyMission? = null,
+             historicalPriority: Map<String, Int> = emptyMap(),
+             excludedIds: Set<String> = emptySet()): DailyMission {
         val category = profile.category(date)
         val profileHash = ProfileSignature.of(profile)
-        val rows = repository.all().also { ActivityCatalogValidator.verify(it) }
-        val catalogHash = ProfileSignature.source(rows) + ":" + repository.revision
+        val rows = repository.verified()
+        val catalogHash = repository.signature()
         val previous = pinned?.takeIf {
             it.date == date && it.category == category && it.profileHash == profileHash &&
                 it.catalogHash == catalogHash && it.ids.distinct().size == it.ids.size &&
@@ -325,13 +331,14 @@ object DailyMissionPlanner {
             else -> 3
         }
         val candidates = rows.filter { it.category == category &&
+            it.id !in excludedIds &&
             EligibilityPolicy.compatible(it, profile, maxLevel) &&
             (adaptation != Adaptation.RECOVER_ONE || it.technicalLevel == 1) }
         val goal = PersonalGoalInterpreter.interpret(profile.customGoal)
         val weekly = WeeklyCategoryChallengePolicy.review(efforts, date, category)
         val selected = DeterministicSelection.select(candidates, limit,
             profileHash + catalogHash + date + category.code, goal.tags,
-            profile.experience, phases[category]?.phase ?: 0)
+            profile.experience, phases[category]?.phase ?: 0, historicalPriority)
         val explanation = when {
             candidates.isEmpty() -> "No existen alternativas compatibles con el perfil y las restricciones."
             adaptation == Adaptation.RECOVER_ONE -> "Esfuerzo reciente 9–10: recuperación y máximo una alternativa sencilla; descansar sigue disponible."
@@ -381,10 +388,12 @@ object MonarchChallengePlanner {
     fun propose(start: LocalDate, accepted: Boolean, profile: TrainingProfile,
                 repository: ActivityRepositoryInterface, efforts: List<EffortObservation>,
                 preferred: List<Category> = emptyList(),
-                previousUsed: Set<String> = emptySet()): MonarchPlan {
+                previousUsed: Set<String> = emptySet(),
+                dailyMission: ((LocalDate) -> DailyMission)? = null): MonarchPlan {
         if (!accepted || profile.weekly.all { it == 5 }) return MonarchPlan(start, accepted, emptyList())
         val days = (0L..4L).map { start.plusDays(it) }.map { day ->
-            val normal = DailyMissionPlanner.plan(day, profile, repository, efforts)
+            val normal = dailyMission?.invoke(day)
+                ?: DailyMissionPlanner.plan(day, profile, repository, efforts)
             if (normal.category == null || normal.ids.isEmpty()) normal else {
                 // Un jefe solo puede ordenar categorías, jamás suprimir elegibilidad.
                 // El enfoque y el historial solo modifican orden y diversidad,

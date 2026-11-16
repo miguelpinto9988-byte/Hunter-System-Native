@@ -1,16 +1,18 @@
 package com.huntersystem.app
 
-import com.huntersystem.app.asterion.*
+import com.huntersystem.app.planning.*
 import org.json.JSONArray
 import org.json.JSONObject
 import java.time.LocalDate
 
 /** Puente de solo lectura al catálogo ACTUAL: no incorpora fichas ni inventarios nuevos. */
-class AsterionActivitySource(private val store: NativeStore) : ActivityRepositoryInterface {
-    override val revision: String = "native-" + store.catalog.exercises.size
+class MonarchActivitySource(
+    private val catalog: Catalog, private val rules: Rules, private val adjusted: JSONObject
+) : ActivityRepositoryInterface {
+    constructor(store: NativeStore) : this(store.catalog, store.rules, store.adjusted())
+    override val revision: String = "native-" + catalog.exercises.size
     private val rows by lazy {
-        val adjusted = store.adjusted()
-        store.catalog.exercises.mapNotNull { e ->
+        catalog.exercises.mapNotNull { e ->
             val category = CategoryMapper.normalize(e.type) ?: return@mapNotNull null
             val levelValue = when {
                 e.raw.has("technicalLevel") -> e.raw.i("technicalLevel")
@@ -46,7 +48,7 @@ class AsterionActivitySource(private val store: NativeStore) : ActivityRepositor
             val eligibility = (declaredMaterials != null || e.raw.optJSONArray("materials46") != null) &&
                 !e.raw.b("sourceOnly") && !e.raw.b("pendingTechnicalReview") &&
                 !(e.raw.b("sourceExpansion2k") && !e.raw.b("approvedForAutoplan")) &&
-                store.rules.compatible(e, adjusted)
+                rules.compatible(e, adjusted)
             ActivityMetadata(e.id, category, familyId, typeId, levelValue, intensity, allowedGear,
                 e.raw.s("modality", "no_especificada"),
                 e.raw.b("requiresSupervision") || e.raw.b("supervisionRequired") ||
@@ -59,13 +61,25 @@ class AsterionActivitySource(private val store: NativeStore) : ActivityRepositor
                 }, e.raw.a("restrictionTags").strings().toSet())
         }
     }
-    override fun all(): List<ActivityMetadata> = rows
+    private val validatedRows by lazy { rows.also(ActivityCatalogValidator::verify) }
+    private val cachedHash by lazy { ProfileSignature.source(validatedRows) + ":" + revision }
+    override fun all(): List<ActivityMetadata> = validatedRows
+    override fun verified(): List<ActivityMetadata> = validatedRows
+    override fun signature(): String = cachedHash
 }
 
 /** Traduce los índices históricos domingo=0 a lunes=0, sin reescribir perfiles guardados. */
-object AsterionProfileAdapter {
+object MonarchProfileAdapter {
     fun from(store: NativeStore): TrainingProfile? {
         val p = store.profile ?: return null
+        val savedStart = (store.state.optJSONObject("monarcaPlanningV2")
+            ?: store.state.o("asterionV1")).s("experienceSince")
+        val since = runCatching { LocalDate.parse(savedStart) }.getOrNull()
+            ?: runCatching { LocalDate.parse(p.s("experienceStartedAt")) }.getOrNull()
+            ?: LocalDate.now()
+        return from(p, since)
+    }
+    fun from(p: JSONObject, since: LocalDate = LocalDate.now()): TrainingProfile? {
         val experience = when (p.s("difficulty")) {
             "advanced" -> Experience.ADVANCED
             "intermediate" -> Experience.INTERMEDIATE
@@ -97,10 +111,6 @@ object AsterionProfileAdapter {
                 else -> 5
             }
         }
-        val savedStart = store.state.o("asterionV1").s("experienceSince")
-        val since = runCatching { LocalDate.parse(savedStart) }.getOrNull()
-            ?: runCatching { LocalDate.parse(p.s("experienceStartedAt")) }.getOrNull()
-            ?: LocalDate.now()
         val declared = buildSet {
             add("body")
             val gear = p.s("equipment", "body")
@@ -127,10 +137,10 @@ object AsterionProfileAdapter {
 }
 
 /**
- * Datos aislados bajo asterionV1, dentro del AtomicFile existente: conservan el
- * backup histórico, y la lectura nunca convierte RPE global antiguo en RPE por categoría.
+ * Los datos nuevos se guardan en monarcaPlanningV2 dentro del AtomicFile. Los
+ * datos previos de asterionV1 se leen como respaldo, sin perder el historial.
  */
-class AsterionProgressRepository(private val store: NativeStore) : VolumeProfileInterface {
+class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileInterface {
     /** Solo lee referencias ya validadas y entregadas por una integración externa. */
     override fun find(variantId: String): VolumeProfile? {
         val exercise = store.catalog.byId[variantId] ?: return null
@@ -156,9 +166,10 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
                 record.i("permittedIncrement"), record.b("automaticReviewEligible"))
         }.getOrNull()
     }
-    private fun root(): JSONObject = store.state.o("asterionV1")
+    private fun root(): JSONObject =
+        store.state.optJSONObject("monarcaPlanningV2") ?: store.state.o("asterionV1")
     private fun write(root: JSONObject) {
-        store.state.put("asterionV1", root)
+        store.state.put("monarcaPlanningV2", root)
         store.save()
     }
     private fun date(text: String): LocalDate? = runCatching { LocalDate.parse(text) }.getOrNull()
@@ -171,8 +182,8 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
             EffortObservation(day, category, rpe, row.b("completed"), row.b("interrupted"))
         }
     fun efforts(): List<EffortObservation> =
-        AsterionLegacyMigration.mergeEffort(
-            AsterionLegacyMigration.efforts(store.logs), explicitEfforts())
+        MonarchLegacyHistory.mergeEffort(
+            explicitEfforts(), MonarchLegacyHistory.efforts(store.logs))
     fun addEffort(day: LocalDate, category: Category?, rpe: Int, completed: Boolean,
                   interrupted: Boolean = false) {
         require(rpe in 1..10 && !day.isAfter(LocalDate.now()))
@@ -194,9 +205,9 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
         Participation(day, row.s("id"), category, status, row.s("notes"), row.b("interrupted"))
     }
     fun participation(): List<Participation> =
-        AsterionLegacyMigration.mergeParticipation(
-            AsterionLegacyMigration.participation(store.logs, store.catalog),
-            explicitParticipation())
+        MonarchLegacyHistory.mergeParticipation(
+            explicitParticipation(),
+            MonarchLegacyHistory.participation(store.logs, store.catalog))
     /**
      * Estados pendientes derivados exclusivamente de propuestas realmente guardadas.
      * No convierte días omitidos, descansos ni actividades futuras en fracasos.
@@ -223,7 +234,7 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
                 planned += Participation(date, id, category, ParticipationStatus.PENDING)
             }
         }
-        return AsterionLegacyMigration.mergeParticipation(planned, participation())
+        return MonarchLegacyHistory.mergeParticipation(planned, participation())
     }
     fun setParticipation(day: LocalDate, variantId: String, status: ParticipationStatus,
                          notes: String = "", interrupted: Boolean = false) {
@@ -297,6 +308,15 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
     fun recordVolume(observation: VolumeObservation) {
         require(!observation.date.isAfter(LocalDate.now()))
         require(observation.completed) { "Volumen reservado a actividad completada explícitamente" }
+        require(participation().any {
+            it.date == observation.date && it.variantId == observation.variantId &&
+                it.category == observation.category &&
+                it.status == ParticipationStatus.COMPLETED && !it.interrupted
+        }) { "La actividad debe estar confirmada antes de registrar volumen" }
+        store.catalog.byId[observation.variantId]?.let { actual ->
+            require((if (actual.unit == "sec") VolumeUnit.SECONDS else VolumeUnit.REPETITIONS)
+                == observation.unit) { "Unidad no coincidente con el catálogo" }
+        }
         val r = root()
         val all = volume().filterNot { it.id == observation.id } + observation
         r.put("volume", arr(all.map {
@@ -315,8 +335,8 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
      */
     fun acceptVolumeReference(day: LocalDate, variantId: String): Boolean {
         require(day == LocalDate.now()) { "La referencia solo puede aceptarse hoy" }
-        val profile = AsterionProfileAdapter.from(store) ?: error("Perfil no configurado")
-        val activity = AsterionActivitySource(store).byId(variantId)
+        val profile = MonarchProfileAdapter.from(store) ?: error("Perfil no configurado")
+        val activity = MonarchActivitySource(store).byId(variantId)
             ?: error("Variante desconocida")
         val block = blocks()[variantId] ?: VolumeResetPolicy.block(
             activity.category, variantId, profile.experience, profile.experienceStart)
@@ -369,15 +389,29 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
         val start = runCatching { LocalDate.parse(cycleId) }.getOrNull()
         val r = root()
         if (accepted && start != null && !r.o("monarchPlans").has(cycleId)) {
-            val profile = AsterionProfileAdapter.from(store) ?: error("Perfil no configurado")
-            val source = AsterionActivitySource(store)
+            val profile = MonarchProfileAdapter.from(store) ?: error("Perfil no configurado")
+            val source = MonarchActivitySource(store)
             val previousIds = r.o("monarchPlans").entries()
                 .filter { it.first != cycleId }.flatMap { (_, raw) ->
                     (raw as? org.json.JSONArray)?.objects()?.flatMap { it.a("ids").strings() }
                         ?: emptyList()
                 }.toSet()
+            // El desafío copia la misión real que ya existe en el calendario.
+            // No vuelve a seleccionar una lista paralela de ejercicios.
             val offer = MonarchChallengePlanner.propose(start, true, profile, source,
-                efforts(), preferred?.let { listOf(it) } ?: emptyList(), previousIds)
+                efforts(), preferred?.let { listOf(it) } ?: emptyList(), previousIds,
+                dailyMission = { day ->
+                    val native = store.day(day.toString())
+                    val category = profile.category(day)
+                    val ids = native.a("items").objects().map { it.s("id") }.distinct()
+                        .filter { id -> source.byId(id)?.let {
+                            it.category == category &&
+                                EligibilityPolicy.compatible(it, profile,
+                                    if (profile.experience == Experience.BEGINNER) 2 else 3)
+                        } == true }
+                    DailyMission(day, category, native.s("progressSettingsHash"),
+                        native.s("progressCatalogHash"), ids, native.s("planningNote"))
+                })
             require(offer.days.any { it.ids.isNotEmpty() }) {
                 "El calendario no contiene alternativas compatibles para Monarca"
             }
@@ -401,8 +435,8 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
         val cycleId = start.toString()
         val accepted = monarchConsented(cycleId)
         if (!accepted) return MonarchPlan(start, false, emptyList())
-        val profile = AsterionProfileAdapter.from(store) ?: return MonarchPlan(start, true, emptyList())
-        val source = AsterionActivitySource(store)
+        val profile = MonarchProfileAdapter.from(store) ?: return MonarchPlan(start, true, emptyList())
+        val source = MonarchActivitySource(store)
         val days = root().o("monarchPlans").optJSONArray(cycleId)?.objects()?.mapNotNull { row ->
             val date = date(row.s("date")) ?: return@mapNotNull null
             if (date < start || !date.isBefore(start.plusDays(5))) return@mapNotNull null
@@ -420,6 +454,12 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
                     " Algunas opciones quedaron incompatibles tras cambiar el perfil." else "")
         } ?: emptyList()
         return MonarchPlan(start, accepted, days)
+    }
+    /** El día aceptado se reutiliza en el MISMO Planner; nunca crea otra sesión. */
+    fun monarchPinned(day: LocalDate): DailyMission? {
+        val monday = day.minusDays((day.dayOfWeek.value - 1).toLong())
+        if (!monarchConsented(monday.toString())) return null
+        return monarchPlan(monday).days.firstOrNull { it.date == day && it.ids.isNotEmpty() }
     }
     fun monarchCompleted(cycleId: String): List<String> =
         root().a("monarchCompletion").objects().filter { it.s("cycle") == cycleId }
@@ -442,17 +482,3 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
     }
 }
 
-/** Consulta y fijación explícita: reabrir la pantalla reutiliza la misma misión. */
-class AsterionTrainingSessionCoordinator(private val store: NativeStore) {
-    val progress = AsterionProgressRepository(store)
-    fun current(date: LocalDate = LocalDate.now()): CoordinatedResult? {
-        val profile = AsterionProfileAdapter.from(store) ?: return null
-        val source = AsterionActivitySource(store)
-        val result = CoordinatedTrainingEngine.evaluate(date, profile, source,
-            progress.efforts(), progress.phases(), progress,
-            progress.volume(), progress.blocks(), progress.pinned(date))
-        if (progress.pinned(date) != result.mission && date == LocalDate.now())
-            progress.pin(result.mission)
-        return result
-    }
-}

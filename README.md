@@ -4,17 +4,15 @@ Rama principal: `main`. El código integra Monarca V43.11 y las mejoras reciente
 
 Monarca 42.9 + Eclipse 41.0, realizados en Kotlin y Jetpack Compose. La compilación de pruebas usa `versionCode=130` y `versionName=43.12-monarca-eclipse` (`applicationId=com.huntersystem.app`).
 
-## Motor local de progreso Asterion integrado en Monarca Eclipse
+## Un solo planificador: Monarca Eclipse
 
-Desde la integración [#27](https://github.com/miguelpinto9988-byte/Hunter-System-Native/pull/27), `main` incorpora un único núcleo de clasificación y progreso Asterion: cinco categorías y descanso, plan diario determinista, esfuerzo por categoría voluntario, participación explícita, rutinas opcionales, fases técnicas reversibles, volumen individual con parámetros validados y ciclo Monarca de cinco días por consentimiento.
+El planificador histórico `Planner.kt` es la única ruta de selección de misiones y rutinas. Sus reglas de calendario, equipamiento, dosificación, reproductor y registros se han unificado con los filtros técnicos, el RPE voluntario por categoría, las revisiones de 7/14/21 días y la participación real.
 
-El historial anterior se consulta sin sobrescribir `logs` ni convertir valoraciones globales en RPE por categoría. Las sesiones ya iniciadas, los registros de series y el reproductor anterior continúan disponibles. No se han creado ejercicios ni modificado los 2000 SVG.
+`NativeStore` guarda la misma misión que se muestra y se reproduce: no hay una lista adicional de ejercicios ni un segundo motor. Se conservan los 1200 ejercicios originales, la expansión de 800 fichas pendientes y los recursos gráficos. El historial y las copias con campos antiguos siguen siendo legibles sin forzar una migración destructiva.
 
-- [Reglas y arquitectura Asterion](docs/ASTERION-RULES-ENGINE.md)
-- [Consolidación de motores y compatibilidad](docs/CONSOLIDACION-MONARCA-ASTERION.md)
-- [Limpieza y conservación de ramas](docs/CONSOLIDACION-RAMAS-2026-11-16.md)
+[Arquitectura única, cambios frente al planificador histórico y compatibilidad](docs/PLANIFICADOR-UNICO-MONARCA-ECLIPSE.md).
 
-**Verificación:** las suites de pruebas Android/JVM y Asterion terminaron correctamente antes de la fusión. Para generar una APK debug de pruebas independiente de descargas promocionales externas, consulta el flujo [Hunter System Asterion - APK debug para QA](.github/workflows/asterion-debug-qa.yml). La compilación release firmada todavía depende de la disponibilidad de medios externos y de las credenciales de firma. Las pruebas en dispositivo físico y la aprobación técnica de variantes pendientes no están sustituidas por la compilación.
+Las pruebas Android/JVM y la APK debug de QA están en [planificación y tests](.github/workflows/monarca-planner-tests.yml) y [compilación debug](.github/workflows/monarca-debug-qa.yml). La validación visual en Android físico y la obtención del arte promocional de terceros para la APK firmada siguen pendientes.
 
 ## Mejoras Eclipse integradas
 - Perfil simplificado, cinco temas, acompañante y escenarios por tarjetas horizontales.

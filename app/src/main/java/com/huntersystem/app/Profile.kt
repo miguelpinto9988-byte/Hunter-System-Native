@@ -151,7 +151,7 @@ private val healthFields=setOf("pain","acute","special","recommendations","appro
     "Tus metas determinan tu ruta de entrenamiento."){
     HunterProfileFields(form[2],setOf("goalGroup","finalGoal"),
      values,expanded,s){manualGoalGroup=true}
-    val intention=com.huntersystem.app.asterion.PersonalGoalInterpreter.interpret(values["finalGoal"]?:"")
+    val intention=com.huntersystem.app.planning.PersonalGoalInterpreter.interpret(values["finalGoal"]?:"")
     HText(if(intention.recognized)"Afinidades reconocidas: "+intention.tags.joinToString(", ")
         else "Objetivo conservado; no se reconocieron afinidades específicas.",
         size=13,color=LocalHunter.current.muted)

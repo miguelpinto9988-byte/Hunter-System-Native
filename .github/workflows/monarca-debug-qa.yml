@@ -1,9 +1,9 @@
-name: Hunter System Asterion - APK debug para QA
+name: Monarca Eclipse - APK debug QA
 on:
   push:
     branches: [main]
     paths:
-      - ".github/workflows/asterion-debug-qa.yml"
+      - ".github/workflows/monarca-debug-qa.yml"
       - "app/**"
       - "*.gradle.kts"
       - "gradle/**"
@@ -38,7 +38,7 @@ jobs:
       - name: Publicar APK de pruebas
         uses: actions/upload-artifact@v4
         with:
-          name: Hunter-System-Asterion-Monarca-Eclipse-debug-QA
+          name: Hunter-System-Monarca-Eclipse-debug-QA
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 14
           if-no-files-found: error

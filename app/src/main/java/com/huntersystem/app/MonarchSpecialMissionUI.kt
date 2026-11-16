@@ -27,13 +27,12 @@ fun MonarchSpecialMissionsPanel(ui:NativeUi) {
  ui.store.revision.intValue
  if(ui.store.state.optJSONObject("monarchSpecialMission")?.s("status")=="active")
   LegacyMonarchSpecialMissionsPanel(ui)
- else AsterionMonarchSection(ui)
+ else MonarchFiveDayChallenge(ui)
 }
 
 @Composable
 private fun LegacyMonarchSpecialMissionsPanel(ui:NativeUi) {
  val store=ui.store
- AsterionMonarchSection(ui)
  store.revision.intValue
  val colors=LocalHunter.current
  val zone=remember{ZoneId.systemDefault()}

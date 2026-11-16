@@ -2,15 +2,9 @@
 
 ## Rama principal
 
-`main` conserva Hunter System V43.12 Monarca Eclipse y el motor
-Asterion de clasificación, progreso y adaptación integrado mediante
-[PR #26](https://github.com/miguelpinto9988-byte/Hunter-System-Native/pull/26),
-merge `d0ddabd8fa38f77da8f5e5b7cc798a6093e1453b`.
+**Nota de actualización:** este registro documenta el estado histórico del 16/11/2026, previo a la integración de [PR #28](https://github.com/miguelpinto9988-byte/Hunter-System-Native/pull/28). Actualmente existe **un único planificador histórico Monarca** (`Planner.kt`), con los filtros y la persistencia de progreso integrados, según [la arquitectura vigente](PLANIFICADOR-UNICO-MONARCA-ECLIPSE.md).
 
-La compilación Android y la batería independiente de pruebas de
-Asterion pasaron en GitHub Actions sobre ese merge. La inspección física
-de la experiencia de usuario y la unificación de los dos planificadores
-de progreso siguen pendientes.
+En la fase anterior, PR #26 introdujo reglas locales de clasificación y progreso en una implementación aparte. Ese código se trasladó al planificador histórico y ya no se expone como motor ni pantalla independiente. Los datos de usuario originales permanecen accesibles. La validación física de la experiencia de usuario continúa fuera del alcance de CI.
 
 ## Ramas eliminadas (21)
 

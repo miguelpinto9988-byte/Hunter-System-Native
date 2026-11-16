@@ -1,6 +1,6 @@
 package com.huntersystem.app
 
-import com.huntersystem.app.asterion.*
+import com.huntersystem.app.planning.*
 import org.json.JSONObject
 import java.time.LocalDate
 
@@ -8,7 +8,7 @@ import java.time.LocalDate
  * Vista de los registros históricos: NO migra, NO borra ni reescribe datos.
  * Un RPE global heredado permanece global salvo si tiene categoryRpe explícito.
  */
-object AsterionLegacyMigration {
+object MonarchLegacyHistory {
     private fun validDate(raw: String): LocalDate? =
         runCatching { LocalDate.parse(raw) }.getOrNull()
 

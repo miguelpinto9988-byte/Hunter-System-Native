@@ -1,18 +1,18 @@
-name: Asterion engine tests
+name: Monarca - pruebas de planificación única
 on:
   push:
     branches: [main]
     paths:
-      - "app/src/main/java/com/huntersystem/app/asterion/**"
-      - "app/src/main/java/com/huntersystem/app/Asterion*.kt"
+      - "app/src/main/java/com/huntersystem/app/planning/**"
+      - "app/src/main/java/com/huntersystem/app/MonarchPlanning*.kt"
       - "app/src/main/java/com/huntersystem/app/NativeStore.kt"
       - "app/src/main/java/com/huntersystem/app/Monarch*.kt"
-      - "app/src/test/java/com/huntersystem/app/asterion/**"
-      - ".github/workflows/asterion-engine.yml"
+      - "app/src/test/java/com/huntersystem/app/planning/**"
+      - ".github/workflows/monarca-planner-tests.yml"
   pull_request:
     paths:
       - "app/**"
-      - ".github/workflows/asterion-engine.yml"
+      - ".github/workflows/monarca-planner-tests.yml"
   workflow_dispatch:
 
 permissions:
@@ -20,7 +20,7 @@ permissions:
 
 jobs:
   kotlin-tests:
-    name: Kotlin compile + Asterion tests
+    name: Kotlin compile + Monarca tests
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -38,4 +38,4 @@ jobs:
           "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
       - uses: gradle/actions/setup-gradle@v4
       - name: Compile and run isolated rules tests
-        run: bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest --tests "com.huntersystem.app.asterion.AsterionRulesTest" --tests "com.huntersystem.app.AsterionPersistenceTest"
+        run: bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest --tests "com.huntersystem.app.planning.MonarchPlanningRulesTest" --tests "com.huntersystem.app.MonarchPlanningPersistenceTest"

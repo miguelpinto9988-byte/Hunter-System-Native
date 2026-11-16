@@ -174,13 +174,8 @@ fun MonarchMissionContent(ui:NativeUi,date:String) {
         val progress=(fraction*100f).roundToInt()
         val hasWorkout=items.isNotEmpty() && day.s("kind")!="rest"
         val canStart=date==today()&&!readOnly&&hasWorkout
-        // Una sola misión visible. Las sesiones manuales y los registros ya
-        // iniciados siguen usando su historial y reproductor original.
-        val unified = date==today() && AsterionProfileAdapter.from(s)!=null &&
-            !s.activeLog(log) && !day.b("customized") &&
-            !day.has("routineId") && !day.b("creatorAssigned") && !day.b("manual")
-        if(unified) AsterionMissionSection(ui,date)
-        else HPanel(padding=18) {
+        // La misma sesión nativa se muestra, ejecuta y registra en todos los casos.
+        HPanel(padding=18) {
             Row(Modifier.fillMaxWidth(),
                 horizontalArrangement=Arrangement.SpaceBetween,
                 verticalAlignment=Alignment.CenterVertically) {
@@ -236,6 +231,7 @@ fun MonarchMissionContent(ui:NativeUi,date:String) {
                     ) {ui.attempt{s.toggleTask(date,index)}}
                 }
             }
+            MonarchTechnicalSection(ui,date)
             HText("Las casillas confirman actividades realizadas; no añaden series, repeticiones ni cargas. Para registrar cantidades utiliza «Registro detallado».",
                 size=13,color=c.muted)
             if(canStart) {
@@ -312,19 +308,20 @@ private fun MonarchMissionExercise(
         ) {ui.attempt{s.toggleMission(date,index)}}
         if(skipped)HText("Actividad omitida voluntariamente; no cuenta como completada.",
             size=12,color=colors.muted)
+        if(date==today()&&checked&&!skipped)MonarchVolumeEditor(ui,date,e.id)
         if(!readOnly&&!inactive){
             HButton(if(skipped)"VOLVER A PENDIENTE" else "OMITIR ACTIVIDAD"){
                 ui.attempt{s.setMissionStatus(date,index,
-                    if(skipped)com.huntersystem.app.asterion.ParticipationStatus.PENDING
-                    else com.huntersystem.app.asterion.ParticipationStatus.SKIPPED)}
+                    if(skipped)com.huntersystem.app.planning.ParticipationStatus.PENDING
+                    else com.huntersystem.app.planning.ParticipationStatus.SKIPPED)}
             }
             var progressNote by remember(date,e.id){mutableStateOf(item.s("progressNote"))}
             HInput(progressNote,{progressNote=it},"Observación opcional",multiline=true)
             HButton("GUARDAR OBSERVACIÓN"){
                 ui.attempt{s.setMissionStatus(date,index,when{
-                    skipped->com.huntersystem.app.asterion.ParticipationStatus.SKIPPED
-                    checked->com.huntersystem.app.asterion.ParticipationStatus.COMPLETED
-                    else->com.huntersystem.app.asterion.ParticipationStatus.PENDING
+                    skipped->com.huntersystem.app.planning.ParticipationStatus.SKIPPED
+                    checked->com.huntersystem.app.planning.ParticipationStatus.COMPLETED
+                    else->com.huntersystem.app.planning.ParticipationStatus.PENDING
                 },progressNote)}
             }
         }
@@ -368,10 +365,10 @@ private fun MonarchMissionsProgress(ui:NativeUi) {
     val c=LocalHunter.current
     val todayLocal=LocalDate.parse(today())
     val monday=todayLocal.minusDays((todayLocal.dayOfWeek.value-1).toLong())
-    val records=AsterionProgressRepository(s).plannedParticipation().filter {
+    val records=MonarchProgressRepository(s).plannedParticipation().filter {
         !it.date.isBefore(monday) && !it.date.isAfter(todayLocal)
     }
-    val summary=com.huntersystem.app.asterion.ProgressSummary.calculate(records)
+    val summary=com.huntersystem.app.planning.ProgressSummary.calculate(records)
     HPanel(padding=17) {
         Eyebrow("03  ·  PARTICIPACIÓN SEMANAL")
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,

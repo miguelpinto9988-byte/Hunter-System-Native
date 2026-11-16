@@ -1,11 +1,11 @@
-package com.huntersystem.app.asterion
+package com.huntersystem.app.planning
 
 import org.junit.Assert.*
 import org.junit.Test
 import java.time.LocalDate
 
 /** Datos sintéticos solo para pruebas: no forman parte del catálogo de producción. */
-class AsterionRulesTest {
+class MonarchPlanningRulesTest {
     private val date = LocalDate.of(2026, 11, 16)
     private fun profile(week: List<Int> = List(7) { 0 }, experience: Experience = Experience.INTERMEDIATE,
                         equipment: Set<String> = emptySet(), goal: String = "") =
