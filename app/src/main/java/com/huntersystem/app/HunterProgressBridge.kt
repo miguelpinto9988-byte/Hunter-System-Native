@@ -68,7 +68,11 @@ object HunterProgressBridge {
             val intensity = when (e.raw.s("intensity").lowercase()) {
                 "low", "baja" -> HunterIntensity.BAJA
                 "moderate", "moderada", "medium" -> HunterIntensity.MODERADA
-                else -> HunterIntensity.MODERADA // Conservative when descriptive intensity is missing.
+                else -> if (!e.power && !e.impact &&
+                    e.raw.s("impact") in listOf("Bajo", "Sin saltos") &&
+                    e.meta.i("conditioning", 99) <= 1) HunterIntensity.BAJA
+                else HunterIntensity.MODERADA
+                // Existing impact/conditioning descriptors are separate from technical level.
             }
             val required = buildSet {
                 addAll(e.raw.a("materials46").strings())
