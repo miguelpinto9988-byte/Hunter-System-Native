@@ -213,11 +213,13 @@ object CategoryEffortPolicy {
 enum class WeeklyDecision { WAIT, INSUFFICIENT, MAINTAIN, EQUIVALENT_VARIATION, RECOVERY }
 object WeeklyCategoryChallengePolicy {
     fun review(history: List<EffortObservation>, date: LocalDate, category: Category): WeeklyDecision {
-        val first = history.filter { it.category != null }.minOfOrNull { it.date } ?: return WeeklyDecision.WAIT
-        if (ChronoUnit.DAYS.between(first, date) < 7) return WeeklyDecision.WAIT
         val recent = history.filter { it.category == category && it.date < date &&
             !it.date.isBefore(date.minusDays(7)) }
+        // La recuperación tiene prioridad incluso antes del primer hito semanal.
         if (recent.any { it.rpe >= 8 || it.interrupted }) return WeeklyDecision.RECOVERY
+        val first = history.filter { it.category != null }.minOfOrNull { it.date }
+            ?: return WeeklyDecision.WAIT
+        if (ChronoUnit.DAYS.between(first, date) < 7) return WeeklyDecision.WAIT
         val completedLowDays = recent.filter { it.completed && !it.interrupted && it.rpe in 1..3 }
             .map { it.date }.distinct()
         if (completedLowDays.size >= 2) return WeeklyDecision.EQUIVALENT_VARIATION
