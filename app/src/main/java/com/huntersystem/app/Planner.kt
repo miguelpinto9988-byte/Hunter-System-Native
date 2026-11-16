@@ -6,6 +6,19 @@ import kotlin.math.*
 
 data class Feedback(val strain:Boolean,val avg:Double,val adherence:Double,val completed:Int,val canProgress:Boolean)
 class Planner(val catalog:Catalog,val rules:Rules){
+ // Un solo adaptador del catálogo por configuración; evita reanalizar los
+ // 2000 registros al dibujar siete días del mismo calendario.
+ private var cachedPlanningKey:String?=null
+ private var cachedPlanningSource:MonarchActivitySource?=null
+ private fun planningSource(p:JSONObject):MonarchActivitySource {
+  val key=profileKey(p)
+  val previous=cachedPlanningSource
+  if(key==cachedPlanningKey&&previous!=null)return previous
+  val source=MonarchActivitySource(catalog,rules,p.copyJson())
+  cachedPlanningSource=source
+  cachedPlanningKey=key
+  return source
+ }
  val fields=listOf("age","goal","goalGroup","finalGoal","finalTarget","focus","difficulty","experience","equipment","gymEquipment23","bench","step","minutes","frequency","dailyMissions","trainingMode","trainingScale","weekPlan","weekFocus","injuries","restrictions","health","limits","preferredTrainer","load","restSeconds","materials46","capabilities46","dynamicRequestedFocus3847")
  fun profileKey(p:JSONObject)=hash(arr(fields.map{arr(listOf(it,p.opt(it)))}).toString()).toString(36)
  fun recent(logs:JSONObject,date:String,days:Long)=logs.entries().mapNotNull{(d,l)->if(d<date&&d>=plus(date,-days)&&l is JSONObject)d to l else null}
@@ -59,8 +72,11 @@ class Planner(val catalog:Catalog,val rules:Rules){
   val index=localDate.dayOfWeek.value-1
   val week=baseProfile.weekly.toMutableList()
   week[index]=requested.ordinal
-  val profile=baseProfile.copy(weekly=week)
-  val source=MonarchActivitySource(catalog,rules,p)
+  val timeUnit=when(kind){"strength"->5;"cardio"->4;else->3}
+  val timeLimit=(p.i("minutes",20).coerceIn(10,90)/timeUnit).coerceIn(1,7)
+  val profile=baseProfile.copy(weekly=week,
+   dailyLimit=min(baseProfile.dailyLimit,timeLimit))
+  val source=planningSource(p)
   val history=observations?:MonarchLegacyHistory.efforts(logs)
   val previous=recent(logs,date,21).filter{it.second.b("complete")}
     .flatMap{it.second.a("items").objects().map{x->x.s("id")}}.toSet()
@@ -158,7 +174,7 @@ class Planner(val catalog:Catalog,val rules:Rules){
   // técnico y de equipamiento, además de los filtros previos de Rules.
   val nativeProfile=MonarchProfileAdapter.from(adjusted,
    runCatching{java.time.LocalDate.parse(date)}.getOrNull()?:java.time.LocalDate.now())?:return null
-  val validated=MonarchActivitySource(catalog,rules,adjusted)
+  val validated=planningSource(adjusted)
   val maxTechnical=when(n){0->2;1->3;else->3}
   val safeIds=validated.all().filter{
    com.huntersystem.app.planning.EligibilityPolicy.compatible(
