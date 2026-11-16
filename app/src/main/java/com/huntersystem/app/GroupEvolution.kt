@@ -54,7 +54,9 @@ object GroupEvolution {
   val past=logs.entries().mapNotNull{(d,raw)->
    val log=raw as? JSONObject?:return@mapNotNull null
    if(d>=date||!Regex("\\d{4}-\\d{2}-\\d{2}").matches(d)||!log.b("complete")||log.b("pain")||log.i("rpe") !in 1..10)return@mapNotNull null
-   if(logGroup(log,p,catalog)!=group)return@mapNotNull null
+   if(logGroup(log,p,catalog)!=group ||
+       com.huntersystem.app.asterion.CategoryMapper.normalize(log.s("categoryRpe")) !=
+       com.huntersystem.app.asterion.CategoryMapper.normalize(group))return@mapNotNull null
    d to log
   }.sortedBy{it.first}
   if(past.isEmpty())return Adjustment(group)
@@ -90,7 +92,9 @@ object GroupEvolution {
   val recentProblem=logs.entries().any{(d,v)->
    val l=v as? JSONObject
    l!=null&&d<date&&d>=plus(date,-14)&&logGroup(l,p,catalog)==group&&
-    (l.b("pain")||l.b("fatigue")||l.i("rpe")>=8)
+    (l.b("pain")||l.b("fatigue")||
+     (com.huntersystem.app.asterion.CategoryMapper.normalize(l.s("categoryRpe")) ==
+      com.huntersystem.app.asterion.CategoryMapper.normalize(group) && l.i("rpe")>=8))
   }
   if(high||recentProblem)steps=steps.coerceAtMost(0)
   // Global safety and medical gates are still enforced by the existing Rules.
@@ -105,9 +109,14 @@ object GroupEvolution {
   }
   val week=rows.filter{it.first>=plus(date,-7)}
   val done=week.map{it.second}.filter{it.b("complete")&&!it.b("pain")&&!it.b("manual")}
-  val scores=done.map{it.n("rpe")}.filter{it in 1.0..10.0}
+  val scores=done.filter{
+   com.huntersystem.app.asterion.CategoryMapper.normalize(it.s("categoryRpe")) ==
+    com.huntersystem.app.asterion.CategoryMapper.normalize(group)
+  }.map{it.n("rpe")}.filter{it in 1.0..10.0}
   val avg=if(scores.isEmpty())0.0 else scores.average()
-  val strain=rows.any{it.second.b("pain")||it.second.b("fatigue")||it.second.n("rpe")>=8}
+  val strain=rows.any{it.second.b("pain")||it.second.b("fatigue")||
+   (com.huntersystem.app.asterion.CategoryMapper.normalize(it.second.s("categoryRpe")) ==
+    com.huntersystem.app.asterion.CategoryMapper.normalize(group) && it.second.n("rpe")>=8)}
   val adherence=if(week.isEmpty())0.0 else done.size.toDouble()/week.size
   return Feedback(strain,avg,adherence,done.size,done.size>=2&&adherence>=.8&&avg>0&&avg<=7&&!strain)
  }
