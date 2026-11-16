@@ -13,8 +13,12 @@ class Planner(val catalog:Catalog,val rules:Rules){
  fun rest(p:JSONObject)=p.i("restSeconds").takeIf{it in listOf(30,60,90)}?:listOf(30,60,90)[level(p)]
  fun cap(e:Exercise,p:JSONObject,item:JSONObject,logs:JSONObject=JSONObject(),date:String=today(),status:Gate=rules.gate(p),fb:Feedback=feedback(logs,date)):JSONObject{
   val c=e.raw.optJSONObject("doseCap46")?:return item;val out=item.copyJson();val scale=p.n("trainingScale",1.0).coerceIn(.25,1.0);val risky=rules.active(p)||status.reduced||fb.strain||recent(logs,date,14).any{(_,l)->l.b("pain")}
-  val evidence=logs.entries().sortedBy{it.first}.flatMap{(d,v)->val l=v as? JSONObject;if(d>=date||l==null||!l.b("complete")||l.b("manual")||l.b("pain")||l.b("fatigue")||l.n("rpe") !in 1.0..7.0)emptyList() else l.a("items").objects().filter{x->x.s("id")==e.id&&x.a("actual").length()>=x.i("sets")&&x.a("actual").objects().all{it.b("done")&&it.n("value")>=x.n("target")}}}
-  val completed=fb.canProgress&&!risky&&evidence.size>=if(e.raw.b("highSkill46"))3 else 2;var ceiling=max(1,floor(c.n("target")*scale).toInt());val start=max(1,floor(c.n("initial")*scale).toInt());ceiling=min(ceiling,if(!completed)start else max(start,evidence.last().i("target",start))+if(e.unit=="sec")5 else 1)
+  // Los límites originales admiten reducción, nunca incremento implícito
+  // por completar días o registrar RPE bajo. Solo un perfil numérico validado
+  // puede proponer una referencia opcional fuera de la sesión automática.
+  var ceiling=max(1,floor(c.n("target")*scale).toInt())
+  val start=max(1,floor(c.n("initial")*scale).toInt())
+  ceiling=min(ceiling,start)
   out.put("target",out.i("target",start).coerceIn(1,ceiling));out.put("sets",out.i("sets",1).coerceIn(1,if(risky)1 else c.i("sets",1)));out.put("rest",max(c.i("rest"),out.i("rest")).coerceAtMost(90));out.put("catalog46",true);out.put("noAutoLoad",out.b("noAutoLoad")||risky||e.raw.b("highSkill46"));out.put("safetyNote",listOf(out.s("safetyNote"),e.raw.a("restrictions46").strings().joinToString(" ")).filter{it.isNotBlank()}.joinToString(" "));return out
  }
  fun load(logs:JSONObject,date:String):Triple<Map<String,Int>,Map<String,Int>,Map<String,Int>>{val groups=mutableMapOf<String,Int>();val patterns=mutableMapOf<String,Int>();val ids=mutableMapOf<String,Int>();for((_,l) in recent(logs,date,7)){if(l.b("pain"))continue;for(x in l.a("items").objects()){val n=x.a("actual").objects().count{it.b("done")};val e=catalog.byId[x.s("id")]?:continue;if(n>0){groups[e.group]=(groups[e.group]?:0)+n;patterns[e.pattern]=(patterns[e.pattern]?:0)+n;ids[e.oldFamily]=(ids[e.oldFamily]?:0)+n}}};return Triple(groups,patterns,ids)}
@@ -73,9 +77,14 @@ class Planner(val catalog:Catalog,val rules:Rules){
     +(rules.score(e,p,kind,emptyList())/5).coerceIn(-25,25)
    ).coerceIn(-90,65)
   }
-  val excluded=source.all().filter{item->
+  val candidateFresh=source.all().any{item->
+   item.category==requested &&
+    catalog.byId[item.id]?.family !in usedBases &&
+    com.huntersystem.app.asterion.EligibilityPolicy.compatible(item,profile)
+  }
+  val excluded=if(candidateFresh)source.all().filter{item->
     catalog.byId[item.id]?.let{e->e.family in usedBases}?:true
-  }.map{it.id}.toSet()
+  }.map{it.id}.toSet() else emptySet()
   val mission=com.huntersystem.app.asterion.DailyMissionPlanner.plan(
    localDate,profile,source,history,phases,pinned,priority,excluded)
   val adaptation=com.huntersystem.app.asterion.CategoryEffortPolicy.decide(
@@ -145,7 +154,22 @@ class Planner(val catalog:Catalog,val rules:Rules){
  fun minutes(r:JSONObject,p:JSONObject)=ceil(steps(r,p).sumOf{it.n("seconds")}/60).toInt()
  fun generateRoutine(mode:String,type:String,n:Int,variant:Int,range:String,epoch:Int,p:JSONObject,logs:JSONObject=JSONObject(),date:String=today()):JSONObject?{
   val kind=if(type=="cardio")"cardio" else if(type=="mobility")"recovery" else "strength";val low=if(range=="medium")10 else 5;val high=if(range=="short")10 else if(range=="medium")20 else 30;val adjusted=p.copyJson().put("difficulty",listOf("basic","intermediate","advanced")[n]).put("minutes",high)
-  val candidates=rules.pool(adjusted,kind).filter{(if(mode=="gym")it.gym||it.power else !it.gym)&&rules.matches(it,type)&&(mode!="gym"||it.raw.a("gymRequirements23").strings().all{key->key in adjusted.a("gymEquipment23").strings()})};if(candidates.isEmpty())return null
+  // La biblioteca histórica y la misión usan exactamente el mismo filtro
+  // técnico y de equipamiento, además de los filtros previos de Rules.
+  val nativeProfile=AsterionProfileAdapter.from(adjusted,
+   runCatching{java.time.LocalDate.parse(date)}.getOrNull()?:java.time.LocalDate.now())?:return null
+  val validated=AsterionActivitySource(catalog,rules,adjusted)
+  val maxTechnical=when(n){0->2;1->3;else->3}
+  val safeIds=validated.all().filter{
+   com.huntersystem.app.asterion.EligibilityPolicy.compatible(
+    it,nativeProfile,maxTechnical)
+  }.map{it.id}.toSet()
+  val candidates=rules.pool(adjusted,kind).filter{it.id in safeIds &&
+   (if(mode=="gym")it.gym||it.power else !it.gym) &&
+   rules.matches(it,type) &&
+   (mode!="gym"||it.raw.a("gymRequirements23").strings().all{
+     key->key in adjusted.a("gymEquipment23").strings()})}
+  if(candidates.isEmpty())return null
   val seed="$epoch|$mode|$type|$n|$variant";val status=rules.gate(adjusted);val fb=GroupEvolution.feedback(logs,date,type,adjusted,catalog);val rawEvolution=GroupEvolution.evaluate(logs,date,type,adjusted,catalog);val evolution=if(status.reduced||rules.active(adjusted))rawEvolution.copy(steps=min(0,rawEvolution.steps)) else rawEvolution;val ready=rules.powerReady(adjusted,logs,date,status,fb.strain);var winner:List<JSONObject>?=null;var winMinutes=0;var winScore=Double.POSITIVE_INFINITY
   for(count in 2..min(candidates.size,if(range=="short")5 else 7)){val picked=mutableListOf<Exercise>();val used=mutableSetOf<String>();val groups=mutableMapOf<String,Int>();while(picked.size<count){val possible=candidates.filter{it.family !in used};val allowed=rules.selection(possible,picked,count,adjusted,kind,type,ready);if(allowed.isEmpty())break;val e=allowed.sortedWith(compareByDescending<Exercise>{rules.score(it,adjusted,kind,picked)-(groups[it.group]?:0)*14}.thenBy{hash("$seed|${it.id}")}).first();picked+=e;used+=e.family;groups[e.group]=(groups[e.group]?:0)+1};if(picked.size<count)break;if(mode=="gym"&&picked.none{it.gym})continue
    for(sets in 1..3){val items=picked.map{e->val base=libraryDose(e,adjusted,kind);val x=obj("id" to e.id,"sets" to min(sets,base.i("sets",1)).coerceAtLeast(1),"target" to base.i("target",8).coerceIn(1,if(e.unit=="sec")50 else 15),"rest" to max(30,base.i("rest",60)),"libraryGen3845" to true);GroupEvolution.apply(e,cap(e,adjusted,rules.groupDose(e,adjusted,kind,x,logs,date,status,fb.strain),logs,date,status,fb),evolution)};val mins=minutes(obj("items" to arr(items)),adjusted);if(mins !in low..high)continue;val aim=if(range=="short")8 else if(range=="medium")15 else 25;val score=abs(aim-mins)*10.0+abs(count-if(range=="short")3 else 5)*2;if(score<winScore){winner=items;winMinutes=mins;winScore=score}}
