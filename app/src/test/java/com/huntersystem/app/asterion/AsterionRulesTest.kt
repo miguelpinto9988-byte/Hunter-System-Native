@@ -120,6 +120,15 @@ class AsterionRulesTest {
             listOf(effort(1, Category.UPPER, 9)))
         assertEquals(listOf("1"), recovery.ids)
     }
+    @Test fun recentHighSignalOverridesLaterLowReadingWithinSameCategory() {
+        val readings = listOf(effort(5, Category.UPPER, 9),
+            effort(1, Category.UPPER, 2),
+            effort(1, Category.CARDIO, 2))
+        assertEquals(Adaptation.RECOVER_ONE,
+            CategoryEffortPolicy.decide(readings, date, Category.UPPER))
+        assertEquals(Adaptation.EQUIVALENT_VARIATION,
+            CategoryEffortPolicy.decide(readings, date, Category.CARDIO))
+    }
     @Test fun staleEffortIsIgnoredAfterTwentyOneDays() {
         assertEquals(Adaptation.MAINTAIN, CategoryEffortPolicy.decide(
             listOf(effort(22, Category.UPPER, 10)), date, Category.UPPER))
