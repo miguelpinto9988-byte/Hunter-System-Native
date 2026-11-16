@@ -52,6 +52,9 @@ class MonarchPlanningPersistenceTest {
     @Test fun volumesUseTheirOriginalUnitsAndRetainPreviousBlocks() {
         val store = NativeStore(context)
         val r = MonarchProgressRepository(store)
+        r.pin(DailyMission(date, Category.UPPER, "synthetic", "synthetic",
+            listOf("synthetic-id"), "only test metadata"))
+        r.setParticipation(date, "synthetic-id", ParticipationStatus.COMPLETED)
         val a = VolumeObservation("observation-a", date, Category.UPPER,
             "synthetic-id", "synthetic-type", 1, VolumeUnit.REPETITIONS,
             2, 8, 4, completed = true, interrupted = false, blockId = "block1")
@@ -81,6 +84,21 @@ class MonarchPlanningPersistenceTest {
         restored.restore(org.json.JSONObject(exported))
         assertEquals("kept", restored.state.s("legacyMarker"))
         assertEquals(10, MonarchProgressRepository(restored).routinePoints())
+    }
+    @Test fun legacyPlanningStorageIsReadWithoutDeletingPreviousData() {
+        val store = NativeStore(context)
+        val legacy = store.state.o("asterionV1")
+        legacy.put("routineDays", arr(listOf(date.toString())))
+        legacy.put("unknownHistoricValue", "must-survive")
+        store.state.put("asterionV1", legacy)
+        store.save()
+        val repo = MonarchProgressRepository(store)
+        assertEquals(10, repo.routinePoints())
+        repo.addEffort(date, null, 4, completed = false)
+        assertEquals(10, MonarchProgressRepository(NativeStore(context)).routinePoints())
+        val restored = NativeStore(context)
+        assertEquals("must-survive", restored.state.o("asterionV1").s("unknownHistoricValue"))
+        assertEquals(1, restored.state.o("monarcaPlanningV2").a("efforts").length())
     }
     @Test fun monarchConsentIsExplicitAndCycleScoped() {
         val store = NativeStore(context)
