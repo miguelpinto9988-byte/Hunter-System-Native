@@ -42,6 +42,22 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
   q.put("name",q.s("name").take(60));q.put("finalGoal",q.s("finalGoal").take(300));q.put("minutes",q.i("minutes",20));q.put("dailyMissions",q.i("dailyMissions",3).coerceIn(1,7));q.put("frequency",q.i("frequency",2));q.put("experience",if(level(q)==0)"beginner" else "regular");q.put("load",q.n("load").coerceIn(0.0,200.0));q.put("trainingScale",q.n("trainingScale",1.0).coerceIn(.4,1.0))
   if(q.a("weekPlan").length()!=7)q.put("weekPlan",arr(listOf("rest","train","rest","train","rest","rest","rest")));if(q.a("weekFocus").length()!=7)q.put("weekFocus",arr(List(7){"upper"}))
   val interpreted=goals.apply(q,q.b("manualGoalGroupNative"));if(interpreted.o("interpretation374").b("medical"))require(rules.injuries(interpreted).isNotEmpty()||interpreted.o("health").b("special")){"Tu meta menciona dolor o lesión. Completa Lesiones y salud antes de guardar el plan."}
+  interpreted.put("custom_goal",interpreted.s("finalGoal").take(500))
+  val calendarChanged=profile==null||
+   profile!!.a("weekPlan").toString()!=interpreted.a("weekPlan").toString()||
+   profile!!.a("weekFocus").toString()!=interpreted.a("weekFocus").toString()
+  if(calendarChanged){
+   // No trasladar el índice 0=domingo del perfil antiguo a lunes por error.
+   val categories=(0..6).map{mon->val i=(mon+1)%7
+    when(interpreted.a("weekPlan").optString(i,"rest")){
+     "train"->when(interpreted.a("weekFocus").optString(i,"upper")){
+      "upper"->0;"core","tronco","integrado"->1;"lower","piernas"->2;else->5
+     }
+     "mobility","recovery"->3;"cardio"->4;else->5
+    }
+   }
+   interpreted.put("weeklyCategories",arr(categories))
+  }
   for(d in allDays().filter{it.s("date")>=today()&&!activeLog(logs.optJSONObject(it.s("date")))})d.remove("reviewReducedNative")
   // Asterion: una experiencia distinta inicia un ciclo nuevo sin destruir observaciones.
   val asterion=state.o("asterionV1")
