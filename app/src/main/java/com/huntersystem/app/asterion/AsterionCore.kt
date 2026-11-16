@@ -203,7 +203,13 @@ object CategoryEffortPolicy {
             .maxWithOrNull(compareBy<EffortObservation> { it.date }.thenBy { it.rpe })
     fun decide(history: List<EffortObservation>, date: LocalDate, category: Category): Adaptation {
         val last = latest(history, date, category) ?: return Adaptation.MAINTAIN
+        val recent = history.filter { it.category == category && it.date < date &&
+            !it.date.isBefore(date.minusDays(7)) }
+        // Señales de recuperación recientes prevalecen sobre una valoración
+        // baja posterior; las valoraciones de otras categorías no intervienen.
         return when {
+            recent.any { it.interrupted || it.rpe >= 9 } -> Adaptation.RECOVER_ONE
+            recent.any { it.rpe == 8 } -> Adaptation.REDUCE_TWO
             last.interrupted || last.rpe >= 9 -> Adaptation.RECOVER_ONE
             last.rpe == 8 -> Adaptation.REDUCE_TWO
             last.completed && last.rpe in 1..3 -> Adaptation.EQUIVALENT_VARIATION
