@@ -87,9 +87,8 @@ class GroupEvolutionTest {
   assertEquals("upper",GroupEvolution.logGroup(oldLog,profile,catalog))
   val basic= obj("id" to upper.id,"target" to 10,"sets" to 2)
   val applied=GroupEvolution.apply(upper,basic,GroupEvolution.Adjustment("upper",1,"2026-10-27",2))
-  if(upper.raw.optJSONObject("doseCap46")==null&&!upper.impact&&!upper.power)
-   assertEquals(11,applied.i("target"))
-  else assertEquals(10,applied.i("target"))
+  // Una valoración baja no es autorización para aumentar repeticiones.
+  assertEquals(10,applied.i("target"))
   assertEquals(10,GroupEvolution.apply(upper,basic,GroupEvolution.Adjustment("lower",-1)).i("target"))
   assertEquals(10,basic.i("target"))
  }
