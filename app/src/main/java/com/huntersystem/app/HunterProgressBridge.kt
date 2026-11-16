@@ -134,7 +134,8 @@ object HunterProgressBridge {
                     volumes += HunterVolume(date, group, id, item.s("typeId", id),
                         item.i("technicalLevel", 0).coerceIn(0, 5), completedSets.size,
                         value, if (item.s("unit") == "sec") HunterUnit.SECONDS else HunterUnit.REPETITIONS,
-                        log.i("rpe").takeIf { it in 1..10 }, log.b("complete"), log.b("pain") || log.b("fatigue"))
+                        log.i("rpe").takeIf { it in 1..10 }, state == HunterStatus.COMPLETED && log.b("complete"),
+                        log.b("pain") || log.b("fatigue"))
                 }
             }
             val rpe = log.i("rpe")
