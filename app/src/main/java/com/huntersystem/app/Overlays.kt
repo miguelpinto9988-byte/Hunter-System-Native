@@ -53,7 +53,8 @@ import kotlin.math.*
    val log=ui.store.logs.optJSONObject(date)
    Heading("Confirmar misión",size=30)
    HNotice("Se registrará esta sesión como completada. Comprueba que marcaste únicamente las actividades realizadas y consignaste el esfuerzo.")
-   HText("Fecha: $date · RPE: ${overlay.data.i("rpe")}/10",size=16)
+   HText("Fecha: $date · RPE: "+(if(overlay.data.i("rpe") in 1..10)
+     overlay.data.i("rpe").toString()+"/10" else "sin registrar"),size=16)
    HButton("VOLVER AL REGISTRO",Modifier.fillMaxWidth()){ui.back()}
    HButton("CONFIRMAR Y GUARDAR",Modifier.fillMaxWidth(),primary=true,
      enabled=date==today() && log!=null && !log.b("complete") && !log.b("pain")) {
@@ -109,15 +110,14 @@ import kotlin.math.*
  if(s.profile!=null){val reasons=s.rules.reasons(e,s.adjusted());HPanel(decor=false,padding=16){Heading("Compatibilidad con tu perfil",size=26);HText(if(reasons.isEmpty())"Incluido por los filtros del perfil actual" else reasons.joinToString("\n"){"· $it"},size=16)}}
  HText("Animación SVG original. Es una demostración orientativa, no una evaluación de tu ejecución ni una validación biomecánica.",size=14,color=c.muted)
 }
-@Composable fun SessionRecord(ui:NativeUi,date:String){val s=ui.store;val l=remember(date){runCatching{s.log(date)}.getOrNull()};if(l==null){HNotice("El registro está disponible en la fecha de hoy.");return};val closed=l.b("complete")||l.b("pain");var rpe by remember(date){mutableStateOf(l.i("rpe").toString())};var notes by remember(date){mutableStateOf(l.s("notes"))};var fatigue by remember(date){mutableStateOf(l.b("fatigue"))};val latestRpe by rememberUpdatedState(rpe);val latestNotes by rememberUpdatedState(notes);val latestFatigue by rememberUpdatedState(fatigue)
- DisposableEffect(date){onDispose{if(!l.b("complete")&&!l.b("pain")){val n=latestRpe.toIntOrNull()?.coerceIn(0,10)?:0;if(l.i("rpe")!=n||l.s("notes")!=latestNotes||l.b("fatigue")!=latestFatigue){l.put("rpe",n);l.put("notes",latestNotes.take(3000));l.put("fatigue",latestFatigue);s.save()}}}}
+@Composable fun SessionRecord(ui:NativeUi,date:String){val s=ui.store;val l=remember(date){runCatching{s.log(date)}.getOrNull()};if(l==null){HNotice("El registro está disponible en la fecha de hoy.");return};val closed=l.b("complete")||l.b("pain");var rpe by remember(date){mutableStateOf(l.i("rpe").toString())};var notes by remember(date){mutableStateOf(l.s("notes"))};var fatigue by remember(date){mutableStateOf(l.b("fatigue"))};// La navegación no guarda valoraciones ni observaciones implícitamente.
  Eyebrow("REGISTRO DETALLADO · $date");Heading("Cada serie cuenta.")
  HText(CompanionDialogue.message(s.profile,LocalVisualTier.current,DialogueContext(
   DialogueMoment.SURVEY,group=l.s("trainingGroup"),rpe=l.i("rpe"),fatigue=fatigue)),
   size=15,color=LocalHunter.current.muted)
  HNotice("Confirma únicamente lo que hayas realizado. Marcar la misión no añade series ni cantidades a este registro.")
  for((i,x)in l.a("items").objects().withIndex()){val e=s.catalog.byId[x.s("id")]?:continue;HPanel(padding=15){Heading(e.name,size=27);if(x.b("archived"))HNotice(x.s("archiveReason"));HText("${x.i("sets")} × ${x.i("target")} ${if(e.unit=="sec")"s" else "repeticiones"}${if(e.sides)" por lado" else ""}",size=15);for(si in 0 until x.i("sets")){val actual=x.a("actual").optJSONObject(si);Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)){HText("${if(actual?.b("done")==true)"✓" else "○"} Serie ${si+1}",Modifier.weight(1f),size=17);HText(if(actual?.b("done")==true)"${actual.n("value")} ${if(e.unit=="sec")"s" else "rep"} · ${actual.n("kg")} kg" else "Pendiente",size=15,color=LocalHunter.current.muted);if(!closed&&!x.b("archived"))HButton("Registrar"){ui.open("series",obj("date" to date,"itemIndex" to i,"setIndex" to si))}}}}}
- if(!closed){HSelect("Esfuerzo percibido · RPE",rpe,listOf("0" to "Seleccionar esfuerzo")+(1..10).map{it.toString() to "$it / 10"}){rpe=it};HInput(notes,{notes=it},"Notas del día",multiline=true);HCheck("He sentido fatiga",fatigue){fatigue=!fatigue};HButton("Guardar registro parcial",Modifier.fillMaxWidth()){ui.attempt{s.feedback(date,rpe.toIntOrNull()?:0,notes);l.put("fatigue",fatigue);s.save();ui.message("Registro parcial guardado")}};HButton("Completar sesión",Modifier.fillMaxWidth(),primary=true){
+ if(!closed){HSelect("Esfuerzo percibido · RPE (opcional)",rpe,listOf("0" to "Seleccionar esfuerzo")+(1..10).map{it.toString() to "$it / 10"}){rpe=it};HInput(notes,{notes=it},"Notas del día",multiline=true);HCheck("He sentido fatiga",fatigue){fatigue=!fatigue};HButton("Guardar registro parcial",Modifier.fillMaxWidth()){ui.attempt{s.feedback(date,rpe.toIntOrNull()?:0,notes);l.put("fatigue",fatigue);s.save();ui.message("Registro parcial guardado")}};HButton("Completar sesión",Modifier.fillMaxWidth(),primary=true){
    ui.open("confirm-finish",obj(
      "date" to date,
      "rpe" to (rpe.toIntOrNull()?:0),
