@@ -269,7 +269,8 @@ data class DailyMission(
 )
 object DeterministicSelection {
     fun select(rows: List<ActivityMetadata>, count: Int, seed: String,
-               goalTags: Set<String>, experience: Experience, phase: Int): List<ActivityMetadata> {
+               goalTags: Set<String>, experience: Experience, phase: Int,
+               historicalPriority: Map<String, Int> = emptyMap()): List<ActivityMetadata> {
         val selected = mutableListOf<ActivityMetadata>()
         val target = MissionDifficultyMixPolicy.levelThreeTarget(experience, phase)
         val maxThree = (count * target / 100.0).roundToInt()
@@ -280,6 +281,7 @@ object DeterministicSelection {
             val three = selected.count { it.technicalLevel == 3 }
             val ranked = remaining.sortedWith(
                 compareByDescending<ActivityMetadata> { item ->
+                    (historicalPriority[item.id] ?: 0) +
                     (if (item.tags.any { it in goalTags }) 100 else 0) +
                     (if (selected.none { it.familyId == item.familyId }) 40 else 0) +
                     (if (selected.none { it.typeId == item.typeId }) 20 else 0) +
@@ -296,7 +298,9 @@ object DeterministicSelection {
 object DailyMissionPlanner {
     fun plan(date: LocalDate, profile: TrainingProfile, repository: ActivityRepositoryInterface,
              efforts: List<EffortObservation>, phases: Map<Category, TechnicalPhase> = emptyMap(),
-             pinned: DailyMission? = null): DailyMission {
+             pinned: DailyMission? = null,
+             historicalPriority: Map<String, Int> = emptyMap(),
+             excludedIds: Set<String> = emptySet()): DailyMission {
         val category = profile.category(date)
         val profileHash = ProfileSignature.of(profile)
         val rows = repository.all().also { ActivityCatalogValidator.verify(it) }
@@ -325,13 +329,14 @@ object DailyMissionPlanner {
             else -> 3
         }
         val candidates = rows.filter { it.category == category &&
+            it.id !in excludedIds &&
             EligibilityPolicy.compatible(it, profile, maxLevel) &&
             (adaptation != Adaptation.RECOVER_ONE || it.technicalLevel == 1) }
         val goal = PersonalGoalInterpreter.interpret(profile.customGoal)
         val weekly = WeeklyCategoryChallengePolicy.review(efforts, date, category)
         val selected = DeterministicSelection.select(candidates, limit,
             profileHash + catalogHash + date + category.code, goal.tags,
-            profile.experience, phases[category]?.phase ?: 0)
+            profile.experience, phases[category]?.phase ?: 0, historicalPriority)
         val explanation = when {
             candidates.isEmpty() -> "No existen alternativas compatibles con el perfil y las restricciones."
             adaptation == Adaptation.RECOVER_ONE -> "Esfuerzo reciente 9–10: recuperación y máximo una alternativa sencilla; descansar sigue disponible."
