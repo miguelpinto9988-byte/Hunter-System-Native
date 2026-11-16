@@ -267,6 +267,23 @@ class AsterionRulesTest {
         assertEquals(0, RoutineParticipation.award(first.first, date, true).second)
         assertEquals(0, RoutineParticipation.award(first.first, date.plusDays(1), false).second)
     }
+    @Test fun monarchPreferenceOnlyChangesSafeOrdering() {
+        val p = profile()
+        val rows = listOf(activity("a"), activity("b"), activity("c"), activity("d"))
+        val repo = FakeRepo(rows)
+        val base = MonarchChallengePlanner.propose(date, true, p, repo, emptyList())
+        val focused = MonarchChallengePlanner.propose(
+            date, true, p, repo, emptyList(), listOf(Category.UPPER),
+            previousUsed = setOf("a"))
+        assertEquals(base.days.map { it.category }, focused.days.map { it.category })
+        assertEquals(base.days.map { it.ids.toSet() }, focused.days.map { it.ids.toSet() })
+        assertTrue(focused.days.all {
+            "a" !in it.ids || it.ids.last() == "a"
+        })
+        assertEquals(focused, MonarchChallengePlanner.propose(
+            date, true, p, repo, emptyList(), listOf(Category.UPPER),
+            previousUsed = setOf("a")))
+    }
     @Test fun monarchNeedsConsentAndPreservesRest() {
         val p = profile(listOf(5, 0, 5, 0, 5, 0, 5))
         val repo = FakeRepo(listOf(meta))
