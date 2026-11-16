@@ -71,26 +71,38 @@ object AsterionProfileAdapter {
             "intermediate" -> Experience.INTERMEDIATE
             else -> Experience.BEGINNER
         }
-        val week = if (p.a("weeklyCategories").length() == 7)
-            p.a("weeklyCategories").ints()
-        else (0..6).map { mondayIndex ->
+        // Los formatos `weekCategories` (texto) y `weeklyCategories` (0..5)
+        // usan lunes=0; el calendario legacy `weekPlan` usa domingo=0.
+        val numericWeek = p.optJSONArray("weeklyCategories")
+        val textualWeek = p.optJSONArray("weekCategories")
+        val explicitWeek: List<Int>? = when {
+            numericWeek?.length() == 7 -> numericWeek.ints().takeIf { it.all { n -> n in 0..5 } }
+            textualWeek?.length() == 7 -> textualWeek.strings().map {
+                if (it in listOf("descanso", "rest")) 5
+                else CategoryMapper.normalize(it)?.ordinal ?: 5
+            }
+            else -> null
+        }
+        val week = explicitWeek ?: (0..6).map { mondayIndex ->
             val oldIndex = (mondayIndex + 1) % 7
             when (p.a("weekPlan").optString(oldIndex, "rest")) {
                 "train" -> when (p.a("weekFocus").optString(oldIndex, "upper")) {
                     "upper" -> 0
-                    "core" -> 1
-                    "lower" -> 2
+                    "core", "tronco", "integrado" -> 1
+                    "lower", "piernas" -> 2
                     else -> 5
                 }
-                "mobility" -> 3
+                "mobility", "recovery" -> 3
                 "cardio" -> 4
                 else -> 5
             }
         }
         val savedStart = store.state.o("asterionV1").s("experienceSince")
         val since = runCatching { LocalDate.parse(savedStart) }.getOrNull()
+            ?: runCatching { LocalDate.parse(p.s("experienceStartedAt")) }.getOrNull()
             ?: LocalDate.now()
         val declared = buildSet {
+            add("body")
             val gear = p.s("equipment", "body")
             if (gear == "db" || gear == "gym") add("db")
             if (gear == "gym") add("gym")
