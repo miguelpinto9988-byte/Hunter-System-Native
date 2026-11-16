@@ -363,9 +363,11 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
     }
     fun routinePoints(): Int = root().a("routineDays").length() * 10
     fun setMonarchConsent(cycleId: String, accepted: Boolean) {
-        val start = LocalDate.parse(cycleId)
+        // Los identificadores históricos de ciclos permanecen legibles;
+        // solo una fecha ISO puede generar un nuevo desafío de cinco días.
+        val start = runCatching { LocalDate.parse(cycleId) }.getOrNull()
         val r = root()
-        if (accepted && !r.o("monarchPlans").has(cycleId)) {
+        if (accepted && start != null && !r.o("monarchPlans").has(cycleId)) {
             val profile = AsterionProfileAdapter.from(store) ?: error("Perfil no configurado")
             val source = AsterionActivitySource(store)
             val offer = MonarchChallengePlanner.propose(start, true, profile, source, efforts())
