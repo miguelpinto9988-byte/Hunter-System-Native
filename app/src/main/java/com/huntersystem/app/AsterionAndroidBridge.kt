@@ -363,14 +363,55 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
     }
     fun routinePoints(): Int = root().a("routineDays").length() * 10
     fun setMonarchConsent(cycleId: String, accepted: Boolean) {
-        require(cycleId.isNotBlank())
+        val start = LocalDate.parse(cycleId)
         val r = root()
+        if (accepted && !r.o("monarchPlans").has(cycleId)) {
+            val profile = AsterionProfileAdapter.from(store) ?: error("Perfil no configurado")
+            val source = AsterionActivitySource(store)
+            val offer = MonarchChallengePlanner.propose(start, true, profile, source, efforts())
+            require(offer.days.any { it.ids.isNotEmpty() }) {
+                "El calendario no contiene alternativas compatibles para Monarca"
+            }
+            val plans = r.o("monarchPlans")
+            plans.put(cycleId, arr(offer.days.map { day ->
+                obj("date" to day.date.toString(),
+                    "category" to (day.category?.code ?: "descanso"),
+                    "ids" to arr(day.ids), "profileHash" to day.profileHash,
+                    "catalogHash" to day.catalogHash,
+                    "explanation" to day.explanation)
+            }))
+            r.put("monarchPlans", plans)
+        }
         val current = r.o("monarchConsent")
         current.put(cycleId, accepted)
         r.put("monarchConsent", current)
         write(r)
     }
     fun monarchConsented(cycleId: String): Boolean = root().o("monarchConsent").b(cycleId)
+    fun monarchPlan(start: LocalDate): MonarchPlan {
+        val cycleId = start.toString()
+        val accepted = monarchConsented(cycleId)
+        if (!accepted) return MonarchPlan(start, false, emptyList())
+        val profile = AsterionProfileAdapter.from(store) ?: return MonarchPlan(start, true, emptyList())
+        val source = AsterionActivitySource(store)
+        val days = root().o("monarchPlans").optJSONArray(cycleId)?.objects()?.mapNotNull { row ->
+            val date = date(row.s("date")) ?: return@mapNotNull null
+            if (date < start || !date.isBefore(start.plusDays(5))) return@mapNotNull null
+            val category = CategoryMapper.normalize(row.s("category"))
+            val scheduled = profile.category(date)
+            val ids = if (category == null || category != scheduled) emptyList()
+                else row.a("ids").strings().distinct().filter { id ->
+                    source.byId(id)?.let { item ->
+                        item.category == category && EligibilityPolicy.compatible(item, profile)
+                    } == true
+                }
+            DailyMission(date, scheduled, row.s("profileHash"),
+                row.s("catalogHash"), ids,
+                row.s("explanation") + if (ids.size < row.a("ids").length())
+                    " Algunas opciones quedaron incompatibles tras cambiar el perfil." else "")
+        } ?: emptyList()
+        return MonarchPlan(start, accepted, days)
+    }
     fun monarchCompleted(cycleId: String): List<String> =
         root().a("monarchCompletion").objects().filter { it.s("cycle") == cycleId }
             .map { it.s("date") + "|" + it.s("id") }
@@ -378,9 +419,7 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
         require(day == LocalDate.now()) { "Solo puedes declarar la fecha local actual" }
         require(monarchConsented(cycleId)) { "Monarca requiere consentimiento explícito" }
         val start = LocalDate.parse(cycleId)
-        val profile = AsterionProfileAdapter.from(store) ?: error("Perfil no configurado")
-        val plan = MonarchChallengePlanner.propose(start, true, profile,
-            AsterionActivitySource(store), efforts())
+        val plan = monarchPlan(start)
         require(plan.days.any { it.date == day && variantId in it.ids }) {
             "La actividad no pertenece a un desafío vigente y compatible"
         }
