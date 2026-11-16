@@ -68,6 +68,18 @@ fun AsterionMissionSection(ui: NativeUi, date: String) {
                     recommendation.reference + " " + recommendation.unit?.name +
                     ". " + recommendation.explanation,
                     size = 12, color = LocalHunter.current.muted)
+                if (date == today() &&
+                    recommendation.decision in setOf(VolumeDecision.OPTIONAL_INCREASE,
+                        VolumeDecision.REVIEW_EXTRA_SET,
+                        VolumeDecision.OPTIONAL_MINIMUM_ADJUSTMENT) &&
+                    recommendation.optional) {
+                    HButton("ACEPTAR REFERENCIA OPCIONAL (SIN APLICARLA)", Modifier.fillMaxWidth()) {
+                        ui.attempt { progress.acceptVolumeReference(day, id) }
+                    }
+                }
+            }
+            if (date == today() && status?.status == ParticipationStatus.COMPLETED) {
+                AsterionVolumeEditor(ui, progress, day, id, mission.category)
             }
             if (date == today()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -84,7 +96,7 @@ fun AsterionMissionSection(ui: NativeUi, date: String) {
                 }
                 HButton("REGISTRAR INTERRUPCIÓN", Modifier.fillMaxWidth()) {
                     ui.attempt {
-                        progress.setParticipation(day, id, ParticipationStatus.SKIPPED,
+                        progress.setParticipation(day, id, ParticipationStatus.PENDING,
                             "Interrupción declarada", interrupted = true)
                     }
                 }
@@ -284,4 +296,57 @@ fun AsterionMonarchSection(ui: NativeUi) {
             }
         }
     }
+}
+
+
+/** Entrada voluntaria: sin referencias automáticas, sin series ni RPE inventados. */
+@Composable
+private fun AsterionVolumeEditor(
+    ui: NativeUi, progress: AsterionProgressRepository,
+    day: LocalDate, id: String, category: Category?
+) {
+    if (category == null) return
+    val exercise = ui.store.catalog.byId[id] ?: return
+    val unit = when (exercise.unit) {
+        "sec" -> VolumeUnit.SECONDS
+        "reps" -> VolumeUnit.REPETITIONS
+        else -> return
+    }
+    val metadata = remember(ui.store, id) { AsterionActivitySource(ui.store).byId(id) }
+        ?: return
+    if (metadata.technicalLevel !in 1..3 || metadata.category != category) return
+    var sets by remember(day, id) { mutableStateOf("") }
+    var amount by remember(day, id) { mutableStateOf("") }
+    val saved = progress.volume().firstOrNull {
+        it.date == day && it.variantId == id
+    }
+    HText("Volumen realizado opcional (" +
+        if (unit == VolumeUnit.SECONDS) "segundos" else "repeticiones" +
+        "). Sin registrar no se presume cantidad.", size = 12,
+        color = LocalHunter.current.muted)
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        HInput(sets, { sets = it }, "Series realizadas", Modifier.weight(1f), number = true)
+        HInput(amount, { amount = it }, "Cantidad por serie", Modifier.weight(1f), number = true)
+    }
+    HButton("REGISTRAR CANTIDAD REAL", Modifier.fillMaxWidth()) {
+        ui.attempt {
+            val numberSets = sets.toIntOrNull() ?: error("Indica las series reales")
+            val perSet = amount.toIntOrNull() ?: error("Indica una cantidad real")
+            require(numberSets in 1..30 && perSet in 1..3600) { "Cantidad fuera de rango" }
+            val p = AsterionProfileAdapter.from(ui.store) ?: error("Perfil no disponible")
+            val block = progress.blocks()[id] ?: VolumeResetPolicy.block(
+                category, id, p.experience, p.experienceStart)
+            val dayRpe = progress.efforts().firstOrNull {
+                it.date == day && it.category == category
+            }?.rpe
+            progress.recordVolume(VolumeObservation(
+                "asterion|" + day + "|" + id,
+                day, category, id, metadata.typeId, metadata.technicalLevel,
+                unit, numberSets, perSet, dayRpe, true, false, block))
+        }
+    }
+    if (saved != null)
+        HText("Registro real guardado: " + saved.sets + " series · " +
+            saved.quantityPerSet + " " + saved.unit.name, size = 12,
+            color = LocalHunter.current.muted)
 }
