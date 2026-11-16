@@ -288,10 +288,7 @@ fun AsterionMonarchSection(ui: NativeUi) {
     val accepted = remember(revision, cycle) { repository.monarchConsented(cycle) }
     val profile = AsterionProfileAdapter.from(store)
     val plan = remember(revision, cycle, accepted) {
-        profile?.let {
-            MonarchChallengePlanner.propose(start, accepted, it,
-                AsterionActivitySource(store), repository.efforts())
-        }
+        if (profile == null) null else repository.monarchPlan(start)
     }
     val done = remember(revision, cycle) { repository.monarchCompleted(cycle).toSet() }
     HPanel(padding = 16) {
