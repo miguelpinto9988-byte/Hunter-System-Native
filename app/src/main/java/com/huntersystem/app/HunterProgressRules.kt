@@ -146,6 +146,9 @@ data class HunterEffort(
     init { require(rpe in 1..10 && category != HunterCategory.REST) }
 }
 /** Historical global RPE uses category=null and never silently becomes category-specific. */
+data class HunterInterruption(val date: LocalDate, val category: HunterCategory) {
+    init { require(category != HunterCategory.REST) }
+}
 data class HunterPhaseChange(val category: HunterCategory, val phase: Int, val date: LocalDate) {
     init { require(category != HunterCategory.REST && phase in 0..2) }
 }
@@ -165,7 +168,8 @@ data class HunterHistory(
     val activities: List<HunterActivityRecord> = emptyList(),
     val efforts: List<HunterEffort> = emptyList(),
     val phaseChanges: List<HunterPhaseChange> = emptyList(),
-    val volumes: List<HunterVolume> = emptyList()
+    val volumes: List<HunterVolume> = emptyList(),
+    val interruptions: List<HunterInterruption> = emptyList()
 ) {
     /** Idempotent upsert; status is changed only by an explicit user action. */
     fun record(item: HunterActivityRecord): HunterHistory {
@@ -268,7 +272,9 @@ object HunterProgressRules {
         if (date < initial.plusDays(7)) return HunterWeeklyReview(HunterReview.ESPERAR, 0,
             "Primera revisión disponible siete días después de la primera valoración.")
         val all = h.efforts.filter { it.category == category && it.date < date && it.date >= date.minusDays(7) }
-        if (all.any { it.interrupted || it.rpe >= 8 }) return HunterWeeklyReview(HunterReview.RECUPERAR, 0,
+        if (all.any { it.interrupted || it.rpe >= 8 } ||
+            h.interruptions.any { it.category == category && it.date < date &&
+                it.date >= date.minusDays(7) }) return HunterWeeklyReview(HunterReview.RECUPERAR, 0,
             "Se prioriza la recuperación por una señal reciente.")
         val lowDays = all.filter { it.hasCompletedActivity && it.rpe in 1..3 }
             .map { it.date }.distinct()
@@ -291,7 +297,9 @@ object HunterProgressRules {
         val lastChange = h.phaseChanges.filter { it.category == category }.maxOfOrNull { it.date }
         val enoughInterval = lastChange == null || ChronoUnit.DAYS.between(lastChange, date) >= 7
         val interrupted = h.efforts.any { it.category == category && it.date < date &&
-            it.date >= date.minusDays(7) && it.interrupted }
+            it.date >= date.minusDays(7) && it.interrupted } ||
+            h.interruptions.any { it.category == category && it.date < date &&
+                it.date >= date.minusDays(7) }
         if (!enoughInterval || interrupted || current >= 2 || p.experience == HunterExperience.PRINCIPIANTE)
             return HunterTechnicalReview(HunterReview.VARIAR, current, current, "Solo variedad equivalente, sin subir nivel.")
         return HunterTechnicalReview(HunterReview.AVANZAR_FASE, current, current + 1,
@@ -327,7 +335,9 @@ object HunterProgressRules {
         if (candidates.isEmpty()) return HunterDailyPlan(date, category, emptyList(), signature, revision,
             "No hay actividades compatibles con el calendario, equipo, técnica y restricciones.")
         val last = recentEffort(history, date, category)
-        val maxCount = when { last?.interrupted == true -> 1; last?.rpe == 8 -> 2; last?.rpe in 9..10 -> 1; else -> p.dailyLimit }
+        val recentStop = history.interruptions.any { it.category == category &&
+            it.date < date && it.date >= date.minusDays(21) }
+        val maxCount = when { recentStop -> 1; last?.interrupted == true -> 1; last?.rpe == 8 -> 2; last?.rpe in 9..10 -> 1; else -> p.dailyLimit }
             .coerceAtMost(p.dailyLimit)
         val review = weekly(history, date, category)
         val intent = interpret(p.customGoal)
@@ -352,7 +362,7 @@ object HunterProgressRules {
         val previous = history.activities.filter { it.category == category &&
             it.status == HunterStatus.COMPLETED && it.date < date }.maxByOrNull { it.date }
         val previousVariant = previous?.let { catalog.variant(it.variantId) }
-        val simple = last?.rpe?.let { it >= 8 } == true || last?.interrupted == true
+        val simple = last?.rpe?.let { it >= 8 } == true || last?.interrupted == true || recentStop
         val desiredLevel3 = (maxCount * technicalMix).roundToInt()
         repeat((maxCount - selected.size).coerceAtLeast(0)) {
             val pool = candidates.filterNot { v -> selected.any { it.id == v.id } }
@@ -376,7 +386,7 @@ object HunterProgressRules {
                 .thenBy { it.id }).first()
         }
         val explanation = when {
-            last?.interrupted == true || last?.rpe in 9..10 ->
+            recentStop || last?.interrupted == true || last?.rpe in 9..10 ->
                 "Recuperación prioritaria: máximo una actividad sencilla de esta categoría."
             last?.rpe == 8 -> "Esfuerzo alto previo: máximo dos actividades; se prefieren opciones sencillas."
             review.decision == HunterReview.VARIAR ->
