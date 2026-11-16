@@ -43,6 +43,15 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
   if(q.a("weekPlan").length()!=7)q.put("weekPlan",arr(listOf("rest","train","rest","train","rest","rest","rest")));if(q.a("weekFocus").length()!=7)q.put("weekFocus",arr(List(7){"upper"}))
   val interpreted=goals.apply(q,q.b("manualGoalGroupNative"));if(interpreted.o("interpretation374").b("medical"))require(rules.injuries(interpreted).isNotEmpty()||interpreted.o("health").b("special")){"Tu meta menciona dolor o lesión. Completa Lesiones y salud antes de guardar el plan."}
   for(d in allDays().filter{it.s("date")>=today()&&!activeLog(logs.optJSONObject(it.s("date")))})d.remove("reviewReducedNative")
+  // Asterion: una experiencia distinta inicia un ciclo nuevo sin destruir observaciones.
+  val asterion=state.o("asterionV1")
+  if(asterion.s("experience")!=interpreted.s("difficulty")){
+   asterion.put("experience",interpreted.s("difficulty"))
+   asterion.put("experienceSince",today())
+   asterion.put("phases",JSONObject())
+   asterion.put("blocks",JSONObject())
+   state.put("asterionV1",asterion)
+  }
   state.put("profile",interpreted);appearance?.let{state.put("appearance33",it.copyJson())};avatar?.let{state.put("avatar",it)}
   // Confirmed work remains immutable; pending incompatible records are archived in place.
   val ap=adjusted();for((date,v)in logs.entries()){val l=v as? JSONObject?:continue;if(date<today()||l.b("complete"))continue;for(x in l.a("items").objects()){val e=catalog.byId[x.s("id")]?:continue;if(!rules.compatible(e,ap)){x.put("archived",true);x.put("archiveReason","Perfil actualizado: revisar compatibilidad antes de continuar.")}}}
