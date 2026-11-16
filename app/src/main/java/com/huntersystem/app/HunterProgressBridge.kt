@@ -12,8 +12,10 @@ object HunterProgressBridge {
     fun settings(p: JSONObject, date: LocalDate): HunterSettings {
         val chosen = p.a("weekCategories").strings().takeIf { it.size == 7 }
         val week = (0..6).map { i ->
-            val legacy = p.a("weekPlan").optString(i, "rest")
-            val focus = p.a("weekFocus").optString(i, "upper")
+            // Legacy V39 stores Sunday first (index 0); new categories are Monday first.
+            val legacyIndex = (i + 1) % 7
+            val legacy = p.a("weekPlan").optString(legacyIndex, "rest")
+            val focus = p.a("weekFocus").optString(legacyIndex, "upper")
             if (chosen != null) HunterCategory.parse(chosen[i]) ?: HunterCategory.REST
             else when (legacy) {
                 "train" -> HunterCategory.parse(focus) ?: HunterCategory.UPPER
