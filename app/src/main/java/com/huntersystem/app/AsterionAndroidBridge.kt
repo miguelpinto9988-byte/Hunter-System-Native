@@ -6,11 +6,13 @@ import org.json.JSONObject
 import java.time.LocalDate
 
 /** Puente de solo lectura al catálogo ACTUAL: no incorpora fichas ni inventarios nuevos. */
-class AsterionActivitySource(private val store: NativeStore) : ActivityRepositoryInterface {
-    override val revision: String = "native-" + store.catalog.exercises.size
+class AsterionActivitySource(
+    private val catalog: Catalog, private val rules: Rules, private val adjusted: JSONObject
+) : ActivityRepositoryInterface {
+    constructor(store: NativeStore) : this(store.catalog, store.rules, store.adjusted())
+    override val revision: String = "native-" + catalog.exercises.size
     private val rows by lazy {
-        val adjusted = store.adjusted()
-        store.catalog.exercises.mapNotNull { e ->
+        catalog.exercises.mapNotNull { e ->
             val category = CategoryMapper.normalize(e.type) ?: return@mapNotNull null
             val levelValue = when {
                 e.raw.has("technicalLevel") -> e.raw.i("technicalLevel")
@@ -46,7 +48,7 @@ class AsterionActivitySource(private val store: NativeStore) : ActivityRepositor
             val eligibility = (declaredMaterials != null || e.raw.optJSONArray("materials46") != null) &&
                 !e.raw.b("sourceOnly") && !e.raw.b("pendingTechnicalReview") &&
                 !(e.raw.b("sourceExpansion2k") && !e.raw.b("approvedForAutoplan")) &&
-                store.rules.compatible(e, adjusted)
+                rules.compatible(e, adjusted)
             ActivityMetadata(e.id, category, familyId, typeId, levelValue, intensity, allowedGear,
                 e.raw.s("modality", "no_especificada"),
                 e.raw.b("requiresSupervision") || e.raw.b("supervisionRequired") ||
@@ -66,6 +68,13 @@ class AsterionActivitySource(private val store: NativeStore) : ActivityRepositor
 object AsterionProfileAdapter {
     fun from(store: NativeStore): TrainingProfile? {
         val p = store.profile ?: return null
+        val savedStart = store.state.o("asterionV1").s("experienceSince")
+        val since = runCatching { LocalDate.parse(savedStart) }.getOrNull()
+            ?: runCatching { LocalDate.parse(p.s("experienceStartedAt")) }.getOrNull()
+            ?: LocalDate.now()
+        return from(p, since)
+    }
+    fun from(p: JSONObject, since: LocalDate = LocalDate.now()): TrainingProfile? {
         val experience = when (p.s("difficulty")) {
             "advanced" -> Experience.ADVANCED
             "intermediate" -> Experience.INTERMEDIATE
@@ -97,10 +106,6 @@ object AsterionProfileAdapter {
                 else -> 5
             }
         }
-        val savedStart = store.state.o("asterionV1").s("experienceSince")
-        val since = runCatching { LocalDate.parse(savedStart) }.getOrNull()
-            ?: runCatching { LocalDate.parse(p.s("experienceStartedAt")) }.getOrNull()
-            ?: LocalDate.now()
         val declared = buildSet {
             add("body")
             val gear = p.s("equipment", "body")
