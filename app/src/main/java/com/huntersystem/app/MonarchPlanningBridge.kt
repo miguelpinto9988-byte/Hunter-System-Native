@@ -396,8 +396,22 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
                     (raw as? org.json.JSONArray)?.objects()?.flatMap { it.a("ids").strings() }
                         ?: emptyList()
                 }.toSet()
+            // El desafío copia la misión real que ya existe en el calendario.
+            // No vuelve a seleccionar una lista paralela de ejercicios.
             val offer = MonarchChallengePlanner.propose(start, true, profile, source,
-                efforts(), preferred?.let { listOf(it) } ?: emptyList(), previousIds)
+                efforts(), preferred?.let { listOf(it) } ?: emptyList(), previousIds,
+                dailyMission = { day ->
+                    val native = store.day(day.toString())
+                    val category = profile.category(day)
+                    val ids = native.a("items").objects().map { it.s("id") }.distinct()
+                        .filter { id -> source.byId(id)?.let {
+                            it.category == category &&
+                                EligibilityPolicy.compatible(it, profile,
+                                    if (profile.experience == Experience.BEGINNER) 2 else 3)
+                        } == true }
+                    DailyMission(day, category, native.s("progressSettingsHash"),
+                        native.s("progressCatalogHash"), ids, native.s("planningNote"))
+                })
             require(offer.days.any { it.ids.isNotEmpty() }) {
                 "El calendario no contiene alternativas compatibles para Monarca"
             }
@@ -440,6 +454,12 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
                     " Algunas opciones quedaron incompatibles tras cambiar el perfil." else "")
         } ?: emptyList()
         return MonarchPlan(start, accepted, days)
+    }
+    /** El día aceptado se reutiliza en el MISMO Planner; nunca crea otra sesión. */
+    fun monarchPinned(day: LocalDate): DailyMission? {
+        val monday = day.minusDays((day.dayOfWeek.value - 1).toLong())
+        if (!monarchConsented(monday.toString())) return null
+        return monarchPlan(monday).days.firstOrNull { it.date == day && it.ids.isNotEmpty() }
     }
     fun monarchCompleted(cycleId: String): List<String> =
         root().a("monarchCompletion").objects().filter { it.s("cycle") == cycleId }
