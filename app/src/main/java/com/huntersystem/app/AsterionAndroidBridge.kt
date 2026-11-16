@@ -362,7 +362,8 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
         return points
     }
     fun routinePoints(): Int = root().a("routineDays").length() * 10
-    fun setMonarchConsent(cycleId: String, accepted: Boolean) {
+    fun setMonarchConsent(cycleId: String, accepted: Boolean,
+                          preferred: Category? = null) {
         // Los identificadores históricos de ciclos permanecen legibles;
         // solo una fecha ISO puede generar un nuevo desafío de cinco días.
         val start = runCatching { LocalDate.parse(cycleId) }.getOrNull()
@@ -370,7 +371,13 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
         if (accepted && start != null && !r.o("monarchPlans").has(cycleId)) {
             val profile = AsterionProfileAdapter.from(store) ?: error("Perfil no configurado")
             val source = AsterionActivitySource(store)
-            val offer = MonarchChallengePlanner.propose(start, true, profile, source, efforts())
+            val previousIds = r.o("monarchPlans").entries()
+                .filter { it.first != cycleId }.flatMap { (_, raw) ->
+                    (raw as? org.json.JSONArray)?.objects()?.flatMap { it.a("ids").strings() }
+                        ?: emptyList()
+                }.toSet()
+            val offer = MonarchChallengePlanner.propose(start, true, profile, source,
+                efforts(), preferred?.let { listOf(it) } ?: emptyList(), previousIds)
             require(offer.days.any { it.ids.isNotEmpty() }) {
                 "El calendario no contiene alternativas compatibles para Monarca"
             }
