@@ -290,7 +290,7 @@ class AsterionRulesTest {
         assertNull(empty.average)
         assertEquals(1, empty.cycleDay)
         val withRating = EffortReviewEngine.review(date.minusDays(21), date,
-            listOf(effort(2, Category.UPPER, 5)))
+            listOf(EffortObservation(date, Category.UPPER, 5, true)))
         assertEquals(5.0, withRating.average!!, 0.00001)
     }
 }
