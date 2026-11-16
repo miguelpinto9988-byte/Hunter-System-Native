@@ -183,7 +183,7 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
         }
     fun efforts(): List<EffortObservation> =
         MonarchLegacyHistory.mergeEffort(
-            MonarchLegacyHistory.efforts(store.logs), explicitEfforts())
+            explicitEfforts(), MonarchLegacyHistory.efforts(store.logs))
     fun addEffort(day: LocalDate, category: Category?, rpe: Int, completed: Boolean,
                   interrupted: Boolean = false) {
         require(rpe in 1..10 && !day.isAfter(LocalDate.now()))
@@ -206,8 +206,8 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
     }
     fun participation(): List<Participation> =
         MonarchLegacyHistory.mergeParticipation(
-            MonarchLegacyHistory.participation(store.logs, store.catalog),
-            explicitParticipation())
+            explicitParticipation(),
+            MonarchLegacyHistory.participation(store.logs, store.catalog))
     /**
      * Estados pendientes derivados exclusivamente de propuestas realmente guardadas.
      * No convierte días omitidos, descansos ni actividades futuras en fracasos.
@@ -308,6 +308,15 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
     fun recordVolume(observation: VolumeObservation) {
         require(!observation.date.isAfter(LocalDate.now()))
         require(observation.completed) { "Volumen reservado a actividad completada explícitamente" }
+        require(participation().any {
+            it.date == observation.date && it.variantId == observation.variantId &&
+                it.category == observation.category &&
+                it.status == ParticipationStatus.COMPLETED && !it.interrupted
+        }) { "La actividad debe estar confirmada antes de registrar volumen" }
+        store.catalog.byId[observation.variantId]?.let { actual ->
+            require((if (actual.unit == "sec") VolumeUnit.SECONDS else VolumeUnit.REPETITIONS)
+                == observation.unit) { "Unidad no coincidente con el catálogo" }
+        }
         val r = root()
         val all = volume().filterNot { it.id == observation.id } + observation
         r.put("volume", arr(all.map {
