@@ -1,6 +1,7 @@
 name: Asterion engine tests
 on:
   push:
+    branches: [main]
     paths:
       - "app/src/main/java/com/huntersystem/app/asterion/**"
       - "app/src/main/java/com/huntersystem/app/Asterion*.kt"
