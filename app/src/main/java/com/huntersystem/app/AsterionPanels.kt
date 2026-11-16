@@ -287,6 +287,8 @@ fun AsterionMonarchSection(ui: NativeUi) {
     val repository = remember(store) { AsterionProgressRepository(store) }
     val accepted = remember(revision, cycle) { repository.monarchConsented(cycle) }
     val profile = AsterionProfileAdapter.from(store)
+    var preferred by remember(cycle) { mutableStateOf("none") }
+    val canOffer = profile != null && profile.weekly.any { it != 5 }
     val plan = remember(revision, cycle, accepted) {
         if (profile == null) null else repository.monarchPlan(start)
     }
@@ -296,9 +298,22 @@ fun AsterionMonarchSection(ui: NativeUi) {
         Heading("Ciclo voluntario", size = 22)
         HText("Las preferencias del jefe nunca modifican la elegibilidad, el equipo ni la complejidad.",
             size = 13, color = LocalHunter.current.muted)
+        if (!accepted && canOffer) {
+            HSelect("Prioridad de categoría opcional", preferred,
+                listOf("none" to "Sin prioridad") +
+                    Category.values().map { it.code to it.code.replace('_', ' ') }) {
+                preferred = it
+            }
+        }
+        if (!accepted && !canOffer)
+            HNotice("Tu calendario contiene únicamente descanso o falta configurar el perfil.")
         HButton(if (accepted) "DESACTIVAR CICLO SIN PENALIZACIÓN"
-            else "ACEPTAR CICLO DE CINCO DÍAS", Modifier.fillMaxWidth()) {
-            ui.attempt { repository.setMonarchConsent(cycle, !accepted) }
+            else "ACEPTAR CICLO DE CINCO DÍAS", Modifier.fillMaxWidth(),
+            enabled = accepted || canOffer) {
+            ui.attempt {
+                repository.setMonarchConsent(cycle, !accepted,
+                    CategoryMapper.normalize(preferred))
+            }
         }
         if (accepted) {
             if (plan == null || plan.days.isEmpty()) {
