@@ -168,6 +168,13 @@ class HunterProgressRulesTest {
             HunterProgressRules.technical(h,config,monday.plusDays(1),HunterCategory.UPPER).decision)
     }
 
+    @Test fun phaseRollbackWinsEvenWhenBothEventsAreOnSameDay() {
+        val state = HunterHistory(phaseChanges = listOf(
+            HunterPhaseChange(HunterCategory.UPPER,1,monday),
+            HunterPhaseChange(HunterCategory.UPPER,0,monday)))
+        assertEquals(0,state.phase(HunterCategory.UPPER))
+    }
+
     @Test fun summaryUsesEvaluatedOnlyAndNoDataIsNotZero() {
         val a = HunterActivityRecord(monday,"a",HunterCategory.UPPER,HunterStatus.PENDING)
         val empty = HunterProgressRules.summary(listOf(a))
