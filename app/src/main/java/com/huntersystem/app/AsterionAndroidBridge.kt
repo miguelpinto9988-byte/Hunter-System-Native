@@ -152,7 +152,7 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
         store.save()
     }
     private fun date(text: String): LocalDate? = runCatching { LocalDate.parse(text) }.getOrNull()
-    fun efforts(): List<EffortObservation> =
+    private fun explicitEfforts(): List<EffortObservation> =
         root().a("efforts").objects().mapNotNull { row ->
             val day = date(row.s("date")) ?: return@mapNotNull null
             val category = CategoryMapper.normalize(row.s("category"))
@@ -160,6 +160,9 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
             if (rpe !in 1..10) return@mapNotNull null
             EffortObservation(day, category, rpe, row.b("completed"), row.b("interrupted"))
         }
+    fun efforts(): List<EffortObservation> =
+        AsterionLegacyMigration.mergeEffort(
+            AsterionLegacyMigration.efforts(store.logs), explicitEfforts())
     fun addEffort(day: LocalDate, category: Category?, rpe: Int, completed: Boolean,
                   interrupted: Boolean = false) {
         require(rpe in 1..10 && !day.isAfter(LocalDate.now()))
@@ -172,19 +175,24 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
             "completed" to completed, "interrupted" to interrupted)))
         write(r)
     }
-    fun participation(): List<Participation> = root().a("participation").objects().mapNotNull { row ->
+    private fun explicitParticipation(): List<Participation> =
+        root().a("participation").objects().mapNotNull { row ->
         val day = date(row.s("date")) ?: return@mapNotNull null
         val category = CategoryMapper.normalize(row.s("category")) ?: return@mapNotNull null
         val status = runCatching { ParticipationStatus.valueOf(row.s("status")) }.getOrNull()
             ?: return@mapNotNull null
         Participation(day, row.s("id"), category, status, row.s("notes"), row.b("interrupted"))
     }
+    fun participation(): List<Participation> =
+        AsterionLegacyMigration.mergeParticipation(
+            AsterionLegacyMigration.participation(store.logs, store.catalog),
+            explicitParticipation())
     fun setParticipation(day: LocalDate, variantId: String, status: ParticipationStatus,
                          notes: String = "", interrupted: Boolean = false) {
         require(!day.isAfter(LocalDate.now()))
         val mission = pinned(day) ?: error("No hay misión fijada para la fecha")
         require(mission.category != null && variantId in mission.ids) { "ID fuera de la misión" }
-        val all = ProgressTrackingService.record(participation(),
+        val all = ProgressTrackingService.record(explicitParticipation(),
             Participation(day, variantId, mission.category, status, notes.take(1000), interrupted))
         val r = root()
         r.put("participation", arr(all.map {
