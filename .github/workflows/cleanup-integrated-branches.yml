@@ -1,0 +1,72 @@
+name: Limpiar ramas historicas ya integradas
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/cleanup-integrated-branches.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  prune-merged:
+    name: Eliminar solo ramas 100% contenidas en main
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verificar ancestria y eliminar ramas obsoletas
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin '+refs/heads/*:refs/remotes/origin/*'
+          branches=(
+            "codex/eclipse-ascension-redesign"
+            "design/v42-fase01-monarca-a-plus"
+            "design/v42-fase02-componentes-temas"
+            "design/v42-fase03-navegacion-acceso"
+            "design/v42-fase04-dashboard-monarca"
+            "design/v42-fase05-misiones-monarca"
+            "design/v42-fase06-rutinas-monarca"
+            "design/v42-fase07-reproductor-monarca"
+            "design/v42-fase08-personalizacion"
+            "design/v42-fase09-estadisticas"
+            "design/v42-fase10-microinteracciones"
+            "design/v42-plan-y-opciones-20261024"
+            "feature/hunter2000-svg-catalog-gated"
+            "feature/v43-12-pixel-art-png-complete"
+            "integration/hunter-v43-compose-2000"
+            "redesign/v39-referencia-20261023"
+            "feat/asterion-rules-engine-v44"
+          )
+          deleted=0
+          skipped=0
+          failed=0
+          for branch in "${branches[@]}"; do
+            [[ "$branch" != "main" ]] || exit 30
+            ref="refs/remotes/origin/$branch"
+            if ! git show-ref --verify --quiet "$ref"; then
+              echo "SKIP (already absent): $branch"
+              skipped=$((skipped + 1))
+              continue
+            fi
+            if ! git merge-base --is-ancestor "$ref" HEAD; then
+              echo "::warning::NOT DELETED (exclusive commits): $branch"
+              skipped=$((skipped + 1))
+              continue
+            fi
+            if gh api --method DELETE "/repos/$GITHUB_REPOSITORY/git/refs/heads/$branch" >/dev/null; then
+              echo "DELETED (ancestor of main): $branch"
+              deleted=$((deleted + 1))
+            else
+              echo "::error::Could not delete $branch"
+              failed=$((failed + 1))
+            fi
+          done
+          echo "Ramas eliminadas: $deleted; omitidas: $skipped; fallidas: $failed" >> "$GITHUB_STEP_SUMMARY"
+          [[ "$failed" -eq 0 ]]
