@@ -310,6 +310,18 @@ private fun MonarchMissionExercise(
             ui.attempt{s.setMissionStatus(date,index,
                 if(skipped)HunterStatus.PENDING else HunterStatus.SKIPPED)}
         }
+        if(!readOnly&&!inactive){
+            var progressNote by remember(date,e.id){mutableStateOf(item.s("progressNote"))}
+            HInput(progressNote,{progressNote=it},"Observación opcional",multiline=true)
+            HButton("GUARDAR OBSERVACIÓN"){
+                val status=when{
+                    item.s("progressStatus")=="SKIPPED"->HunterStatus.SKIPPED
+                    item.b("missionState")->HunterStatus.COMPLETED
+                    else->HunterStatus.PENDING
+                }
+                ui.attempt{s.setMissionStatus(date,index,status,progressNote)}
+            }
+        }
     }
 }
 
