@@ -388,10 +388,12 @@ object MonarchChallengePlanner {
     fun propose(start: LocalDate, accepted: Boolean, profile: TrainingProfile,
                 repository: ActivityRepositoryInterface, efforts: List<EffortObservation>,
                 preferred: List<Category> = emptyList(),
-                previousUsed: Set<String> = emptySet()): MonarchPlan {
+                previousUsed: Set<String> = emptySet(),
+                dailyMission: ((LocalDate) -> DailyMission)? = null): MonarchPlan {
         if (!accepted || profile.weekly.all { it == 5 }) return MonarchPlan(start, accepted, emptyList())
         val days = (0L..4L).map { start.plusDays(it) }.map { day ->
-            val normal = DailyMissionPlanner.plan(day, profile, repository, efforts)
+            val normal = dailyMission?.invoke(day)
+                ?: DailyMissionPlanner.plan(day, profile, repository, efforts)
             if (normal.category == null || normal.ids.isEmpty()) normal else {
                 // Un jefe solo puede ordenar categorías, jamás suprimir elegibilidad.
                 // El enfoque y el historial solo modifican orden y diversidad,
