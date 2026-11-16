@@ -207,3 +207,61 @@ fun AsterionRoutineSection(ui: NativeUi) {
             size = 12, color = LocalHunter.current.muted)
     }
 }
+
+
+/** Desafío de cinco días: distinto del evento semanal heredado, siempre optativo. */
+@Composable
+fun AsterionMonarchSection(ui: NativeUi) {
+    val store = ui.store
+    val revision = store.revision.intValue
+    val start = LocalDate.now().minusDays((LocalDate.now().dayOfWeek.value - 1).toLong())
+    val cycle = start.toString()
+    val repository = remember(store) { AsterionProgressRepository(store) }
+    val accepted = remember(revision, cycle) { repository.monarchConsented(cycle) }
+    val profile = AsterionProfileAdapter.from(store)
+    val plan = remember(revision, cycle, accepted) {
+        profile?.let {
+            MonarchChallengePlanner.propose(start, accepted, it,
+                AsterionActivitySource(store), repository.efforts())
+        }
+    }
+    val done = remember(revision, cycle) { repository.monarchCompleted(cycle).toSet() }
+    HPanel(padding = 16) {
+        Eyebrow("ASTERION · DESAFÍO MONARCA DE CINCO DÍAS")
+        Heading("Ciclo voluntario", size = 22)
+        HText("Las preferencias del jefe nunca modifican la elegibilidad, el equipo ni la complejidad.",
+            size = 13, color = LocalHunter.current.muted)
+        HButton(if (accepted) "DESACTIVAR CICLO SIN PENALIZACIÓN"
+            else "ACEPTAR CICLO DE CINCO DÍAS", Modifier.fillMaxWidth()) {
+            ui.attempt { repository.setMonarchConsent(cycle, !accepted) }
+        }
+        if (accepted) {
+            if (plan == null || plan.days.isEmpty()) {
+                HNotice("No hay días o actividades compatibles. El descanso se mantiene.")
+            } else {
+                plan.days.forEach { day ->
+                    HText(day.date.toString() + " · " +
+                        (day.category?.code?.replace('_', ' ') ?: "Descanso"),
+                        size = 15, bold = true)
+                    if (day.ids.isEmpty()) {
+                        HText("Sin actividades asignadas.", size = 12,
+                            color = LocalHunter.current.muted)
+                    }
+                    day.ids.forEach { id ->
+                        val finished = day.date.toString() + "|" + id in done
+                        HText((store.catalog.byId[id]?.name ?: id) +
+                            if (finished) " · Declarada completada" else " · Opcional",
+                            size = 13, color = LocalHunter.current.muted)
+                        if (day.date == LocalDate.now() && !finished) {
+                            HButton("DECLARAR PARTICIPACIÓN", Modifier.fillMaxWidth()) {
+                                ui.attempt {
+                                    repository.markMonarchCompletion(cycle, day.date, id)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
