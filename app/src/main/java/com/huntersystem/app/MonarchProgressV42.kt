@@ -369,6 +369,7 @@ fun MonarchProgressScreen(ui:NativeUi){
             HNotice("${data.quickCompletions} sesiones se confirmaron sin registrar series "+
                 "en este período. Cuentan como completadas, pero no inventamos repeticiones ni series.")
         }
+        AsterionProgressSection(ui)
         MonarchAchievementGrid(ui,all)
         HPanel(padding=16){
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,

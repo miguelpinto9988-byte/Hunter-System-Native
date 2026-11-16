@@ -89,6 +89,7 @@ private fun routineMinutes(s:NativeStore,r:JSONObject,p:JSONObject)=
         HText("Elige una secuencia de la biblioteca o genera una sesión adaptada a tu perfil, totalmente sin conexión.",
             size=16,color=LocalHunter.current.muted)
         TrainingMode(ui)
+        AsterionRoutineSection(ui)
         MonarchRoutineModeCard(
             title="Biblioteca Hunter",subtitle="$normal rutinas originales · sin conexión",
             tag="01  /  ENTRENAR SIN EQUIPO DE GIMNASIO",

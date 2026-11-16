@@ -210,6 +210,7 @@ fun MonarchMissionContent(ui:NativeUi,date:String) {
                 if(day.s("kind")=="rest")"Día de descanso elegido en tu calendario."
                 else "Esta misión todavía no tiene ejercicios compatibles. Revisa tu Perfil."
             )
+            AsterionMissionSection(ui,date)
             if(items.isNotEmpty()) {
                 Eyebrow("EJERCICIOS DE LA MISIÓN")
                 items.forEachIndexed { index,item ->
