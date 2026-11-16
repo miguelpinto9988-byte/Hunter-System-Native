@@ -141,14 +141,7 @@ fun MonarchDashboardMission(ui: NativeUi) {
     val currentDate = today()
     val day = s.day(currentDate)
     val log = s.logs.optJSONObject(currentDate)
-    // La tarjeta inicial y la pantalla de misiones consultan el mismo motor.
-    val unified = AsterionProfileAdapter.from(s) != null &&
-        !s.activeLog(log) && !day.b("customized") &&
-        !day.has("routineId") && !day.b("creatorAssigned") && !day.b("manual")
-    if (unified) {
-        AsterionHomeSummary(ui)
-        return
-    }
+    // El panel y la pantalla de misiones comparten el mismo día nativo.
     val progress = s.fraction(log).toFloat().coerceIn(0f, 1f)
     val finished = log?.b("complete") == true
     val paused = log?.b("pain") == true
