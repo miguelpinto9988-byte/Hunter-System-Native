@@ -174,7 +174,13 @@ fun MonarchMissionContent(ui:NativeUi,date:String) {
         val progress=(fraction*100f).roundToInt()
         val hasWorkout=items.isNotEmpty() && day.s("kind")!="rest"
         val canStart=date==today()&&!readOnly&&hasWorkout
-        HPanel(padding=18) {
+        // Una sola misión visible. Las sesiones manuales y los registros ya
+        // iniciados siguen usando su historial y reproductor original.
+        val unified = date==today() && AsterionProfileAdapter.from(s)!=null &&
+            !s.activeLog(log) && !day.b("customized") &&
+            !day.has("routineId") && !day.b("creatorAssigned") && !day.b("manual")
+        if(unified) AsterionMissionSection(ui,date)
+        else HPanel(padding=18) {
             Row(Modifier.fillMaxWidth(),
                 horizontalArrangement=Arrangement.SpaceBetween,
                 verticalAlignment=Alignment.CenterVertically) {
@@ -210,7 +216,6 @@ fun MonarchMissionContent(ui:NativeUi,date:String) {
                 if(day.s("kind")=="rest")"Día de descanso elegido en tu calendario."
                 else "Esta misión todavía no tiene ejercicios compatibles. Revisa tu Perfil."
             )
-            AsterionMissionSection(ui,date)
             if(items.isNotEmpty()) {
                 Eyebrow("EJERCICIOS DE LA MISIÓN")
                 items.forEachIndexed { index,item ->
@@ -273,7 +278,8 @@ private fun MonarchMissionExercise(
     val doneSets=item.a("actual").objects().count{it.b("done")}
     val prescribed=item.i("sets").coerceAtLeast(0)
     val reported=item.b("missionState")||item.b("selfReported")
-    val checked=reported||(prescribed>0&&doneSets>=prescribed)
+    val skipped=item.s("progressStatus")=="SKIPPED"
+    val checked=!skipped&&(reported||(prescribed>0&&doneSets>=prescribed))
     val inactive=item.b("archived")
     val shape=RoundedCornerShape(17.dp)
     Column(Modifier.fillMaxWidth().clip(shape)
@@ -304,6 +310,24 @@ private fun MonarchMissionExercise(
             done=checked,enabled=!readOnly&&!inactive,
             subtitle=if(readOnly)"Solo lectura" else if(inactive)"Actividad archivada" else ""
         ) {ui.attempt{s.toggleMission(date,index)}}
+        if(skipped)HText("Actividad omitida voluntariamente; no cuenta como completada.",
+            size=12,color=colors.muted)
+        if(!readOnly&&!inactive){
+            HButton(if(skipped)"VOLVER A PENDIENTE" else "OMITIR ACTIVIDAD"){
+                ui.attempt{s.setMissionStatus(date,index,
+                    if(skipped)com.huntersystem.app.asterion.ParticipationStatus.PENDING
+                    else com.huntersystem.app.asterion.ParticipationStatus.SKIPPED)}
+            }
+            var progressNote by remember(date,e.id){mutableStateOf(item.s("progressNote"))}
+            HInput(progressNote,{progressNote=it},"Observación opcional",multiline=true)
+            HButton("GUARDAR OBSERVACIÓN"){
+                ui.attempt{s.setMissionStatus(date,index,when{
+                    skipped->com.huntersystem.app.asterion.ParticipationStatus.SKIPPED
+                    checked->com.huntersystem.app.asterion.ParticipationStatus.COMPLETED
+                    else->com.huntersystem.app.asterion.ParticipationStatus.PENDING
+                },progressNote)}
+            }
+        }
     }
 }
 
@@ -340,27 +364,27 @@ private fun MonarchMissionCheck(
 @Composable
 private fun MonarchMissionsProgress(ui:NativeUi) {
     val s=ui.store
+    s.revision.intValue
     val c=LocalHunter.current
     val todayLocal=LocalDate.parse(today())
     val monday=todayLocal.minusDays((todayLocal.dayOfWeek.value-1).toLong())
-    val eligible=(0L..6L).map{monday.plusDays(it).toString()}
-        .filter{it<=today()&&s.day(it).s("kind")!="rest"}
-    val completed=eligible.count{s.logs.o(it).b("complete")}
-    val inProgress=eligible.count{
-        val log=s.logs.optJSONObject(it)
-        log!=null&&!log.b("complete")&&!log.b("pain")
+    val records=AsterionProgressRepository(s).plannedParticipation().filter {
+        !it.date.isBefore(monday) && !it.date.isAfter(todayLocal)
     }
-    val fraction=if(eligible.isEmpty())0f else completed.toFloat()/eligible.size
+    val summary=com.huntersystem.app.asterion.ProgressSummary.calculate(records)
     HPanel(padding=17) {
-        Eyebrow("03  ·  AVANCE SEMANAL")
+        Eyebrow("03  ·  PARTICIPACIÓN SEMANAL")
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
             verticalAlignment=Alignment.CenterVertically) {
             Heading("Tu progreso",size=25)
-            HText("$completed / ${eligible.size}",size=19,color=c.accent,bold=true)
+            HText(summary.label,size=17,color=c.accent,bold=true)
         }
-        HProgress(fraction)
-        HText("$completed días completados · $inProgress en curso",
+        summary.percent?.let{HProgress(it/100f)}
+        HText(summary.completed.toString()+" completadas · "+
+            summary.skipped+" omitidas · "+summary.pending+" pendientes",
             size=15,color=c.muted)
+        HText("Tasa solo entre actividades completadas u omitidas. Descanso y pendientes no se penalizan.",
+            size=13,color=c.muted)
         HButton("REVISIÓN DE MI SEMANA  ↗",Modifier.fillMaxWidth()) {
             ui.open("review")
         }

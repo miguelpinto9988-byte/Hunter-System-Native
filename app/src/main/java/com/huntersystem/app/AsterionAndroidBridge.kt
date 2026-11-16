@@ -12,27 +12,51 @@ class AsterionActivitySource(private val store: NativeStore) : ActivityRepositor
         val adjusted = store.adjusted()
         store.catalog.exercises.mapNotNull { e ->
             val category = CategoryMapper.normalize(e.type) ?: return@mapNotNull null
-            val levelValue = if (e.raw.has("technicalLevel")) e.raw.i("technicalLevel")
-                else if (e.meta.has("level")) e.meta.i("level") + 1 else 0
-            val unitKnown = e.raw.optJSONArray("materialRequirements") != null
-            val materials = e.raw.a("materialRequirements").strings().filter { it != "body" }.toSet()
+            val levelValue = when {
+                e.raw.has("technicalLevel") -> e.raw.i("technicalLevel")
+                e.raw.has("technicalLevel46") -> e.raw.i("technicalLevel46")
+                e.meta.has("level") -> e.planningLevel + 1
+                else -> 0 // sin metadatos: nivel 0 bloqueado
+            }.takeIf { it in 0..5 } ?: 0
+            val declaredMaterials = e.raw.optJSONArray("materialRequirements")
+            val allowedGear = buildSet {
+                addAll(e.raw.a("materials46").strings())
+                addAll(e.raw.a("materialRequirements").strings())
+                if (e.equipment == "db") add("db")
+                if (e.equipment == "gym" || e.gym) add("gym")
+            }.filterNot { it == "body" }.toSet()
             val intensity = when (e.raw.s("intensity", e.meta.s("intensity")).lowercase()) {
                 "low", "baja", "suave" -> Intensity.LOW
-                "moderate", "moderada", "media" -> Intensity.MODERATE
+                "moderate", "moderada", "media", "medium" -> Intensity.MODERATE
                 "high", "alta" -> Intensity.HIGH
-                else -> Intensity.UNKNOWN // metadatos ausentes: fallo cerrado
+                else -> when {
+                    // Solo descriptores que ya constan en el catálogo; no inferir técnica de edad.
+                    !e.power && !e.impact &&
+                        e.raw.s("impact") in listOf("Bajo", "Sin saltos") &&
+                        e.meta.has("conditioning") && e.meta.i("conditioning") <= 1 ->
+                        Intensity.LOW
+                    e.raw.s("impact") in listOf("Moderado", "Medio") &&
+                        e.meta.has("conditioning") && e.meta.i("conditioning") <= 2 ->
+                        Intensity.MODERATE
+                    else -> Intensity.UNKNOWN
+                }
             }
             val familyId = category.code + "/" + e.family
             val typeId = familyId + "/" + e.pattern.ifBlank { e.oldFamily }
-            val eligibility = unitKnown && !e.raw.b("sourceOnly") &&
+            val eligibility = (declaredMaterials != null || e.raw.optJSONArray("materials46") != null) &&
+                !e.raw.b("sourceOnly") && !e.raw.b("pendingTechnicalReview") &&
                 !(e.raw.b("sourceExpansion2k") && !e.raw.b("approvedForAutoplan")) &&
                 store.rules.compatible(e, adjusted)
-            ActivityMetadata(e.id, category, familyId, typeId, levelValue.coerceIn(0, 5),
-                intensity, materials, e.raw.s("modality", "no_especificada"),
-                e.raw.b("requiresSupervision") || e.raw.b("highSkill46"),
-                eligibility, e.raw.a("sportTags").strings().toSet() +
-                    e.raw.a("goalTags").strings().toSet(),
-                e.raw.a("restrictionTags").strings().toSet())
+            ActivityMetadata(e.id, category, familyId, typeId, levelValue, intensity, allowedGear,
+                e.raw.s("modality", "no_especificada"),
+                e.raw.b("requiresSupervision") || e.raw.b("supervisionRequired") ||
+                    e.raw.b("highSkill46"),
+                eligibility, buildSet {
+                    addAll(e.raw.a("sportTags").strings())
+                    addAll(e.raw.a("goalTags").strings())
+                    addAll(e.raw.a("tags").strings())
+                    if (e.pattern.isNotBlank()) add(e.pattern)
+                }, e.raw.a("restrictionTags").strings().toSet())
         }
     }
     override fun all(): List<ActivityMetadata> = rows
@@ -47,26 +71,38 @@ object AsterionProfileAdapter {
             "intermediate" -> Experience.INTERMEDIATE
             else -> Experience.BEGINNER
         }
-        val week = if (p.a("weeklyCategories").length() == 7)
-            p.a("weeklyCategories").ints()
-        else (0..6).map { mondayIndex ->
+        // Los formatos `weekCategories` (texto) y `weeklyCategories` (0..5)
+        // usan lunes=0; el calendario legacy `weekPlan` usa domingo=0.
+        val numericWeek = p.optJSONArray("weeklyCategories")
+        val textualWeek = p.optJSONArray("weekCategories")
+        val explicitWeek: List<Int>? = when {
+            numericWeek?.length() == 7 -> numericWeek.ints().takeIf { it.all { n -> n in 0..5 } }
+            textualWeek?.length() == 7 -> textualWeek.strings().map {
+                if (it in listOf("descanso", "rest")) 5
+                else CategoryMapper.normalize(it)?.ordinal ?: 5
+            }
+            else -> null
+        }
+        val week = explicitWeek ?: (0..6).map { mondayIndex ->
             val oldIndex = (mondayIndex + 1) % 7
             when (p.a("weekPlan").optString(oldIndex, "rest")) {
                 "train" -> when (p.a("weekFocus").optString(oldIndex, "upper")) {
                     "upper" -> 0
-                    "core" -> 1
-                    "lower" -> 2
+                    "core", "tronco", "integrado" -> 1
+                    "lower", "piernas" -> 2
                     else -> 5
                 }
-                "mobility" -> 3
+                "mobility", "recovery" -> 3
                 "cardio" -> 4
                 else -> 5
             }
         }
         val savedStart = store.state.o("asterionV1").s("experienceSince")
         val since = runCatching { LocalDate.parse(savedStart) }.getOrNull()
+            ?: runCatching { LocalDate.parse(p.s("experienceStartedAt")) }.getOrNull()
             ?: LocalDate.now()
         val declared = buildSet {
+            add("body")
             val gear = p.s("equipment", "body")
             if (gear == "db" || gear == "gym") add("db")
             if (gear == "gym") add("gym")
@@ -80,7 +116,7 @@ object AsterionProfileAdapter {
         }.toSet()
         return runCatching {
             TrainingProfile(experience, since, week, declared, restrictions,
-                p.s("intensityPreference") == "low",
+                p.s("intensityPreference", "baja") in listOf("low", "baja"),
                 p.i("dailyMissions", 3).coerceIn(1, 7),
                 p.i("minutes", 20).coerceAtLeast(1),
                 p.s("custom_goal", p.s("finalGoal")), p.s("goal", "general"),
@@ -97,13 +133,23 @@ object AsterionProfileAdapter {
 class AsterionProgressRepository(private val store: NativeStore) : VolumeProfileInterface {
     /** Solo lee referencias ya validadas y entregadas por una integración externa. */
     override fun find(variantId: String): VolumeProfile? {
-        val record = root().o("validatedVolumeProfiles").optJSONObject(variantId)
-            ?: return null
+        val exercise = store.catalog.byId[variantId] ?: return null
+        // Fuente primaria: metadatos de la misma variante en el catálogo externo.
+        // Fuente importada: exige identidad y revisión del proveedor verificables.
+        val catalogProfile = exercise.raw.optJSONObject("volumeProfile")
+        val record = if (catalogProfile?.b("validated") == true) catalogProfile
+            else root().o("validatedVolumeProfiles").optJSONObject(variantId) ?: return null
         return runCatching {
             require(record.b("validated") && record.s("variantId") == variantId)
+            require(catalogProfile === record ||
+                (record.s("sourceId").isNotBlank() &&
+                 record.s("sourceRevision").isNotBlank()))
             require(record.has("minimum") && record.has("maximum") &&
                 record.has("permittedIncrement"))
-            VolumeProfile(variantId, VolumeUnit.valueOf(record.s("unit")),
+            val unit = VolumeUnit.valueOf(record.s("unit"))
+            require(unit == (if (exercise.unit == "sec") VolumeUnit.SECONDS
+                             else VolumeUnit.REPETITIONS))
+            VolumeProfile(variantId, unit,
                 record.i("initialSets").takeIf { record.has("initialSets") },
                 record.i("initialValue").takeIf { record.has("initialValue") },
                 record.i("minimum"), record.i("maximum"),
@@ -116,7 +162,7 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
         store.save()
     }
     private fun date(text: String): LocalDate? = runCatching { LocalDate.parse(text) }.getOrNull()
-    fun efforts(): List<EffortObservation> =
+    private fun explicitEfforts(): List<EffortObservation> =
         root().a("efforts").objects().mapNotNull { row ->
             val day = date(row.s("date")) ?: return@mapNotNull null
             val category = CategoryMapper.normalize(row.s("category"))
@@ -124,6 +170,9 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
             if (rpe !in 1..10) return@mapNotNull null
             EffortObservation(day, category, rpe, row.b("completed"), row.b("interrupted"))
         }
+    fun efforts(): List<EffortObservation> =
+        AsterionLegacyMigration.mergeEffort(
+            AsterionLegacyMigration.efforts(store.logs), explicitEfforts())
     fun addEffort(day: LocalDate, category: Category?, rpe: Int, completed: Boolean,
                   interrupted: Boolean = false) {
         require(rpe in 1..10 && !day.isAfter(LocalDate.now()))
@@ -136,19 +185,52 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
             "completed" to completed, "interrupted" to interrupted)))
         write(r)
     }
-    fun participation(): List<Participation> = root().a("participation").objects().mapNotNull { row ->
+    private fun explicitParticipation(): List<Participation> =
+        root().a("participation").objects().mapNotNull { row ->
         val day = date(row.s("date")) ?: return@mapNotNull null
         val category = CategoryMapper.normalize(row.s("category")) ?: return@mapNotNull null
         val status = runCatching { ParticipationStatus.valueOf(row.s("status")) }.getOrNull()
             ?: return@mapNotNull null
         Participation(day, row.s("id"), category, status, row.s("notes"), row.b("interrupted"))
     }
+    fun participation(): List<Participation> =
+        AsterionLegacyMigration.mergeParticipation(
+            AsterionLegacyMigration.participation(store.logs, store.catalog),
+            explicitParticipation())
+    /**
+     * Estados pendientes derivados exclusivamente de propuestas realmente guardadas.
+     * No convierte días omitidos, descansos ni actividades futuras en fracasos.
+     */
+    fun plannedParticipation(until: LocalDate = LocalDate.now()): List<Participation> {
+        val planned = mutableListOf<Participation>()
+        for (day in root().a("missions").objects()) {
+            val date = date(day.s("date")) ?: continue
+            if (date.isAfter(until)) continue
+            val category = CategoryMapper.normalize(day.s("category")) ?: continue
+            for (id in day.a("ids").strings()) {
+                val exercise = store.catalog.byId[id] ?: continue
+                if (CategoryMapper.normalize(exercise.type) == category)
+                    planned += Participation(date, id, category, ParticipationStatus.PENDING)
+            }
+        }
+        for (day in store.allDays()) {
+            val date = date(day.s("date")) ?: continue
+            if (date.isAfter(until) || day.s("kind") == "rest") continue
+            for (item in day.a("items").objects()) {
+                val id = item.s("id")
+                val category = CategoryMapper.normalize(store.catalog.byId[id]?.type ?: "")
+                    ?: continue
+                planned += Participation(date, id, category, ParticipationStatus.PENDING)
+            }
+        }
+        return AsterionLegacyMigration.mergeParticipation(planned, participation())
+    }
     fun setParticipation(day: LocalDate, variantId: String, status: ParticipationStatus,
                          notes: String = "", interrupted: Boolean = false) {
         require(!day.isAfter(LocalDate.now()))
         val mission = pinned(day) ?: error("No hay misión fijada para la fecha")
         require(mission.category != null && variantId in mission.ids) { "ID fuera de la misión" }
-        val all = ProgressTrackingService.record(participation(),
+        val all = ProgressTrackingService.record(explicitParticipation(),
             Participation(day, variantId, mission.category, status, notes.take(1000), interrupted))
         val r = root()
         r.put("participation", arr(all.map {
@@ -190,6 +272,18 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
         r.put("phases", entries)
         write(r)
     }
+    /** Reversión explícita sin borrar hitos anteriores ni historial por categoría. */
+    fun revertPhase(category: Category): Boolean {
+        val current = phases()[category] ?: return false
+        if (current.phase == 0) return false
+        val r = root()
+        val phases = r.o("phases")
+        phases.put(category.code, obj("phase" to current.phase - 1,
+            "lastChange" to LocalDate.now().toString()))
+        r.put("phases", phases)
+        write(r)
+        return true
+    }
     fun volume(): List<VolumeObservation> = root().a("volume").objects().mapNotNull { row ->
         runCatching {
             VolumeObservation(row.s("id"), LocalDate.parse(row.s("date")),
@@ -215,6 +309,36 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
         }))
         write(r)
     }
+    /**
+     * Guarda únicamente consentimiento de una referencia futura. No modifica
+     * misiones, series realizadas, pesos ni el plan del día.
+     */
+    fun acceptVolumeReference(day: LocalDate, variantId: String): Boolean {
+        require(day == LocalDate.now()) { "La referencia solo puede aceptarse hoy" }
+        val profile = AsterionProfileAdapter.from(store) ?: error("Perfil no configurado")
+        val activity = AsterionActivitySource(store).byId(variantId)
+            ?: error("Variante desconocida")
+        val block = blocks()[variantId] ?: VolumeResetPolicy.block(
+            activity.category, variantId, profile.experience, profile.experienceStart)
+        val suggestion = VolumeProgressionEngine.review(
+            day, activity, find(variantId), volume(), block, efforts())
+        require(suggestion.optional && suggestion.reference != null && suggestion.sets != null &&
+            suggestion.decision in setOf(VolumeDecision.OPTIONAL_INCREASE,
+                VolumeDecision.REVIEW_EXTRA_SET, VolumeDecision.OPTIONAL_MINIMUM_ADJUSTMENT)) {
+            "No existe un aumento opcional verificable para aceptar"
+        }
+        val key = variantId + "|" + block
+        val r = root()
+        val accepted = r.o("acceptedVolumeReferences")
+        val next = obj("variantId" to variantId, "blockId" to block,
+            "unit" to suggestion.unit!!.name, "value" to suggestion.reference,
+            "sets" to suggestion.sets, "acceptedOn" to day.toString())
+        if (accepted.optJSONObject(key)?.toString() == next.toString()) return false
+        accepted.put(key, next)
+        r.put("acceptedVolumeReferences", accepted)
+        write(r)
+        return true
+    }
     fun blocks(): Map<String, String> = root().o("blocks").entries().mapNotNull {
         (id, value) -> (value as? String)?.let { id to it }
     }.toMap()
@@ -238,15 +362,65 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
         return points
     }
     fun routinePoints(): Int = root().a("routineDays").length() * 10
-    fun setMonarchConsent(cycleId: String, accepted: Boolean) {
-        require(cycleId.isNotBlank())
+    fun setMonarchConsent(cycleId: String, accepted: Boolean,
+                          preferred: Category? = null) {
+        // Los identificadores históricos de ciclos permanecen legibles;
+        // solo una fecha ISO puede generar un nuevo desafío de cinco días.
+        val start = runCatching { LocalDate.parse(cycleId) }.getOrNull()
         val r = root()
+        if (accepted && start != null && !r.o("monarchPlans").has(cycleId)) {
+            val profile = AsterionProfileAdapter.from(store) ?: error("Perfil no configurado")
+            val source = AsterionActivitySource(store)
+            val previousIds = r.o("monarchPlans").entries()
+                .filter { it.first != cycleId }.flatMap { (_, raw) ->
+                    (raw as? org.json.JSONArray)?.objects()?.flatMap { it.a("ids").strings() }
+                        ?: emptyList()
+                }.toSet()
+            val offer = MonarchChallengePlanner.propose(start, true, profile, source,
+                efforts(), preferred?.let { listOf(it) } ?: emptyList(), previousIds)
+            require(offer.days.any { it.ids.isNotEmpty() }) {
+                "El calendario no contiene alternativas compatibles para Monarca"
+            }
+            val plans = r.o("monarchPlans")
+            plans.put(cycleId, arr(offer.days.map { day ->
+                obj("date" to day.date.toString(),
+                    "category" to (day.category?.code ?: "descanso"),
+                    "ids" to arr(day.ids), "profileHash" to day.profileHash,
+                    "catalogHash" to day.catalogHash,
+                    "explanation" to day.explanation)
+            }))
+            r.put("monarchPlans", plans)
+        }
         val current = r.o("monarchConsent")
         current.put(cycleId, accepted)
         r.put("monarchConsent", current)
         write(r)
     }
     fun monarchConsented(cycleId: String): Boolean = root().o("monarchConsent").b(cycleId)
+    fun monarchPlan(start: LocalDate): MonarchPlan {
+        val cycleId = start.toString()
+        val accepted = monarchConsented(cycleId)
+        if (!accepted) return MonarchPlan(start, false, emptyList())
+        val profile = AsterionProfileAdapter.from(store) ?: return MonarchPlan(start, true, emptyList())
+        val source = AsterionActivitySource(store)
+        val days = root().o("monarchPlans").optJSONArray(cycleId)?.objects()?.mapNotNull { row ->
+            val date = date(row.s("date")) ?: return@mapNotNull null
+            if (date < start || !date.isBefore(start.plusDays(5))) return@mapNotNull null
+            val category = CategoryMapper.normalize(row.s("category"))
+            val scheduled = profile.category(date)
+            val ids = if (category == null || category != scheduled) emptyList()
+                else row.a("ids").strings().distinct().filter { id ->
+                    source.byId(id)?.let { item ->
+                        item.category == category && EligibilityPolicy.compatible(item, profile)
+                    } == true
+                }
+            DailyMission(date, scheduled, row.s("profileHash"),
+                row.s("catalogHash"), ids,
+                row.s("explanation") + if (ids.size < row.a("ids").length())
+                    " Algunas opciones quedaron incompatibles tras cambiar el perfil." else "")
+        } ?: emptyList()
+        return MonarchPlan(start, accepted, days)
+    }
     fun monarchCompleted(cycleId: String): List<String> =
         root().a("monarchCompletion").objects().filter { it.s("cycle") == cycleId }
             .map { it.s("date") + "|" + it.s("id") }
@@ -254,9 +428,7 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
         require(day == LocalDate.now()) { "Solo puedes declarar la fecha local actual" }
         require(monarchConsented(cycleId)) { "Monarca requiere consentimiento explícito" }
         val start = LocalDate.parse(cycleId)
-        val profile = AsterionProfileAdapter.from(store) ?: error("Perfil no configurado")
-        val plan = MonarchChallengePlanner.propose(start, true, profile,
-            AsterionActivitySource(store), efforts())
+        val plan = monarchPlan(start)
         require(plan.days.any { it.date == day && variantId in it.ids }) {
             "La actividad no pertenece a un desafío vigente y compatible"
         }

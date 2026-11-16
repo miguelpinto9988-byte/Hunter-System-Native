@@ -34,6 +34,12 @@ fun AsterionMissionSection(ui: NativeUi, date: String) {
         Heading(if (mission.category == null) "Descanso programado"
             else mission.category.code.replace('_', ' '), size = 23)
         HText(mission.explanation, size = 14, color = LocalHunter.current.muted)
+        if (mission.category != null && date == today() &&
+            (progress.phases()[mission.category]?.phase ?: 0) > 0) {
+            HButton("VOLVER A FASE TÉCNICA ANTERIOR", Modifier.fillMaxWidth()) {
+                ui.attempt { progress.revertPhase(mission.category) }
+            }
+        }
         current.checkpoint?.let { checkpoint ->
             HText("Hito técnico: día " + checkpoint.day +
                 " · decisión " + checkpoint.decision.name.lowercase().replace('_', ' ') +
@@ -68,6 +74,18 @@ fun AsterionMissionSection(ui: NativeUi, date: String) {
                     recommendation.reference + " " + recommendation.unit?.name +
                     ". " + recommendation.explanation,
                     size = 12, color = LocalHunter.current.muted)
+                if (date == today() &&
+                    recommendation.decision in setOf(VolumeDecision.OPTIONAL_INCREASE,
+                        VolumeDecision.REVIEW_EXTRA_SET,
+                        VolumeDecision.OPTIONAL_MINIMUM_ADJUSTMENT) &&
+                    recommendation.optional) {
+                    HButton("ACEPTAR REFERENCIA OPCIONAL (SIN APLICARLA)", Modifier.fillMaxWidth()) {
+                        ui.attempt { progress.acceptVolumeReference(day, id) }
+                    }
+                }
+            }
+            if (date == today() && status?.status == ParticipationStatus.COMPLETED) {
+                AsterionVolumeEditor(ui, progress, day, id, mission.category)
             }
             if (date == today()) {
                 Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
@@ -84,7 +102,7 @@ fun AsterionMissionSection(ui: NativeUi, date: String) {
                 }
                 HButton("REGISTRAR INTERRUPCIÓN", Modifier.fillMaxWidth()) {
                     ui.attempt {
-                        progress.setParticipation(day, id, ParticipationStatus.SKIPPED,
+                        progress.setParticipation(day, id, ParticipationStatus.PENDING,
                             "Interrupción declarada", interrupted = true)
                     }
                 }
@@ -114,38 +132,68 @@ fun AsterionMissionSection(ui: NativeUi, date: String) {
 
 @Composable
 fun AsterionProgressSection(ui: NativeUi) {
-    val s = ui.store
-    val revision = s.revision.intValue
-    val records = remember(revision) { AsterionProgressRepository(s).participation() }
-    val efforts = remember(revision) { AsterionProgressRepository(s).efforts() }
+    val store = ui.store
+    val revision = store.revision.intValue
+    val progress = remember(store) { AsterionProgressRepository(store) }
+    var window by remember { mutableIntStateOf(7) }
     val date = LocalDate.now()
-    val pending = remember(revision) {
-        val pinned = AsterionProgressRepository(s).pinned(date)
-        pinned?.ids?.filterNot { id -> records.any { it.date == date && it.variantId == id } }
-            ?.mapNotNull { id -> pinned.category?.let { Participation(date, id, it, ParticipationStatus.PENDING) } }
-            ?: emptyList()
+    val records = remember(revision) { progress.plannedParticipation() }
+    val efforts = remember(revision) { progress.efforts() }
+    val visible = records.filter {
+        !it.date.isAfter(date) && (window == 0 || !it.date.isBefore(date.minusDays((window - 1).toLong())))
     }
-    val summary = ProgressSummary.calculate(records + pending)
+    val summary = ProgressSummary.calculate(visible)
+    val weeklyMonday = date.minusDays((date.dayOfWeek.value - 1).toLong())
+    val weekly = ProgressSummary.calculate(records.filter {
+        !it.date.isBefore(weeklyMonday) && !it.date.isAfter(date)
+    })
     HPanel(padding = 16) {
-        Eyebrow("ASTERION · PARTICIPACIÓN POR ACTIVIDAD")
+        Eyebrow("ASTERION · PARTICIPACIÓN REAL")
+        Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            HChip("7 DÍAS", window == 7, Modifier.weight(1f)) { window = 7 }
+            HChip("30 DÍAS", window == 30, Modifier.weight(1f)) { window = 30 }
+            HChip("TODO", window == 0, Modifier.weight(1f)) { window = 0 }
+        }
         Heading(summary.label, size = 28)
         HText("Planificadas: " + summary.planned + " · Completadas: " +
             summary.completed + " · Omitidas: " + summary.skipped +
             " · Pendientes: " + summary.pending, size = 14)
-        HText("Porcentaje calculado solo con completadas y omitidas; las pendientes no cuentan.",
-            size = 12, color = LocalHunter.current.muted)
+        HText("Las pendientes no se consideran incumplimientos. Tasa semanal: " +
+            weekly.label, size = 12, color = LocalHunter.current.muted)
         Category.values().forEach { category ->
-            val count = records.count { it.category == category &&
+            val count = visible.count { it.category == category &&
                 it.status == ParticipationStatus.COMPLETED }
-            val ratings = efforts.filter { it.category == category }
-            val average = ratings.map { it.rpe }.takeIf { it.isNotEmpty() }?.average()
+            val categoryRatings = efforts.filter { it.category == category && it.date <= date &&
+                (window == 0 || !it.date.isBefore(date.minusDays((window - 1).toLong()))) }
+            val mean = categoryRatings.map { it.rpe }.takeIf { it.isNotEmpty() }?.average()
+            val review = WeeklyCategoryChallengePolicy.review(efforts, date, category)
             HText(category.code.replace('_', ' ') + ": " + count +
-                " completadas · esfuerzo: " +
-                (average?.let { "%.1f".format(it) + "/10" } ?: "sin datos"),
+                " completadas · esfuerzo " +
+                (mean?.let { "%.1f".format(it) + "/10" } ?: "sin datos") +
+                " · revisión " + review.name.lowercase().replace('_', ' '),
                 size = 13, color = LocalHunter.current.muted)
         }
-        HText("Los registros globales antiguos permanecen separados. Las referencias de volumen no se calculan sin parámetros validados.",
+        val globalEfforts = efforts.filter { it.category == null }
+        val first = globalEfforts.minOfOrNull { it.date } ?: date
+        val global = EffortReviewEngine.review(first, date, globalEfforts)
+        HText("Ciclo de RPE global: día " + global.cycleDay + "/21 · " +
+            global.observations + " valoraciones · " +
+            (global.average?.let { "%.1f".format(it) + "/10" } ?: "sin datos suficientes"),
+            size = 13, color = LocalHunter.current.muted)
+        HText("El RPE global heredado es descriptivo y nunca se traslada a una categoría.",
             size = 12, color = LocalHunter.current.muted)
+        if (visible.isNotEmpty()) {
+            Eyebrow("RESULTADOS POR FECHA · ÚLTIMOS REGISTROS")
+            visible.sortedWith(compareByDescending<Participation> { it.date }
+                .thenBy { it.variantId }).take(12).forEach { entry ->
+                HText(entry.date.toString() + " · " +
+                    (store.catalog.byId[entry.variantId]?.name ?: entry.variantId) +
+                    " · " + entry.status.name.lowercase() +
+                    (if (entry.interrupted) " · interrumpida" else ""),
+                    size = 12, color = LocalHunter.current.muted)
+            }
+        } else HText("Sin actividades registradas para el período seleccionado.",
+            size = 13, color = LocalHunter.current.muted)
     }
 }
 
@@ -239,11 +287,10 @@ fun AsterionMonarchSection(ui: NativeUi) {
     val repository = remember(store) { AsterionProgressRepository(store) }
     val accepted = remember(revision, cycle) { repository.monarchConsented(cycle) }
     val profile = AsterionProfileAdapter.from(store)
+    var preferred by remember(cycle) { mutableStateOf("none") }
+    val canOffer = profile != null && profile.weekly.any { it != 5 }
     val plan = remember(revision, cycle, accepted) {
-        profile?.let {
-            MonarchChallengePlanner.propose(start, accepted, it,
-                AsterionActivitySource(store), repository.efforts())
-        }
+        if (profile == null) null else repository.monarchPlan(start)
     }
     val done = remember(revision, cycle) { repository.monarchCompleted(cycle).toSet() }
     HPanel(padding = 16) {
@@ -251,9 +298,22 @@ fun AsterionMonarchSection(ui: NativeUi) {
         Heading("Ciclo voluntario", size = 22)
         HText("Las preferencias del jefe nunca modifican la elegibilidad, el equipo ni la complejidad.",
             size = 13, color = LocalHunter.current.muted)
+        if (!accepted && canOffer) {
+            HSelect("Prioridad de categoría opcional", preferred,
+                listOf("none" to "Sin prioridad") +
+                    Category.values().map { it.code to it.code.replace('_', ' ') }) {
+                preferred = it
+            }
+        }
+        if (!accepted && !canOffer)
+            HNotice("Tu calendario contiene únicamente descanso o falta configurar el perfil.")
         HButton(if (accepted) "DESACTIVAR CICLO SIN PENALIZACIÓN"
-            else "ACEPTAR CICLO DE CINCO DÍAS", Modifier.fillMaxWidth()) {
-            ui.attempt { repository.setMonarchConsent(cycle, !accepted) }
+            else "ACEPTAR CICLO DE CINCO DÍAS", Modifier.fillMaxWidth(),
+            enabled = accepted || canOffer) {
+            ui.attempt {
+                repository.setMonarchConsent(cycle, !accepted,
+                    CategoryMapper.normalize(preferred))
+            }
         }
         if (accepted) {
             if (plan == null || plan.days.isEmpty()) {
@@ -282,6 +342,101 @@ fun AsterionMonarchSection(ui: NativeUi) {
                     }
                 }
             }
+        }
+    }
+}
+
+
+/** Entrada voluntaria: sin referencias automáticas, sin series ni RPE inventados. */
+@Composable
+private fun AsterionVolumeEditor(
+    ui: NativeUi, progress: AsterionProgressRepository,
+    day: LocalDate, id: String, category: Category?
+) {
+    if (category == null) return
+    val exercise = ui.store.catalog.byId[id] ?: return
+    val unit = when (exercise.unit) {
+        "sec" -> VolumeUnit.SECONDS
+        "reps" -> VolumeUnit.REPETITIONS
+        else -> return
+    }
+    val metadata = remember(ui.store, id) { AsterionActivitySource(ui.store).byId(id) }
+        ?: return
+    if (metadata.technicalLevel !in 1..3 || metadata.category != category) return
+    var sets by remember(day, id) { mutableStateOf("") }
+    var amount by remember(day, id) { mutableStateOf("") }
+    val saved = progress.volume().firstOrNull {
+        it.date == day && it.variantId == id
+    }
+    HText("Volumen realizado opcional (" +
+        (if (unit == VolumeUnit.SECONDS) "segundos" else "repeticiones") +
+        "). Sin registrar no se presume cantidad.", size = 12,
+        color = LocalHunter.current.muted)
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        HInput(sets, { sets = it }, "Series realizadas", Modifier.weight(1f), number = true)
+        HInput(amount, { amount = it }, "Cantidad por serie", Modifier.weight(1f), number = true)
+    }
+    HButton("REGISTRAR CANTIDAD REAL", Modifier.fillMaxWidth()) {
+        ui.attempt {
+            val numberSets = sets.toIntOrNull() ?: error("Indica las series reales")
+            val perSet = amount.toIntOrNull() ?: error("Indica una cantidad real")
+            require(numberSets in 1..30 && perSet in 1..3600) { "Cantidad fuera de rango" }
+            val p = AsterionProfileAdapter.from(ui.store) ?: error("Perfil no disponible")
+            val block = progress.blocks()[id] ?: VolumeResetPolicy.block(
+                category, id, p.experience, p.experienceStart)
+            val dayRpe = progress.efforts().firstOrNull {
+                it.date == day && it.category == category
+            }?.rpe
+            progress.recordVolume(VolumeObservation(
+                "asterion|" + day + "|" + id,
+                day, category, id, metadata.typeId, metadata.technicalLevel,
+                unit, numberSets, perSet, dayRpe, true, false, block))
+        }
+    }
+    if (saved != null)
+        HText("Registro real guardado: " + saved.sets + " series · " +
+            saved.quantityPerSet + " " + saved.unit.name, size = 12,
+            color = LocalHunter.current.muted)
+}
+
+
+/** Misma misión fijada que ve la pantalla Misiones; nunca genera un segundo plan. */
+@Composable
+fun AsterionHomeSummary(ui: NativeUi) {
+    val store = ui.store
+    val revision = store.revision.intValue
+    val date = LocalDate.now()
+    val coordinator = remember(store) { AsterionTrainingSessionCoordinator(store) }
+    var mission by remember(date) { mutableStateOf<DailyMission?>(null) }
+    LaunchedEffect(revision, date) {
+        mission = runCatching { coordinator.current(date)?.mission }.getOrNull()
+    }
+    val progress = coordinator.progress
+    val records = remember(revision) { progress.plannedParticipation(date) }
+    val completed = mission?.ids?.count { id ->
+        records.any { it.date == date && it.variantId == id &&
+            it.status == ParticipationStatus.COMPLETED }
+    } ?: 0
+    val monday = date.minusDays((date.dayOfWeek.value - 1).toLong())
+    val summary = ProgressSummary.calculate(records.filter {
+        !it.date.isBefore(monday) && !it.date.isAfter(date)
+    })
+    HPanel(padding = 18) {
+        Eyebrow("MISIÓN PRINCIPAL · ASTERION")
+        val active = mission
+        Heading(if (active?.category == null) "Descanso del día"
+            else active.category.code.replace('_', ' '), size = 26)
+        HText(active?.explanation ?: "Sin propuesta disponible.",
+            size = 14, color = LocalHunter.current.muted)
+        HText("Actividades completadas hoy: " + completed + " de " +
+            (active?.ids?.size ?: 0), size = 15)
+        HText("Participación semanal evaluada: " + summary.label +
+            " · " + summary.pending + " pendientes", size = 13,
+            color = LocalHunter.current.muted)
+        HText("Puedes descansar o mantener una alternativa más sencilla. No hay aumentos automáticos.",
+            size = 12, color = LocalHunter.current.muted)
+        HButton("ABRIR MISIÓN DE HOY", Modifier.fillMaxWidth(), primary = true) {
+            ui.open("mission", obj("date" to date.toString()))
         }
     }
 }

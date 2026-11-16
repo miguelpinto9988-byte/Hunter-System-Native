@@ -120,6 +120,15 @@ class AsterionRulesTest {
             listOf(effort(1, Category.UPPER, 9)))
         assertEquals(listOf("1"), recovery.ids)
     }
+    @Test fun recentHighSignalOverridesLaterLowReadingWithinSameCategory() {
+        val readings = listOf(effort(5, Category.UPPER, 9),
+            effort(1, Category.UPPER, 2),
+            effort(1, Category.CARDIO, 2))
+        assertEquals(Adaptation.RECOVER_ONE,
+            CategoryEffortPolicy.decide(readings, date, Category.UPPER))
+        assertEquals(Adaptation.EQUIVALENT_VARIATION,
+            CategoryEffortPolicy.decide(readings, date, Category.CARDIO))
+    }
     @Test fun staleEffortIsIgnoredAfterTwentyOneDays() {
         assertEquals(Adaptation.MAINTAIN, CategoryEffortPolicy.decide(
             listOf(effort(22, Category.UPPER, 10)), date, Category.UPPER))
@@ -266,6 +275,23 @@ class AsterionRulesTest {
         assertEquals(10, first.second)
         assertEquals(0, RoutineParticipation.award(first.first, date, true).second)
         assertEquals(0, RoutineParticipation.award(first.first, date.plusDays(1), false).second)
+    }
+    @Test fun monarchPreferenceOnlyChangesSafeOrdering() {
+        val p = profile()
+        val rows = listOf(activity("a"), activity("b"), activity("c"), activity("d"))
+        val repo = FakeRepo(rows)
+        val base = MonarchChallengePlanner.propose(date, true, p, repo, emptyList())
+        val focused = MonarchChallengePlanner.propose(
+            date, true, p, repo, emptyList(), listOf(Category.UPPER),
+            previousUsed = setOf("a"))
+        assertEquals(base.days.map { it.category }, focused.days.map { it.category })
+        assertEquals(base.days.map { it.ids.toSet() }, focused.days.map { it.ids.toSet() })
+        assertTrue(focused.days.all {
+            "a" !in it.ids || it.ids.last() == "a"
+        })
+        assertEquals(focused, MonarchChallengePlanner.propose(
+            date, true, p, repo, emptyList(), listOf(Category.UPPER),
+            previousUsed = setOf("a")))
     }
     @Test fun monarchNeedsConsentAndPreservesRest() {
         val p = profile(listOf(5, 0, 5, 0, 5, 0, 5))

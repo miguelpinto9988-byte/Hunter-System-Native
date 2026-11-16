@@ -10,7 +10,8 @@ class GroupEvolutionTest {
  private val profile=obj("weekFocus" to arr(listOf("upper","upper","lower","upper","lower","cardio","mobility")))
  private fun record(date:String,group:String,rpe:Int,fatigue:Boolean=false):JSONObject=
   obj("date" to date,"kind" to if(group=="cardio")"cardio" else if(group=="mobility")"recovery" else "strength",
-   "trainingGroup" to group,"complete" to true,"pain" to false,"rpe" to rpe,"fatigue" to fatigue)
+   "trainingGroup" to group,"categoryRpe" to group,
+   "complete" to true,"pain" to false,"rpe" to rpe,"fatigue" to fatigue)
  private fun records(vararg rs:JSONObject):JSONObject=JSONObject().apply{for(r in rs)put(r.s("date"),r)}
 
  @Test fun eachFamilyUsesOnlyItsOwnPreviousEvaluation(){
@@ -22,6 +23,12 @@ class GroupEvolutionTest {
   for(group in listOf("core","cardio","mobility"))assertEquals(group,0,GroupEvolution.evaluate(logs,"2026-10-28",group,profile,catalog).steps)
   assertEquals("2026-10-26",upper.lastDate)
   assertEquals(2,upper.lastRpe)
+ }
+ @Test fun globalRpeNeverCreatesCategoryProgression(){
+  val global=record("2026-10-26","upper",1).apply{remove("categoryRpe")}
+  val logs=records(global)
+  assertEquals(0,GroupEvolution.evaluate(logs,"2026-10-28","upper",profile,catalog).steps)
+  assertEquals(0,GroupEvolution.feedback(logs,"2026-10-28","upper",profile,catalog).avg.toInt())
  }
  @Test fun nextOccurrenceCanBeDaysOrWeeksLater(){
   val logs=records(record("2026-10-26","upper",2))
@@ -87,9 +94,8 @@ class GroupEvolutionTest {
   assertEquals("upper",GroupEvolution.logGroup(oldLog,profile,catalog))
   val basic= obj("id" to upper.id,"target" to 10,"sets" to 2)
   val applied=GroupEvolution.apply(upper,basic,GroupEvolution.Adjustment("upper",1,"2026-10-27",2))
-  if(upper.raw.optJSONObject("doseCap46")==null&&!upper.impact&&!upper.power)
-   assertEquals(11,applied.i("target"))
-  else assertEquals(10,applied.i("target"))
+  // Una valoración baja no es autorización para aumentar repeticiones.
+  assertEquals(10,applied.i("target"))
   assertEquals(10,GroupEvolution.apply(upper,basic,GroupEvolution.Adjustment("lower",-1)).i("target"))
   assertEquals(10,basic.i("target"))
  }

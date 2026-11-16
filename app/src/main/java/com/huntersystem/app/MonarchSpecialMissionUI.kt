@@ -22,6 +22,16 @@ import java.time.ZoneId
 /** Una sola misión semanal rotativa, visible en Inicio y renovada los domingos. */
 @Composable
 fun MonarchSpecialMissionsPanel(ui:NativeUi) {
+ // Un único desafío activo. Las sesiones del ciclo histórico ya iniciado
+ // permanecen accesibles hasta que la persona las finalice o detenga.
+ ui.store.revision.intValue
+ if(ui.store.state.optJSONObject("monarchSpecialMission")?.s("status")=="active")
+  LegacyMonarchSpecialMissionsPanel(ui)
+ else AsterionMonarchSection(ui)
+}
+
+@Composable
+private fun LegacyMonarchSpecialMissionsPanel(ui:NativeUi) {
  val store=ui.store
  AsterionMonarchSection(ui)
  store.revision.intValue

@@ -199,16 +199,23 @@ data class ProgressSummary(val planned: Int, val completed: Int, val skipped: In
 object CategoryEffortPolicy {
     fun latest(history: List<EffortObservation>, date: LocalDate, category: Category): EffortObservation? =
         history.filter { it.category == category && it.date < date &&
-            !it.date.isBefore(date.minusDays(21)) }.maxWithOrNull(
-            compareBy<EffortObservation> { it.date }.thenBy { it.rpe }
-        )
-    fun decide(history: List<EffortObservation>, date: LocalDate, category: Category): Adaptation =
-        when (latest(history, date, category)?.rpe) {
-            null, 4, 5, 6, 7 -> Adaptation.MAINTAIN
-            1, 2, 3 -> Adaptation.EQUIVALENT_VARIATION
-            8 -> Adaptation.REDUCE_TWO
-            else -> Adaptation.RECOVER_ONE
+            !it.date.isBefore(date.minusDays(21)) && (it.completed || it.interrupted || it.rpe >= 8) }
+            .maxWithOrNull(compareBy<EffortObservation> { it.date }.thenBy { it.rpe })
+    fun decide(history: List<EffortObservation>, date: LocalDate, category: Category): Adaptation {
+        val last = latest(history, date, category) ?: return Adaptation.MAINTAIN
+        val recent = history.filter { it.category == category && it.date < date &&
+            !it.date.isBefore(date.minusDays(7)) }
+        // Señales de recuperación recientes prevalecen sobre una valoración
+        // baja posterior; las valoraciones de otras categorías no intervienen.
+        return when {
+            recent.any { it.interrupted || it.rpe >= 9 } -> Adaptation.RECOVER_ONE
+            recent.any { it.rpe == 8 } -> Adaptation.REDUCE_TWO
+            last.interrupted || last.rpe >= 9 -> Adaptation.RECOVER_ONE
+            last.rpe == 8 -> Adaptation.REDUCE_TWO
+            last.completed && last.rpe in 1..3 -> Adaptation.EQUIVALENT_VARIATION
+            else -> Adaptation.MAINTAIN
         }
+    }
 }
 enum class WeeklyDecision { WAIT, INSUFFICIENT, MAINTAIN, EQUIVALENT_VARIATION, RECOVERY }
 object WeeklyCategoryChallengePolicy {
@@ -373,13 +380,22 @@ data class MonarchPlan(val start: LocalDate, val accepted: Boolean, val days: Li
 object MonarchChallengePlanner {
     fun propose(start: LocalDate, accepted: Boolean, profile: TrainingProfile,
                 repository: ActivityRepositoryInterface, efforts: List<EffortObservation>,
-                preferred: List<Category> = emptyList()): MonarchPlan {
+                preferred: List<Category> = emptyList(),
+                previousUsed: Set<String> = emptySet()): MonarchPlan {
         if (!accepted || profile.weekly.all { it == 5 }) return MonarchPlan(start, accepted, emptyList())
         val days = (0L..4L).map { start.plusDays(it) }.map { day ->
             val normal = DailyMissionPlanner.plan(day, profile, repository, efforts)
             if (normal.category == null || normal.ids.isEmpty()) normal else {
                 // Un jefe solo puede ordenar categorías, jamás suprimir elegibilidad.
-                normal.copy(explanation = normal.explanation +
+                // El enfoque y el historial solo modifican orden y diversidad,
+                // jamás la categoría del día, el filtro técnico ni el equipamiento.
+                val ids = normal.ids.sortedWith(compareBy<String> {
+                    if (it in previousUsed) 1 else 0
+                }.thenBy { ProfileSignature.stable(
+                    if (normal.category in preferred) "monarca-enfoque|" + start
+                    else "monarca-estable|" + start, it
+                ) })
+                normal.copy(ids = ids, explanation = normal.explanation +
                     if (normal.category in preferred) " Categoría de enfoque Monarca." else "")
             }
         }

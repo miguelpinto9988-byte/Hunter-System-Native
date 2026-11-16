@@ -4,6 +4,7 @@ name: Compilar Hunter System Android APK
 on:
   workflow_dispatch:
   push:
+    branches: [main]
     paths:
       - "app/**"
       - "*.gradle.kts"
