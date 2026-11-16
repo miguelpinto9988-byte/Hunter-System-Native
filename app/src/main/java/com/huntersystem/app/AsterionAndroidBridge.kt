@@ -12,27 +12,51 @@ class AsterionActivitySource(private val store: NativeStore) : ActivityRepositor
         val adjusted = store.adjusted()
         store.catalog.exercises.mapNotNull { e ->
             val category = CategoryMapper.normalize(e.type) ?: return@mapNotNull null
-            val levelValue = if (e.raw.has("technicalLevel")) e.raw.i("technicalLevel")
-                else if (e.meta.has("level")) e.meta.i("level") + 1 else 0
-            val unitKnown = e.raw.optJSONArray("materialRequirements") != null
-            val materials = e.raw.a("materialRequirements").strings().filter { it != "body" }.toSet()
+            val levelValue = when {
+                e.raw.has("technicalLevel") -> e.raw.i("technicalLevel")
+                e.raw.has("technicalLevel46") -> e.raw.i("technicalLevel46")
+                e.meta.has("level") -> e.planningLevel + 1
+                else -> 0 // sin metadatos: nivel 0 bloqueado
+            }.takeIf { it in 0..5 } ?: 0
+            val declaredMaterials = e.raw.optJSONArray("materialRequirements")
+            val allowedGear = buildSet {
+                addAll(e.raw.a("materials46").strings())
+                addAll(e.raw.a("materialRequirements").strings())
+                if (e.equipment == "db") add("db")
+                if (e.equipment == "gym" || e.gym) add("gym")
+            }.filterNot { it == "body" }.toSet()
             val intensity = when (e.raw.s("intensity", e.meta.s("intensity")).lowercase()) {
                 "low", "baja", "suave" -> Intensity.LOW
-                "moderate", "moderada", "media" -> Intensity.MODERATE
+                "moderate", "moderada", "media", "medium" -> Intensity.MODERATE
                 "high", "alta" -> Intensity.HIGH
-                else -> Intensity.UNKNOWN // metadatos ausentes: fallo cerrado
+                else -> when {
+                    // Solo descriptores que ya constan en el catálogo; no inferir técnica de edad.
+                    !e.power && !e.impact &&
+                        e.raw.s("impact") in listOf("Bajo", "Sin saltos") &&
+                        e.meta.has("conditioning") && e.meta.i("conditioning") <= 1 ->
+                        Intensity.LOW
+                    e.raw.s("impact") in listOf("Moderado", "Medio") &&
+                        e.meta.has("conditioning") && e.meta.i("conditioning") <= 2 ->
+                        Intensity.MODERATE
+                    else -> Intensity.UNKNOWN
+                }
             }
             val familyId = category.code + "/" + e.family
             val typeId = familyId + "/" + e.pattern.ifBlank { e.oldFamily }
-            val eligibility = unitKnown && !e.raw.b("sourceOnly") &&
+            val eligibility = (declaredMaterials != null || e.raw.optJSONArray("materials46") != null) &&
+                !e.raw.b("sourceOnly") && !e.raw.b("pendingTechnicalReview") &&
                 !(e.raw.b("sourceExpansion2k") && !e.raw.b("approvedForAutoplan")) &&
                 store.rules.compatible(e, adjusted)
-            ActivityMetadata(e.id, category, familyId, typeId, levelValue.coerceIn(0, 5),
-                intensity, materials, e.raw.s("modality", "no_especificada"),
-                e.raw.b("requiresSupervision") || e.raw.b("highSkill46"),
-                eligibility, e.raw.a("sportTags").strings().toSet() +
-                    e.raw.a("goalTags").strings().toSet(),
-                e.raw.a("restrictionTags").strings().toSet())
+            ActivityMetadata(e.id, category, familyId, typeId, levelValue, intensity, allowedGear,
+                e.raw.s("modality", "no_especificada"),
+                e.raw.b("requiresSupervision") || e.raw.b("supervisionRequired") ||
+                    e.raw.b("highSkill46"),
+                eligibility, buildSet {
+                    addAll(e.raw.a("sportTags").strings())
+                    addAll(e.raw.a("goalTags").strings())
+                    addAll(e.raw.a("tags").strings())
+                    if (e.pattern.isNotBlank()) add(e.pattern)
+                }, e.raw.a("restrictionTags").strings().toSet())
         }
     }
     override fun all(): List<ActivityMetadata> = rows
