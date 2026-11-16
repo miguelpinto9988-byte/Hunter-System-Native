@@ -330,7 +330,7 @@ fun MonarchProgressScreen(ui:NativeUi){
         s.profile?.let{profile->
             val start=runCatching{LocalDate.parse(profile.s("experienceStartedAt"))}
                 .getOrElse{LocalDate.parse(today())}
-            val history=HunterProgressBridge.history(s.logs,s.state.a("hunterPhases"))
+            val history=HunterProgressBridge.history(s.logs,s.state.a("hunterPhases"),s.catalog)
             val review=HunterProgressRules.global(history,start,LocalDate.parse(today()))
             HPanel(padding=14){
                 Eyebrow("REVISIÓN GLOBAL DE ESFUERZO · 21 DÍAS")
