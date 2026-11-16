@@ -278,7 +278,8 @@ private fun MonarchMissionExercise(
     val doneSets=item.a("actual").objects().count{it.b("done")}
     val prescribed=item.i("sets").coerceAtLeast(0)
     val reported=item.b("missionState")||item.b("selfReported")
-    val checked=reported||(prescribed>0&&doneSets>=prescribed)
+    val skipped=item.s("progressStatus")=="SKIPPED"
+    val checked=!skipped&&(reported||(prescribed>0&&doneSets>=prescribed))
     val inactive=item.b("archived")
     val shape=RoundedCornerShape(17.dp)
     Column(Modifier.fillMaxWidth().clip(shape)
@@ -309,6 +310,24 @@ private fun MonarchMissionExercise(
             done=checked,enabled=!readOnly&&!inactive,
             subtitle=if(readOnly)"Solo lectura" else if(inactive)"Actividad archivada" else ""
         ) {ui.attempt{s.toggleMission(date,index)}}
+        if(skipped)HText("Actividad omitida voluntariamente; no cuenta como completada.",
+            size=12,color=colors.muted)
+        if(!readOnly&&!inactive){
+            HButton(if(skipped)"VOLVER A PENDIENTE" else "OMITIR ACTIVIDAD"){
+                ui.attempt{s.setMissionStatus(date,index,
+                    if(skipped)com.huntersystem.app.asterion.ParticipationStatus.PENDING
+                    else com.huntersystem.app.asterion.ParticipationStatus.SKIPPED)}
+            }
+            var progressNote by remember(date,e.id){mutableStateOf(item.s("progressNote"))}
+            HInput(progressNote,{progressNote=it},"Observación opcional",multiline=true)
+            HButton("GUARDAR OBSERVACIÓN"){
+                ui.attempt{s.setMissionStatus(date,index,when{
+                    skipped->com.huntersystem.app.asterion.ParticipationStatus.SKIPPED
+                    checked->com.huntersystem.app.asterion.ParticipationStatus.COMPLETED
+                    else->com.huntersystem.app.asterion.ParticipationStatus.PENDING
+                },progressNote)}
+            }
+        }
     }
 }
 
