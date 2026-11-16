@@ -52,8 +52,8 @@ import kotlin.math.*
    val date=overlay.data.s("date",today())
    val log=ui.store.logs.optJSONObject(date)
    Heading("Confirmar misión",size=30)
-   HNotice("Se registrará esta sesión como completada. Comprueba que marcaste únicamente las actividades realizadas y consignaste el esfuerzo.")
-   HText("Fecha: $date · RPE: ${overlay.data.i("rpe")}/10",size=16)
+   HNotice("Se registrará esta sesión como completada. Comprueba que marcaste únicamente las actividades realizadas. Valorar el esfuerzo es opcional.")
+   HText("Fecha: $date · "+(if(overlay.data.i("rpe") in 1..10)"Esfuerzo declarado: "+overlay.data.i("rpe")+"/10" else "Sin valoración de esfuerzo"),size=16)
    HButton("VOLVER AL REGISTRO",Modifier.fillMaxWidth()){ui.back()}
    HButton("CONFIRMAR Y GUARDAR",Modifier.fillMaxWidth(),primary=true,
      enabled=date==today() && log!=null && !log.b("complete") && !log.b("pain")) {
@@ -117,7 +117,7 @@ import kotlin.math.*
   size=15,color=LocalHunter.current.muted)
  HNotice("Confirma únicamente lo que hayas realizado. Marcar la misión no añade series ni cantidades a este registro.")
  for((i,x)in l.a("items").objects().withIndex()){val e=s.catalog.byId[x.s("id")]?:continue;HPanel(padding=15){Heading(e.name,size=27);if(x.b("archived"))HNotice(x.s("archiveReason"));HText("${x.i("sets")} × ${x.i("target")} ${if(e.unit=="sec")"s" else "repeticiones"}${if(e.sides)" por lado" else ""}",size=15);for(si in 0 until x.i("sets")){val actual=x.a("actual").optJSONObject(si);Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)){HText("${if(actual?.b("done")==true)"✓" else "○"} Serie ${si+1}",Modifier.weight(1f),size=17);HText(if(actual?.b("done")==true)"${actual.n("value")} ${if(e.unit=="sec")"s" else "rep"} · ${actual.n("kg")} kg" else "Pendiente",size=15,color=LocalHunter.current.muted);if(!closed&&!x.b("archived"))HButton("Registrar"){ui.open("series",obj("date" to date,"itemIndex" to i,"setIndex" to si))}}}}}
- if(!closed){HSelect("Esfuerzo percibido · RPE",rpe,listOf("0" to "Seleccionar esfuerzo")+(1..10).map{it.toString() to "$it / 10"}){rpe=it};HInput(notes,{notes=it},"Notas del día",multiline=true);HCheck("He sentido fatiga",fatigue){fatigue=!fatigue};HButton("Guardar registro parcial",Modifier.fillMaxWidth()){ui.attempt{s.feedback(date,rpe.toIntOrNull()?:0,notes);l.put("fatigue",fatigue);s.save();ui.message("Registro parcial guardado")}};HButton("Completar sesión",Modifier.fillMaxWidth(),primary=true){
+ if(!closed){HSelect("Esfuerzo percibido · RPE",rpe,listOf("0" to "No valorar (opcional)")+(1..10).map{it.toString() to "$it / 10"}){rpe=it};HInput(notes,{notes=it},"Notas del día",multiline=true);HCheck("He sentido fatiga",fatigue){fatigue=!fatigue};HButton("Guardar registro parcial",Modifier.fillMaxWidth()){ui.attempt{s.feedback(date,rpe.toIntOrNull()?:0,notes);l.put("fatigue",fatigue);s.save();ui.message("Registro parcial guardado")}};HButton("Completar sesión",Modifier.fillMaxWidth(),primary=true){
    ui.open("confirm-finish",obj(
      "date" to date,
      "rpe" to (rpe.toIntOrNull()?:0),
