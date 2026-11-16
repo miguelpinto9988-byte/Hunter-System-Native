@@ -72,6 +72,22 @@ class MonarchSinglePlannerIntegrationTest {
         })
     }
 
+    @Test fun fiveDayChallengeCannotInventDifferentNativeActivities() {
+        val store=store()
+        val monday=LocalDate.now().minusDays((LocalDate.now().dayOfWeek.value-1).toLong())
+        val repository=MonarchProgressRepository(store)
+        repository.setMonarchConsent(monday.toString(),true,Category.UPPER)
+        val plan=repository.monarchPlan(monday)
+        assertTrue(plan.accepted)
+        assertTrue(plan.days.any { it.ids.isNotEmpty() })
+        for(day in plan.days){
+            val nativeIds=store.day(day.date.toString()).a("items")
+                .objects().map { it.s("id") }.toSet()
+            assertEquals("Mismo plan "+day.date, nativeIds,day.ids.toSet())
+        }
+        val reloaded=MonarchProgressRepository(NativeStore(context)).monarchPlan(monday)
+        assertEquals(plan.days.map { it.ids },reloaded.days.map { it.ids })
+    }
     @Test fun explicitlySavedEffortUsesTodayCategoryNotAnotherDay() {
         val store=store()
         val day=store.day(today())
