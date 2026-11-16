@@ -34,9 +34,11 @@ Los desafíos nuevos de cinco días requieren consentimiento expreso y se fijan 
 
 ## Integración con GitHub y verificación
 
-La rama actual de trabajo es `integration/monarca-eclipse-asterion-consolidation`. Añade pruebas de regresión para esfuerzos con categoría explícita y para rechazar el RPE exclusivamente global. La compilación del código nuevo y el flujo de APK pasaron en una revisión intermedia, pero cada commit posterior requiere revisión final.
+La implementación se fusionó en `main` mediante [PR #27](https://github.com/miguelpinto9988-byte/Hunter-System-Native/pull/27), commit `58734817a366bdcc12a246faf454ba7a6f854b31`. El PR #25 (motor alternativo) y el PR #18 (integración V42 ya incorporada) se cerraron como sustituidos, sin destruir sus ramas ni commits históricos.
 
-La suite integral de Android usa Robolectric. GitHub Actions llegó a ejecutar 109 pruebas; varias ejecuciones fallaron por HTTP 429 al descargar dependencias de Robolectric. Tras una ejecución exitosa en el motor de Asterion, la suite integral detectó pruebas históricas que asumían erróneamente que un esfuerzo global servía como evidencia por categoría; se actualizaron para introducir `categoryRpe` de forma explícita.
+Antes de la fusión pasaron tanto el flujo de pruebas específicas de Asterion como la **suite Android/Kotlin/JVM completa**, con pruebas Robolectric, en el commit final del PR. La batería incluye comprobaciones nuevas de migración de registros y de prioridad de recuperación por categoría. Las pruebas heredadas que atribuían RPE global a un grupo se corrigieron para etiquetar expresamente `categoryRpe`.
+
+El flujo de compilación APK de `main` se ejecuta de nuevo después de fusionar. La compilación y los tests en CI no sustituyen las pruebas de usabilidad, reproducción de recursos, accesibilidad y persistencia en un teléfono Android físico.
 
 ## Límites comprobables
 
