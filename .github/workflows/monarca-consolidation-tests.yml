@@ -1,7 +1,5 @@
 name: Monarca Eclipse consolidated Android tests
 on:
-  push:
-    branches: [integration/monarca-eclipse-asterion-consolidation]
   pull_request:
     branches: [main]
   workflow_dispatch:
