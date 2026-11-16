@@ -113,7 +113,8 @@ object GroupEvolution {
  }
 
  fun apply(e:Exercise,item:JSONObject,adjustment:Adjustment):JSONObject {
-  if(adjustment.steps==0||item.i("target")<1||exerciseGroup(e)!=adjustment.group)return item
+  // Las valoraciones bajas no son permiso para aumentar dosis reales.
+  if(adjustment.steps>=0||item.i("target")<1||exerciseGroup(e)!=adjustment.group)return item
   val out=item.copyJson()
   val unit=out.s("unit",e.unit)
   val base=out.i("target")
