@@ -59,7 +59,7 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
  }
  fun revertTechnicalPhase(category:HunterCategory){
   require(category!=HunterCategory.REST)
-  val history=HunterProgressBridge.history(logs,state.a("hunterPhases"))
+  val history=HunterProgressBridge.history(logs,state.a("hunterPhases"),catalog)
   val phase=history.phase(category)
   if(phase==0)return
   val phases=state.a("hunterPhases")
@@ -76,7 +76,7 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
   val choice=p.a("weekPlan").optString(weekday(date),"rest")
   val kind=when(category){HunterCategory.CARDIO->"cardio";HunterCategory.MOBILITY->"recovery";HunterCategory.REST->"rest";else->"strength"}
   val source=HunterProgressBridge.catalog(catalog,rules,q)
-  var history=HunterProgressBridge.history(logs,state.a("hunterPhases"))
+  var history=HunterProgressBridge.history(logs,state.a("hunterPhases"),catalog)
   // A technical phase may change on its actual milestone, never for a future preview.
   if(date==today()&&category!=HunterCategory.REST){
    val technical=HunterProgressRules.technical(history,settings,localDate,category)
@@ -94,7 +94,7 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
   val recent=if(category==HunterCategory.REST)null else HunterProgressRules.recentEffort(history,localDate,category)
   val items=proposal.ids.mapNotNull{catalog.byId[it]}.map{e->
    val base=planner.libraryDose(e,q,kind)
-   base.put("sets",if(recent?.rpe?.let{it>=8}==true)1 else base.i("sets",1).coerceIn(1,2))
+   base.put("sets",if(recent?.rpe?.let{it>=8}==true || history.interruptions.any{it.category==category&&it.date<localDate&&it.date>=localDate.minusDays(21)})1 else base.i("sets",1).coerceIn(1,2))
    base.put("typeId",e.oldFamily).put("technicalLevel",source.variant(e.id)?.technicalLevel?:0)
    base.put("unit",e.unit).put("progressStatus","PENDING")
    base
