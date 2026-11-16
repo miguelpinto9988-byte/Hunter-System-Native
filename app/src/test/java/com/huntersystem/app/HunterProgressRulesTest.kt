@@ -143,8 +143,8 @@ class HunterProgressRulesTest {
     @Test fun technicalMilestonesRequireEvidenceAndMinimumInterval() {
         val config = settings()
         val h = HunterHistory(efforts = listOf(
-            HunterEffort(monday.minusDays(3), HunterCategory.UPPER, 2, true),
-            HunterEffort(monday.minusDays(1), HunterCategory.UPPER, 3, true)))
+            HunterEffort(monday.minusDays(7), HunterCategory.UPPER, 2, true),
+            HunterEffort(monday.minusDays(5), HunterCategory.UPPER, 3, true)))
         val first = HunterProgressRules.technical(h,config,monday,HunterCategory.UPPER)
         // Day 21 from chosen experience start; it is a review, not automatic advancement.
         assertEquals(HunterReview.AVANZAR_FASE,first.decision)
