@@ -61,7 +61,11 @@ class MonarchActivitySource(
                 }, e.raw.a("restrictionTags").strings().toSet())
         }
     }
-    override fun all(): List<ActivityMetadata> = rows
+    private val validatedRows by lazy { rows.also(ActivityCatalogValidator::verify) }
+    private val cachedHash by lazy { ProfileSignature.source(validatedRows) + ":" + revision }
+    override fun all(): List<ActivityMetadata> = validatedRows
+    override fun verified(): List<ActivityMetadata> = validatedRows
+    override fun signature(): String = cachedHash
 }
 
 /** Traduce los índices históricos domingo=0 a lunes=0, sin reescribir perfiles guardados. */
