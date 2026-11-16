@@ -26,6 +26,18 @@ class HunterProgressRulesTest {
                 HunterCategory.REST, HunterCategory.UPPER, HunterCategory.REST, HunterCategory.REST),
             gear, "general", goal, limit, HunterIntensity.MODERADA)
 
+    @Test fun convertsHistoricalSundayFirstCalendarWithoutChangingStoredValues() {
+        val p = JSONObject().put("difficulty","basic")
+            .put("weekPlan",org.json.JSONArray(listOf("rest","train","cardio","mobility","rest","train","rest")))
+            .put("weekFocus",org.json.JSONArray(listOf("upper","core","cardio","mobility","upper","lower","upper")))
+        val before = p.toString()
+        val cfg = HunterProgressBridge.settings(p,monday)
+        assertEquals(HunterCategory.CORE,cfg.week[0])
+        assertEquals(HunterCategory.CARDIO,cfg.week[1])
+        assertEquals(HunterCategory.REST,cfg.week[6])
+        assertEquals(before,p.toString())
+    }
+
     @Test fun exactlyFiveCategoriesAndRestNotPartOfCatalog() {
         assertEquals(5, HunterCategory.activity.size)
         assertEquals(HunterCategory.CORE, HunterCategory.parse("integrado"))
