@@ -9,6 +9,7 @@ import java.time.LocalDate
 class AsterionActivitySource(private val store: NativeStore) : ActivityRepositoryInterface {
     override val revision: String = "native-" + store.catalog.exercises.size
     private val rows by lazy {
+        val adjusted = store.adjusted()
         store.catalog.exercises.mapNotNull { e ->
             val category = CategoryMapper.normalize(e.type) ?: return@mapNotNull null
             val levelValue = if (e.raw.has("technicalLevel")) e.raw.i("technicalLevel")
@@ -25,7 +26,7 @@ class AsterionActivitySource(private val store: NativeStore) : ActivityRepositor
             val typeId = familyId + "/" + e.pattern.ifBlank { e.oldFamily }
             val eligibility = unitKnown && !e.raw.b("sourceOnly") &&
                 !(e.raw.b("sourceExpansion2k") && !e.raw.b("approvedForAutoplan")) &&
-                store.rules.compatible(e, store.adjusted())
+                store.rules.compatible(e, adjusted)
             ActivityMetadata(e.id, category, familyId, typeId, levelValue.coerceIn(0, 5),
                 intensity, materials, e.raw.s("modality", "no_especificada"),
                 e.raw.b("requiresSupervision") || e.raw.b("highSkill46"),
