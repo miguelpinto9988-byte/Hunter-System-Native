@@ -247,6 +247,27 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
         write(r)
     }
     fun monarchConsented(cycleId: String): Boolean = root().o("monarchConsent").b(cycleId)
+    fun monarchCompleted(cycleId: String): List<String> =
+        root().a("monarchCompletion").objects().filter { it.s("cycle") == cycleId }
+            .map { it.s("date") + "|" + it.s("id") }
+    fun markMonarchCompletion(cycleId: String, day: LocalDate, variantId: String): Boolean {
+        require(day == LocalDate.now()) { "Solo puedes declarar la fecha local actual" }
+        require(monarchConsented(cycleId)) { "Monarca requiere consentimiento explícito" }
+        val start = LocalDate.parse(cycleId)
+        val profile = AsterionProfileAdapter.from(store) ?: error("Perfil no configurado")
+        val plan = MonarchChallengePlanner.propose(start, true, profile,
+            AsterionActivitySource(store), efforts())
+        require(plan.days.any { it.date == day && variantId in it.ids }) {
+            "La actividad no pertenece a un desafío vigente y compatible"
+        }
+        val key = day.toString() + "|" + variantId
+        if (key in monarchCompleted(cycleId)) return false
+        val r = root()
+        r.put("monarchCompletion", arr(r.a("monarchCompletion").objects() +
+            obj("cycle" to cycleId, "date" to day.toString(), "id" to variantId)))
+        write(r)
+        return true
+    }
 }
 
 /** Consulta y fijación explícita: reabrir la pantalla reutiliza la misma misión. */
