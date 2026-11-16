@@ -4,6 +4,18 @@ Rama principal: `main`. El código integra Monarca V43.11 y las mejoras reciente
 
 Monarca 42.9 + Eclipse 41.0, realizados en Kotlin y Jetpack Compose. La compilación de pruebas usa `versionCode=130` y `versionName=43.12-monarca-eclipse` (`applicationId=com.huntersystem.app`).
 
+## Motor local de progreso Asterion integrado en Monarca Eclipse
+
+Desde la integración [#27](https://github.com/miguelpinto9988-byte/Hunter-System-Native/pull/27), `main` incorpora un único núcleo de clasificación y progreso Asterion: cinco categorías y descanso, plan diario determinista, esfuerzo por categoría voluntario, participación explícita, rutinas opcionales, fases técnicas reversibles, volumen individual con parámetros validados y ciclo Monarca de cinco días por consentimiento.
+
+El historial anterior se consulta sin sobrescribir `logs` ni convertir valoraciones globales en RPE por categoría. Las sesiones ya iniciadas, los registros de series y el reproductor anterior continúan disponibles. No se han creado ejercicios ni modificado los 2000 SVG.
+
+- [Reglas y arquitectura Asterion](docs/ASTERION-RULES-ENGINE.md)
+- [Consolidación de motores y compatibilidad](docs/CONSOLIDACION-MONARCA-ASTERION.md)
+- [Limpieza y conservación de ramas](docs/CONSOLIDACION-RAMAS-2026-11-16.md)
+
+**Verificación:** las suites de pruebas Android/JVM y Asterion terminaron correctamente antes de la fusión. Para generar una APK debug de pruebas independiente de descargas promocionales externas, consulta el flujo [Hunter System Asterion - APK debug para QA](.github/workflows/asterion-debug-qa.yml). La compilación release firmada todavía depende de la disponibilidad de medios externos y de las credenciales de firma. Las pruebas en dispositivo físico y la aprobación técnica de variantes pendientes no están sustituidas por la compilación.
+
 ## Mejoras Eclipse integradas
 - Perfil simplificado, cinco temas, acompañante y escenarios por tarjetas horizontales.
 - Cuatro pestañas Monarca y acceso al perfil desde el avatar.
