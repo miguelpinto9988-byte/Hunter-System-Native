@@ -321,7 +321,7 @@ private fun AsterionVolumeEditor(
         it.date == day && it.variantId == id
     }
     HText("Volumen realizado opcional (" +
-        if (unit == VolumeUnit.SECONDS) "segundos" else "repeticiones" +
+        (if (unit == VolumeUnit.SECONDS) "segundos" else "repeticiones") +
         "). Sin registrar no se presume cantidad.", size = 12,
         color = LocalHunter.current.muted)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
