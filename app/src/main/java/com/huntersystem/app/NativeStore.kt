@@ -39,7 +39,7 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
  }
  fun saveProfile(p:JSONObject,appearance:JSONObject?=null,avatar:String?=null){
   val q=p.copyJson();for((k,range)in mapOf("age" to 13.0..100.0,"height" to 100.0..250.0,"weight" to 30.0..350.0)){val n=q.n(k,Double.NaN);require(n in range){"Revisa "+mapOf("age" to "la edad","height" to "la estatura","weight" to "el peso")[k]};q.put(k,n)};require(q.s("name").isNotBlank()){ "Escribe tu nombre de cazador" }
-  q.put("name",q.s("name").take(60));q.put("finalGoal",q.s("finalGoal").take(300));q.put("minutes",q.i("minutes",20));q.put("dailyMissions",q.i("dailyMissions",3).coerceIn(1,7));q.put("frequency",q.i("frequency",2));q.put("experience",if(level(q)==0)"beginner" else "regular");q.put("load",q.n("load").coerceIn(0.0,200.0));q.put("trainingScale",q.n("trainingScale",1.0).coerceIn(.4,1.0))
+  q.put("name",q.s("name").take(60));q.put("finalGoal",q.s("finalGoal").take(300));q.put("custom_goal",q.s("custom_goal",q.s("finalGoal")).take(500));q.put("experienceStartedAt",if(profile==null||profile!!.s("difficulty")!=q.s("difficulty"))today() else profile!!.s("experienceStartedAt",today()));q.put("minutes",q.i("minutes",20));q.put("dailyMissions",q.i("dailyMissions",3).coerceIn(1,7));q.put("frequency",q.i("frequency",2));q.put("experience",if(level(q)==0)"beginner" else "regular");q.put("load",q.n("load").coerceIn(0.0,200.0));q.put("trainingScale",q.n("trainingScale",1.0).coerceIn(.4,1.0))
   if(q.a("weekPlan").length()!=7)q.put("weekPlan",arr(listOf("rest","train","rest","train","rest","rest","rest")));if(q.a("weekFocus").length()!=7)q.put("weekFocus",arr(List(7){"upper"}))
   val interpreted=goals.apply(q,q.b("manualGoalGroupNative"));if(interpreted.o("interpretation374").b("medical"))require(rules.injuries(interpreted).isNotEmpty()||interpreted.o("health").b("special")){"Tu meta menciona dolor o lesión. Completa Lesiones y salud antes de guardar el plan."}
   for(d in allDays().filter{it.s("date")>=today()&&!activeLog(logs.optJSONObject(it.s("date")))})d.remove("reviewReducedNative")
@@ -53,9 +53,40 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
  fun allDays()=state.a("cycles").objects().flatMap{it.a("days").objects()}
  fun makeDay(date:String,planned:MutableList<PlanRow> = mutableListOf(),used:Set<String> = emptySet()):JSONObject{
   val p=profile?:return obj("date" to date,"kind" to "rest","items" to JSONArray(),"tasks" to JSONArray(),"title" to "Completa tu perfil")
-  val choice=p.a("weekPlan").optString(weekday(date),"rest");val kind=mapOf("train" to "strength","cardio" to "cardio","mobility" to "recovery")[choice]?:"rest";val q=adjusted();val result=planner.choose(q,kind,planner.profileKey(q)+"|"+date+"|1",logs,date,used,planned)
-  val focus=p.a("weekFocus").optString(weekday(date),"upper");val title=if(kind=="rest")"Descanso elegido" else if(kind=="strength")groupLabels[focus]?:"Tren superior" else kindLabel(kind)
-  return obj("date" to date,"kind" to kind,"scheduleChoice" to choice,"items" to result.a("items"),"tasks" to if(result.has("blocked"))arr(listOf(obj("id" to "review-dynamic381","text" to "Revisar restricciones para encontrar ejercicios compatibles","done" to false))) else JSONArray(),"title" to if(result.has("blocked"))kindLabel(kind)+" · requiere revisión" else title+if(kind=="rest")"" else " · plan dinámico","dynamic381" to true,"blocked381" to result.opt("blocked"),"planningNote" to "Generado bajo demanda desde demostraciones 2D existentes, sin rutinas combinatorias precargadas.")
+  val localDate=LocalDate.parse(date);val q=adjusted()
+  val settings=HunterProgressBridge.settings(q,localDate);val category=settings.category(localDate)
+  val choice=p.a("weekPlan").optString(weekday(date),"rest")
+  val kind=when(category){HunterCategory.CARDIO->"cardio";HunterCategory.MOBILITY->"recovery";HunterCategory.REST->"rest";else->"strength"}
+  val source=HunterProgressBridge.catalog(catalog,rules,q)
+  var history=HunterProgressBridge.history(logs,state.a("hunterPhases"))
+  // A technical phase may change on its actual milestone, never for a future preview.
+  if(date==today()&&category!=HunterCategory.REST){
+   val technical=HunterProgressRules.technical(history,settings,localDate,category)
+   if(technical.decision==HunterReview.AVANZAR_FASE){
+    val phases=state.a("hunterPhases")
+    phases.put(obj("category" to category.code,"phase" to technical.nextPhase,"date" to date))
+    state.put("hunterPhases",phases)
+    history=history.copy(phaseChanges=history.phaseChanges+HunterPhaseChange(category,technical.nextPhase,localDate))
+   }
+  }
+  val old=allDays().firstOrNull{it.s("date")==date}
+  val pinned=old?.let(HunterProgressBridge::pinned)
+  val proposal=HunterProgressRules.propose(settings,localDate,source,history,pinned)
+  if(old!=null&&pinned!=null&&proposal===pinned)return old
+  val recent=if(category==HunterCategory.REST)null else HunterProgressRules.recentEffort(history,localDate,category)
+  val items=proposal.ids.mapNotNull{catalog.byId[it]}.map{e->
+   val base=planner.libraryDose(e,q,kind)
+   base.put("sets",if(recent?.rpe?.let{it>=8}==true)1 else base.i("sets",1).coerceIn(1,2))
+   base.put("typeId",e.oldFamily).put("technicalLevel",source.variant(e.id)?.technicalLevel?:0)
+   base.put("unit",e.unit).put("progressStatus","PENDING")
+   base
+  }
+  val blocked=category!=HunterCategory.REST&&items.isEmpty()
+  return obj("date" to date,"kind" to kind,"scheduleChoice" to choice,"items" to arr(items),
+   "tasks" to JSONArray(),"title" to if(blocked)category.title+" · requiere revisión" else category.title,
+   "dynamic381" to true,"blocked381" to if(blocked)proposal.explanation else "",
+   "progressCategory" to category.code,"progressSettingsHash" to proposal.settingsHash,
+   "progressCatalogHash" to proposal.catalogHash,"planningNote" to proposal.explanation)
  }
  fun refreshWeek(){if(profile==null||readError!=null)return;val monday=LocalDate.now().minusDays((LocalDate.now().dayOfWeek.value-1).toLong()).toString();val cycles=state.a("cycles");var c=cycles.objects().firstOrNull{it.s("start")==monday};if(c==null){c=obj("index" to cycles.length()+1,"start" to monday,"days" to JSONArray(),"reviews" to JSONArray());cycles.put(c);state.put("cycles",cycles)};val q=adjusted();val key=planner.profileKey(q)+"|"+today()+"|"+hash(logs.toString()).toString(36);if(c.s("nativeKey")==key)return
   if(c.a("reviews").objects().lastOrNull()?.s("action")=="pausar")return
@@ -64,11 +95,22 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
  fun day(date:String)=allDays().firstOrNull{it.s("date")==date}?:previews.getOrPut(date){makeDay(date)}
  fun mutableDay(date:String):JSONObject{LocalDate.parse(date);allDays().firstOrNull{it.s("date")==date}?.let{return it};val start=LocalDate.parse(date).minusDays((LocalDate.parse(date).dayOfWeek.value-1).toLong()).toString();val cycles=state.a("cycles");var cycle=cycles.objects().firstOrNull{it.s("start")==start};if(cycle==null){cycle=obj("start" to start,"index" to cycles.length()+1,"days" to arr((0L..6L).map{day(plus(start,it)).copyJson()}));cycles.put(cycle);state.put("cycles",cycles)};return cycle.a("days").objects().first{it.s("date")==date}}
  fun log(date:String=today()):JSONObject{require(date==today()){ "El registro de series está disponible en la fecha de hoy" };logs.optJSONObject(date)?.let{return it};val d=day(date);val l=obj("date" to date,"kind" to d.s("kind"),"trainingGroup" to (GroupEvolution.sessionGroup(d,profile,catalog)?:""),"items" to arr(d.a("items").objects().map{x->x.copyJson().put("actual",arr((0 until x.i("sets")).map{obj("done" to false,"value" to x.i("target"),"kg" to 0)}))}),"missionTasks" to d.a("tasks").copyJson(),"complete" to false,"pain" to false,"rpe" to 0,"notes" to "");val logs=state.o("logs");logs.put(date,l);state.put("logs",logs);save();return l}
- fun toggleMission(date:String,index:Int){val l=log(date);require(!l.b("complete")&&!l.b("pain")){"La sesión está cerrada"};val x=l.a("items").getJSONObject(index);require(!x.b("archived")){x.s("archiveReason")};val e=catalog.byId[x.s("id")]?:error("Ejercicio desconocido");require(rules.compatible(e,adjusted())){"Revisa la compatibilidad del ejercicio en Perfil"};x.put("missionState",!x.b("missionState"));save()}
+ fun setMissionStatus(date:String,index:Int,status:HunterStatus,note:String=""){
+  val l=log(date);require(!l.b("complete")&&!l.b("pain")){"La sesión está cerrada"}
+  val x=l.a("items").getJSONObject(index);require(!x.b("archived")){x.s("archiveReason")}
+  val e=catalog.byId[x.s("id")]?:error("Ejercicio desconocido")
+  require(rules.compatible(e,adjusted())){"Revisa la compatibilidad del ejercicio en Perfil"}
+  x.put("progressStatus",status.name);x.put("progressNote",note.take(1000))
+  x.put("missionState",status==HunterStatus.COMPLETED);save()
+ }
+ fun toggleMission(date:String,index:Int){
+  val x=log(date).a("items").getJSONObject(index)
+  setMissionStatus(date,index,if(x.b("missionState"))HunterStatus.PENDING else HunterStatus.COMPLETED)
+ }
  fun toggleTask(date:String,index:Int){val l=log(date);require(!l.b("complete")&&!l.b("pain"));val x=l.a("missionTasks").getJSONObject(index);x.put("done",!x.b("done"));save()}
  fun confirmSet(date:String,itemIndex:Int,setIndex:Int,value:Double,kg:Double,done:Boolean=true){val l=log(date);require(!l.b("complete")&&!l.b("pain")){"La sesión está cerrada"};val x=l.a("items").getJSONObject(itemIndex);require(!x.b("archived")){x.s("archiveReason")};val e=catalog.byId[x.s("id")]?:error("Ejercicio desconocido");require(rules.compatible(e,adjusted())){"Revisa la compatibilidad del ejercicio en Perfil"};require(value.isFinite()&&value>0&&value<=if(x.s("unit",e.unit)=="sec")3600 else 300);require(kg.isFinite()&&kg in 0.0..200.0);val actual=x.a("actual");require(setIndex in 0 until x.i("sets"));actual.put(setIndex,obj("done" to done,"value" to value,"kg" to if(e.equipment=="body")0 else kg));x.put("actual",actual);save()}
  fun feedback(date:String,rpe:Int,notes:String){require(rpe in 0..10);val l=log(date);require(!l.b("complete"));l.put("rpe",rpe);l.put("notes",notes.take(3000));save()}
- fun finish(date:String){val l=log(date);require(!l.b("complete")&&!l.b("pain"));require(l.a("items").objects().all{it.b("archived")||it.b("missionState")||it.b("selfReported")||it.a("actual").objects().count{a->a.b("done")}>=it.i("sets")}&&l.a("missionTasks").objects().all{it.b("done")}){"Completa los objetivos o registra las series pendientes"};require(l.s("kind")=="rest"||l.i("rpe") in 1..10){"Indica tu esfuerzo del 1 al 10"};l.put("complete",true);l.put("trainingGroup",GroupEvolution.logGroup(l,profile,catalog)?:"");l.put("finishedAt",java.time.Instant.now().toString());save();refreshWeek()}
+ fun finish(date:String){val l=log(date);require(!l.b("complete")&&!l.b("pain"));require(l.a("items").objects().all{it.b("archived")||it.b("missionState")||it.b("selfReported")||it.a("actual").objects().count{a->a.b("done")}>=it.i("sets")}&&l.a("missionTasks").objects().all{it.b("done")}){"Completa los objetivos o registra las series pendientes"};l.put("complete",true);l.put("trainingGroup",GroupEvolution.logGroup(l,profile,catalog)?:"");val participated=l.a("items").objects().any{it.b("missionState")||it.b("selfReported")||it.a("actual").objects().any{a->a.b("done")}};if(l.i("rpe") in 1..10&&participated)l.put("categoryRpe",HunterCategory.parse(l.s("trainingGroup"))?.code?:"");l.put("finishedAt",java.time.Instant.now().toString());save();refreshWeek()}
  fun pain(date:String,notes:String){val l=log(date);require(!l.b("complete"));l.put("pain",true);l.put("notes",notes.take(3000));save()}
  fun assign(routine:JSONObject,date:String){require(date>=today()){ "No se pueden sustituir días pasados" };require(!activeLog(logs.optJSONObject(date))){"Este día ya tiene actividad registrada"};val p=adjusted();require(rules.gate(p).ok);val items=routine.a("items").objects();require(items.isNotEmpty()&&items.all{catalog.byId[it.s("id")]?.let{e->rules.compatible(e,p)}==true}){"Revisa compatibilidad y equipo en Perfil"};val d=mutableDay(date);d.put("items",arr(items.map{it.copyJson()}));d.put("kind",when(routine.s("category")){"Cardio"->"cardio";"Movilidad"->"recovery";"Mixta"->"mixed";else->"strength"});d.put("title",routine.s("name"));d.put("routineId",routine.s("id"));d.put("customized",true);d.put("tasks",JSONArray());routine.optJSONObject("sourceSequence")?.let{d.put("sourceSequence",it.copyJson())};val logs=state.o("logs");logs.remove(date);state.put("logs",logs);save()}
  fun customize(date:String,items:List<JSONObject>,tasks:List<String>,title:String){require(date>=today()&&!activeLog(logs.optJSONObject(date))){"No se puede sustituir una sesión con actividad"};require(items.all{catalog.byId[it.s("id")]?.let{e->rules.compatible(e,adjusted())}==true}){"Revisa las restricciones del perfil"};val d=mutableDay(date);d.put("items",arr(items));d.put("tasks",arr(tasks.filter{it.isNotBlank()}.mapIndexed{i,t->obj("id" to "custom-$i","text" to t.take(300),"done" to false)}));d.put("customized",true);d.put("title",title.take(160));d.remove("blocked381");save()}
