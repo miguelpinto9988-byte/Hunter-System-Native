@@ -256,7 +256,7 @@ object HunterProgressRules {
     }
 
     private fun categoryRows(h: HunterHistory, date: LocalDate, category: HunterCategory, days: Long) =
-        h.efforts.filter { it.category == category && it.hasCompletedActivity && it.date < date &&
+        h.efforts.filter { it.category == category && (it.hasCompletedActivity || it.interrupted) && it.date < date &&
             it.date >= date.minusDays(days) }.sortedBy { it.date }
 
     fun recentEffort(h: HunterHistory, date: LocalDate, category: HunterCategory): HunterEffort? =
@@ -327,7 +327,7 @@ object HunterProgressRules {
         if (candidates.isEmpty()) return HunterDailyPlan(date, category, emptyList(), signature, revision,
             "No hay actividades compatibles con el calendario, equipo, técnica y restricciones.")
         val last = recentEffort(history, date, category)
-        val maxCount = when (last?.rpe) { 8 -> 2; 9, 10 -> 1; else -> p.dailyLimit }
+        val maxCount = when { last?.interrupted == true -> 1; last?.rpe == 8 -> 2; last?.rpe in 9..10 -> 1; else -> p.dailyLimit }
             .coerceAtMost(p.dailyLimit)
         val review = weekly(history, date, category)
         val intent = interpret(p.customGoal)
