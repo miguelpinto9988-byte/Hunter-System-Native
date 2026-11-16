@@ -34,6 +34,12 @@ fun AsterionMissionSection(ui: NativeUi, date: String) {
         Heading(if (mission.category == null) "Descanso programado"
             else mission.category.code.replace('_', ' '), size = 23)
         HText(mission.explanation, size = 14, color = LocalHunter.current.muted)
+        if (mission.category != null && date == today() &&
+            (progress.phases()[mission.category]?.phase ?: 0) > 0) {
+            HButton("VOLVER A FASE TÉCNICA ANTERIOR", Modifier.fillMaxWidth()) {
+                ui.attempt { progress.revertPhase(mission.category) }
+            }
+        }
         current.checkpoint?.let { checkpoint ->
             HText("Hito técnico: día " + checkpoint.day +
                 " · decisión " + checkpoint.decision.name.lowercase().replace('_', ' ') +
