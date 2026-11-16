@@ -197,6 +197,34 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
         AsterionLegacyMigration.mergeParticipation(
             AsterionLegacyMigration.participation(store.logs, store.catalog),
             explicitParticipation())
+    /**
+     * Estados pendientes derivados exclusivamente de propuestas realmente guardadas.
+     * No convierte días omitidos, descansos ni actividades futuras en fracasos.
+     */
+    fun plannedParticipation(until: LocalDate = LocalDate.now()): List<Participation> {
+        val planned = mutableListOf<Participation>()
+        for (day in root().a("missions").objects()) {
+            val date = date(day.s("date")) ?: continue
+            if (date.isAfter(until)) continue
+            val category = CategoryMapper.normalize(day.s("category")) ?: continue
+            for (id in day.a("ids").strings()) {
+                val exercise = store.catalog.byId[id] ?: continue
+                if (CategoryMapper.normalize(exercise.type) == category)
+                    planned += Participation(date, id, category, ParticipationStatus.PENDING)
+            }
+        }
+        for (day in store.allDays()) {
+            val date = date(day.s("date")) ?: continue
+            if (date.isAfter(until) || day.s("kind") == "rest") continue
+            for (item in day.a("items").objects()) {
+                val id = item.s("id")
+                val category = CategoryMapper.normalize(store.catalog.byId[id]?.type ?: "")
+                    ?: continue
+                planned += Participation(date, id, category, ParticipationStatus.PENDING)
+            }
+        }
+        return AsterionLegacyMigration.mergeParticipation(planned, participation())
+    }
     fun setParticipation(day: LocalDate, variantId: String, status: ParticipationStatus,
                          notes: String = "", interrupted: Boolean = false) {
         require(!day.isAfter(LocalDate.now()))
