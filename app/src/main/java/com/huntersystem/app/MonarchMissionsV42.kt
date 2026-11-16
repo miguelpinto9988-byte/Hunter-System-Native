@@ -383,7 +383,7 @@ private fun MonarchMissionsProgress(ui:NativeUi) {
             size=13,color=c.muted)
         val todayCategory=HunterCategory.parse(s.day(today()).s("progressCategory"))
         if(todayCategory!=null&&todayCategory!=HunterCategory.REST){
-            val history=HunterProgressBridge.history(s.logs,s.state.a("hunterPhases"))
+            val history=HunterProgressBridge.history(s.logs,s.state.a("hunterPhases"),s.catalog)
             val review=HunterProgressRules.weekly(history,LocalDate.parse(today()),todayCategory)
             HText("Revisión de "+todayCategory.title+": "+review.explanation,
                 size=13,color=c.muted)
