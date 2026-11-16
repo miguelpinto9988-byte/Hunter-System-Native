@@ -110,14 +110,17 @@ object HunterProgressBridge {
      * Prior logs lacking an explicit categoryRpe remain global-only.
      * Planned items are not silently turned into completed items.
      */
-    fun history(logs: JSONObject, phases: JSONArray = JSONArray()): HunterHistory {
+    fun history(logs: JSONObject, phases: JSONArray = JSONArray(), catalog: Catalog? = null): HunterHistory {
         val activities = mutableListOf<HunterActivityRecord>()
         val efforts = mutableListOf<HunterEffort>()
         val volumes = mutableListOf<HunterVolume>()
+        val interruptions = mutableListOf<HunterInterruption>()
         for ((key, raw) in logs.entries()) {
             val date = runCatching { LocalDate.parse(key) }.getOrNull() ?: continue
             val log = raw as? JSONObject ?: continue
             val group = HunterCategory.parse(log.s("trainingGroup"))?.takeIf { it != HunterCategory.REST }
+            if (group != null && (log.b("pain") || log.b("fatigue")))
+                interruptions += HunterInterruption(date, group)
             val details = log.a("items").objects()
             for (item in details) {
                 val id = item.s("id")
@@ -135,9 +138,12 @@ object HunterProgressBridge {
                 val completedSets = item.a("actual").objects().filter { it.b("done") }
                 val value = completedSets.map { it.n("value") }.takeIf { it.isNotEmpty() }?.average()
                 if (value != null && value > 0 && value.isFinite()) {
-                    volumes += HunterVolume(date, group, id, item.s("typeId", id),
-                        item.i("technicalLevel", 0).coerceIn(0, 5), completedSets.size,
-                        value, if (item.s("unit") == "sec") HunterUnit.SECONDS else HunterUnit.REPETITIONS,
+                    val source = catalog?.byId?.get(id)
+                    val unit = item.s("unit", source?.unit ?: "reps")
+                    volumes += HunterVolume(date, group, id, item.s("typeId", source?.oldFamily ?: id),
+                        item.i("technicalLevel", source?.planningLevel?.plus(1) ?: 0).coerceIn(0, 5),
+                        completedSets.size, value,
+                        if (unit == "sec") HunterUnit.SECONDS else HunterUnit.REPETITIONS,
                         log.i("rpe").takeIf { it in 1..10 }, state == HunterStatus.COMPLETED && log.b("complete"),
                         log.b("pain") || log.b("fatigue"))
                 }
@@ -159,7 +165,7 @@ object HunterProgressBridge {
             if (c != null && date != null && it.i("phase") in 0..2)
                 HunterPhaseChange(c, it.i("phase"), date) else null
         }
-        return HunterHistory(activities, efforts, changes, volumes)
+        return HunterHistory(activities, efforts, changes, volumes, interruptions)
     }
 
     fun pinned(day: JSONObject): HunterDailyPlan? {
