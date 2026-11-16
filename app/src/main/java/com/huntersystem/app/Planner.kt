@@ -32,36 +32,36 @@ class Planner(val catalog:Catalog,val rules:Rules){
  fun choose(p:JSONObject,kind:String,seed:String,logs:JSONObject=JSONObject(),
             date:String=today(),usedBases:Set<String> = emptySet(),
             planned:MutableList<PlanRow> = mutableListOf(),weekIndex:Int=0,
-            trainingProfile:com.huntersystem.app.asterion.TrainingProfile?=null,
-            observations:List<com.huntersystem.app.asterion.EffortObservation>?=null,
-            phases:Map<com.huntersystem.app.asterion.Category,com.huntersystem.app.asterion.TechnicalPhase> = emptyMap(),
-            pinned:com.huntersystem.app.asterion.DailyMission?=null):JSONObject{
+            trainingProfile:com.huntersystem.app.planning.TrainingProfile?=null,
+            observations:List<com.huntersystem.app.planning.EffortObservation>?=null,
+            phases:Map<com.huntersystem.app.planning.Category,com.huntersystem.app.planning.TechnicalPhase> = emptyMap(),
+            pinned:com.huntersystem.app.planning.DailyMission?=null):JSONObject{
   val gate=rules.gate(p)
   if(!gate.ok)return obj("items" to JSONArray(),"blocked" to gate.reason,"requested" to kind)
   if(kind=="rest")return obj("items" to JSONArray(),"effective" to "rest","requested" to "rest",
    "progressCategory" to "descanso")
   val localDate=runCatching{java.time.LocalDate.parse(date)}.getOrNull()
    ?:return obj("items" to JSONArray(),"blocked" to "Fecha no válida","requested" to kind)
-  val baseProfile=trainingProfile?:AsterionProfileAdapter.from(p,localDate)
+  val baseProfile=trainingProfile?:MonarchProfileAdapter.from(p,localDate)
    ?:return obj("items" to JSONArray(),"blocked" to "Perfil de planificación incompleto","requested" to kind)
   val current=baseProfile.category(localDate)
   val focus=p.s("dynamicRequestedFocus3847").takeIf{it in listOf("upper","core","lower")}
    ?:p.a("weekFocus").optString(weekday(date),"upper")
   val requested=when(kind){
-   "cardio"->com.huntersystem.app.asterion.Category.CARDIO
-   "recovery","mobility"->com.huntersystem.app.asterion.Category.MOBILITY
-   "strength"->if(current in listOf(com.huntersystem.app.asterion.Category.UPPER,
-     com.huntersystem.app.asterion.Category.CENTRAL,
-     com.huntersystem.app.asterion.Category.LOWER))current
-     else com.huntersystem.app.asterion.CategoryMapper.normalize(focus)
+   "cardio"->com.huntersystem.app.planning.Category.CARDIO
+   "recovery","mobility"->com.huntersystem.app.planning.Category.MOBILITY
+   "strength"->if(current in listOf(com.huntersystem.app.planning.Category.UPPER,
+     com.huntersystem.app.planning.Category.CENTRAL,
+     com.huntersystem.app.planning.Category.LOWER))current
+     else com.huntersystem.app.planning.CategoryMapper.normalize(focus)
    else->current
   }?:return obj("items" to JSONArray(),"effective" to "rest","requested" to kind)
   val index=localDate.dayOfWeek.value-1
   val week=baseProfile.weekly.toMutableList()
   week[index]=requested.ordinal
   val profile=baseProfile.copy(weekly=week)
-  val source=AsterionActivitySource(catalog,rules,p)
-  val history=observations?:AsterionLegacyMigration.efforts(logs)
+  val source=MonarchActivitySource(catalog,rules,p)
+  val history=observations?:MonarchLegacyHistory.efforts(logs)
   val previous=recent(logs,date,21).filter{it.second.b("complete")}
     .flatMap{it.second.a("items").objects().map{x->x.s("id")}}.toSet()
   val load=load(logs,date)
@@ -80,24 +80,24 @@ class Planner(val catalog:Catalog,val rules:Rules){
   val candidateFresh=source.all().any{item->
    item.category==requested &&
     catalog.byId[item.id]?.family !in usedBases &&
-    com.huntersystem.app.asterion.EligibilityPolicy.compatible(item,profile)
+    com.huntersystem.app.planning.EligibilityPolicy.compatible(item,profile)
   }
   val excluded=if(candidateFresh)source.all().filter{item->
     catalog.byId[item.id]?.let{e->e.family in usedBases}?:true
   }.map{it.id}.toSet() else emptySet()
-  val mission=com.huntersystem.app.asterion.DailyMissionPlanner.plan(
+  val mission=com.huntersystem.app.planning.DailyMissionPlanner.plan(
    localDate,profile,source,history,phases,pinned,priority,excluded)
-  val adaptation=com.huntersystem.app.asterion.CategoryEffortPolicy.decide(
+  val adaptation=com.huntersystem.app.planning.CategoryEffortPolicy.decide(
    history,localDate,requested)
   val stop=gate.reduced||rules.active(p)||
-   adaptation==com.huntersystem.app.asterion.Adaptation.RECOVER_ONE
-  val limited=adaptation==com.huntersystem.app.asterion.Adaptation.REDUCE_TWO
+   adaptation==com.huntersystem.app.planning.Adaptation.RECOVER_ONE
+  val limited=adaptation==com.huntersystem.app.planning.Adaptation.REDUCE_TWO
   val group=when(requested){
-   com.huntersystem.app.asterion.Category.UPPER->"upper"
-   com.huntersystem.app.asterion.Category.CENTRAL->"core"
-   com.huntersystem.app.asterion.Category.LOWER->"lower"
-   com.huntersystem.app.asterion.Category.MOBILITY->"mobility"
-   com.huntersystem.app.asterion.Category.CARDIO->"cardio"
+   com.huntersystem.app.planning.Category.UPPER->"upper"
+   com.huntersystem.app.planning.Category.CENTRAL->"core"
+   com.huntersystem.app.planning.Category.LOWER->"lower"
+   com.huntersystem.app.planning.Category.MOBILITY->"mobility"
+   com.huntersystem.app.planning.Category.CARDIO->"cardio"
   }
   val oldReview=GroupEvolution.evaluate(logs,date,group,p,catalog)
   val safeReview=oldReview.copy(steps=min(0,oldReview.steps))
@@ -156,12 +156,12 @@ class Planner(val catalog:Catalog,val rules:Rules){
   val kind=if(type=="cardio")"cardio" else if(type=="mobility")"recovery" else "strength";val low=if(range=="medium")10 else 5;val high=if(range=="short")10 else if(range=="medium")20 else 30;val adjusted=p.copyJson().put("difficulty",listOf("basic","intermediate","advanced")[n]).put("minutes",high)
   // La biblioteca histórica y la misión usan exactamente el mismo filtro
   // técnico y de equipamiento, además de los filtros previos de Rules.
-  val nativeProfile=AsterionProfileAdapter.from(adjusted,
+  val nativeProfile=MonarchProfileAdapter.from(adjusted,
    runCatching{java.time.LocalDate.parse(date)}.getOrNull()?:java.time.LocalDate.now())?:return null
-  val validated=AsterionActivitySource(catalog,rules,adjusted)
+  val validated=MonarchActivitySource(catalog,rules,adjusted)
   val maxTechnical=when(n){0->2;1->3;else->3}
   val safeIds=validated.all().filter{
-   com.huntersystem.app.asterion.EligibilityPolicy.compatible(
+   com.huntersystem.app.planning.EligibilityPolicy.compatible(
     it,nativeProfile,maxTechnical)
   }.map{it.id}.toSet()
   val candidates=rules.pool(adjusted,kind).filter{it.id in safeIds &&
