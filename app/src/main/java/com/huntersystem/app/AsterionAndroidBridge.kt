@@ -269,6 +269,36 @@ class AsterionProgressRepository(private val store: NativeStore) : VolumeProfile
         }))
         write(r)
     }
+    /**
+     * Guarda únicamente consentimiento de una referencia futura. No modifica
+     * misiones, series realizadas, pesos ni el plan del día.
+     */
+    fun acceptVolumeReference(day: LocalDate, variantId: String): Boolean {
+        require(day == LocalDate.now()) { "La referencia solo puede aceptarse hoy" }
+        val profile = AsterionProfileAdapter.from(store) ?: error("Perfil no configurado")
+        val activity = AsterionActivitySource(store).byId(variantId)
+            ?: error("Variante desconocida")
+        val block = blocks()[variantId] ?: VolumeResetPolicy.block(
+            activity.category, variantId, profile.experience, profile.experienceStart)
+        val suggestion = VolumeProgressionEngine.review(
+            day, activity, find(variantId), volume(), block, efforts())
+        require(suggestion.optional && suggestion.reference != null && suggestion.sets != null &&
+            suggestion.decision in setOf(VolumeDecision.OPTIONAL_INCREASE,
+                VolumeDecision.REVIEW_EXTRA_SET, VolumeDecision.OPTIONAL_MINIMUM_ADJUSTMENT)) {
+            "No existe un aumento opcional verificable para aceptar"
+        }
+        val key = variantId + "|" + block
+        val r = root()
+        val accepted = r.o("acceptedVolumeReferences")
+        val next = obj("variantId" to variantId, "blockId" to block,
+            "unit" to suggestion.unit!!.name, "value" to suggestion.reference,
+            "sets" to suggestion.sets, "acceptedOn" to day.toString())
+        if (accepted.optJSONObject(key)?.toString() == next.toString()) return false
+        accepted.put(key, next)
+        r.put("acceptedVolumeReferences", accepted)
+        write(r)
+        return true
+    }
     fun blocks(): Map<String, String> = root().o("blocks").entries().mapNotNull {
         (id, value) -> (value as? String)?.let { id to it }
     }.toMap()
