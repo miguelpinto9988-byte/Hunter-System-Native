@@ -199,16 +199,17 @@ data class ProgressSummary(val planned: Int, val completed: Int, val skipped: In
 object CategoryEffortPolicy {
     fun latest(history: List<EffortObservation>, date: LocalDate, category: Category): EffortObservation? =
         history.filter { it.category == category && it.date < date &&
-            !it.date.isBefore(date.minusDays(21)) }.maxWithOrNull(
-            compareBy<EffortObservation> { it.date }.thenBy { it.rpe }
-        )
-    fun decide(history: List<EffortObservation>, date: LocalDate, category: Category): Adaptation =
-        when (latest(history, date, category)?.rpe) {
-            null, 4, 5, 6, 7 -> Adaptation.MAINTAIN
-            1, 2, 3 -> Adaptation.EQUIVALENT_VARIATION
-            8 -> Adaptation.REDUCE_TWO
-            else -> Adaptation.RECOVER_ONE
+            !it.date.isBefore(date.minusDays(21)) && (it.completed || it.interrupted || it.rpe >= 8) }
+            .maxWithOrNull(compareBy<EffortObservation> { it.date }.thenBy { it.rpe })
+    fun decide(history: List<EffortObservation>, date: LocalDate, category: Category): Adaptation {
+        val last = latest(history, date, category) ?: return Adaptation.MAINTAIN
+        return when {
+            last.interrupted || last.rpe >= 9 -> Adaptation.RECOVER_ONE
+            last.rpe == 8 -> Adaptation.REDUCE_TWO
+            last.completed && last.rpe in 1..3 -> Adaptation.EQUIVALENT_VARIATION
+            else -> Adaptation.MAINTAIN
         }
+    }
 }
 enum class WeeklyDecision { WAIT, INSUFFICIENT, MAINTAIN, EQUIVALENT_VARIATION, RECOVERY }
 object WeeklyCategoryChallengePolicy {
