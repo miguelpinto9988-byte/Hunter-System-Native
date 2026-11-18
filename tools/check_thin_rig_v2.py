@@ -7,9 +7,11 @@ from __future__ import annotations
 
 import math
 import pathlib
+import sys
 import xml.etree.ElementTree as ET
 
-ROOT = pathlib.Path(__file__).resolve().parents[1] / "app/src/main/assets/media2d/rig-v2"
+ROOT = (pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else
+        pathlib.Path(__file__).resolve().parents[1] / "app/src/main/assets/media2d/rig-v2")
 NS = "{http://www.w3.org/2000/svg}"
 FILES = {
     "squat_front.svg": ("front", ("ankleL", "ankleR", "toeL", "toeR")),
