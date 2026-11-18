@@ -1,4 +1,4 @@
-# Hunter System V43.12 — Monarca con mejoras Eclipse, catálogo de 2000 SVG
+# Hunter System V43.12 — Monarca con mejoras Eclipse, catálogo de 2000 ejercicios sin SVG animados
 
 Rama principal: `main`. El código integra Monarca V43.11 y las mejoras recientes de Eclipse. Las dos historias se conservan en el commit de fusión.
 
@@ -24,8 +24,8 @@ Las pruebas Android/JVM y la APK debug de QA están en [planificación y tests](
 
 ## Recursos de ejercicio
 - **2000 fichas**: 1200 originales y 800 adicionales, con identificadores únicos.
-- **2000 SVG animados originales** restaurados desde el repositorio anterior a la migración, alojados en `app/src/main/assets/demos30/`. Se conservan también sus ficheros JSON complementarios originales.
-- Cada ficha obtiene la ruta SVG desde `demoPath30` en `Catalog.kt`. `MonarchExerciseStage` reproduce el SVG en Canvas Android con `OriginalSvg` y proporciona pausa, reproducción, espejo, velocidad y reinicio, sin usar WebView.
+- **Se retiraron los 2000 SVG animados** de `app/src/main/assets/demos30/`. Se conservan los JSON complementarios, las 1200 ilustraciones 2D estáticas de `media2d/` y los 342 MP4 locales.
+- `Catalog.kt` usa `media2d/<id>.svg` para las 1200 fichas originales y deja sin ilustración las 800 nuevas pendientes. `MonarchExerciseStage` dibuja imágenes fijas con `OriginalSvg`, sin animar. Los controles del temporizador y los MP4 locales son independientes.
 - El motor Rive y los 2000 `.riv` se han retirado del código y recursos empaquetados. El workflow verifica **0 archivos .riv** y **0 bibliotecas nativas de Rive** dentro de la APK.
 - Las **800 fichas nuevas** continúan `pendingTechnicalReview=true`, `approvedForAutoplan=false` y `autoProgressionApproved=false`; quedan excluidas de planificación automática.
 
@@ -35,6 +35,6 @@ python3 tools/check_hunter2000_complete.py
 python3 tools/generate_svg_qa_queue.py
 bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest :app:assembleRelease
 ```
-`.github/workflows/android-apk.yml` realiza las auditorías, pruebas Kotlin/Compose y compilación firmada. Verifica los 2000 SHA-256 de los SVG que realmente se empaquetan en la APK. Esta verificación **no acredita** fidelidad visual en Android, rendimiento ni validación biomecánica.
+`.github/workflows/android-apk.yml` realiza las auditorías, pruebas Kotlin/Compose y compilación firmada. Verifica que no queden SVG animados en la APK y que las 1200 ilustraciones estáticas estén empaquetadas. Esta verificación **no acredita** fidelidad visual en Android, rendimiento ni validación biomecánica.
 
-La validación visual en teléfono físico y la evaluación técnica de las 800 fichas siguen pendientes. Consultar [QA SVG](docs/QA-ANDROID-SVG-V43.md). Las 800 fichas continúan excluidas de la planificación automática.
+La validación visual en teléfono físico y la evaluación técnica de las 800 fichas siguen pendientes. Los 800 ejercicios nuevos no tienen demostración SVG. Consultar [QA SVG](docs/QA-ANDROID-SVG-V43.md). Las 800 fichas continúan excluidas de la planificación automática.

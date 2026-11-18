@@ -61,5 +61,5 @@ class NativeSvgView(context:Context):View(context){
  fun release(){animator?.cancel();animator=null;cache.evictAll();doc=null;ready=false}
 }
 @Composable fun OriginalSvg(path:String,modifier:Modifier=Modifier,play:Boolean=false,speed:Float=1f,mirror:Boolean=false,progress:Float?=null,accent:String="#aacce0",metal:String="#494c68",ornament:String="#8b8fb1",crop:Boolean=false){
- AndroidView(factory={NativeSvgView(it)},modifier=modifier,update={v->v.load(path,accent,metal,ornament);v.speed=speed;v.mirrored=mirror;v.crop=crop;if(progress!=null&&!play)v.fraction=progress;v.playing=play},onRelease={it.release()})
+ AndroidView(factory={NativeSvgView(it)},modifier=modifier,update={v->v.load(path,accent,metal,ornament);v.speed=speed;v.mirrored=mirror;v.crop=crop;if(progress!=null&&!play)v.fraction=progress;v.playing=false},onRelease={it.release()})
 }
