@@ -34,3 +34,9 @@ python3 tools/split_legacy_svg_layers.py --all --out build/svg-dos-capas
 El script utiliza `git show` contra el commit histórico para que los SVG animados **no reaparezcan en la APK**. No altera `main`, los 1.200 SVG estáticos de `media2d/` ni los 342 MP4.
 
 **Alcance:** separación de datos y prueba de visualización web. Todavía no se ha creado un motor nativo de animación esquelética reutilizable para los personajes de la app Android. Las muestras no constituyen una validación biomecánica.
+
+## Integración dentro de la aplicación Android
+
+`LegacyRigMotion.kt` lee los 48 fotogramas con articulaciones de `app/src/main/assets/demos30/<id>.json` y dibuja el esqueleto articulado mediante Compose Canvas. `MonarchExerciseStage` expone las vistas **Movimiento**, **Apariencia estática** y **Ambas (lado a lado)**; los controles de velocidad, pausa, reinicio, espejo y búsqueda de pose afectan al movimiento del esqueleto, no al temporizador de la sesión. El dibujo de `media2d/<id>.svg` sigue estático e independiente del esqueleto: no se afirma que esté riggeado ni acoplado.
+
+Los 800 ejercicios de expansión no tienen por ahora archivos JSON históricos con poses y se muestran sin animación ni apariencia. Las 1200 demostraciones originales sí tienen JSON en la carpeta `demos30`. La aplicación sigue sin usar SVG con `<animate>`.

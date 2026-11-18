@@ -19,8 +19,8 @@ def verify(ok,msg):
 verify(len(catalog)==1200,"Catálogo no contiene 1200 ejercicios")
 verify(len(list((R/"app/src/main/assets").rglob("*.mp4")))==342,"Se modificó el conjunto de 342 MP4")
 verify("fun MonarchExerciseStage(" in stage,"Falta escenario nuevo")
-verify("IMAGEN FIJA" in stage,"La ficha debe identificar la imagen estática")
-verify("OriginalSvg(demo" in stage and "play=false" in stage,"La ficha debe usar el SVG estático")
+verify("CAPA VISIBLE" in stage and "CAPAS INDEPENDIENTES" in stage,"La ficha debe permitir seleccionar las dos capas")
+verify("OriginalSvg(demo" in stage and "LegacyExerciseRig(" in stage,"La ficha debe mostrar por separado rig y SVG estético")
 verify("HunterRiveExercise" not in stage and "app.rive:rive-android" not in build,"El motor Rive debe estar retirado")
 verify("MonarchExerciseStage(e.name,e.demo,playing" in overlays,"Ficha no usa reproductor")
 # V43.12 puede encapsular la misma demostración en un componente de sesión adaptable.
@@ -34,7 +34,7 @@ session_uses_demo=(
 verify(session_uses_demo,"Sesión guiada no usa reproductor")
 # La ficha usa los controles originales; la sesión V43 usa los mismos callbacks
 # separados para reducir densidad de botones, sin alterar su comportamiento.
-exercise_controls='HButton(if(mirror)"⇄ ESPEJO' in overlays
+exercise_controls="MonarchPlaybackControls(playing" in overlays
 guided_controls=(
     overlays.count("MonarchPlaybackControls(")>=2
     or ("GuidedSessionPlaybackControls(running" in overlays

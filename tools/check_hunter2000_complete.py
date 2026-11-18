@@ -45,8 +45,20 @@ def verify():
             raise ValueError(f"SVG no estático o inseguro: {name}")
         if ET.fromstring(raw).tag.rsplit("}", 1)[-1] != "svg":
             raise ValueError(f"XML inválido: {name}")
+        # La capa estructural antigua debe seguir presente aunque se retiren los SVG animados.
+        rig_path = ASSETS / "demos30" / (name + ".json")
+        if not rig_path.is_file():
+            raise ValueError(f"Falta rig de movimiento histórico: {name}")
+        frames = json.loads(rig_path.read_text(encoding="utf-8")).get("frames", [])
+        if not (2 <= len(frames) <= 240) or any(
+            len(frame.get("p", [])) != 11 or
+            any(len(point) < 2 for point in frame["p"])
+            for frame in frames
+        ):
+            raise ValueError(f"Rig inválido: {name}")
     return {"status": "PASS", "catalog_total": 2000, "static_svg": 1200,
-            "animated_svg": 0, "pending_new": 800, "mp4_unchanged": True}
+            "animated_svg": 0, "motion_rigs": 1200, "pending_new": 800,
+            "mp4_unchanged": True}
 
 if __name__ == "__main__":
     try:

@@ -25,7 +25,7 @@ Las pruebas Android/JVM y la APK debug de QA están en [planificación y tests](
 ## Recursos de ejercicio
 - **2000 fichas**: 1200 originales y 800 adicionales, con identificadores únicos.
 - **Se retiraron los 2000 SVG animados** de `app/src/main/assets/demos30/`. Se conservan los JSON complementarios, las 1200 ilustraciones 2D estáticas de `media2d/` y los 342 MP4 locales.
-- `Catalog.kt` usa `media2d/<id>.svg` para las 1200 fichas originales y deja sin ilustración las 800 nuevas pendientes. `MonarchExerciseStage` dibuja imágenes fijas con `OriginalSvg`, sin animar. Los controles del temporizador y los MP4 locales son independientes.
+- `Catalog.kt` usa `media2d/<id>.svg` para las 1200 fichas originales y deja sin ilustración las 800 nuevas pendientes. `MonarchExerciseStage` ofrece dos capas independientes: **el esqueleto vectorial animado desde los JSON originales `demos30/<id>.json`** y **la apariencia 2D estática `media2d/<id>.svg`**. Se pueden visualizar por separado o una al lado de la otra; la apariencia todavía no está vinculada geométricamente al rig. Ningún SVG animado completo se incluye en los assets. El reloj y los MP4 locales funcionan independientemente.
 - El motor Rive y los 2000 `.riv` se han retirado del código y recursos empaquetados. El workflow verifica **0 archivos .riv** y **0 bibliotecas nativas de Rive** dentro de la APK.
 - Las **800 fichas nuevas** continúan `pendingTechnicalReview=true`, `approvedForAutoplan=false` y `autoProgressionApproved=false`; quedan excluidas de planificación automática.
 

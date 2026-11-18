@@ -101,13 +101,22 @@ import kotlin.math.*
 @Composable fun ExerciseDetail(ui:NativeUi,id:String){val s=ui.store;val e=s.catalog.byId[id]?:return;val c=LocalHunter.current;val tier=LocalVisualTier.current;var playing by remember(id,tier){mutableStateOf(tier!=VisualTier.SAVER)};var mirror by remember(id){mutableStateOf(false)};var speed by remember(id){mutableFloatStateOf(s.state.n("demoSpeed",1.0).toFloat())};var seek by remember(id){mutableFloatStateOf(0f)};var restart by remember(id){mutableIntStateOf(0)}
  Eyebrow("${e.group} · ${e.category}");Heading(e.name,size=35);HText("${if(e.unit=="sec")"Por tiempo" else "Por repeticiones"}${if(e.sides)" · Cantidad por lado" else ""} · ${if(e.impact)"Con saltos" else "Sin saltos"}",size=16,color=c.muted)
  MonarchExerciseStage(e.name,e.demo,playing,speed,mirror,progress=seek,height=360,restartToken=restart)
- HButton(if(mirror)"⇄ ESPEJO ✓" else "⇄ ESPEJO"){mirror=!mirror}
- HText("Ilustración SVG 2D estática: no hay reproducción ni control de velocidad.",size=14,color=c.muted)
+ if(e.demo.isNotBlank()){
+   MonarchPlaybackControls(playing,speed,mirror,
+     onToggle={playing=!playing},
+     onRestart={restart+=1;playing=true;seek=0f},
+     onMirror={mirror=!mirror},
+     onSpeed={speed=it;s.state.put("demoSpeed",speed.toDouble());s.save()})
+   HText("Ver poses del esqueleto",size=14,color=c.muted)
+   Slider(seek,{seek=it;playing=false})
+   HText("La velocidad del rig no modifica el tiempo ni las cantidades de la sesión.",
+     size=14,color=c.muted)
+ }
  s.catalog.editorial.o("clips").optJSONObject(id)?.let{clip->HButton("Ver clip local"){playing=false;ui.open("video",obj("path" to "offline2d/"+clip.s("file")))}}
  for((key,label)in listOf("setup" to "Preparación","instructions" to "Ejecución","control" to "Control","breath" to "Respiración","tempo" to "Ritmo","muscles" to "Músculos implicados","cue" to "Punto clave")){val text=if(key=="instructions")e.raw.a(key).strings().mapIndexed{i,t->"${i+1}. $t"}.joinToString("\n") else e.raw.s(key);if(text.isNotBlank())HPanel(decor=false,padding=16){Heading(label,size=25);HText(text,size=17)}}
  if(e.sides)HNotice("Realiza la cantidad indicada en cada lado. El registro especifica si corresponde a un lado o a ambos.")
  if(s.profile!=null){val reasons=s.rules.reasons(e,s.adjusted());HPanel(decor=false,padding=16){Heading("Compatibilidad con tu perfil",size=26);HText(if(reasons.isEmpty())"Incluido por los filtros del perfil actual" else reasons.joinToString("\n"){"· $it"},size=16)}}
- HText("Ilustración 2D orientativa; no sustituye la revisión técnica del ejercicio.",size=14,color=c.muted)
+ HText("La capa de movimiento se obtiene de los datos articulados originales. La apariencia 2D es independiente; ninguna constituye validación biomecánica.",size=14,color=c.muted)
 }
 @Composable fun SessionRecord(ui:NativeUi,date:String){val s=ui.store;val l=remember(date){runCatching{s.log(date)}.getOrNull()};if(l==null){HNotice("El registro está disponible en la fecha de hoy.");return};val closed=l.b("complete")||l.b("pain");var rpe by remember(date){mutableStateOf(l.i("rpe").toString())};var notes by remember(date){mutableStateOf(l.s("notes"))};var fatigue by remember(date){mutableStateOf(l.b("fatigue"))};// La navegación no guarda valoraciones ni observaciones implícitamente.
  Eyebrow("REGISTRO DETALLADO · $date");Heading("Cada serie cuenta.")

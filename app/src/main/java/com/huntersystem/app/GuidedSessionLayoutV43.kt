@@ -113,7 +113,14 @@ internal fun GuidedSessionPlaybackControls(
                 Modifier.weight(1.7f),primary=true){onToggle()}
             HButton("↺ REINICIAR",Modifier.weight(1f)){onRestart()}
         }
-        HButton(if(mirror)"⇄ ESPEJO ✓" else "⇄ ESPEJO"){onMirror()}
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp),
+            verticalAlignment=Alignment.Bottom){
+            HSelect("VELOCIDAD DEL RIG",speed.toString(),
+                listOf("0.5" to "0,5×","1.0" to "1×","1.5" to "1,5×","2.0" to "2×"),
+                Modifier.weight(1f)){onSpeed(it.toFloat())}
+            HButton(if(mirror)"⇄ ESPEJO ✓" else "⇄ ESPEJO",
+                Modifier.weight(1f)){onMirror()}
+        }
     }
 }
 
