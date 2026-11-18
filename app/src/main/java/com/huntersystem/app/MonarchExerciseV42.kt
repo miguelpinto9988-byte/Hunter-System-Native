@@ -15,6 +15,19 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
 /**
+ * Vistas vectoriales nuevas basadas en la figura delgada histórica de media2d.
+ * No cambia los IDs del catálogo ni activa ejercicios pendientes de revisión.
+ */
+internal fun thinRigViews(demo:String):List<Pair<String,String>> = when(demo.substringAfterLast('/')) {
+    "squat.svg" -> listOf(
+        "FRONTAL" to "media2d/rig-v2/squat_front.svg",
+        "LATERAL" to "media2d/rig-v2/squat_side.svg"
+    )
+    "pushup.svg" -> listOf("CENITAL" to "media2d/rig-v2/pushup_top.svg")
+    else -> emptyList()
+}
+
+/**
  * Hunter System V42.6 Monarca fase 07: escenario reutilizable de ejercicios.
  * Reproduce los SVG animados originales en Canvas Android, sin motor Rive ni WebView.
  * Estas demostraciones no sustituyen la revisión biomecánica.
@@ -32,6 +45,9 @@ fun MonarchExerciseStage(
     restartToken:Int=0
 ){
     val c=LocalHunter.current
+    val views=remember(demo){thinRigViews(demo)}
+    var viewIndex by remember(demo){mutableIntStateOf(0)}
+    val activeDemo=views.getOrNull(viewIndex)?.second?:demo
     val frame=RoundedCornerShape(24.dp)
     Column(Modifier.fillMaxWidth().clip(frame)
         .background(Brush.verticalGradient(listOf(c.surface,c.panel)))
@@ -39,15 +55,24 @@ fun MonarchExerciseStage(
         .padding(12.dp),verticalArrangement=Arrangement.spacedBy(9.dp)){
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
             verticalAlignment=Alignment.CenterVertically){
-            Eyebrow("DEMOSTRACIÓN NATIVA · SVG 2D")
+            Eyebrow(if(views.isNotEmpty())"DEMOSTRACIÓN NATIVA · RIG VECTORIAL 3D" else "DEMOSTRACIÓN NATIVA · SVG 2D")
             HText(if(isRunning)"● EN MOVIMIENTO" else "Ⅱ PAUSADA",
                 size=12,bold=true,color=if(isRunning)c.accent else c.muted)
+        }
+        if(views.size>1){
+            Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                views.forEachIndexed{index,view->
+                    HButton(view.first,Modifier.weight(1f),primary=viewIndex==index){
+                        viewIndex=index
+                    }
+                }
+            }
         }
         Box(Modifier.fillMaxWidth().height(height.dp)
             .clip(RoundedCornerShape(17.dp)).background(c.input),
             contentAlignment=Alignment.Center){
-            key(demo,restartToken){
-                OriginalSvg(demo,Modifier.fillMaxWidth().fillMaxHeight(),
+            key(activeDemo,restartToken){
+                OriginalSvg(activeDemo,Modifier.fillMaxWidth().fillMaxHeight(),
                     play=isRunning,speed=speed,mirror=mirror,progress=progress.coerceIn(0f,1f))
             }
         }
