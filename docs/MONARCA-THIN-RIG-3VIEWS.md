@@ -20,6 +20,17 @@ Fuentes: `app/src/main/assets/media2d/squat.svg` y `pushup.svg` (personaje 2D hi
 - Invariantes verificables: longitudes de huesos constantes en 3D, trayectorias continuas y bucle cerrado, puntos de apoyo inmóviles. Cada círculo `j-*` incluye `data-xyz` por muestra para que un test independiente compare el movimiento real y los enlaces del rig.
 - Como el SVG se proyecta a 2D, una vista por sí sola no basta para medir ángulos o diagnosticar una técnica de ejercicio. La escala del personaje y los parámetros de movimiento son ilustrativos, NO clínicos.
 
+## Regeneración programática
+
+El archivo `tools/generate_thin_rig_v2.mjs` es el código fuente editable para construir nuevos SVG a partir de parámetros 3D, cinemática inversa (IK) y paleta visual delgada. No requiere paquetes npm ni WebView. Para regenerar en un directorio separado:
+
+```bash
+node tools/generate_thin_rig_v2.mjs --output /tmp/monarca-rig
+python3 tools/check_thin_rig_v2.py /tmp/monarca-rig
+```
+
+Revisar visualmente antes de sustituir cualquier recurso de la APK. La versión de prueba regenerada puede variar en trazos respecto a los SVG ya incorporados; ambos pasan el mismo contrato geométrico.
+
 ## Validación
 
 ```bash
