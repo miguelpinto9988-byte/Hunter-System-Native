@@ -18,6 +18,12 @@ jobs:
         with:
           distribution: temurin
           java-version: "17"
+      - name: Validate original slim 3D SVG rig and two layers
+        run: python3 tools/check_thin_rig_v2.py
+      - name: Regenerate slim 3D rig and revalidate independent output
+        run: |
+          node tools/generate_thin_rig_v2.mjs --output "$RUNNER_TEMP/thin-rig-v2"
+          python3 tools/check_thin_rig_v2.py "$RUNNER_TEMP/thin-rig-v2"
       - name: Android 36
         shell: bash
         run: |
