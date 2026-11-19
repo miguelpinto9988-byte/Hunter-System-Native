@@ -3,6 +3,7 @@ package com.huntersystem.app
 import com.huntersystem.app.planning.*
 import org.json.JSONObject
 import org.json.JSONArray
+import java.time.LocalDate
 import kotlin.math.*
 
 data class Feedback(val strain:Boolean,val avg:Double,val adherence:Double,val completed:Int,val canProgress:Boolean)
@@ -216,12 +217,12 @@ class Planner(val catalog:Catalog,val rules:Rules){
   val kind=if(type=="cardio")"cardio" else if(type=="mobility")"recovery" else "strength";val low=if(range=="medium")10 else 5;val high=if(range=="short")10 else if(range=="medium")20 else 30;val adjusted=p.copyJson().put("difficulty",listOf("basic","intermediate","advanced")[n]).put("minutes",high)
   // La biblioteca histórica y la misión usan exactamente el mismo filtro
   // técnico y de equipamiento, además de los filtros previos de Rules.
-  val nativeProfile=MonarchProfileAdapter.from(adjusted,
-   runCatching{java.time.LocalDate.parse(date)}.getOrNull()?:java.time.LocalDate.now())?:return null
+  val localDate=runCatching{LocalDate.parse(date)}.getOrNull()?:return null
+  val nativeProfile=MonarchProfileAdapter.from(adjusted,localDate)?:return null
   val validated=planningSource(adjusted)
   val category=CategoryMapper.normalize(type)?:return null
   val adaptation=CategoryEffortPolicy.decide(MonarchLegacyHistory.efforts(logs,catalog),
-   LocalDate.parse(date),category,MonarchLegacyHistory.interruptions(logs))
+   localDate,category,MonarchLegacyHistory.interruptions(logs))
   val levelLimit=when(adaptation){
    Adaptation.RECOVER_ONE->1
    Adaptation.REDUCE_TWO->2
