@@ -78,14 +78,14 @@ jobs:
               svg={x for x in ns if x.startswith('assets/demos30/') and x.endswith('.svg')}
               assert not svg, f'Persisten {len(svg)} SVG animados'
               static={x for x in ns if x.startswith('assets/media2d/') and x.endswith('.svg')}
-              assert len(static)==1200, f'Se esperaban 1200 SVG estáticos; hay {len(static)}'
+              assert len(static)==1000, f'Se esperaban 1000 SVG estáticos; hay {len(static)}'
               assert not [x for x in ns if x.endswith('.riv') or 'librive-android.so' in x]
               path='assets/catalog-hunter2000-extra.json'
               assert path in ns
               new=json.loads(f.read(path))
               assert len(new)==800
               assert len({x['id'] for x in new})==800
-              print(f'APK verificada: 0 SVG animados, 1200 ilustraciones estáticas, 800 fichas Hunter 2000')
+              print(f'APK verificada: 0 SVG animados, 1000 ilustraciones estáticas, 800 fichas Hunter 2000')
           PY
 
       - name: Publicar APK de 2000 ejercicios

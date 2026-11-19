@@ -40,11 +40,11 @@ def validate_installed():
     new=json.loads(dest.read_text('utf8'))
     if len(base)!=1200 or len(new)!=800 or len({x['id'] for x in base+new})!=2000:
         raise ValueError('Catálogo instalado inválido')
-    missing=[x['id'] for x in base if not (ASSETS/'media2d'/(x['id']+'.svg')).is_file()]
+    missing=[x['id'] for x in base if not x["id"].startswith(("new46-", "hs379-")) and not (ASSETS/'media2d'/(x['id']+'.svg')).is_file()]
     if missing: raise ValueError(f'Faltan {len(missing)} ilustraciones estáticas, p.ej.: {missing[:3]}')
     if list((ASSETS/'demos30').glob('*.svg')):
         raise ValueError('No se permiten animaciones SVG en demos30')
-    print('INTEGRADOS: 2000 fichas, 1200 ilustraciones estáticas y 800 fichas Hunter 2000.')
+    print('INTEGRADOS: 2000 fichas, 1000 ilustraciones estáticas y 800 fichas Hunter 2000.')
 
 def main():
     if len(sys.argv)==2 and sys.argv[1]=='--check':

@@ -99,9 +99,17 @@ def verify():
     if (ASSETS / "demos-rive").exists():
         raise ValueError("No deben existir recursos Rive")
     static_assets = list((ASSETS / "media2d").glob("*.svg"))
-    if len(static_assets) != 1200:
-        raise ValueError(f"Se esperaban 1200 ilustraciones 2D, hay {len(static_assets)}")
+    if len(static_assets) != 1000:
+        raise ValueError(f"Se esperaban 1000 ilustraciones 2D, hay {len(static_assets)}")
+    expected = {item["id"] for item in original
+                if not item["id"].startswith(("new46-", "hs379-"))}
+    if {path.stem for path in static_assets} != expected:
+        raise ValueError("Las ilustraciones deben corresponder a las fichas del estilo original")
+    if any(path.stem not in expected for path in (ASSETS / "offline2d").glob("*.mp4")):
+        raise ValueError("Quedan clips fuera del conjunto de ilustraciones originales")
     for item in original:
+        if item["id"] not in expected:
+            continue
         name = item["id"]
         if not re.fullmatch(r"[a-zA-Z0-9_-]+", name):
             raise ValueError(f"ID inválido: {name}")
@@ -111,7 +119,8 @@ def verify():
         raw = path.read_bytes()
         if re.search(rb"<!\\s*(DOCTYPE|ENTITY)|<\\s*(script|foreignObject|animate|animateTransform|animateMotion|set)\\b", raw, re.I):
             raise ValueError(f"SVG no estático o inseguro: {name}")
-        if ET.fromstring(raw).tag.rsplit("}", 1)[-1] != "svg":
+        svg = ET.fromstring(raw)
+        if svg.tag.rsplit("}", 1)[-1] != "svg" or svg.get("data-renderer") != "2d":
             raise ValueError(f"XML inválido: {name}")
     sports_count, distribution, aliases, similar, candidates = verify_sports(items)
     return {"status": "PASS", "catalog_total": len(items) + sports_count, "static_svg": len(static_assets),

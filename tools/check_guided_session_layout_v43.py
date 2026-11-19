@@ -13,7 +13,7 @@ checks={
  "pasos y progreso visibles":'GuidedSessionHeader(preview' in player and 'HProgress(index.toFloat()' in layout,
  "demo adaptativa y sin recorte de ventana":'GuidedSessionDemo(e.name,e.demo' in player and 'BoxWithConstraints' in layout and 'MonarchExerciseStage(' in layout,
  "temporizador integrado con progreso":'GuidedSessionTimer(remaining' in player and 'guidedSessionProgress(totalSeconds,remaining)' in layout,
- "botones principales y opciones":all(x in layout for x in ('REPRODUCIR','REINICIAR','Velocidad','ESPEJO','onToggle','onRestart','onMirror','onSpeed')),
+ "botones principales y opciones":all(x in layout for x in ('INICIAR RELOJ','REINICIAR','ESPEJO','onToggle','onRestart','onMirror')),
  "serie y navegación intactas":all(x in player for x in ('ui.open("series"','"‹ Anterior"','"Siguiente ›"','pending=true','persist()')),
  "seguridad y guardado":all(x in player for x in ('Lifecycle.Event.ON_STOP','running=false;persist()','ui.open("pain"','s.state.put("guidedSessions"')),
  "ruta de vista previa intacta":all(x in player for x in ('val preview=data.has("routineId")','if(!preview&&date==today())')),

@@ -55,7 +55,7 @@ internal fun GuidedSessionHeader(preview:Boolean,title:String,index:Int,total:In
 /** La demostración sigue siendo el foco y se adapta al ancho disponible. */
 @Composable
 internal fun GuidedSessionDemo(
-    name:String,demo:String,running:Boolean,speed:Float,mirror:Boolean
+    name:String,demo:String,mirror:Boolean
 ){
     BoxWithConstraints(Modifier.fillMaxWidth()){
         val demoHeight=when {
@@ -63,8 +63,7 @@ internal fun GuidedSessionDemo(
             maxWidth<440.dp -> 265
             else -> 310
         }
-        MonarchExerciseStage(name,demo,running,speed,mirror,
-            height=demoHeight,showProgress=false)
+        MonarchExerciseStage(name,demo,mirror,height=demoHeight)
     }
 }
 
@@ -103,17 +102,17 @@ internal fun GuidedSessionTimer(remaining:Int,totalSeconds:Int,summary:String,ru
 /** Las acciones del tiempo prevalecen; espejo y velocidad no compiten con ellas. */
 @Composable
 internal fun GuidedSessionPlaybackControls(
-    running:Boolean,speed:Float,mirror:Boolean,
-    onToggle:()->Unit,onRestart:()->Unit,onMirror:()->Unit,onSpeed:(Float)->Unit
+    running:Boolean,mirror:Boolean,hasIllustration:Boolean,
+    onToggle:()->Unit,onRestart:()->Unit,onMirror:()->Unit
 ){
     val c=LocalHunter.current
     Column(Modifier.fillMaxWidth(),verticalArrangement=Arrangement.spacedBy(8.dp)){
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
-            HButton(if(running)"Ⅱ PAUSAR" else "▶ REPRODUCIR",
+            HButton(if(running)"Ⅱ PAUSAR RELOJ" else "▶ INICIAR RELOJ",
                 Modifier.weight(1.7f),primary=true){onToggle()}
             HButton("↺ REINICIAR",Modifier.weight(1f)){onRestart()}
         }
-        HButton(if(mirror)"⇄ ESPEJO ✓" else "⇄ ESPEJO"){onMirror()}
+        if(hasIllustration) HButton(if(mirror)"⇄ ESPEJO ✓" else "⇄ ESPEJO"){onMirror()}
     }
 }
 

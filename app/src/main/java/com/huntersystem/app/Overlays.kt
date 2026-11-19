@@ -98,16 +98,16 @@ import kotlin.math.*
  else->HNotice("Selecciona una sección para continuar.")
  }}}
  }}}}
-@Composable fun ExerciseDetail(ui:NativeUi,id:String){val s=ui.store;val e=s.catalog.byId[id]?:return;val c=LocalHunter.current;val tier=LocalVisualTier.current;var playing by remember(id,tier){mutableStateOf(tier!=VisualTier.SAVER)};var mirror by remember(id){mutableStateOf(false)};var speed by remember(id){mutableFloatStateOf(s.state.n("demoSpeed",1.0).toFloat())};var seek by remember(id){mutableFloatStateOf(0f)};var restart by remember(id){mutableIntStateOf(0)}
+@Composable fun ExerciseDetail(ui:NativeUi,id:String){val s=ui.store;val e=s.catalog.byId[id]?:return;val c=LocalHunter.current;var mirror by remember(id){mutableStateOf(false)}
  Eyebrow(listOf(e.group,e.category,e.sport).filter{it.isNotBlank()}.joinToString(" · "));Heading(e.name,size=35);HText("${if(e.unit=="sec")"Por tiempo" else "Por repeticiones"}${if(e.sides)" · Cantidad por lado" else ""} · ${if(e.impact)"Con saltos" else "Sin saltos"}",size=16,color=c.muted)
- MonarchExerciseStage(e.name,e.demo,playing,speed,mirror,progress=seek,height=360,restartToken=restart)
+ MonarchExerciseStage(e.name,e.demo,mirror,height=360)
  if(e.demo.isNotBlank()){
   HButton(if(mirror)"⇄ ESPEJO ✓" else "⇄ ESPEJO"){mirror=!mirror}
   HText("Ilustración SVG 2D estática",size=14,color=c.muted)
  }
  if(e.raw.a("instructions").length()==0&&e.raw.s("steps").isNotBlank())
   HPanel(decor=false,padding=16){Heading("Ejecución",size=25);HText(e.raw.s("steps"),size=17)}
- s.catalog.editorial.o("clips").optJSONObject(id)?.let{clip->HButton("Ver clip local"){playing=false;ui.open("video",obj("path" to "offline2d/"+clip.s("file")))}}
+ s.catalog.editorial.o("clips").optJSONObject(id)?.let{clip->HButton("Ver clip local"){ui.open("video",obj("path" to "offline2d/"+clip.s("file")))}}
  for((key,label)in listOf("setup" to "Preparación","instructions" to "Ejecución","commonErrors" to "Errores comunes","initialDose" to "Dosis inicial","control" to "Control","breath" to "Respiración","tempo" to "Ritmo","muscles" to "Músculos implicados","cue" to "Punto clave")){val text=if(key=="instructions")e.raw.a(key).strings().mapIndexed{i,t->"${i+1}. $t"}.joinToString("\n") else e.raw.s(key);if(text.isNotBlank())HPanel(decor=false,padding=16){Heading(label,size=25);HText(text,size=17)}}
  if(e.sides)HNotice("Realiza la cantidad indicada en cada lado. El registro especifica si corresponde a un lado o a ambos.")
  if(s.profile!=null){val reasons=s.rules.reasons(e,s.adjusted());HPanel(decor=false,padding=16){Heading("Compatibilidad con tu perfil",size=26);HText(if(reasons.isEmpty())"Incluido por los filtros del perfil actual" else reasons.joinToString("\n"){"· $it"},size=16)}}
@@ -145,7 +145,7 @@ import kotlin.math.*
  HButton("Ver sesión paso a paso",Modifier.fillMaxWidth()){ui.open("session",obj("routineId" to id))};HButton("Usar esta rutina",Modifier.fillMaxWidth(),primary=true,enabled=reasons.isEmpty()){ui.open("assign",obj("id" to id))}
 }
 @Composable fun AssignRoutine(ui:NativeUi,id:String){val r=ui.routine(id)?:return;var date by remember{mutableStateOf(today())};Heading("Usar esta rutina",size=35);HText(r.s("name"),bold=true);HText("Los ejercicios y cantidades mostrados se copiarán a la fecha elegida.",size=17,color=LocalHunter.current.muted);HSelect("Fecha",date,(0L..20L).map{val d=plus(today(),it);d to "$d${if(it==0L)" · Hoy" else ""}"}){date=it};for(x in r.a("items").objects())HText("${ui.store.catalog.byId[x.s("id")]?.name} · ${x.i("sets")} × ${x.i("target")}",size=16);HButton("Confirmar asignación",Modifier.fillMaxWidth(),primary=true){ui.attempt{ui.store.assign(r,date);ui.stack.clear();ui.go("plan");ui.message("Rutina asignada a $date")}}}
-@Composable fun SessionPlayer(ui:NativeUi,data:JSONObject){val s=ui.store;val date=data.s("date",today());val preview=data.has("routineId");val day=if(preview)ui.routine(data.s("routineId"))?:return else s.day(date);val p=s.adjusted();val reasons=day.a("items").objects().flatMap{item->s.catalog.byId[item.s("id")]?.let{s.rules.missionReasons(it,p,item)}?:listOf("Ejercicio desconocido")};if(reasons.isNotEmpty()){Heading("Revisa tu perfil");HNotice(reasons.distinct().joinToString("\n"));return};val steps=remember(day.toString(),p.toString()){s.planner.steps(day,p)};if(steps.isEmpty()){Heading("No hay ejercicios para esta sesión");return};val signature=hash(arr(steps).toString()).toString(16);val saved=if(preview)JSONObject() else s.state.o("guidedSessions").o(date).takeIf{it.s("nativeSignature")==signature}?:JSONObject();var index by remember(signature){mutableIntStateOf(saved.i("index").coerceIn(0,steps.size))};var remaining by remember(signature){mutableIntStateOf(saved.i("remaining",steps.getOrNull(index)?.i("seconds")?:0).coerceAtLeast(0))};var running by remember{mutableStateOf(false)};var pending by remember(index){mutableStateOf(false)};var speed by remember{mutableFloatStateOf(s.state.n("demoSpeed",1.0).toFloat())};var mirror by remember{mutableStateOf(false)};val scope=rememberCoroutineScope();val latestIndex by rememberUpdatedState(index);val latestRemaining by rememberUpdatedState(remaining)
+@Composable fun SessionPlayer(ui:NativeUi,data:JSONObject){val s=ui.store;val date=data.s("date",today());val preview=data.has("routineId");val day=if(preview)ui.routine(data.s("routineId"))?:return else s.day(date);val p=s.adjusted();val reasons=day.a("items").objects().flatMap{item->s.catalog.byId[item.s("id")]?.let{s.rules.missionReasons(it,p,item)}?:listOf("Ejercicio desconocido")};if(reasons.isNotEmpty()){Heading("Revisa tu perfil");HNotice(reasons.distinct().joinToString("\n"));return};val steps=remember(day.toString(),p.toString()){s.planner.steps(day,p)};if(steps.isEmpty()){Heading("No hay ejercicios para esta sesión");return};val signature=hash(arr(steps).toString()).toString(16);val saved=if(preview)JSONObject() else s.state.o("guidedSessions").o(date).takeIf{it.s("nativeSignature")==signature}?:JSONObject();var index by remember(signature){mutableIntStateOf(saved.i("index").coerceIn(0,steps.size))};var remaining by remember(signature){mutableIntStateOf(saved.i("remaining",steps.getOrNull(index)?.i("seconds")?:0).coerceAtLeast(0))};var running by remember{mutableStateOf(false)};var pending by remember(index){mutableStateOf(false)};var mirror by remember{mutableStateOf(false)};val scope=rememberCoroutineScope();val latestIndex by rememberUpdatedState(index);val latestRemaining by rememberUpdatedState(remaining)
  fun persist(){if(!preview){val all=s.state.o("guidedSessions");all.put(date,obj("nativeSignature" to signature,"index" to latestIndex,"remaining" to latestRemaining,"mode22" to p.s("blockMode22","exercise")));s.state.put("guidedSessions",all);s.save()}}
  val lifecycle=LocalLifecycleOwner.current.lifecycle;DisposableEffect(lifecycle,signature){val observer=LifecycleEventObserver{_,event->if(event==Lifecycle.Event.ON_STOP){running=false;persist()}};lifecycle.addObserver(observer);onDispose{lifecycle.removeObserver(observer);persist()}}
  LaunchedEffect(running,index){while(running&&remaining>0){delay(1000);remaining--;if(remaining==0){running=false;TimerSound.play(s.context)}}}
@@ -171,15 +171,15 @@ import kotlin.math.*
              sets=step.i("sets"),seconds=e.unit=="sec",cue=e.raw.s("cue"))),
          size=14,color=LocalHunter.current.muted,maxLines=3)
  }
- if(e!=null)GuidedSessionDemo(e.name,e.demo,running,speed,mirror)
+ if(e!=null)GuidedSessionDemo(e.name,e.demo,mirror)
  val summary=if(step.s("kind")=="exercise")
      "SERIE ${step.i("setIndex")+1}/${step.i("sets")} · ${step.i("target")} ${if(step.s("unit")=="sec")"segundos" else "repeticiones"}${if(e?.sides==true)" por lado" else ""}"
      else "INTERVALO DE RECUPERACIÓN"
  GuidedSessionTimer(remaining,step.i("seconds"),summary,running)
- GuidedSessionPlaybackControls(running,speed,mirror,
+ GuidedSessionPlaybackControls(running,mirror,e?.demo?.isNotBlank()==true,
      onToggle={running=!running},
      onRestart={running=false;remaining=step.i("seconds")},
-     onMirror={mirror=!mirror},onSpeed={speed=it})
+     onMirror={mirror=!mirror})
  if(step.s("kind")=="exercise"&&!preview&&date==today())
      HButton("✓ COMPLETAR Y REGISTRAR",Modifier.fillMaxWidth(),primary=true){
          running=false

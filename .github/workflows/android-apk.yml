@@ -115,7 +115,7 @@ jobs:
       - name: Comprobar estado de recursos Hunter 2000
         run: python3 tools/import_hunter2000_assets.py --check
 
-      - name: Comprobar ausencia de SVG animados y 1200 ilustraciones estáticas
+      - name: Comprobar ausencia de SVG animados y 1000 ilustraciones estáticas
         run: python3 tools/check_hunter2000_complete.py
 
       - name: Crear matriz de inspección de ilustraciones (800 pendientes)
@@ -149,7 +149,7 @@ jobs:
             svgs={p for p in names if p.startswith('assets/demos30/') and p.endswith('.svg')}
             assert not svgs, f'Persisten {len(svgs)} SVG animados'
             static={p for p in names if p.startswith('assets/media2d/') and p.endswith('.svg')}
-            assert len(static)==1200, f'Se esperaban 1200 SVG estáticos; hay {len(static)}'
+            assert len(static)==1000, f'Se esperaban 1000 SVG estáticos; hay {len(static)}'
             assert not [p for p in names if p.endswith('.riv') or 'librive-android.so' in p], 'Persisten archivos Rive'
             artwork='assets/monarch_splash_background.webp'
             assert artwork in names,'Falta fondo animado de carga'
@@ -176,7 +176,7 @@ jobs:
             print('49 fuentes PNG Pixel Art; recursos raster Android presentes en APK:',len(compiled_pngs))
             extra=json.loads(z.read('assets/catalog-hunter2000-extra.json'))
             assert len(extra)==800 and len({x['id'] for x in extra})==800
-            print('APK verificada: 0 SVG animados, 1200 ilustraciones estáticas, 800 fichas Hunter 2000')
+            print('APK verificada: 0 SVG animados, 1000 ilustraciones estáticas, 800 fichas Hunter 2000')
           PY
 
       - name: Publicar matriz de QA pendiente (no es certificacion)
