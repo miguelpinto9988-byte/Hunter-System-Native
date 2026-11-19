@@ -310,13 +310,19 @@ function smoothStations(stations, subdivisions=4){
     const g=mk('g',{'data-motion':profile.track,'data-surface':profile.id});
     const path=mk('path',{'id':'vol-'+profile.id,'class':'volume-patch','fill':bandColor[profile.type]||'url(#vol-arm)','data-depth':/posterior/.test(profile.id)?'far':'near'});
     const label=mk('title');label.textContent=profile.name;
-    path.appendChild(label);g.appendChild(path);volumeGroups.appendChild(g);
-    createdSurfaces.push({profile,path});
+    path.appendChild(label);g.appendChild(path);
+    // Cyan dashed reference shows the previous exterior contour at the SAME phase.
+    const baseline=mk('path',{'class':'layer3-baseline-reference','fill':'none','stroke':'#b6ffff','stroke-width':'1.8','stroke-dasharray':'5 4','opacity':'.92','pointer-events':'none'});
+    g.appendChild(baseline);volumeGroups.appendChild(g);
+    createdSurfaces.push({profile,path,baseline});
  }
  // Keep technical rig and aesthetic art untouched: only new layer receives these fresh geometry writes.
  function refreshExterior(phase){
     const k=(1-Math.cos(2*Math.PI*phase))/2;
-    for(const {profile,path} of createdSurfaces){
+    for(const {profile,path,baseline} of createdSurfaces){
+       const oldSwell=profile.type==='calf' ? .12*k : 0;
+       baseline.setAttribute('d',profilePath(profile.stations,relief,oldSwell));
+       baseline.style.display=compareImproved ? '' : 'none';
        const swell=compareImproved ? (profile.type==='calf' ? .30*k : profile.type==='thigh' ? .065*k : profile.type==='shoulder' ? .055*k : 0) : (profile.type==='calf' ? .12*k : 0);
        path.setAttribute('d',profilePath(profile.stations,relief,swell));
     }
@@ -342,10 +348,10 @@ function smoothStations(stations, subdivisions=4){
  let compareImproved=true;
  const compareButton=document.createElement('button');
  compareButton.type='button';
- compareButton.textContent='Capa 3: MEJORADA (pulsar para comparar)';
+ compareButton.textContent='MEJORADA + contorno anterior punteado (pulsar para comparar)';
  compareButton.style.cssText='position:fixed;bottom:18px;right:18px;z-index:9999;background:#126c76;color:white;border:2px solid #a5f5ff;border-radius:12px;padding:13px 18px;font-weight:800;box-shadow:0 4px 22px #0009';
  document.body.appendChild(compareButton);
- compareButton.addEventListener('click',()=>{compareImproved=!compareImproved;compareButton.textContent=compareImproved?'Capa 3: MEJORADA (pulsar para comparar)':'Capa 3: ORIGINAL (pulsar para comparar)';update()});
+ compareButton.addEventListener('click',()=>{compareImproved=!compareImproved;compareButton.textContent=compareImproved?'MEJORADA + contorno anterior punteado (pulsar para comparar)':'ORIGINAL (pulsar para comparar)';update()});
  const partSets=[...document.querySelectorAll('[data-motion]')];
  const sample=(values,f)=>{const p=(f*48)%48,a=Math.floor(p),b=(a+1)%48,k=p-a;return values[a]+(values[b]-values[a])*k};
  const fmt=x=>Math.abs(x)<.05?'0,0':x.toFixed(1).replace('.',',');
