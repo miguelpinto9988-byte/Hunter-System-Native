@@ -1,0 +1,16 @@
+'use strict';
+const assert=require('node:assert/strict');
+const profiles=require('./profiles/calf.json').profiles;
+const order=require('./occlusion_order_calf.json');
+const ids=profiles.map(p=>p.id);
+assert.equal(ids.length,24);
+assert.equal(new Set(order.backToFront).size,24);
+assert.deepEqual([...order.backToFront].sort(),[...ids].sort());
+assert.deepEqual(Object.values(order.groups).flat(),order.backToFront);
+const index=id=>order.backToFront.indexOf(id);
+for(const rear of order.groups.rear)assert(index(rear)<index('torso'),rear+' must be behind torso');
+for(const front of order.groups.front)assert(index(front)>index('torso'),front+' must be in front of torso');
+assert.equal(index('cabeza_exterior'),23);
+assert(index('pantorrilla_posterior')<index('pantorrilla_frontal'));
+assert(index('pie_posterior')<index('pie_frontal'));
+console.log('PASS: 24 C3 surfaces, rear/core/front/head painter invariants');
