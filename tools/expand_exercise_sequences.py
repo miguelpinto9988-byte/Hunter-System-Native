@@ -58,6 +58,27 @@ POOLS = (
      sport-ampl-strength-single-leg-row"""),
 )
 
+# The second release adds new gestures to each of the established training pools.
+ADDITIONS = (
+    ("shoulder home-wallangel30 new46-scapcar new46-wristrock new46-firehydrant",
+     "home-handrelease23 home-plank-toe23 home-bear-return23 home-hollow-tuck23",
+     "home-push-tap23 home-spiderman23 home-body-saw23 home-hindu23"),
+    ("sport-ampl-track-march-toe sport-track-a-wall standingabduct new46-shortfoot heeldig frontbackstep ankledrive",
+     "sport-ampl-track-grapevine new46-ladderinout new46-ickyshuffle new46-laddercarioca",
+     "new46-shuttle new46-tdrill new46-forwardhop skater-stick19"),
+    ("new46-bentcalfstretch heeltoe new46-walltibia new46-shortfoot heeldig frontbackstep standingcurl hipflex calf",
+     "new46-heelwalk new46-toewalk new46-droplanding sport-ampl-track-shuffle-brake",
+     "new46-shuttle new46-tdrill new46-lateralhurdle new46-forwardhop"),
+    ("new46-quadthoracic new46-adductorrock new46-seatedhipir new46-butterfly new46-pelvicclock",
+     "new46-hipcarquad new46-seatedhinge skaterreach",
+     "home-skater-squat23 home-shrimp23 sport-ampl-strength-single-leg-row"),
+    ("new46-firehydrant new46-walltibia new46-reverseclam new46-sideadduct new46-ankleinvert",
+     "new46-soleus new46-slidelateral new46-monsterwalk home-bridge-walk23 new46-bandkick",
+     "new46-trxsplit new46-copenhagendyn home-ham-slide-one23 new46-spanishsquat"),
+)
+SECOND_TARGETS = (70, 75, 55)
+
+
 # Some early fichas describe material in prose rather than in their material list.
 MATERIAL = {
     "chair": ["chair"], "wall": ["wall"], "wallplank": ["wall"], "wallcalf": ["wall"],
@@ -71,6 +92,8 @@ MATERIAL = {
     "new46-ballhip": ["swissball"], "new46-couchstretch": ["wall"],
     "home-airplane23": ["support"], "new46-lungerotation": ["mat"],
     "sport-futbol-sole": ["ball"], "sport-track-a-wall": ["wall"],
+    "home-wallangel30": ["wall"], "heeltoe": ["chair"],
+    "ankledrive": ["wall"],
 }
 GROUP_NAMES = {
     "upper": "Tren superior", "core": "Core", "lower": "Piernas",
@@ -156,21 +179,23 @@ def compose(discipline, category, group, level, first, second, labels):
     }
 
 
-def main():
-    sports = [row for row in load("catalog-sports.json") if not row["id"].startswith(PREFIX)]
-    originals = load("catalog.json")
-    components = {row["id"]: row for row in originals + sports}
-    labels = load("materials.json")
-    aliases = load("exercise-aliases.json")
-    used = set()
+def build_sequences(components, labels, aliases, used, targets, additions):
     sequences = []
-    for slug, discipline, category, group, *tiers in POOLS:
+    for (slug, discipline, category, group, *tiers), extra in zip(POOLS, additions):
+        extra_ids = set(" ".join(extra).split())
+        tiers = [f"{base} {extension}" for base, extension in zip(tiers, extra)]
         counts = Counter()
-        candidates = [(components[id], level) for level, tier in enumerate(tiers) for id in tier.split()]
-        for level, target in enumerate(TARGETS):
+        candidate_levels = {}
+        for level, tier in enumerate(tiers):
+            for identity in tier.split():
+                candidate_levels.setdefault(identity, level)
+        candidates = [(components[identity], level) for identity, level in candidate_levels.items()]
+        for level, target in enumerate(targets):
             options = [
                 (first, second) for (first, a), (second, b) in itertools.combinations(candidates, 2)
                 if max(a, b) == level and first["id"] not in aliases and second["id"] not in aliases
+                and (not extra_ids or first["id"] in extra_ids or second["id"] in extra_ids)
+                and not first.get("sourceOnly") and not second.get("sourceOnly")
                 and not first.get("pendingTechnicalReview") and not second.get("pendingTechnicalReview")
                 and patterns(first) != patterns(second)
                 and first.get("baseId", first["id"]) != second.get("baseId", second["id"])
@@ -183,6 +208,7 @@ def main():
                 index = min(range(len(options)), key=lambda i: (
                     counts[options[i][0]["id"]] + counts[options[i][1]["id"]],
                     -sum(item["sport"] == discipline for item in options[i] if "sport" in item),
+                    -(bool(extra_ids) and bool(options[i][0].get("floor")) == bool(options[i][1].get("floor"))),
                     i,
                 ))
                 first, second = options.pop(index)
@@ -190,7 +216,22 @@ def main():
                 used.add(tuple(sorted((first["id"], second["id"]))))
                 row = compose(discipline, category, group, level, first, second, labels)
                 row["id"] = f"{PREFIX}{slug}-{first['id']}-{second['id']}"
+                if extra_ids:
+                    row["catalogWave"] = 2
                 sequences.append(row)
+    return sequences
+
+
+def main():
+    sports = [row for row in load("catalog-sports.json") if not row["id"].startswith(PREFIX)]
+    originals = load("catalog.json")
+    components = {row["id"]: row for row in originals + sports}
+    labels = load("materials.json")
+    aliases = load("exercise-aliases.json")
+    used = set()
+    sequences = []
+    sequences.extend(build_sequences(components, labels, aliases, used, TARGETS, [("", "", "")] * len(POOLS)))
+    sequences.extend(build_sequences(components, labels, aliases, used, SECOND_TARGETS, ADDITIONS))
     (ASSETS / "catalog-sports.json").write_text(
         json.dumps(sports, ensure_ascii=False, indent=2)[:-2] + ",\n" + ",\n".join(
             "  " + json.dumps(row, ensure_ascii=False, separators=(",", ":")) for row in sequences

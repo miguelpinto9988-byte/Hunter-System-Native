@@ -53,11 +53,15 @@ class ExercisePerspectiveTest {
 
     @Test fun everyNewSequenceLoadsWithItsOwnPerspectiveAndACommonScale() {
         val catalog = Catalog(context)
-        assertEquals(3_000, catalog.exercises.size)
+        assertEquals(4_000, catalog.exercises.size)
         val sequences = catalog.exercises.filter { it.id.startsWith("sport-seq-") }
-        assertEquals(965, sequences.size)
+        assertEquals(1_965, sequences.size)
         for ((_, exercises) in sequences.groupBy { it.sport }) {
-            assertEquals(mapOf(0 to 68, 1 to 73, 2 to 52),
+            val latest = exercises.filter { it.raw.i("catalogWave") == 2 }
+            assertEquals(200, latest.size)
+            assertEquals(mapOf(0 to 70, 1 to 75, 2 to 55),
+                latest.groupingBy { it.planningLevel }.eachCount())
+            assertEquals(mapOf(0 to 138, 1 to 148, 2 to 107),
                 exercises.groupingBy { it.planningLevel }.eachCount())
         }
         for (exercise in sequences) {

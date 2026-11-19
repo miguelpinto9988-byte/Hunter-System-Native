@@ -76,14 +76,16 @@ def verify_sports(items):
             ):
                 raise ValueError(f"Guía o progresión inválida: {row['id']}")
             seen_pairs.add(pair)
-            sequence_distribution[sport][level] += 1
+            sequence_distribution[(row.get("catalogWave", 1), sport)][level] += 1
         distribution[sport][level] += 1
-    expected_sequence_levels = {0: 68, 1: 73, 2: 52}
     expected_areas = {"Calistenia", "Fútbol", "Atletismo", "Movilidad", "Fuerza"}
-    if len(sequences) != 965 or set(sequence_distribution) != expected_areas or any(
-        levels != expected_sequence_levels for levels in sequence_distribution.values()
-    ):
-        raise ValueError("La ampliación debe aportar 965 secuencias con los niveles acordados")
+    expected_distribution = {
+        (wave, area): dict(enumerate(levels))
+        for wave, levels in ((1, (68, 73, 52)), (2, (70, 75, 55)))
+        for area in expected_areas
+    }
+    if len(sequences) != 1965 or sequence_distribution != expected_distribution:
+        raise ValueError("La ampliación debe aportar 1965 secuencias con los niveles acordados")
     candidates = defaultdict(list)
     for row in all_rows:
         if row.get("steps"):
