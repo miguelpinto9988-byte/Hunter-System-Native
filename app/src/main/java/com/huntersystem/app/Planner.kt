@@ -1,6 +1,6 @@
 package com.huntersystem.app
 
-import com.huntersystem.app.planning.DeterministicSelection
+import com.huntersystem.app.planning.*
 import org.json.JSONObject
 import org.json.JSONArray
 import kotlin.math.*
@@ -20,7 +20,7 @@ class Planner(val catalog:Catalog,val rules:Rules){
   cachedPlanningKey=key
   return source
  }
- val fields=listOf("age","goal","goalGroup","finalGoal","finalTarget","focus","difficulty","experience","equipment","gymEquipment23","bench","step","minutes","frequency","dailyMissions","trainingMode","trainingScale","weekPlan","weekFocus","injuries","restrictions","health","limits","preferredTrainer","load","restSeconds","materials46","capabilities46","dynamicRequestedFocus3847")
+ val fields=listOf("age","goal","goalGroup","finalGoal","finalTarget","focus","difficulty","experience","equipment","gymEquipment23","bench","step","minutes","frequency","dailyMissions","trainingMode","trainingScale","weekPlan","weekFocus","injuries","restrictions","health","limits","preferredTrainer","load","restSeconds","materials46","capabilities46","dynamicRequestedFocus3847","weeklyCategories","weekCategories","custom_goal","intensityPreference","blockMode22")
  fun profileKey(p:JSONObject)=hash(arr(fields.map{arr(listOf(it,p.opt(it)))}).toString()).toString(36)
  fun recent(logs:JSONObject,date:String,days:Long)=logs.entries().mapNotNull{(d,l)->if(d<date&&d>=plus(date,-days)&&l is JSONObject)d to l else null}
  fun feedback(logs:JSONObject,date:String):Feedback{val rows=recent(logs,date,7);val done=rows.map{it.second}.filter{it.b("complete")&&!it.b("pain")&&!it.b("manual")};val efforts=done.map{it.n("rpe")}.filter{it in 1.0..10.0};val avg=if(efforts.isEmpty())0.0 else efforts.average();val strain=recent(logs,date,14).any{(_,l)->l.b("pain")||l.b("fatigue")||l.n("rpe")>=8};val adherence=if(rows.isEmpty())0.0 else done.size.toDouble()/rows.size;return Feedback(strain,avg,adherence,done.size,done.size>=2&&adherence>=.8&&avg>0&&avg<=7&&!strain)}
@@ -49,7 +49,9 @@ class Planner(val catalog:Catalog,val rules:Rules){
             trainingProfile:com.huntersystem.app.planning.TrainingProfile?=null,
             observations:List<com.huntersystem.app.planning.EffortObservation>?=null,
             phases:Map<com.huntersystem.app.planning.Category,com.huntersystem.app.planning.TechnicalPhase> = emptyMap(),
-            pinned:com.huntersystem.app.planning.DailyMission?=null):JSONObject{
+            pinned:DailyMission?=null,
+            participation:List<Participation> = emptyList(),
+            interruptions:List<SessionInterruption> = MonarchLegacyHistory.interruptions(logs)):JSONObject{
   val gate=rules.gate(p)
   if(!gate.ok)return obj("items" to JSONArray(),"blocked" to gate.reason,"requested" to kind)
   if(kind=="rest")return obj("items" to JSONArray(),"effective" to "rest","requested" to "rest",
@@ -59,9 +61,12 @@ class Planner(val catalog:Catalog,val rules:Rules){
   val baseProfile=trainingProfile?:MonarchProfileAdapter.from(p,localDate)
    ?:return obj("items" to JSONArray(),"blocked" to "Perfil de planificación incompleto","requested" to kind)
   val current=baseProfile.category(localDate)
+  if(trainingProfile!=null&&current==null)return obj("items" to JSONArray(),
+   "effective" to "rest","requested" to kind,"progressCategory" to "descanso",
+   "planningNote" to "Descanso programado.")
   val focus=p.s("dynamicRequestedFocus3847").takeIf{it in listOf("upper","core","lower")}
    ?:p.a("weekFocus").optString(weekday(date),"upper")
-  val requested=when(kind){
+  val requested=(if(trainingProfile!=null)current else when(kind){
    "cardio"->com.huntersystem.app.planning.Category.CARDIO
    "recovery","mobility"->com.huntersystem.app.planning.Category.MOBILITY
    "strength"->if(current in listOf(com.huntersystem.app.planning.Category.UPPER,
@@ -69,7 +74,7 @@ class Planner(val catalog:Catalog,val rules:Rules){
      com.huntersystem.app.planning.Category.LOWER))current
      else com.huntersystem.app.planning.CategoryMapper.normalize(focus)
    else->current
-  }?:return obj("items" to JSONArray(),"effective" to "rest","requested" to kind)
+  })?:return obj("items" to JSONArray(),"effective" to "rest","requested" to kind)
   val index=localDate.dayOfWeek.value-1
   val week=baseProfile.weekly.toMutableList()
   week[index]=requested.ordinal
@@ -78,7 +83,7 @@ class Planner(val catalog:Catalog,val rules:Rules){
   val profile=baseProfile.copy(weekly=week,
    dailyLimit=min(baseProfile.dailyLimit,timeLimit))
   val source=planningSource(p)
-  val history=observations?:MonarchLegacyHistory.efforts(logs)
+  val history=observations?:MonarchLegacyHistory.efforts(logs,catalog)
   val lastUse=mutableMapOf<String, String>()
   for((day,log) in recent(logs,date,21)) {
    if(!log.b("complete"))continue
@@ -109,7 +114,7 @@ class Planner(val catalog:Catalog,val rules:Rules){
     catalog.byId[item.id]?.let{e->e.family in usedBases}?:true
   }.map{it.id}.toSet() else emptySet()
   val adaptation=com.huntersystem.app.planning.CategoryEffortPolicy.decide(
-   history,localDate,requested)
+   history,localDate,requested,interruptions)
   val stop=gate.reduced||rules.active(p)||
    adaptation==com.huntersystem.app.planning.Adaptation.RECOVER_ONE
   val limited=adaptation==com.huntersystem.app.planning.Adaptation.REDUCE_TWO
@@ -121,13 +126,11 @@ class Planner(val catalog:Catalog,val rules:Rules){
    com.huntersystem.app.planning.Category.CARDIO->"cardio"
   }
   val oldReview=GroupEvolution.evaluate(logs,date,group,p,catalog)
-  val progressionReady=!stop&&!limited&&oldReview.technicalReady&&
-   java.time.temporal.ChronoUnit.DAYS.between(profile.experienceStart,localDate)>=7
-  val mission=com.huntersystem.app.planning.DailyMissionPlanner.plan(
-   localDate,profile,source,history,phases,pinned,priority,excluded,seed,progressionReady)
+  val mission=DailyMissionPlanner.plan(
+   localDate,profile,source,history,phases,pinned,priority,excluded,seed,participation,interruptions)
   val safeReview=oldReview.copy(steps=min(0,oldReview.steps))
   val groupFeedback=GroupEvolution.feedback(logs,date,group,p,catalog)
-  val items=mission.ids.mapNotNull{id->
+  val doseOptions=mission.ids.mapNotNull{id->
    val e=catalog.byId[id]?:return@mapNotNull null
    val metadata=source.byId(id)?:return@mapNotNull null
    val baseLevel=profile.experience.ordinal+1
@@ -155,6 +158,12 @@ class Planner(val catalog:Catalog,val rules:Rules){
    }
    item
   }
+  val items=mutableListOf<JSONObject>()
+  val budget=profile.minutes.toLong()*60
+  for(item in doseOptions){
+   val tentative=obj("items" to arr(items+item),"unifiedPlanning" to true)
+   if(steps(tentative,p).sumOf{it.i("seconds").toLong()}<=budget)items+=item
+  }
   for(item in items){val e=catalog.byId[item.s("id")]?:continue
    planned+=PlanRow(date,e.oldFamily,e.group,e.pattern,item.i("sets").coerceAtMost(6))}
   return obj("items" to arr(items),"effective" to kind,"requested" to kind,
@@ -162,7 +171,9 @@ class Planner(val catalog:Catalog,val rules:Rules){
    "progressSettingsHash" to mission.profileHash,
    "progressCatalogHash" to mission.catalogHash,
    "planningNote" to mission.explanation,
-   "blocked" to if(items.isEmpty())mission.explanation else "")
+   "blocked" to if(items.isEmpty()&&doseOptions.isNotEmpty())
+    "Ninguna actividad compatible cabe en el tiempo disponible."
+   else if(items.isEmpty())mission.explanation else "")
  }
  fun gentle(p:JSONObject)=rules.mode(p).reduced||catalog.editorial.o("goalPlans").o(p.s("finalTarget")).b("gentle")
  fun libraryDose(e:Exercise,p:JSONObject,kind:String):JSONObject{
@@ -178,7 +189,8 @@ class Planner(val catalog:Catalog,val rules:Rules){
  fun warmKey(e:Exercise)=when{Regex("box|shadow|punch").containsMatchIn(e.oldFamily)->"boxing";e.oldFamily in listOf("jog","heelback","highknees")->"running";"march" in e.oldFamily->"marching";else->e.oldFamily}
  fun phase(items:List<JSONObject>,p:JSONObject):Exercise?{val used=items.mapNotNull{catalog.byId[it.s("id")]};return listOf("fastmarch","stepjack","heelback","box","heeldig","sidestep","seatedpunch","seatedmarch","seatedstep").mapNotNull{catalog.byId[it]}.filter{e->!e.impact&&!e.power&&used.none{it.family==e.family||warmKey(it)==warmKey(e)}&&rules.compatible(e,p)}.let{xs->xs.firstOrNull{!it.raw.b("seated")}?:xs.firstOrNull()}}
  fun workSeconds(e:Exercise,item:JSONObject):Int{if(item.s("unit",e.unit)=="sec")return item.i("target");return (item.i("target")*e.raw.n("tempoSeconds18",4.0)*(if(e.sides&&item.s("side").isBlank())2 else 1)).roundToInt()}
- fun steps(day:JSONObject,p:JSONObject):List<JSONObject>{val items=day.a("items").objects();if(items.isEmpty())return emptyList();val out=mutableListOf<JSONObject>();val phase=phase(items,p);val sec=phaseSeconds(p)
+ fun steps(day:JSONObject,p:JSONObject):List<JSONObject>{val items=day.a("items").objects();if(items.isEmpty())return emptyList();val out=mutableListOf<JSONObject>();val phase=if(day.b("unifiedPlanning") || items.any{it.b("unifiedPlanning")}) null
+   else phase(items,p);val sec=phaseSeconds(p)
   if(phase!=null)out+=obj("kind" to "preparation","id" to phase.id,"label" to "Calentamiento progresivo · ${phase.name}","seconds" to sec,"unit" to "sec","target" to sec)
   val source=day.optJSONObject("sourceSequence");if(source!=null){var itemIndex=0;for((bi,b)in source.a("steps").objects().withIndex()){if(b.s("kind")!="exercise"){out+=b.copyJson().put("blockIndex",bi);continue};val e=catalog.byId[b.s("exerciseId")]?:continue;val x=b.copyJson();val unit=b.s("unit",e.unit);for(si in 0 until b.i("sets",1)){out+=obj("kind" to "exercise","id" to e.id,"label" to e.name,"target" to b.i("target"),"unit" to unit,"side" to b.s("side"),"seconds" to if(unit=="sec")b.i("target") else workSeconds(e,x),"itemIndex" to itemIndex,"setIndex" to si,"sets" to b.i("sets"),"blockIndex" to bi);if(b.i("restSeconds")>0&&si<b.i("sets")-1)out+=obj("kind" to "rest","label" to "Descanso","seconds" to b.i("restSeconds").coerceIn(30,90),"blockIndex" to bi)};itemIndex++}}
   else{val rounds=p.s("blockMode22")=="rounds";val sequence=if(rounds)(0 until (items.maxOfOrNull{it.i("sets")}?:0)).flatMap{s->items.withIndex().filter{it.value.i("sets")>s}.map{Triple(it.index,s,it.value)}} else items.withIndex().flatMap{(i,x)->(0 until x.i("sets")).map{Triple(i,it,x)}}
@@ -194,10 +206,18 @@ class Planner(val catalog:Catalog,val rules:Rules){
   val nativeProfile=MonarchProfileAdapter.from(adjusted,
    runCatching{java.time.LocalDate.parse(date)}.getOrNull()?:java.time.LocalDate.now())?:return null
   val validated=planningSource(adjusted)
-  val maxTechnical=n+1
+  val category=CategoryMapper.normalize(type)?:return null
+  val adaptation=CategoryEffortPolicy.decide(MonarchLegacyHistory.efforts(logs,catalog),
+   LocalDate.parse(date),category,MonarchLegacyHistory.interruptions(logs))
+  val levelLimit=when(adaptation){
+   Adaptation.RECOVER_ONE->1
+   Adaptation.REDUCE_TWO->2
+   else->if(level(p)==0)2 else 3
+  }
+  val maxTechnical=min(n+1,levelLimit)
+  val goalTags=PersonalGoalInterpreter.interpret(nativeProfile.customGoal).tags
   val safeMetadata=validated.all().filter{
-   com.huntersystem.app.planning.EligibilityPolicy.compatible(
-    it,nativeProfile,maxTechnical)
+   it.category==category && EligibilityPolicy.compatible(it,nativeProfile,maxTechnical)
   }.associateBy{it.id}
   val candidates=rules.pool(adjusted,kind).filter{it.id in safeMetadata &&
    (if(mode=="gym")it.gym||it.power else !it.gym) &&
@@ -206,11 +226,19 @@ class Planner(val catalog:Catalog,val rules:Rules){
      key->key in adjusted.a("gymEquipment23").strings()})}
   if(candidates.isEmpty())return null
   val seed="$epoch|$mode|$type|$n|$variant";val status=rules.gate(adjusted);val fb=GroupEvolution.feedback(logs,date,type,adjusted,catalog);val rawEvolution=GroupEvolution.evaluate(logs,date,type,adjusted,catalog);val evolution=if(status.reduced||rules.active(adjusted))rawEvolution.copy(steps=min(0,rawEvolution.steps)) else rawEvolution;val ready=rules.powerReady(adjusted,logs,date,status,fb.strain);var winner:List<JSONObject>?=null;var winMinutes=0;var winScore=Double.POSITIVE_INFINITY
-  for(count in 2..min(candidates.size,if(range=="short")5 else 7)){val picked=mutableListOf<Exercise>();val used=mutableSetOf<String>();val groups=mutableMapOf<String,Int>();while(picked.size<count){val possible=candidates.filter{it.family !in used};val allowed=rules.selection(possible,picked,count,adjusted,kind,type,ready);if(allowed.isEmpty())break;val selectedMetadata=picked.mapNotNull{safeMetadata[it.id]};val e=allowed.maxWithOrNull(compareBy<Exercise>{
+  val adaptedCount=when(adaptation){
+   Adaptation.RECOVER_ONE->1
+   Adaptation.REDUCE_TWO->2
+   else->if(range=="short")5 else 7
+  }
+  val minimumCount=if(adaptation==Adaptation.RECOVER_ONE)1 else 2
+  val minimumMinutes=if(adaptation in setOf(Adaptation.RECOVER_ONE,Adaptation.REDUCE_TWO))0 else low
+  for(count in minimumCount..min(candidates.size,adaptedCount)){val picked=mutableListOf<Exercise>();val used=mutableSetOf<String>();val groups=mutableMapOf<String,Int>();while(picked.size<count){val possible=candidates.filter{it.family !in used};val allowed=rules.selection(possible,picked,count,adjusted,kind,type,ready);if(allowed.isEmpty())break;val selectedMetadata=picked.mapNotNull{safeMetadata[it.id]};val e=allowed.maxWithOrNull(compareBy<Exercise>{
       DeterministicSelection.rankScore(safeMetadata.getValue(it.id),selectedMetadata,seed,maxTechnical,
-       rules.score(it,adjusted,kind,picked)-(groups[it.group]?:0)*14)
+       rules.score(it,adjusted,kind,picked)-(groups[it.group]?:0)*14+
+        if(safeMetadata.getValue(it.id).tags.any{tag->tag in goalTags})55 else 0)
      }.thenBy{it.id})?:break;picked+=e;used+=e.family;groups[e.group]=(groups[e.group]?:0)+1};if(picked.size<count)break;if(mode=="gym"&&picked.none{it.gym})continue
-   for(sets in 1..3){val items=picked.map{e->val base=libraryDose(e,adjusted,kind);val x=obj("id" to e.id,"sets" to min(sets,base.i("sets",1)).coerceAtLeast(1),"target" to base.i("target",8).coerceIn(1,if(e.unit=="sec")50 else 15),"rest" to max(30,base.i("rest",60)),"libraryGen3845" to true);GroupEvolution.apply(e,cap(e,adjusted,rules.groupDose(e,adjusted,kind,x,logs,date,status,fb.strain),logs,date,status,fb),evolution)};val mins=minutes(obj("items" to arr(items)),adjusted);if(mins !in low..high)continue;val aim=if(range=="short")8 else if(range=="medium")15 else 25;val score=abs(aim-mins)*10.0+abs(count-if(range=="short")3 else 5)*2;if(score<winScore){winner=items;winMinutes=mins;winScore=score}}
+   for(sets in 1..if(adaptation==Adaptation.RECOVER_ONE)1 else 3){val items=picked.map{e->val base=libraryDose(e,adjusted,kind);val x=obj("id" to e.id,"sets" to min(sets,base.i("sets",1)).coerceAtLeast(1),"target" to base.i("target",8).coerceIn(1,if(e.unit=="sec")50 else 15),"rest" to max(30,base.i("rest",60)),"libraryGen3845" to true);GroupEvolution.apply(e,cap(e,adjusted,rules.groupDose(e,adjusted,kind,x,logs,date,status,fb.strain),logs,date,status,fb),evolution)};val mins=minutes(obj("items" to arr(items)),adjusted);if(mins !in minimumMinutes..high)continue;val aim=if(range=="short")8 else if(range=="medium")15 else 25;val score=abs(aim-mins)*10.0+abs(count-if(range=="short")3 else 5)*2;if(score<winScore){winner=items;winMinutes=mins;winScore=score}}
   }
   val result=winner?:return null;return obj("id" to "hlib3845-$mode-$epoch-$type-$n-$variant","name" to "${groupLabels[type]} · ${listOf("Básico","Intermedio","Avanzado")[n]} · ${if(mode=="gym")"Gimnasio" else "Sin conexión"} ${variant+1}","category" to kindLabel(kind),"focus3845" to type,"mode3845" to mode,"level" to n,"items" to arr(result),"gymOnly23" to (mode=="gym"),"gymRequirements23" to arr(result.flatMap{catalog.byId[it.s("id")]!!.gymRequirements}.distinct()),"minutes" to winMinutes,"impact" to if(result.any{catalog.byId[it.s("id")]!!.impact})"Con saltos" else "Sin saltos","family" to "dynamic","safe381" to true,"description" to "Secuencia generada por categoría, equipo y restricciones del perfil. Estimación de tiempo con descansos. No altera las misiones del día.")
  }

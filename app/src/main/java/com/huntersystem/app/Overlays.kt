@@ -207,7 +207,11 @@ import kotlin.math.*
          }
      }
  }
- if(!preview&&date==today())GuidedSessionStopButton{
-     running=false;ui.open("pain",obj("date" to date))
+ if(!preview&&date==today()){
+     HButton("Registrar interrupción",Modifier.fillMaxWidth()){
+         running=false
+         ui.attempt{s.interruptSession(date);ui.back()}
+     }
+     GuidedSessionStopButton{running=false;ui.open("pain",obj("date" to date))}
  }
 }

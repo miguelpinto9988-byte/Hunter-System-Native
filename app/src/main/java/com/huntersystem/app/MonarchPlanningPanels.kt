@@ -17,6 +17,7 @@ fun MonarchCategoryReview(ui: NativeUi) {
     val date = LocalDate.now()
     val records = remember(revision) { progress.plannedParticipation() }
     val efforts = remember(revision) { progress.efforts() }
+    val interruptions = remember(revision) { progress.interruptions() }
     val visible = records.filter {
         !it.date.isAfter(date) && (window == 0 || !it.date.isBefore(date.minusDays((window - 1).toLong())))
     }
@@ -44,7 +45,7 @@ fun MonarchCategoryReview(ui: NativeUi) {
             val categoryRatings = efforts.filter { it.category == category && it.date <= date &&
                 (window == 0 || !it.date.isBefore(date.minusDays((window - 1).toLong()))) }
             val mean = categoryRatings.map { it.rpe }.takeIf { it.isNotEmpty() }?.average()
-            val review = WeeklyCategoryChallengePolicy.review(efforts, date, category)
+            val review = WeeklyCategoryChallengePolicy.review(efforts, date, category, interruptions)
             HText(category.code.replace('_', ' ') + ": " + count +
                 " completadas · esfuerzo " +
                 (mean?.let { "%.1f".format(it) + "/10" } ?: "sin datos") +
@@ -55,11 +56,13 @@ fun MonarchCategoryReview(ui: NativeUi) {
         val first = globalEfforts.minOfOrNull { it.date } ?: date
         val global = EffortReviewEngine.review(first, date, globalEfforts)
         HText("Ciclo de RPE global: día " + global.cycleDay + "/21 · " +
-            global.observations + " valoraciones · " +
+            "última revisión " + (if (global.previous == 0) "pendiente" else "día " + global.previous) +
+            " · próxima día " + global.next +
+            (if (global.previous == 21) " del siguiente ciclo" else "") +
+            " · " + global.observations + " valoraciones · " +
             (global.average?.let { "%.1f".format(it) + "/10" } ?: "sin datos suficientes"),
             size = 13, color = LocalHunter.current.muted)
-        HText("El RPE global heredado es descriptivo y nunca se traslada a una categoría.",
-            size = 12, color = LocalHunter.current.muted)
+        HText(global.explanation, size = 12, color = LocalHunter.current.muted)
         if (visible.isNotEmpty()) {
             Eyebrow("RESULTADOS POR FECHA · ÚLTIMOS REGISTROS")
             visible.sortedWith(compareByDescending<Participation> { it.date }
@@ -248,11 +251,11 @@ fun MonarchTechnicalSection(ui: NativeUi, date: String) {
     val phases = remember(revision) { repository.phases() }
     val checkpoint = remember(revision, date) {
         TechnicalCheckpointPolicy.review(profile, category, today,
-            repository.efforts(), phases[category] ?: TechnicalPhase())
+            repository.efforts(), phases[category] ?: TechnicalPhase(), repository.interruptions())
     }
     Eyebrow("REVISIÓN TÉCNICA · MISMA SESIÓN")
-    HText("Fase actual: " + ((phases[category]?.phase ?: 0) + 1) +
-        "/3 · día de experiencia " + checkpoint.day +
+    HText("Fase actual: " + (phases[category]?.phase ?: 0) +
+        "/2 · día de experiencia " + checkpoint.day +
         " · " + checkpoint.decision.name.lowercase().replace('_',' '),
         size = 13, color = LocalHunter.current.muted)
     if (checkpoint.decision == TechnicalDecision.ADVANCE_PHASE) {

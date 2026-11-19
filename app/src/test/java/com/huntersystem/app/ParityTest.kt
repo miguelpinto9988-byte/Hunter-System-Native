@@ -28,7 +28,7 @@ class ParityTest {
     val metadata=source.byId(e.id)!!
     assertTrue(test.s("seed")+"/"+e.id,
      com.huntersystem.app.planning.EligibilityPolicy.compatible(metadata,profile))
-    assertTrue(r.compatible(e,p))
+    assertTrue(r.compatibleWithMission(e,p,item))
     assertTrue(item.i("sets")>=1&&item.i("target")>=1)
    }
    for(own in test.a("own").objects()){

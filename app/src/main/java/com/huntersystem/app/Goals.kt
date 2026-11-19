@@ -22,5 +22,16 @@ class Goals(val catalog:Catalog){
   return obj("primary" to primary,"alternatives" to arr(hits.map{it.first}),"target" to target,"focus" to focus,"restrictions" to restrictions,"medical" to medical,"recognized" to hits.size)
  }
  fun apply(p:JSONObject,manual:Boolean=false):JSONObject{val out=p.copyJson();val result=interpret(p.s("finalGoal"),p.s("goalGroup","habit"));val primary=if(manual)p.s("goalGroup","habit") else result.s("primary");val target=if(primary==result.s("primary")&&result.i("recognized")>0)result.s("target") else if(manual)targets[primary]?:"general" else p.s("finalTarget").ifBlank{targets[primary]?:"general"};out.put("goalGroup",primary);out.put("finalTarget",target);out.put("goal",target);if(result.s("focus")!="full")out.put("focus",result.s("focus"));val restrictions=out.o("restrictions");for((k,v)in result.o("restrictions").entries())restrictions.put(k,v);out.put("restrictions",restrictions);out.put("interpretation374",result);out.put("goalAutoRestrictions374",arr(result.o("restrictions").entries().map{it.first}));return out}
+ /** El objetivo escrito es un dato de afinidad; nunca configura filtros ni diagnostica. */
+ fun forPlanner(p: JSONObject): JSONObject {
+  val out = p.copyJson()
+  val primary = p.s("goalGroup", "habit")
+  val target = p.s("goal", "general").takeUnless { it == "general" }
+   ?: targets[primary] ?: "general"
+  val plan = catalog.editorial.o("goalPlans").o(target)
+  out.put("goal", plan.s("base", target))
+  out.put("finalTarget", target)
+  return out
+ }
  fun adjusted(p:JSONObject,titles:List<String> = emptyList()):JSONObject{val out=p.copyJson();val intent=interpret((listOf(p.s("finalGoal"))+titles).joinToString(". "),p.s("goalGroup","habit"));val target=if(intent.s("primary")==p.s("goalGroup")&&intent.i("recognized")>0)intent.s("target") else p.s("finalTarget",p.s("goal","general"));val plan=catalog.editorial.o("goalPlans").o(target);out.put("goal",plan.s("base",p.s("goal","general")));out.put("focus",if(intent.s("focus")!="full")intent.s("focus") else plan.s("focus",p.s("focus","full")));val r=out.o("restrictions");if(plan.b("noImpact"))r.put("noImpact",true);if(plan.b("seated"))r.put("seatedOnly",true);for((k,v)in intent.o("restrictions").entries())r.put(k,v);out.put("restrictions",r);if(out.s("trainingMode")=="routines")out.remove("dailyMissions");return out}
 }

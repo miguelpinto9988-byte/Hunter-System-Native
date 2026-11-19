@@ -49,8 +49,8 @@ class MonarchSinglePlannerIntegrationTest {
         for (item in chosen) {
             val meta=source.byId(item.s("id"))!!
             assertTrue(EligibilityPolicy.compatible(meta,profile))
-            assertTrue(store.rules.compatible(store.catalog.byId[meta.id]!!,
-                store.adjusted()))
+            assertTrue(store.rules.compatibleWithMission(store.catalog.byId.getValue(meta.id),
+                store.adjusted(), item))
         }
         val persisted=NativeStore(context).day(today())
         assertEquals(chosen.map{it.s("id")},
@@ -100,5 +100,37 @@ class MonarchSinglePlannerIntegrationTest {
             it.date==LocalDate.parse(today())&&it.rpe==5&&
                 it.category==CategoryMapper.normalize(day.s("progressCategory"))
         })
+    }
+    @Test fun writtenGoalStaysAdvisoryAndTheExplicitCalendarStaysInControl() {
+        val store = store()
+        val text = "No quiero hacer saltos. Tengo dolor. Quiero caminar."
+        val existing = store.profile!!.copyJson()
+        val originalRestrictions = existing.o("restrictions").toString()
+        val originalWeek = existing.a("weeklyCategories").toString()
+        store.saveProfile(existing.put("finalGoal", text))
+        assertEquals(text, store.profile!!.s("custom_goal"))
+        assertEquals(originalRestrictions, store.adjusted().o("restrictions").toString())
+        assertEquals(originalWeek, store.profile!!.a("weeklyCategories").toString())
+        assertEquals(setOf("caminar"), PersonalGoalInterpreter.interpret(text).tags)
+    }
+
+    @Test fun interruptionAndGlobalEffortArePersistedWithoutInventingCompletion() {
+        val store = store()
+        val day = LocalDate.parse(today())
+        val ids = store.day(today()).a("items").objects().map { it.s("id") }
+        assertTrue(ids.isNotEmpty())
+        store.interruptSession(today())
+        val restored = NativeStore(context)
+        val repository = MonarchProgressRepository(restored)
+        assertTrue(repository.efforts().isEmpty())
+        assertEquals(listOf(SessionInterruption(day, Category.UPPER)), repository.interruptions())
+        assertTrue(repository.plannedParticipation().none {
+            it.date == day && it.status != ParticipationStatus.PENDING
+        })
+        restored.feedback(today(), 8, "Valoración voluntaria")
+        val observations = MonarchProgressRepository(NativeStore(context)).efforts()
+        assertEquals(setOf(null, Category.UPPER), observations.filter { it.date == day }.map { it.category }.toSet())
+        assertTrue(observations.filter { it.date == day }.all { it.rpe == 8 && !it.completed })
+        assertEquals(ids, NativeStore(context).day(today()).a("items").objects().map { it.s("id") })
     }
 }

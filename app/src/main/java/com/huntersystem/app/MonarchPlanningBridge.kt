@@ -61,12 +61,17 @@ class MonarchActivitySource(
                     addAll(e.raw.a("goalTags").strings())
                     addAll(e.raw.a("tags").strings())
                     if (e.pattern.isNotBlank()) add(e.pattern)
-                }, e.raw.a("restrictionTags").strings().toSet(), e.sport)
+                    addAll(PersonalGoalInterpreter.affinity(
+                        (listOf(e.name, e.sport, e.pattern) + this.toList()).joinToString(" ")
+                    ))
+                }, e.raw.a("restrictionTags").strings().toSet(), e.sport, e.name)
         }
     }
     private val validatedRows by lazy { rows.also(ActivityCatalogValidator::verify) }
     private val cachedHash by lazy { ProfileSignature.source(validatedRows) + ":" + revision }
+    private val variantsById by lazy { validatedRows.associateBy(ActivityMetadata::id) }
     override fun all(): List<ActivityMetadata> = validatedRows
+    override fun byId(id: String): ActivityMetadata? = variantsById[id]
     override fun verified(): List<ActivityMetadata> = validatedRows
     override fun signature(): String = cachedHash
 }
@@ -83,9 +88,9 @@ object MonarchProfileAdapter {
         return from(p, since)
     }
     fun from(p: JSONObject, since: LocalDate = LocalDate.now()): TrainingProfile? {
-        val experience = when (p.s("difficulty")) {
-            "advanced" -> Experience.ADVANCED
-            "intermediate" -> Experience.INTERMEDIATE
+        val experience = when (p.s("difficulty", p.s("experience"))) {
+            "advanced", "avanzado" -> Experience.ADVANCED
+            "intermediate", "intermedio" -> Experience.INTERMEDIATE
             else -> Experience.BEGINNER
         }
         // Los formatos `weekCategories` (texto) y `weeklyCategories` (0..5)
@@ -93,10 +98,20 @@ object MonarchProfileAdapter {
         val numericWeek = p.optJSONArray("weeklyCategories")
         val textualWeek = p.optJSONArray("weekCategories")
         val explicitWeek: List<Int>? = when {
-            numericWeek?.length() == 7 -> numericWeek.ints().takeIf { it.all { n -> n in 0..5 } }
-            textualWeek?.length() == 7 -> textualWeek.strings().map {
-                if (it in listOf("descanso", "rest")) 5
-                else CategoryMapper.normalize(it)?.ordinal ?: 5
+            numericWeek != null -> {
+                if (numericWeek.length() != 7) return null
+                (0..6).map { index ->
+                    numericWeek.opt(index)?.toString()?.toIntOrNull()?.takeIf { it in 0..5 }
+                        ?: return null
+                }
+            }
+            textualWeek != null -> {
+                if (textualWeek.length() != 7) return null
+                (0..6).map { index ->
+                    val value = textualWeek.optString(index)
+                    if (value.trim().lowercase() in listOf("descanso", "rest")) 5
+                    else CategoryMapper.normalize(value)?.ordinal ?: return null
+                }
             }
             else -> null
         }
@@ -133,7 +148,7 @@ object MonarchProfileAdapter {
                 p.i("dailyMissions", 3).coerceIn(1, 7),
                 p.i("minutes", 20).coerceAtLeast(1),
                 p.s("custom_goal", p.s("finalGoal")), p.s("goal", "general"),
-                if (p.s("trainingMode") == "routines") "rutinas" else "misiones",
+                if (p.s("trainingMode") in listOf("routines", "rutinas")) "rutinas" else "misiones",
                 p.i("restSeconds", 60), p.s("blockMode22") == "rounds")
         }.getOrNull()
     }
@@ -176,6 +191,12 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
         store.save()
     }
     private fun date(text: String): LocalDate? = runCatching { LocalDate.parse(text) }.getOrNull()
+    fun planningRevisionKey(): String {
+        val state = root()
+        return ProfileSignature.stable("progreso", listOf("phases", "efforts", "participation")
+            .joinToString("|") { state.opt(it)?.toString().orEmpty() })
+    }
+
     private fun explicitEfforts(): List<EffortObservation> =
         root().a("efforts").objects().mapNotNull { row ->
             val day = date(row.s("date")) ?: return@mapNotNull null
@@ -186,7 +207,11 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
         }
     fun efforts(): List<EffortObservation> =
         MonarchLegacyHistory.mergeEffort(
-            explicitEfforts(), MonarchLegacyHistory.efforts(store.logs))
+            MonarchLegacyHistory.efforts(store.logs, store.catalog), explicitEfforts())
+    fun interruptions(): List<SessionInterruption> =
+        (MonarchLegacyHistory.interruptions(store.logs) +
+            participation().filter { it.interrupted }.map { SessionInterruption(it.date, it.category) })
+            .distinct()
     fun addEffort(day: LocalDate, category: Category?, rpe: Int, completed: Boolean,
                   interrupted: Boolean = false) {
         require(rpe in 1..10 && !day.isAfter(LocalDate.now()))
@@ -279,12 +304,20 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
     }.toMap()
     fun acceptPhase(category: Category, checkpoint: TechnicalCheckpoint) {
         require(checkpoint.decision == TechnicalDecision.ADVANCE_PHASE)
+        val today = LocalDate.now()
+        val profile = MonarchProfileAdapter.from(store) ?: error("Perfil no disponible")
+        require(profile.category(today) == category)
+        val current = phases()[category] ?: TechnicalPhase()
+        val verified = TechnicalCheckpointPolicy.review(profile, category, today, efforts(),
+            current, interruptions())
+        require(verified == checkpoint) { "La revisión técnica ya cambió" }
         val r = root()
         val entries = r.o("phases")
         entries.put(category.code, obj("phase" to checkpoint.phase.phase,
             "lastChange" to (checkpoint.phase.lastChange?.toString() ?: "")))
         r.put("phases", entries)
         write(r)
+        store.refreshWeek()
     }
     /** Reversión explícita sin borrar hitos anteriores ni historial por categoría. */
     fun revertPhase(category: Category): Boolean {
@@ -296,6 +329,7 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
             "lastChange" to LocalDate.now().toString()))
         r.put("phases", phases)
         write(r)
+        store.refreshWeek()
         return true
     }
     fun volume(): List<VolumeObservation> = root().a("volume").objects().mapNotNull { row ->
