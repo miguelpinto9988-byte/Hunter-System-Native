@@ -34,13 +34,16 @@ object MonarchLegacyHistory {
         return categories.distinct().singleOrNull()
     }
 
-    fun interruptions(logs: JSONObject, catalog: Catalog? = null): List<SessionInterruption> = logs.entries().mapNotNull { (day, raw) ->
-        val date = validDate(day) ?: return@mapNotNull null
-        val log = raw as? JSONObject ?: return@mapNotNull null
-        if (!interrupted(log)) return@mapNotNull null
-        val category = interruptionCategory(log, catalog) ?: return@mapNotNull null
-        SessionInterruption(date, category)
-    }
+    fun interruptions(logs: JSONObject, catalog: Catalog? = null): List<SessionInterruption> =
+        logs.entries().flatMap { (day, raw) ->
+            val date = validDate(day) ?: return@flatMap emptyList()
+            val log = raw as? JSONObject ?: return@flatMap emptyList()
+            val category = if (interrupted(log)) interruptionCategory(log, catalog) else null
+            val explicitItems = if (catalog == null) emptyList() else log.a("items").objects()
+                .filter { it.b("interrupted") }
+                .mapNotNull { categoryOf(it.s("id"), catalog) }
+            (listOfNotNull(category) + explicitItems).distinct().map { SessionInterruption(date, it) }
+        }
 
     fun participation(logs: JSONObject, catalog: Catalog): List<Participation> {
         val records = mutableListOf<Participation>()
@@ -57,7 +60,8 @@ object MonarchLegacyHistory {
                     else -> ParticipationStatus.PENDING
                 }
                 records += Participation(date, id, category, status, item.s("progressNote"),
-                    item.b("interrupted") || category == sessionCategory)
+                    item.b("interrupted") ||
+                        (interrupted(log) && (sessionCategory == null || category == sessionCategory)))
             }
         }
         return records

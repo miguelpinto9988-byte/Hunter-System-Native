@@ -211,7 +211,7 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
             MonarchLegacyHistory.efforts(store.logs, store.catalog), explicitEfforts())
     fun interruptions(): List<SessionInterruption> =
         (MonarchLegacyHistory.interruptions(store.logs, store.catalog) +
-            participation().filter { it.interrupted }.map { SessionInterruption(it.date, it.category) })
+            explicitParticipation().filter { it.interrupted }.map { SessionInterruption(it.date, it.category) })
             .distinct()
     fun addEffort(day: LocalDate, category: Category?, rpe: Int, completed: Boolean,
                   interrupted: Boolean = false) {
