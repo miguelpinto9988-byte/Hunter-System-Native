@@ -6,6 +6,8 @@ import androidx.compose.ui.geometry.Rect
 import org.json.JSONObject
 import kotlin.math.floor
 
+internal enum class ExerciseView { FRONT, SIDE, OVERHEAD, REAR }
+
 internal data class ExerciseProp(val kind: String, val bounds: Rect)
 
 internal data class ExerciseMotion(
@@ -16,7 +18,10 @@ internal data class ExerciseMotion(
     val facing: String,
     val staticHold: Boolean = false,
     val equipment: String = "",
-    val props: List<ExerciseProp> = emptyList()
+    val props: List<ExerciseProp> = emptyList(),
+    val view: ExerciseView = ExerciseView.SIDE,
+    val prone: Boolean = false,
+    val handSupport: Boolean = false
 ) {
     fun at(phase: Float): List<Offset> {
         if (staticHold) return frames.first()
@@ -85,8 +90,23 @@ internal object ExerciseMotions {
                 bounds.getDouble(2).toFloat(), bounds.getDouble(3).toFloat()))
         }
         require(duration in .5f..30f)
-        return ExerciseMotion(frames,duration,times,source,json.optString("facing23",
-            json.optJSONObject("view21")?.optString("primary","right") ?: "right"),
-            json.optBoolean("hold"),json.optString("equipment"),props)
+        val camera = json.optJSONObject("view21")
+        val view = when (camera?.optString("primary")) {
+            "front" -> ExerciseView.FRONT
+            "top", "topoblique" -> ExerciseView.OVERHEAD
+            "rear" -> ExerciseView.REAR
+            else -> ExerciseView.SIDE
+        }
+        val prone = json.optString("posture23") == "prone"
+        val handSupport = prone && (view == ExerciseView.OVERHEAD || frames.any { frame ->
+            val lower = maxOf(frame[7].y, frame[8].y, frame[9].y, frame[10].y)
+            val torso = (frame[2] - frame[1]).getDistance()
+            maxOf(frame[4].y, frame[6].y) >= lower - .12f * torso &&
+                frame[0].y + .20f * torso < maxOf(frame[4].y, frame[6].y)
+        })
+        return ExerciseMotion(
+            frames, duration, times, source, json.optString("facing23", "right"),
+            json.optBoolean("hold"), json.optString("equipment"), props, view, prone, handSupport
+        )
     }
 }

@@ -171,7 +171,8 @@ def verify_apk(path):
         if actual != expected or alternatives:
             raise ValueError("La APK debe contener solo los SVG originales para ilustrar ejercicios")
         motion_files = ["hunter2000-poses.json", "exercise-actor/sports-poses.json",
-                        "exercise-actor/rostro.svg"]
+                        "exercise-actor/rostro.svg", "exercise-actor/rostro-frontal.svg",
+                        "exercise-actor/rostro-superior.svg"]
         motion_files.extend(str(file.relative_to(ASSETS)) for file in (ASSETS / "demos30").glob("*.json"))
         for name in motion_files:
             if apk.read(f"assets/{name}") != (ASSETS / name).read_bytes():

@@ -18,6 +18,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.drawscope.withTransform
@@ -42,9 +44,14 @@ private val sole = Color(0xFFD5E6E3)
 internal fun ExerciseActor(motion: ExerciseMotion, modifier: Modifier, play: Boolean,
                            mirror: Boolean, reset: Int) {
     val context = LocalContext.current
-    val face = remember(context) {
+    val headAsset = when (motion.view) {
+        ExerciseView.FRONT -> "rostro-frontal.svg"
+        ExerciseView.OVERHEAD, ExerciseView.REAR -> "rostro-superior.svg"
+        ExerciseView.SIDE -> "rostro.svg"
+    }
+    val face = remember(context, headAsset) {
         runCatching {
-            context.assets.open("exercise-actor/rostro.svg").use {
+            context.assets.open("exercise-actor/$headAsset").use {
                 SVG.getFromInputStream(it).renderToPicture(69,82)
             }
         }.getOrNull()
@@ -88,12 +95,36 @@ internal fun ExerciseActor(motion: ExerciseMotion, modifier: Modifier, play: Boo
             scale(if(mirror) -fit else fit,fit,pivot=Offset.Zero)
             translate(-origin.x,-origin.y)
         }) {
-            drawLine(Color(0xFF47606E),Offset(origin.x-width*.43f,maxY+16*scaleUnit),
-                Offset(origin.x+width*.43f,maxY+16*scaleUnit),strokeWidth=1.6f*scaleUnit)
+            drawStage(motion, p, origin, width, height, scaleUnit, maxY)
             motion.props.forEach { drawProp(it, scaleUnit) }
             drawEquipment(motion.equipment,p,scaleUnit,maxY)
-            drawActor(p,scaleUnit,motion.facing,face)
+            drawActor(p, scaleUnit, motion, face)
         }
+    }
+}
+
+private fun DrawScope.drawStage(
+    motion: ExerciseMotion, pose: List<Offset>, center: Offset,
+    width: Float, height: Float, unit: Float, bottom: Float
+) {
+    val ink = Color(0xFF47606E)
+    if (motion.view == ExerciseView.OVERHEAD) {
+        val matWidth = width * .83f
+        val matHeight = height * .88f
+        val corner = center - Offset(matWidth / 2, matHeight / 2)
+        val size = Size(matWidth, matHeight)
+        val radius = CornerRadius(unit * 23f)
+        drawRoundRect(Color(0xFF254651), corner, size, radius)
+        drawRoundRect(ink, corner, size, radius, style = Stroke(unit * 1.5f))
+        if (motion.handSupport) {
+            for (i in listOf(4, 6, 8, 10)) {
+                drawCircle(Color(0xFF17343F), unit * 20f, pose[i])
+            }
+        }
+    } else {
+        val floor = bottom + (if (motion.handSupport) 6f else 16f) * unit
+        drawLine(ink, Offset(center.x - width * .43f, floor),
+            Offset(center.x + width * .43f, floor), strokeWidth = 1.6f * unit)
     }
 }
 
@@ -126,32 +157,70 @@ private fun smoothBody(points: List<Offset>, widths: List<Float>): Path {
     }
 }
 
-private fun DrawScope.drawActor(p:List<Offset>,u:Float,facing:String,face:Picture?) {
+private fun DrawScope.drawActor(p: List<Offset>, u: Float, motion: ExerciseMotion, face: Picture?) {
     val head=p[0];val shoulder=p[1];val hip=p[2]
     val down=direction(shoulder,hip)
     val side=normal(down)
-    val left=facing=="left"
+    val overhead = motion.view == ExerciseView.OVERHEAD
+    val broad = motion.view != ExerciseView.SIDE
+    val left = if (motion.prone && !broad) down.x > 0f else motion.facing == "left"
     fun limb(near:Boolean,leg:Boolean) {
         val joint=if(leg) p[if(near) 7 else 9] else p[if(near) 3 else 5]
         val end=if(leg) p[if(near) 8 else 10] else p[if(near) 4 else 6]
-        val start=(if(leg)hip else shoulder)+side*(if(near) -8f*u else 10f*u)
-        val tip=if(leg) end-direction(joint,end)*u*5f else end+direction(joint,end)*u*16f
+        val center = if (leg) hip else shoulder
+        val lateral = if (broad) {
+            val projected = ((joint.x - center.x) * side.x + (joint.y - center.y) * side.y)
+            val sign = if (abs(projected) > 4f * u) Math.signum(projected) else if (near) 1f else -1f
+            sign * if (leg) 20f else 36f
+        } else if (near) -8f else 10f
+        val start = center + side * (lateral * u)
+        val tip = end - direction(joint, end) * (if (leg) 5f * u else 0f)
         val points=listOf(start,mix(start,joint,.33f),mix(start,joint,.71f),joint,
             mix(joint,end,.26f),mix(joint,end,.65f),tip)
         val halfWidths=if(leg) listOf(15f,26f,20f,12.5f,14f,10.7f,7.5f)
-            else listOf(11f,17.5f,12f,9.5f,9f,7.1f,3.5f)
+            else listOf(13f,16f,12f,9.5f,9f,7.1f,5.8f)
         val hem=mix(start,joint,if(leg) .66f else .58f)
         val fabric=if(leg) { if(near) navy else navyDark }
             else if(near) Color(0xFF57999D) else Color(0xFF3D747F)
-        val tone=if(near) skin else skinFar
+        val tone = if (near || broad) skin else skinFar
         val fabricDark=if(leg)navyDark else teal
-        drawPath(smoothBody(points,halfWidths.map { it*u }),
-            Brush.linearGradient(0f to fabricDark,.64f to fabric,.97f to fabric,
-                1f to tone,start=start,end=hem))
-        if(leg){
+        val contour = smoothBody(points, halfWidths.map { it * u })
+        drawPath(contour, tone)
+        val armAxis = direction(start, joint)
+        val seam = normal(armAxis) * (36f * u)
+        val cuff = Path().apply {
+            val back = start - armAxis * (26f * u)
+            val a = back + seam
+            val b = hem + seam
+            val c = hem - seam
+            val d = back - seam
+            moveTo(a.x, a.y)
+            lineTo(b.x, b.y)
+            lineTo(c.x, c.y)
+            lineTo(d.x, d.y)
+            close()
+        }
+        clipPath(contour) {
+            drawPath(cuff, Brush.linearGradient(listOf(fabricDark, fabric), start, hem))
+        }
+        if (!leg) {
+            val planted = motion.handSupport && (overhead || abs(end.y - max(p[4].y, p[6].y)) < 21f * u)
+            val forearm = direction(joint, end)
+            val fingers = when {
+                planted && overhead -> down * -1f
+                planted -> Offset(if (left) -1f else 1f, 0f)
+                else -> forearm
+            }
+            drawHand(end, fingers, u, tone, near, planted && !overhead)
+        } else {
             val axis=direction(joint,end)
             val turn=if(abs(down.y)<.60f) side*(if(left)1f else -1f) else Offset(if(left)-1f else 1f,0f)
-            val foot=direction(Offset.Zero,mix(turn,axis,.16f))
+            val foot = when {
+                overhead -> direction(Offset.Zero, mix(down, axis, .4f))
+                motion.handSupport && motion.prone -> direction(Offset.Zero, Offset(if (left) -.43f else .43f, .9f))
+                broad -> direction(Offset.Zero, Offset(if (end.x < hip.x) -.34f else .34f, .94f))
+                else -> direction(Offset.Zero, mix(turn, axis, .16f))
+            }
             val lower=normal(foot)*(if(foot.x<0) -1f else 1f)
             val heel=end-foot*(10*u)
             val toe=end+foot*(29*u)
@@ -177,25 +246,53 @@ private fun DrawScope.drawActor(p:List<Offset>,u:Float,facing:String,face:Pictur
     drawLine(skin,neckTop,shoulder+down*(10*u),18*u,StrokeCap.Round)
     val torso=listOf(shoulder-down*(8*u),mix(shoulder,hip,.19f),
         mix(shoulder,hip,.40f),mix(shoulder,hip,.74f),hip+down*(14*u))
-    drawPath(smoothBody(torso,listOf(14f,36f,35f,26f,24f).map{it*u}),
+    val torsoWidths = if (broad) listOf(23f, 51f, 42f, 30f, 29f)
+        else listOf(14f, 36f, 35f, 26f, 24f)
+    drawPath(smoothBody(torso, torsoWidths.map { it * u }),
         Brush.linearGradient(listOf(tealLight,teal,navy),end=hip+down*(17*u),start=shoulder))
     val waist=hip-down*(7*u)
     drawLine(Color(0xFF83ACAE),waist-side*(20*u),waist+side*(20*u),1.2f*u,StrokeCap.Round)
     limb(true,false)
     if(face!=null){
         val headScale=u*.96f
-        val tilt=(atan2(down.y,down.x)*180f/Math.PI.toFloat()-90f).coerceIn(-36f,36f)
+        val angle = atan2(down.y, down.x) * 180f / Math.PI.toFloat() - 90f
+        val tilt = when {
+            overhead -> angle
+            motion.prone -> angle.coerceIn(-100f, 100f)
+            else -> angle.coerceIn(-28f, 28f)
+        }
         drawIntoCanvas { compose ->
             val c=compose.nativeCanvas
             c.save()
             c.translate(head.x,head.y)
             c.rotate(tilt)
-            c.scale(if(left)-headScale else headScale,headScale)
+            c.scale(if (left && !broad) -headScale else headScale,headScale)
             c.translate(-35f,-45f)
             c.drawPicture(face)
             c.restore()
         }
     }
+}
+
+private fun DrawScope.drawHand(
+    wrist: Offset, forward: Offset, unit: Float, tone: Color, near: Boolean, sideSupport: Boolean
+) {
+    val across = normal(forward) * if (near) 1f else -1f
+    fun point(length: Float, width: Float) = wrist + (forward * length + across * width) * unit
+    val palmWidth = if (sideSupport) .53f else 1f
+    val palm = smoothBody(
+        listOf(point(-4f, 0f), point(4f, 0f), point(11f, 0f), point(14f, 0f)),
+        listOf(5.5f, 7f, 8f, 6.3f).map { it * unit * palmWidth }
+    )
+    drawPath(palm, tone)
+    val fingerLengths = listOf(20f, 24f, 25f, 22f)
+    for ((index, length) in fingerLengths.withIndex()) {
+        val spread = (index - 1.5f) * 4.4f
+        drawLine(tone, point(10f, spread * palmWidth),
+            point(length, spread * 1.32f * palmWidth), (if (sideSupport) 3f else 3.7f) * unit, StrokeCap.Round)
+    }
+    val thumb = if (sideSupport) 5.5f else 10.5f
+    drawLine(tone, point(3f, 4f * palmWidth), point(12f, thumb), 5f * unit, StrokeCap.Round)
 }
 
 private fun DrawScope.drawProp(prop: ExerciseProp, unit: Float) {
