@@ -57,6 +57,12 @@ internal object ExerciseMotions {
         }.getOrNull()
     }
 
+    fun loadSequence(context: Context, exercise: Exercise): List<ExerciseMotion>? {
+        val ids = exercise.raw.a("sequenceParts").strings()
+        if (ids.size != 2 || ids[0] == ids[1]) return null
+        return ids.map { load(context, it) ?: return null }
+    }
+
     private fun read(context: Context, file: String) =
         context.assets.open(file).bufferedReader().use { JSONObject(it.readText()) }
 

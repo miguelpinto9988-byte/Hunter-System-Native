@@ -30,6 +30,16 @@ class ComposeSmokeTest {
   }
   compose.runOnIdle{ui.open("exercise",obj("id" to "chair"))};compose.waitForIdle();compose.onAllNodesWithText("Sentadilla a silla").onFirst().assertExists();compose.onNodeWithText("Reproducir demostración").assertExists();compose.runOnIdle{ui.back()};compose.waitForIdle()
  }
+ @Test(timeout=60000) fun sequencePreviewCanOpenBothGestures() {
+  val exercise = store.catalog.exercises.first { it.id.startsWith("sport-seq-") }
+  val labels = exercise.raw.a("sequenceLabels").strings()
+  compose.runOnIdle { ui.open("exercise", obj("id" to exercise.id)) }
+  compose.onNodeWithText("1 de 2 · ${labels[0]}").assertExists()
+  compose.onNodeWithText("Gesto 2").performScrollTo().performClick()
+  compose.onNodeWithText("2 de 2 · ${labels[1]}").assertExists()
+  compose.onNodeWithText("Gesto 1").performScrollTo().performClick()
+  compose.onNodeWithText("1 de 2 · ${labels[0]}").assertExists()
+ }
  @Test(timeout=60000) fun firstLaunchProfileCanRender(){
   compose.runOnIdle{store.state.put("profile",JSONObject.NULL);store.save();ui.go("profile")};compose.waitForIdle()
   val qa=File("../qa");qa.mkdirs();File(qa,"initial-semantics.txt").writeText(compose.onRoot().printToString());capture("initial-profile")

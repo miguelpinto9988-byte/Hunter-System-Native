@@ -34,6 +34,10 @@ def verify_sports(items):
     material_ids = set(read_json("materials.json"))
     expansion_poses = read_json("exercise-actor/sports-poses.json")
     new_signatures = set()
+    sequences = [row for row in sports if row["id"].startswith("sport-seq-")]
+    components = {row["id"]: row for row in items + sports if not row.get("sequenceParts")}
+    seen_pairs = set()
+    sequence_distribution = defaultdict(Counter)
     distribution = defaultdict(Counter)
     for row in sports:
         sport, level = row["sport"], row["level"]
@@ -55,7 +59,31 @@ def verify_sports(items):
             if len(tracks) < 2 or signature in new_signatures:
                 raise ValueError(f"Secuencia ausente o repetida: {row['id']}")
             new_signatures.add(signature)
+        if row["id"].startswith("sport-seq-"):
+            parts = row["sequenceParts"]
+            pair = tuple(sorted(parts))
+            if len(parts) != 2 or parts[0] == parts[1] or pair in seen_pairs or any(
+                part in aliases or part not in components for part in parts
+            ):
+                raise ValueError(f"Combinación repetida o inválida: {row['id']}")
+            source_rows = [components[part] for part in parts]
+            if (
+                any(record.get("sourceOnly") or record.get("pendingTechnicalReview") for record in source_rows)
+                or row["sequenceLabels"] != [record["name"] for record in source_rows]
+                or row["level"] < max(record["level"] for record in source_rows)
+                or row["technicalLevel"] != level + 1 or row["planning49"]["level"] != level
+                or set(row["materialRequirements"]) - material_ids
+            ):
+                raise ValueError(f"Guía o progresión inválida: {row['id']}")
+            seen_pairs.add(pair)
+            sequence_distribution[sport][level] += 1
         distribution[sport][level] += 1
+    expected_sequence_levels = {0: 68, 1: 73, 2: 52}
+    expected_areas = {"Calistenia", "Fútbol", "Atletismo", "Movilidad", "Fuerza"}
+    if len(sequences) != 965 or set(sequence_distribution) != expected_areas or any(
+        levels != expected_sequence_levels for levels in sequence_distribution.values()
+    ):
+        raise ValueError("La ampliación debe aportar 965 secuencias con los niveles acordados")
     candidates = defaultdict(list)
     for row in all_rows:
         if row.get("steps"):
@@ -95,7 +123,8 @@ def verify_motion(original, extra, sports):
     original_files = {path.stem: path for path in (ASSETS / "demos30").glob("*.json")}
     legacy = read_json("hunter2000-poses.json")
     sporting = read_json("exercise-actor/sports-poses.json")
-    for rows, records in ((original, original_files), (extra, legacy), (sports, sporting)):
+    single_sports = [row for row in sports if not row.get("sequenceParts")]
+    for rows, records in ((original, original_files), (extra, legacy), (single_sports, sporting)):
         if {row["id"] for row in rows} != records.keys():
             raise ValueError("La cobertura de animaciones debe coincidir con el catálogo")
         for exercise_id, motion in records.items():

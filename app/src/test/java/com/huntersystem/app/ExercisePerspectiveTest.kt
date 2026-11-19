@@ -1,6 +1,7 @@
 package com.huntersystem.app
 
 import android.content.Context
+import androidx.compose.ui.geometry.Size
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -46,7 +47,31 @@ class ExercisePerspectiveTest {
             val motion = checkNotNull(ExerciseMotions.load(context, exercise.id)) { exercise.id }
             assertTrue(motion.frames.distinct().size > 1)
             val framing = ExerciseFraming.from(motion)
-            assertTrue(framing.scaleFor(androidx.compose.ui.geometry.Size(200f, 320f)) > 0f)
+            assertTrue(framing.scaleFor(Size(200f, 320f)) > 0f)
+        }
+    }
+
+    @Test fun everyNewSequenceLoadsWithItsOwnPerspectiveAndACommonScale() {
+        val catalog = Catalog(context)
+        assertEquals(3_000, catalog.exercises.size)
+        val sequences = catalog.exercises.filter { it.id.startsWith("sport-seq-") }
+        assertEquals(965, sequences.size)
+        for ((_, exercises) in sequences.groupBy { it.sport }) {
+            assertEquals(mapOf(0 to 68, 1 to 73, 2 to 52),
+                exercises.groupingBy { it.planningLevel }.eachCount())
+        }
+        for (exercise in sequences) {
+            assertFalse(exercise.validationBlocked)
+            val components = checkNotNull(ExerciseMotions.loadSequence(context, exercise)) { exercise.id }
+            assertEquals(2, components.size)
+            val stage = Size(208f, 320f)
+            val frames = components.map(ExerciseFraming::from)
+            val unitScale = frames.minOf { it.scaleFor(stage) * it.unit }
+            assertTrue(exercise.id, unitScale.isFinite() && unitScale > 0f)
+            for (frame in frames) {
+                assertTrue(frame.bounds.width * unitScale / frame.unit < stage.width)
+                assertTrue(frame.bounds.height * unitScale / frame.unit < stage.height)
+            }
         }
     }
 }

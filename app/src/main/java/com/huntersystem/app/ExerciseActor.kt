@@ -3,11 +3,10 @@ package com.huntersystem.app
 import android.graphics.Picture
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
@@ -41,8 +40,26 @@ private val shoe = Color(0xFF294456)
 private val sole = Color(0xFFD5E6E3)
 
 @Composable
+internal fun rememberExercisePhase(key: Any, duration: Float, play: Boolean, reset: Int): MutableFloatState {
+    val reduced = LocalMonarchMotion.current.reduced
+    val phase = remember(key, reset) { mutableFloatStateOf(0f) }
+    LaunchedEffect(key, duration, play, reduced, reset) {
+        if (!play || reduced) return@LaunchedEffect
+        var previous = withFrameNanos { it }
+        while (isActive) {
+            val next = withFrameNanos { it }
+            phase.floatValue = (phase.floatValue + (next - previous).coerceAtMost(80_000_000L) /
+                (duration * 1_000_000_000f)) % 1f
+            previous = next
+        }
+    }
+    return phase
+}
+
+@Composable
 internal fun ExerciseActor(motion: ExerciseMotion, modifier: Modifier, play: Boolean,
-                           mirror: Boolean, reset: Int) {
+                           mirror: Boolean, reset: Int, sequenceFraming: List<ExerciseFraming> = emptyList(),
+                           phaseOverride: (() -> Float)? = null) {
     val context = LocalContext.current
     val headAsset = when (motion.view) {
         ExerciseView.FRONT -> "rostro-frontal.svg"
@@ -56,18 +73,8 @@ internal fun ExerciseActor(motion: ExerciseMotion, modifier: Modifier, play: Boo
             }
         }.getOrNull()
     }
-    val reduced = LocalMonarchMotion.current.reduced
-    var phase by remember(motion,reset) { mutableFloatStateOf(0f) }
-    LaunchedEffect(motion,play,reduced,reset) {
-        if (!play || reduced || motion.staticHold) return@LaunchedEffect
-        var previous = withFrameNanos { it }
-        while (isActive) {
-            val next = withFrameNanos { it }
-            phase = (phase + (next - previous).coerceAtMost(80_000_000L) /
-                (motion.duration * 1_000_000_000f)) % 1f
-            previous = next
-        }
-    }
+    val playback = rememberExercisePhase(motion, motion.duration,
+        play && !motion.staticHold && phaseOverride == null, reset)
     val framing = remember(motion) { ExerciseFraming.from(motion) }
     val firstArmSide = remember(motion) {
         if (motion.view == ExerciseView.SIDE) 1f else {
@@ -85,10 +92,11 @@ internal fun ExerciseActor(motion: ExerciseMotion, modifier: Modifier, play: Boo
         drawCircle(Brush.radialGradient(listOf(Color(0xFF22464D),Color(0xFF142C3A),Color(0xFF101F2A)),
             center=Offset(size.width*.48f,size.height*.47f),radius=max(size.width,size.height)*.51f),
             radius=min(size.width,size.height)*.47f,center=Offset(size.width*.5f,size.height*.47f))
-        val fit = framing.scaleFor(size)
+        val commonScale = sequenceFraming.minOfOrNull { it.scaleFor(size) * it.unit }
+        val fit = commonScale?.div(framing.unit) ?: framing.scaleFor(size)
         if (fit <= 0f) return@Canvas
         val origin = framing.bounds.center
-        val p = motion.at(phase)
+        val p = motion.at(phaseOverride?.invoke() ?: playback.floatValue)
         withTransform({
             translate(size.width/2,size.height/2)
             scale(if(mirror) -fit else fit,fit,pivot=Offset.Zero)
