@@ -57,16 +57,19 @@ class ExercisePerspectiveTest {
         assertEquals("new46-tke", catalog.byId.getValue("hx_lower_0019").id)
         assertTrue(catalog.exercises.none { it.id == "hx_lower_0019" })
         val sequences = catalog.exercises.filter { it.id.startsWith("sport-seq-") }
-        assertEquals(2_966, sequences.size)
+        assertEquals(2_969, sequences.size)
         val pairs = mutableSetOf<List<String>>()
+        val replacements = mapOf("Fuerza" to listOf(0), "Calistenia" to listOf(1, 2),
+            "Atletismo" to listOf(1))
         for ((discipline, exercises) in sequences.groupBy { it.sport }) {
-            val latest = exercises.filter { it.raw.i("catalogWave") == 3 }
-            val replacement = if (discipline == "Fuerza") 1 else 0
-            assertEquals(mapOf(0 to 70 + replacement, 1 to 75, 2 to 55),
-                latest.groupingBy { it.planningLevel }.eachCount())
-            assertEquals(mapOf(0 to 208 + replacement, 1 to 223, 2 to 162),
-                exercises.groupingBy { it.planningLevel }.eachCount())
+            val levels = listOf(208, 223, 162).mapIndexed { index, count ->
+                index to (count + if (index in replacements[discipline].orEmpty()) 1 else 0)
+            }.toMap()
+            assertEquals(levels, exercises.groupingBy { it.planningLevel }.eachCount())
         }
+        assertEquals("sport-ampl-pushup-staggered-hands", catalog.byId.getValue("home-staggered23").id)
+        assertEquals("sport-ampl-track-a-skip", catalog.byId.getValue("new46-askip").id)
+        assertEquals("new46-scapularhang", catalog.byId.getValue("sport-calisthenics-scapula").id)
         for (exercise in sequences) {
             assertFalse(exercise.validationBlocked)
             val pair = exercise.raw.a("sequenceParts").strings().map {

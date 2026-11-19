@@ -34,7 +34,7 @@ def verify_sports(items):
     material_ids = set(read_json("materials.json"))
     expansion_poses = read_json("exercise-actor/sports-poses.json")
     new_signatures = set()
-    sequences = [row for row in sports if row["id"].startswith("sport-seq-")]
+    sequences = [row for row in active_rows if row["id"].startswith("sport-seq-")]
     components = {row["id"]: row for row in items + sports if not row.get("sequenceParts")}
     seen_pairs = set()
     seen_families = set()
@@ -60,7 +60,7 @@ def verify_sports(items):
             if len(tracks) < 2 or signature in new_signatures:
                 raise ValueError(f"Secuencia ausente o repetida: {row['id']}")
             new_signatures.add(signature)
-        if row["id"].startswith("sport-seq-"):
+        if row["id"].startswith("sport-seq-") and row["id"] not in aliases:
             parts = row["sequenceParts"]
             pair = tuple(sorted(parts))
             if len(parts) != 2 or parts[0] == parts[1] or pair in seen_pairs or any(
@@ -81,17 +81,16 @@ def verify_sports(items):
             ):
                 raise ValueError(f"Guía o progresión inválida: {row['id']}")
             seen_pairs.add(pair)
-            sequence_distribution[(row.get("catalogWave", 1), sport)][level] += 1
+            sequence_distribution[sport][level] += 1
         distribution[sport][level] += 1
     expected_areas = {"Calistenia", "Fútbol", "Atletismo", "Movilidad", "Fuerza"}
-    expected_distribution = {
-        (wave, area): dict(enumerate(levels))
-        for wave, levels in ((1, (68, 73, 52)), (2, (70, 75, 55)), (3, (70, 75, 55)))
-        for area in expected_areas
-    }
-    expected_distribution[(3, "Fuerza")][0] += 1
-    if len(sequences) != 2966 or sequence_distribution != expected_distribution:
-        raise ValueError("La ampliación debe aportar 2966 secuencias con los niveles acordados")
+    expected_distribution = {area: {0: 208, 1: 223, 2: 162} for area in expected_areas}
+    expected_distribution["Fuerza"][0] += 1
+    expected_distribution["Calistenia"][1] += 1
+    expected_distribution["Calistenia"][2] += 1
+    expected_distribution["Atletismo"][1] += 1
+    if len(sequences) != 2969 or sequence_distribution != expected_distribution:
+        raise ValueError("La ampliación debe aportar 2969 secuencias activas con los niveles acordados")
     candidates = defaultdict(list)
     for row in all_rows:
         if row.get("steps"):

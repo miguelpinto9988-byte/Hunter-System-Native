@@ -111,6 +111,15 @@ THIRD_ADDITIONS = (
      "home-clean-db23 new46-cubanpress"),
 )
 THIRD_TARGETS = (70, 75, 55)
+# Keep the historical IDs as aliases. The forward catalog uses one canonical movement.
+COMPONENT_MERGES = {
+    "home-staggered23": "sport-ampl-pushup-staggered-hands",
+    "new46-askip": "sport-ampl-track-a-skip",
+    "sport-calisthenics-scapula": "new46-scapularhang",
+}
+MERGED_COMPONENT_REPLACEMENTS = {
+    ("Calistenia", 1): 1, ("Calistenia", 2): 1, ("Atletismo", 1): 1,
+}
 
 
 # Some early fichas describe material in prose rather than in their material list.
@@ -219,7 +228,7 @@ def pair_key(first, second):
     return tuple(sorted(row.get("baseId") or row["id"] for row in (first, second)))
 
 
-def build_sequences(components, labels, aliases, used, targets, additions, wave):
+def build_sequences(components, labels, aliases, used, targets, additions, wave, replacements=None):
     sequences = []
     for (slug, discipline, category, group, *tiers), extra in zip(POOLS, additions):
         extra_ids = set(" ".join(extra).split())
@@ -231,8 +240,10 @@ def build_sequences(components, labels, aliases, used, targets, additions, wave)
                 candidate_levels.setdefault(identity, level)
         candidates = [(components[identity], level) for identity, level in candidate_levels.items()]
         for level, target in enumerate(targets):
-            if wave == 3 and slug == "fuerza" and level == 0:
-                target += 1  # Replaces the historical duplicate merged in this release.
+            if replacements is not None:
+                target += replacements.get((discipline, level), 0)
+            elif wave == 3 and slug == "fuerza" and level == 0:
+                target += 1
             options = [
                 (first, second) for (first, a), (second, b) in itertools.combinations(candidates, 2)
                 if max(a, b) == level and first["id"] not in aliases and second["id"] not in aliases
@@ -264,17 +275,56 @@ def build_sequences(components, labels, aliases, used, targets, additions, wave)
     return sequences
 
 
+def consolidate_components(sequences, components, labels, aliases):
+    replacements = Counter(MERGED_COMPONENT_REPLACEMENTS)
+    canonical_pairs = {}
+    groups = {discipline: (category, group) for _, discipline, category, group, *_ in POOLS}
+    for index, row in enumerate(sequences):
+        parts = [COMPONENT_MERGES.get(part, part) for part in row["sequenceParts"]]
+        first, second = (components[part] for part in parts)
+        pair = pair_key(first, second)
+        if pair[0] == pair[1] or pair in canonical_pairs:
+            aliases[row["id"]] = parts[0] if pair[0] == pair[1] else canonical_pairs[pair]
+            replacements[(row["sport"], row["level"])] += 1
+            continue
+        canonical_pairs[pair] = row["id"]
+        if parts != row["sequenceParts"]:
+            category, group = groups[row["sport"]]
+            updated = compose(row["sport"], category, group, row["level"], first, second, labels)
+            updated["id"] = row["id"]
+            if "catalogWave" in row:
+                updated["catalogWave"] = row["catalogWave"]
+            sequences[index] = updated
+    return replacements, set(canonical_pairs)
+
+
 def main():
     sports = [row for row in load("catalog-sports.json") if not row["id"].startswith(PREFIX)]
     originals = load("catalog.json")
     components = {row["id"]: row for row in originals + sports}
     labels = load("materials.json")
-    aliases = load("exercise-aliases.json")
+    aliases = {
+        old: new for old, new in load("exercise-aliases.json").items()
+        if old not in COMPONENT_MERGES and not old.startswith(PREFIX)
+    }
     used = set()
     sequences = []
     sequences.extend(build_sequences(components, labels, aliases, used, TARGETS, [("", "", "")] * len(POOLS), 1))
     sequences.extend(build_sequences(components, labels, aliases, used, SECOND_TARGETS, ADDITIONS, 2))
     sequences.extend(build_sequences(components, labels, aliases, used, THIRD_TARGETS, THIRD_ADDITIONS, 3))
+    aliases.update(COMPONENT_MERGES)
+    replacements, canonical_pairs = consolidate_components(sequences, components, labels, aliases)
+    replacements_used = used | canonical_pairs
+    all_additions = [
+        tuple(" ".join(pool) for pool in zip(first, second))
+        for first, second in zip(ADDITIONS, THIRD_ADDITIONS)
+    ]
+    sequences.extend(build_sequences(
+        components, labels, aliases, replacements_used, (0, 0, 0), all_additions, 3, replacements
+    ))
+    (ASSETS / "exercise-aliases.json").write_text(
+        json.dumps(aliases, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
     (ASSETS / "catalog-sports.json").write_text(
         json.dumps(sports, ensure_ascii=False, indent=2)[:-2] + ",\n" + ",\n".join(
             "  " + json.dumps(row, ensure_ascii=False, separators=(",", ":")) for row in sequences
