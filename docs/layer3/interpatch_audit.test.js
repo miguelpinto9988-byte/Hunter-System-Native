@@ -1,0 +1,22 @@
+'use strict';
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const path=require('node:path');
+const {audit,intervals,overlap,transformPoint}=require('./interpatch_audit.js');
+const {smoothStations}=require('./smooth.js');
+const {computeSurface}=require('./sculpt_v2.js');
+const profiles=require('./profiles/calf.json').profiles;
+const html=fs.readFileSync(path.join(__dirname,'comparacion_visual_calf.html'),'utf8');
+const match=html.match(/const stage=\$\('stage'\),M=(\{.*?\});/);
+assert(match,'historical motion missing');
+const M=Function('return ('+match[1]+')')();
+assert.equal(overlap([[0,2]],[[1,3]]),1);
+assert.deepEqual(intervals([[0,0],[2,0],[2,2],[0,2]],1),[[0,2]]);
+assert.deepEqual(transformPoint({track:'body'},[10,20],-5,0),[10,15]);
+const result=audit(profiles,M,smoothStations,computeSurface);
+assert.deepEqual(result,require('./interpatch_calf.qa.json'));
+assert.equal(result.pairCount,276);
+assert.equal(result.frames,48);
+assert(result.overlappingPairs>0);
+for(const p of result.pairs){assert(p.framesWithOverlap>=1&&p.framesWithOverlap<=48);assert(p.maxWidth>0);assert(p.peakFrame>=0&&p.peakFrame<48)}
+console.log('PASS: 276 interpatch pairs × 48 historical frames; report parity');
