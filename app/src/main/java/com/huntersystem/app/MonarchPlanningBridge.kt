@@ -14,12 +14,16 @@ class MonarchActivitySource(
     private val rows by lazy {
         catalog.exercises.mapNotNull { e ->
             val category = CategoryMapper.normalize(e.type) ?: return@mapNotNull null
-            val levelValue = when {
+            val declaredLevel = when {
                 e.raw.has("technicalLevel") -> e.raw.i("technicalLevel")
                 e.raw.has("technicalLevel46") -> e.raw.i("technicalLevel46")
                 e.meta.has("level") -> e.planningLevel + 1
                 else -> 0 // sin metadatos: nivel 0 bloqueado
             }.takeIf { it in 0..5 } ?: 0
+            val levelValue = if (declaredLevel == 0) 0 else maxOf(
+                declaredLevel, e.planningLevel + 1, e.raw.i("progressionTierNative") + 1,
+                if (e.raw.b("pack46")) e.raw.i("level") + 1 else 1
+            ).coerceAtMost(5)
             val declaredMaterials = e.raw.optJSONArray("materialRequirements")
             val allowedGear = buildSet {
                 addAll(e.raw.a("materials46").strings())

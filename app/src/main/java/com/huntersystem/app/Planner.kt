@@ -130,7 +130,10 @@ class Planner(val catalog:Catalog,val rules:Rules){
   val items=mission.ids.mapNotNull{id->
    val e=catalog.byId[id]?:return@mapNotNull null
    val metadata=source.byId(id)?:return@mapNotNull null
-   if(!rules.compatible(e,p,maxPlanningLevel=2))return@mapNotNull null
+   val baseLevel=profile.experience.ordinal+1
+   val progression=metadata.technicalLevel>baseLevel
+   if(!rules.compatible(e,p,maxPlanningLevel=if(progression)min(2,baseLevel) else level(p)))
+    return@mapNotNull null
    val first=libraryDose(e,p,kind)
    if(stop)first.put("sets",1)
    else if(limited)first.put("sets",min(2,first.i("sets",1)))
@@ -143,8 +146,8 @@ class Planner(val catalog:Catalog,val rules:Rules){
    item.put("technicalLevel",metadata.technicalLevel)
    item.put("progressStatus","PENDING")
    item.put("unifiedPlanning",true)
-   if(metadata.technicalLevel>profile.experience.ordinal+1){
-    item.put("progressionFromLevel",profile.experience.ordinal+1)
+   if(progression){
+    item.put("progressionFromLevel",baseLevel)
     item.put("sets",1)
     item.put("noAutoLoad",true)
     val limit=e.raw.o("doseCap46").i("initial",if(e.unit=="sec")15 else 5)
