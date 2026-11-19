@@ -133,4 +133,17 @@ class MonarchSinglePlannerIntegrationTest {
         assertTrue(observations.filter { it.date == day }.all { it.rpe == 8 && !it.completed })
         assertEquals(ids, NativeStore(context).day(today()).a("items").objects().map { it.s("id") })
     }
+
+    @Test fun explicitRestAndAllSkippedDaysDoNotCountAsCompletedSessions() {
+        val store = store()
+        val items = store.day(today()).a("items")
+        assertTrue(items.length() > 0)
+        for (index in 0 until items.length()) store.setMissionStatus(today(), index, ParticipationStatus.SKIPPED)
+        store.finish(today())
+        assertEquals(0, store.stats().i("days"))
+        val next = LocalDate.now().plusDays(1)
+        store.saveProfile(store.profile!!.copyJson().put("weeklyCategories", arr(List(7) { 5 })))
+        assertEquals("descanso", store.makeDay(next.toString()).s("progressCategory"))
+        assertEquals(0, store.makeDay(next.toString()).a("items").length())
+    }
 }

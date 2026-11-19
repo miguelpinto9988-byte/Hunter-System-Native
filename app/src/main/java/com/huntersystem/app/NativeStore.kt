@@ -46,7 +46,10 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
   val calendarChanged=profile==null||
    profile!!.a("weekPlan").toString()!=interpreted.a("weekPlan").toString()||
    profile!!.a("weekFocus").toString()!=interpreted.a("weekFocus").toString()
-  if(calendarChanged){
+  val explicitCalendarChanged=listOf("weeklyCategories","weekCategories").any{key->
+   q.has(key)&&q.opt(key).toString()!=profile?.opt(key)?.toString()
+  }
+  if(calendarChanged&&!explicitCalendarChanged){
    // No trasladar el índice 0=domingo del perfil antiguo a lunes por error.
    val categories=(0..6).map{mon->val i=(mon+1)%7
     when(interpreted.a("weekPlan").optString(i,"rest")){
@@ -58,6 +61,7 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
    }
    interpreted.put("weeklyCategories",arr(categories))
   }
+  require(MonarchProfileAdapter.from(interpreted)!=null){"Revisa el calendario y las preferencias"}
   for(d in allDays().filter{it.s("date")>=today()&&!activeLog(logs.optJSONObject(it.s("date")))})d.remove("reviewReducedNative")
   // Compatibilidad por lectura con el almacenamiento anterior; un único ciclo activo.
   val planning=(state.optJSONObject("monarcaPlanningV2")?:
@@ -192,7 +196,8 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
  fun assign(routine:JSONObject,date:String){require(date>=today()){ "No se pueden sustituir días pasados" };require(!activeLog(logs.optJSONObject(date))){"Este día ya tiene actividad registrada"};val p=adjusted();require(rules.gate(p).ok);val items=routine.a("items").objects();require(items.isNotEmpty()&&items.all{item->catalog.byId[item.s("id")]?.let{e->rules.compatibleWithMission(e,p,item)}==true}){"Revisa compatibilidad y equipo en Perfil"};val d=mutableDay(date);d.put("items",arr(items.map{it.copyJson()}));d.put("kind",when(routine.s("category")){"Cardio"->"cardio";"Movilidad"->"recovery";"Mixta"->"mixed";else->"strength"});d.put("title",routine.s("name"));d.put("routineId",routine.s("id"));d.put("customized",true);d.put("tasks",JSONArray());routine.optJSONObject("sourceSequence")?.let{d.put("sourceSequence",it.copyJson())};val logs=state.o("logs");logs.remove(date);state.put("logs",logs);save()}
  fun customize(date:String,items:List<JSONObject>,tasks:List<String>,title:String){require(date>=today()&&!activeLog(logs.optJSONObject(date))){"No se puede sustituir una sesión con actividad"};require(items.all{catalog.byId[it.s("id")]?.let{e->rules.compatible(e,adjusted())}==true}){"Revisa las restricciones del perfil"};val d=mutableDay(date);d.put("items",arr(items));d.put("tasks",arr(tasks.filter{it.isNotBlank()}.mapIndexed{i,t->obj("id" to "custom-$i","text" to t.take(300),"done" to false)}));d.put("customized",true);d.put("title",title.take(160));d.remove("blocked381");save()}
  fun fraction(l:JSONObject?):Double{if(l==null)return 0.0;val tasks=l.a("missionTasks").objects();val items=l.a("items").objects();val total=tasks.size+items.size;if(total==0)return 0.0;return (tasks.count{it.b("done")}.toDouble()+items.sumOf{x->if(x.b("archived")||x.s("progressStatus")=="SKIPPED")0.0 else if(MonarchLegacyHistory.completed(x))1.0 else min(1.0,x.a("actual").objects().count{it.b("done")}.toDouble()/max(1,x.i("sets")))} )/total}
- fun stats():JSONObject{val entries=logs.entries().filter{it.first<=today()}.mapNotNull{(d,l)->(l as? JSONObject)?.let{d to it}};val completed=entries.filter{it.second.b("complete")};var series=0;var reps=0.0;var seconds=0.0;var volume=0.0;var exercises=0
+ fun stats():JSONObject{val entries=logs.entries().filter{it.first<=today()}.mapNotNull{(d,l)->(l as? JSONObject)?.let{d to it}};val completed=entries.filter{it.second.b("complete")&&
+   it.second.a("items").objects().any(MonarchLegacyHistory::completed)};var series=0;var reps=0.0;var seconds=0.0;var volume=0.0;var exercises=0
   for((_,l)in entries)for(x in l.a("items").objects()){val e=catalog.byId[x.s("id")]?:continue;var count=0;for(a in x.a("actual").objects())if(a.b("done")){series++;count++;val n=a.n("value")*(if(e.sides&&(x.s("side").isBlank()||x.s("side")=="both"))2 else 1);if(x.s("unit",e.unit)=="sec")seconds+=n else{reps+=n;volume+=n*a.n("kg")}};if(count>0)exercises++}
   val dates=completed.map{it.first}.toSet();var cursor=if(today() in dates)today() else plus(today(),-1);var streak=0;while(cursor in dates){streak++;cursor=plus(cursor,-1)};val xp=entries.sumOf{(_,l)->floor(fraction(l)*when(l.s("kind")){"strength","mixed"->100;"cardio"->70;"recovery"->40;else->20}).toInt()};return obj("days" to completed.size,"series" to series,"reps" to reps,"seconds" to seconds,"volume" to volume,"exerciseCount" to exercises,"streak" to streak,"xp" to xp,"level" to 1+xp/300)
  }
