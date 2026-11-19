@@ -79,6 +79,40 @@ ADDITIONS = (
 SECOND_TARGETS = (70, 75, 55)
 
 
+THIRD_ADDITIONS = (
+    ("hs379-scapular hs379-palms hs379-isobiceps pau-pushchild new46-serratusband "
+     "new46-bandpullapart clam",
+     "home-reverse-plank-lift23 home-legraise23 home-knee-tuck23 home-sidehip30 "
+     "new46-scapularhang new46-scapdip new46-trxpress",
+     "new46-paralleldip home-push-one23 home-side-knee23 home-side-thread23 "
+     "home-crab23 home-hollow-rock23"),
+    ("calf new46-walltibia new46-bentcalfstretch standingcurl hipcircle "
+     "new46-ankleinvert new46-ankleevert new46-toeyoga",
+     "new46-heelwalk new46-toewalk home-hopforward30 new46-droplanding "
+     "sport-ampl-track-a-skip new46-pivotlunge",
+     "new46-crosshop new46-turnjump new46-lateralhurdle new46-splitjump "
+     "sport-ampl-track-bound-single"),
+    ("ankle heeldig frontbackstep new46-bandplantar new46-toeyoga new46-ankleinvert "
+     "new46-ankleevert new46-pelvictilt",
+     "home-hopforward30 new46-ladderinout new46-laddercarioca "
+     "new46-jumpropealt new46-jumpropeside new46-ickyshuffle",
+     "new46-crosshop new46-boxjump skater-stick19 new46-resistedsprint new46-depthjump"),
+    ("home-wallangel30 childpose latstretch new46-crossshoulder new46-stickextension "
+     "new46-doorpec new46-hipcapsule new46-scapcar",
+     "home-step-lateral23 new46-hiphike new46-stepdown new46-soleus "
+     "new46-trxsquat new46-pivotlunge",
+     "home-side-thread23 home-sideabduct30 home-splithigh30 new46-ringturnout "
+     "new46-sissysquat"),
+    ("new46-bandplantar new46-ankleevert new46-bandpullapart new46-bander new46-bandir "
+     "seatedhip pau-lateralcurl",
+     "home-rdlstagger30 home-lungefront30 home-floor-fly23 home-hammer-cross23 "
+     "home-thruster-db23 new46-suitcasecarry new46-rackcarry",
+     "home-rdlsuit30 home-lungeoffset30 home-renegade23 home-cyclistdb30 "
+     "home-clean-db23 new46-cubanpress"),
+)
+THIRD_TARGETS = (70, 75, 55)
+
+
 # Some early fichas describe material in prose rather than in their material list.
 MATERIAL = {
     "chair": ["chair"], "wall": ["wall"], "wallplank": ["wall"], "wallcalf": ["wall"],
@@ -94,6 +128,8 @@ MATERIAL = {
     "sport-futbol-sole": ["ball"], "sport-track-a-wall": ["wall"],
     "home-wallangel30": ["wall"], "heeltoe": ["chair"],
     "ankledrive": ["wall"],
+    "seatedhip": ["chair"], "hs379-scapular": ["chair"],
+    "hs379-palms": ["chair"], "hs379-isobiceps": ["chair"],
 }
 GROUP_NAMES = {
     "upper": "Tren superior", "core": "Core", "lower": "Piernas",
@@ -179,7 +215,11 @@ def compose(discipline, category, group, level, first, second, labels):
     }
 
 
-def build_sequences(components, labels, aliases, used, targets, additions):
+def pair_key(first, second):
+    return tuple(sorted(row.get("baseId") or row["id"] for row in (first, second)))
+
+
+def build_sequences(components, labels, aliases, used, targets, additions, wave):
     sequences = []
     for (slug, discipline, category, group, *tiers), extra in zip(POOLS, additions):
         extra_ids = set(" ".join(extra).split())
@@ -191,6 +231,8 @@ def build_sequences(components, labels, aliases, used, targets, additions):
                 candidate_levels.setdefault(identity, level)
         candidates = [(components[identity], level) for identity, level in candidate_levels.items()]
         for level, target in enumerate(targets):
+            if wave == 3 and slug == "fuerza" and level == 0:
+                target += 1  # Replaces the historical duplicate merged in this release.
             options = [
                 (first, second) for (first, a), (second, b) in itertools.combinations(candidates, 2)
                 if max(a, b) == level and first["id"] not in aliases and second["id"] not in aliases
@@ -199,7 +241,7 @@ def build_sequences(components, labels, aliases, used, targets, additions):
                 and not first.get("pendingTechnicalReview") and not second.get("pendingTechnicalReview")
                 and patterns(first) != patterns(second)
                 and first.get("baseId", first["id"]) != second.get("baseId", second["id"])
-                and tuple(sorted((first["id"], second["id"]))) not in used
+                and pair_key(first, second) not in used
             ]
             if len(options) < target:
                 raise ValueError(f"{discipline} / {level}: {len(options)} distinct pairs available")
@@ -213,11 +255,11 @@ def build_sequences(components, labels, aliases, used, targets, additions):
                 ))
                 first, second = options.pop(index)
                 counts.update((first["id"], second["id"]))
-                used.add(tuple(sorted((first["id"], second["id"]))))
+                used.add(pair_key(first, second))
                 row = compose(discipline, category, group, level, first, second, labels)
                 row["id"] = f"{PREFIX}{slug}-{first['id']}-{second['id']}"
-                if extra_ids:
-                    row["catalogWave"] = 2
+                if wave > 1:
+                    row["catalogWave"] = wave
                 sequences.append(row)
     return sequences
 
@@ -230,8 +272,9 @@ def main():
     aliases = load("exercise-aliases.json")
     used = set()
     sequences = []
-    sequences.extend(build_sequences(components, labels, aliases, used, TARGETS, [("", "", "")] * len(POOLS)))
-    sequences.extend(build_sequences(components, labels, aliases, used, SECOND_TARGETS, ADDITIONS))
+    sequences.extend(build_sequences(components, labels, aliases, used, TARGETS, [("", "", "")] * len(POOLS), 1))
+    sequences.extend(build_sequences(components, labels, aliases, used, SECOND_TARGETS, ADDITIONS, 2))
+    sequences.extend(build_sequences(components, labels, aliases, used, THIRD_TARGETS, THIRD_ADDITIONS, 3))
     (ASSETS / "catalog-sports.json").write_text(
         json.dumps(sports, ensure_ascii=False, indent=2)[:-2] + ",\n" + ",\n".join(
             "  " + json.dumps(row, ensure_ascii=False, separators=(",", ":")) for row in sequences

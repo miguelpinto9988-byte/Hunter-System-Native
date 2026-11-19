@@ -53,19 +53,27 @@ class ExercisePerspectiveTest {
 
     @Test fun everyNewSequenceLoadsWithItsOwnPerspectiveAndACommonScale() {
         val catalog = Catalog(context)
-        assertEquals(4_000, catalog.exercises.size)
+        assertEquals(5_000, catalog.exercises.size)
+        assertEquals("new46-tke", catalog.byId.getValue("hx_lower_0019").id)
+        assertTrue(catalog.exercises.none { it.id == "hx_lower_0019" })
         val sequences = catalog.exercises.filter { it.id.startsWith("sport-seq-") }
-        assertEquals(1_965, sequences.size)
-        for ((_, exercises) in sequences.groupBy { it.sport }) {
-            val latest = exercises.filter { it.raw.i("catalogWave") == 2 }
-            assertEquals(200, latest.size)
-            assertEquals(mapOf(0 to 70, 1 to 75, 2 to 55),
+        assertEquals(2_966, sequences.size)
+        val pairs = mutableSetOf<List<String>>()
+        for ((discipline, exercises) in sequences.groupBy { it.sport }) {
+            val latest = exercises.filter { it.raw.i("catalogWave") == 3 }
+            val replacement = if (discipline == "Fuerza") 1 else 0
+            assertEquals(mapOf(0 to 70 + replacement, 1 to 75, 2 to 55),
                 latest.groupingBy { it.planningLevel }.eachCount())
-            assertEquals(mapOf(0 to 138, 1 to 148, 2 to 107),
+            assertEquals(mapOf(0 to 208 + replacement, 1 to 223, 2 to 162),
                 exercises.groupingBy { it.planningLevel }.eachCount())
         }
         for (exercise in sequences) {
             assertFalse(exercise.validationBlocked)
+            val pair = exercise.raw.a("sequenceParts").strings().map {
+                val component = catalog.byId.getValue(it)
+                component.raw.s("baseId", component.id)
+            }.sorted()
+            assertTrue(exercise.id, pairs.add(pair))
             val components = checkNotNull(ExerciseMotions.loadSequence(context, exercise)) { exercise.id }
             assertEquals(2, components.size)
             val stage = Size(208f, 320f)

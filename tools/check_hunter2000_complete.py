@@ -37,6 +37,7 @@ def verify_sports(items):
     sequences = [row for row in sports if row["id"].startswith("sport-seq-")]
     components = {row["id"]: row for row in items + sports if not row.get("sequenceParts")}
     seen_pairs = set()
+    seen_families = set()
     sequence_distribution = defaultdict(Counter)
     distribution = defaultdict(Counter)
     for row in sports:
@@ -67,6 +68,10 @@ def verify_sports(items):
             ):
                 raise ValueError(f"Combinación repetida o inválida: {row['id']}")
             source_rows = [components[part] for part in parts]
+            family_pair = tuple(sorted(record.get("baseId") or record["id"] for record in source_rows))
+            if family_pair[0] == family_pair[1] or family_pair in seen_families:
+                raise ValueError(f"Pareja de movimientos base repetida: {row['id']}")
+            seen_families.add(family_pair)
             if (
                 any(record.get("sourceOnly") or record.get("pendingTechnicalReview") for record in source_rows)
                 or row["sequenceLabels"] != [record["name"] for record in source_rows]
@@ -81,11 +86,12 @@ def verify_sports(items):
     expected_areas = {"Calistenia", "Fútbol", "Atletismo", "Movilidad", "Fuerza"}
     expected_distribution = {
         (wave, area): dict(enumerate(levels))
-        for wave, levels in ((1, (68, 73, 52)), (2, (70, 75, 55)))
+        for wave, levels in ((1, (68, 73, 52)), (2, (70, 75, 55)), (3, (70, 75, 55)))
         for area in expected_areas
     }
-    if len(sequences) != 1965 or sequence_distribution != expected_distribution:
-        raise ValueError("La ampliación debe aportar 1965 secuencias con los niveles acordados")
+    expected_distribution[(3, "Fuerza")][0] += 1
+    if len(sequences) != 2966 or sequence_distribution != expected_distribution:
+        raise ValueError("La ampliación debe aportar 2966 secuencias con los niveles acordados")
     candidates = defaultdict(list)
     for row in all_rows:
         if row.get("steps"):
