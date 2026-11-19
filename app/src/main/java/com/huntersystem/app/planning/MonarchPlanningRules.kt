@@ -353,11 +353,11 @@ object DailyMissionPlanner {
              interruptions: List<SessionInterruption> = emptyList()): DailyMission {
         val category = profile.category(date)
         val profileHash = ProfileSignature.of(profile)
-        val catalogHash = repository.signature()
-        val maxInitial = if (profile.experience == Experience.BEGINNER) 2 else 3
         if (category == null)
-            return DailyMission(date, null, profileHash, catalogHash, emptyList(), "Descanso programado.")
+            return DailyMission(date, null, profileHash, "rest", emptyList(), "Descanso programado.")
+        val maxInitial = if (profile.experience == Experience.BEGINNER) 2 else 3
         val rows = repository.verified()
+        val catalogHash = repository.signature()
         val byId = rows.associateBy(ActivityMetadata::id)
         val previous = pinned?.takeIf {
             it.date == date && it.category == category && it.profileHash == profileHash &&
@@ -392,7 +392,9 @@ object DailyMissionPlanner {
         val levelThreeSlots = (limit * MissionDifficultyMixPolicy.levelThreeTarget(profile.experience, phase)
             / 100.0).roundToInt().coerceAtMost(limit)
         val selected = selectMissionMix(candidates, limit, levelThreeSlots, maxLevel, seed, goal.tags, priority,
-            preferSimple = adaptation == Adaptation.REDUCE_TWO)
+            preferSimple = adaptation == Adaptation.REDUCE_TWO,
+            preferSecondLevel = profile.experience == Experience.ADVANCED &&
+                (adaptation == Adaptation.MAINTAIN || adaptation == Adaptation.EQUIVALENT_VARIATION))
         val final = if (adaptation == Adaptation.EQUIVALENT_VARIATION &&
             weekly == WeeklyDecision.EQUIVALENT_VARIATION)
             rotateEquivalent(selected, candidates, participation, efforts, date, category, seed)
@@ -412,7 +414,8 @@ object DailyMissionPlanner {
     }
     private fun selectMissionMix(
         rows: List<ActivityMetadata>, limit: Int, levelThreeSlots: Int, maxLevel: Int,
-        seed: String, tags: Set<String>, priority: Map<String, Int>, preferSimple: Boolean
+        seed: String, tags: Set<String>, priority: Map<String, Int>, preferSimple: Boolean,
+        preferSecondLevel: Boolean
     ): List<ActivityMetadata> {
         val selected = mutableListOf<ActivityMetadata>()
         var technical = 0
@@ -426,8 +429,9 @@ object DailyMissionPlanner {
                 val desired = if ((item.technicalLevel == 3) == preferThree) 180 else 0
                 val simple = if (!preferSimple) 0 else
                     (if (item.technicalLevel == 1) 200 else 0) + (if (item.intensity == Intensity.LOW) 100 else 0)
+                val advancedPreference = if (preferSecondLevel && item.technicalLevel == 1) -400 else 0
                 DeterministicSelection.rankScore(item, selected, seed, min(2, maxLevel),
-                    ((priority[item.id] ?: 0) + affinity + desired + simple).toDouble())
+                    ((priority[item.id] ?: 0) + affinity + desired + simple + advancedPreference).toDouble())
             }.thenBy { it.id }) ?: return selected
             selected += next
             if (next.technicalLevel == 3) technical++

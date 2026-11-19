@@ -42,6 +42,13 @@ class MonarchPlanningRulesTest {
         assertTrue(DailyMissionPlanner.plan(date, profile(List(7) { 5 }),
             FakeRepo(listOf(meta)), emptyList()).ids.isEmpty())
     }
+    @Test fun restDoesNotQueryTheExternalCatalog() {
+        val offline = object : ActivityRepositoryInterface {
+            override val revision = "synthetic"
+            override fun all(): List<ActivityMetadata> = error("Descanso no consulta actividades")
+        }
+        assertTrue(DailyMissionPlanner.plan(date, profile(List(7) { 5 }), offline, emptyList()).ids.isEmpty())
+    }
     @Test fun historicalAliasesNeverRewriteIds() {
         assertEquals(Category.CENTRAL, CategoryMapper.normalize("tronco"))
         assertEquals(Category.CENTRAL, CategoryMapper.normalize("integrado"))
