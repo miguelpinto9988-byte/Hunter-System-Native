@@ -443,12 +443,21 @@ const L3Sculpt=(()=>{
    const path=mk('path',{'id':'vol-'+profile.id,'class':'volume-patch','fill':bandColor[profile.type]||'url(#vol-arm)','data-depth':/posterior/.test(profile.id)?'far':'near'});
    const label=mk('title');label.textContent=profile.name;
    path.appendChild(label);g.appendChild(path);
+   // Keep thick exterior light bands inside their own moving silhouette.
+   // A unique local clipPath per profile avoids highlight leakage at the edge.
+   const clipId='c3-clip-'+profile.id;
+   const clip=mk('clipPath',{'id':clipId,'clipPathUnits':'userSpaceOnUse'});
+   const clipOutline=mk('path');
+   clip.appendChild(clipOutline);
+   g.appendChild(clip);
+   const lighting=mk('g',{'clip-path':'url(#'+clipId+')','aria-hidden':'true'});
    const shade=mk('path',{'class':'sculpt-shade','aria-hidden':'true'});
    const ridge=mk('path',{'class':'sculpt-ridge','aria-hidden':'true'});
-   g.append(shade,ridge);
+   lighting.append(shade,ridge);
+   g.appendChild(lighting);
    const baseline=mk('path',{'class':'layer3-baseline-reference','fill':'none','stroke':'#b6ffff','stroke-width':'1.8','stroke-dasharray':'5 4','opacity':'.92','pointer-events':'none'});
    g.appendChild(baseline);volumeGroups.appendChild(g);
-   createdSurfaces.push({profile,path,baseline,shade,ridge});
+   createdSurfaces.push({profile,path,baseline,shade,ridge,clipOutline});
  }
  // Keep technical rig and aesthetic art untouched: only new layer receives these fresh geometry writes.
  // Cache geometry that cannot change with the historical calf phase.
@@ -461,7 +470,7 @@ const L3Sculpt=(()=>{
  }
  function refreshExterior(phase){
    const k=(1-Math.cos(2*Math.PI*phase))/2;
-   for(const {profile,path,baseline,shade,ridge} of createdSurfaces){
+   for(const {profile,path,baseline,shade,ridge,clipOutline} of createdSurfaces){
      const smoothed=smoothedProfiles.get(profile.id);
      const isDynamic=profile.type==='calf';
      const cached=cachedExterior.get(profile.id);
@@ -473,13 +482,15 @@ const L3Sculpt=(()=>{
      baseline.style.display=compareImproved?'':'none';
      if(compareImproved){
        const g=L3Sculpt.computeSurface(profile,smoothed,isDynamic?phase:0,relief);
-       setPathIfChanged(path,sculptOutline(smoothed,g));
+       const exteriorPath=sculptOutline(smoothed,g);
+       setPathIfChanged(path,exteriorPath);
+       setPathIfChanged(clipOutline,exteriorPath);
        if(L3Sculpt.presets[profile.id]){
          setPathIfChanged(ridge,makeSmoothSide(g.ridge.slice(2,-2)));
          setPathIfChanged(shade,makeSmoothSide(g.shadow.slice(2,-2)));
          ridge.style.display='';shade.style.display='';
        }else{ridge.style.display='none';shade.style.display='none';}
-     }else{setPathIfChanged(path,base);ridge.style.display='none';shade.style.display='none';}
+     }else{setPathIfChanged(path,base);setPathIfChanged(clipOutline,base);ridge.style.display='none';shade.style.display='none';}
      if(!isDynamic)cachedExterior.set(profile.id,{revision:staticKey});
    }
    if(showControlPoints){
