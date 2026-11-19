@@ -14,6 +14,6 @@
   "kotlinVersion": "41.0-eclipse (repositorio revisado 2026-10-25)",
   "reportedTestState": "no compilado ni probado en Android",
   "animatedSvgAssets": 0,
-  "staticSvgAssets": 1200,
+  "staticSvgAssets": 1000,
   "animatedSvgAssetsRemoved": true
 }
