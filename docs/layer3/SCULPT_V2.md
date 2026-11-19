@@ -11,3 +11,7 @@
 
 Repetir en Node: `node docs/layer3/sculpt_v2.test.js`. Abrir `docs/layer3/comparacion_visual_calf.html` en un navegador.
 Cobertura C3: **1/1200** ejercicios originales. Los 800 sin poses históricas verificadas permanecen pendientes.
+
+## V3 — protección de relieves exteriores
+Cada una de las 24 superficies dispone de un clipPath SVG único en coordenadas locales (userSpaceOnUse). Las bandas de luz y sombra están agrupadas dentro de su recorte, cuyo contorno se actualiza junto con el path exterior; al alternar a ORIGINAL también se actualiza el recorte. Evita que el trazo grueso de relieve sobresalga de **su propia silueta** sin cambiar C1, C2, las 48 poses ni los 104 anclajes originales. No resuelve por sí solo oclusiones entre superficies diferentes.
+Validación: JavaScript del visor compilado, 24 identificadores únicos y 24 jerarquías clipPath/grupo comprobadas con nodos SVG simulados; validación visual real pendiente.
