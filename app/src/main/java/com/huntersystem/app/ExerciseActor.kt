@@ -171,7 +171,7 @@ private fun DrawScope.drawActor(p: List<Offset>, u: Float, motion: ExerciseMotio
         val lateral = if (broad) {
             val projected = ((joint.x - center.x) * side.x + (joint.y - center.y) * side.y)
             val sign = if (abs(projected) > 4f * u) Math.signum(projected) else if (near) 1f else -1f
-            sign * if (leg) 20f else 36f
+            sign * if (leg) 20f else 29f
         } else if (near) -8f else 10f
         val start = center + side * (lateral * u)
         val tip = end - direction(joint, end) * (if (leg) 5f * u else 0f)
@@ -212,13 +212,14 @@ private fun DrawScope.drawActor(p: List<Offset>, u: Float, motion: ExerciseMotio
                 else -> forearm
             }
             drawHand(end, fingers, u, tone, near, planted && !overhead)
+        } else if (broad && !overhead) {
+            drawFrontShoe(end, u, end.x < hip.x)
         } else {
             val axis=direction(joint,end)
             val turn=if(abs(down.y)<.60f) side*(if(left)1f else -1f) else Offset(if(left)-1f else 1f,0f)
             val foot = when {
                 overhead -> direction(Offset.Zero, mix(down, axis, .4f))
                 motion.handSupport && motion.prone -> direction(Offset.Zero, Offset(if (left) -.43f else .43f, .9f))
-                broad -> direction(Offset.Zero, Offset(if (end.x < hip.x) -.34f else .34f, .94f))
                 else -> direction(Offset.Zero, mix(turn, axis, .16f))
             }
             val lower=normal(foot)*(if(foot.x<0) -1f else 1f)
@@ -246,7 +247,7 @@ private fun DrawScope.drawActor(p: List<Offset>, u: Float, motion: ExerciseMotio
     drawLine(skin,neckTop,shoulder+down*(10*u),18*u,StrokeCap.Round)
     val torso=listOf(shoulder-down*(8*u),mix(shoulder,hip,.19f),
         mix(shoulder,hip,.40f),mix(shoulder,hip,.74f),hip+down*(14*u))
-    val torsoWidths = if (broad) listOf(23f, 51f, 42f, 30f, 29f)
+    val torsoWidths = if (broad) listOf(33f, 47f, 40f, 32f, 29f)
         else listOf(14f, 36f, 35f, 26f, 24f)
     drawPath(smoothBody(torso, torsoWidths.map { it * u }),
         Brush.linearGradient(listOf(tealLight,teal,navy),end=hip+down*(17*u),start=shoulder))
@@ -272,6 +273,26 @@ private fun DrawScope.drawActor(p: List<Offset>, u: Float, motion: ExerciseMotio
             c.restore()
         }
     }
+}
+
+private fun DrawScope.drawFrontShoe(ankle: Offset, unit: Float, left: Boolean) {
+    val offset = if (left) -4f else 4f
+    val foot = ankle + Offset(offset * unit, 9f * unit)
+    val heelLeft = ankle + Offset(-8f * unit, -9f * unit)
+    val heelRight = ankle + Offset(8f * unit, -9f * unit)
+    val toeLeft = foot + Offset(-14f * unit, 5f * unit)
+    val toeRight = foot + Offset(14f * unit, 5f * unit)
+    val upper = Path().apply {
+        moveTo(toeLeft.x, toeLeft.y)
+        quadraticTo(heelLeft.x - 4f * unit, heelLeft.y, heelLeft.x, heelLeft.y)
+        quadraticTo(ankle.x, ankle.y - 13f * unit, heelRight.x, heelRight.y)
+        quadraticTo(heelRight.x + 4f * unit, heelRight.y, toeRight.x, toeRight.y)
+        close()
+    }
+    drawPath(upper, shoe)
+    drawLine(sole, toeLeft, toeRight, 3f * unit, StrokeCap.Round)
+    drawLine(Color(0xFF79B7B0), foot - Offset(7f * unit, 3f * unit),
+        foot + Offset(7f * unit, -3f * unit), 1.4f * unit, StrokeCap.Round)
 }
 
 private fun DrawScope.drawHand(
