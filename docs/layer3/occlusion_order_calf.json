@@ -1,0 +1,71 @@
+{
+  "format": "MonarcaC3PainterOrder",
+  "version": 1,
+  "exercise": "calf",
+  "reason": "Stable exterior occlusion order; rear silhouettes behind torso and front silhouettes",
+  "groups": {
+    "rear": [
+      "hombro_posterior",
+      "brazo_posterior",
+      "antebrazo_posterior",
+      "mano_posterior",
+      "gluteo_posterior",
+      "muslo_posterior",
+      "pantorrilla_posterior",
+      "tobillo_posterior",
+      "pie_posterior"
+    ],
+    "core": [
+      "trapecio_base_cuello",
+      "torso",
+      "cuello_exterior",
+      "pectoral_superficial"
+    ],
+    "front": [
+      "cadera_frontal",
+      "muslo_frontal",
+      "rotula_frontal",
+      "pantorrilla_frontal",
+      "tobillo_frontal",
+      "pie_frontal",
+      "deltoides_frontal",
+      "brazo_frontal",
+      "antebrazo_frontal",
+      "mano_frontal"
+    ],
+    "head": [
+      "cabeza_exterior"
+    ]
+  },
+  "backToFront": [
+    "hombro_posterior",
+    "brazo_posterior",
+    "antebrazo_posterior",
+    "mano_posterior",
+    "gluteo_posterior",
+    "muslo_posterior",
+    "pantorrilla_posterior",
+    "tobillo_posterior",
+    "pie_posterior",
+    "trapecio_base_cuello",
+    "torso",
+    "cuello_exterior",
+    "pectoral_superficial",
+    "cadera_frontal",
+    "muslo_frontal",
+    "rotula_frontal",
+    "pantorrilla_frontal",
+    "tobillo_frontal",
+    "pie_frontal",
+    "deltoides_frontal",
+    "brazo_frontal",
+    "antebrazo_frontal",
+    "mano_frontal",
+    "cabeza_exterior"
+  ],
+  "notes": [
+    "Only C3 SVG painter stacking changes; C1/C2, motion, dimensions and profiles are preserved",
+    "Overlap of adjacent patches is intentional and is not the same as a geometric penetration",
+    "Inter-surface overlap and browser screenshots remain for manual QA"
+  ]
+}

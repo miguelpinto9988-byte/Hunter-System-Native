@@ -1,0 +1,844 @@
+{
+  "format": "MonarcaExteriorVolumeLayer",
+  "version": 1,
+  "exercise": "calf",
+  "layer": 3,
+  "role": "Superficie exterior deformable, SIN atlas interno ni cambio de la primera capa",
+  "coordinateSystem": "SVG 720×800; g anatomy translate(-45.30 -119.41) scale(1.12)",
+  "motionSource": "48 frames from original demos30/calf.json embedded unchanged in the base HTML",
+  "fixedProportions": true,
+  "stageScale": "Unchanged viewBox; no global scale deformation",
+  "profiles": [
+    {
+      "id": "cuello_exterior",
+      "name": "Cuello exterior",
+      "track": "body",
+      "type": "neck",
+      "stations": [
+        [
+          359,
+          276,
+          9,
+          10
+        ],
+        [
+          358,
+          289,
+          11,
+          12
+        ],
+        [
+          356,
+          304,
+          17,
+          16
+        ],
+        [
+          355,
+          313,
+          19,
+          20
+        ]
+      ]
+    },
+    {
+      "id": "trapecio_base_cuello",
+      "name": "Trapecio y base del cuello",
+      "track": "body",
+      "type": "body",
+      "stations": [
+        [
+          355,
+          283,
+          12,
+          13
+        ],
+        [
+          354,
+          294,
+          20,
+          21
+        ],
+        [
+          353,
+          305,
+          27,
+          28
+        ],
+        [
+          354,
+          317,
+          25,
+          25
+        ]
+      ]
+    },
+    {
+      "id": "torso",
+      "name": "Pecho, espalda y cintura",
+      "track": "body",
+      "type": "torso",
+      "stations": [
+        [
+          358,
+          301,
+          33,
+          35
+        ],
+        [
+          358,
+          325,
+          37,
+          44
+        ],
+        [
+          360,
+          349,
+          40,
+          44
+        ],
+        [
+          360,
+          381,
+          35,
+          38
+        ],
+        [
+          358,
+          410,
+          30,
+          30
+        ],
+        [
+          359,
+          443,
+          32,
+          34
+        ],
+        [
+          359,
+          460,
+          36,
+          37
+        ]
+      ]
+    },
+    {
+      "id": "hombro_posterior",
+      "name": "Deltoides posterior",
+      "track": "body",
+      "type": "shoulder",
+      "stations": [
+        [
+          388,
+          304,
+          17,
+          20
+        ],
+        [
+          392,
+          321,
+          21,
+          19
+        ],
+        [
+          399,
+          342,
+          17,
+          17
+        ],
+        [
+          399,
+          357,
+          13,
+          12
+        ]
+      ]
+    },
+    {
+      "id": "brazo_posterior",
+      "name": "Volumen superior del brazo posterior",
+      "track": "body",
+      "type": "arm",
+      "stations": [
+        [
+          395,
+          324,
+          15,
+          15
+        ],
+        [
+          403,
+          347,
+          18,
+          17
+        ],
+        [
+          411,
+          372,
+          14,
+          15
+        ],
+        [
+          415,
+          394,
+          11,
+          12
+        ]
+      ]
+    },
+    {
+      "id": "antebrazo_posterior",
+      "name": "Contorno del antebrazo posterior",
+      "track": "body",
+      "type": "forearm",
+      "stations": [
+        [
+          415,
+          395,
+          10,
+          11
+        ],
+        [
+          419,
+          422,
+          15,
+          13
+        ],
+        [
+          420,
+          450,
+          13,
+          11
+        ],
+        [
+          420,
+          477,
+          8,
+          9
+        ]
+      ]
+    },
+    {
+      "id": "mano_posterior",
+      "name": "Mano posterior",
+      "track": "body",
+      "type": "hand",
+      "stations": [
+        [
+          420,
+          476,
+          10,
+          10
+        ],
+        [
+          420,
+          492,
+          10,
+          8
+        ],
+        [
+          419,
+          502,
+          6,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "gluteo_posterior",
+      "name": "Volumen posterior de cadera",
+      "track": "body",
+      "type": "hip",
+      "stations": [
+        [
+          381,
+          456,
+          17,
+          18
+        ],
+        [
+          386,
+          474,
+          21,
+          20
+        ],
+        [
+          387,
+          494,
+          20,
+          20
+        ],
+        [
+          382,
+          514,
+          14,
+          13
+        ]
+      ]
+    },
+    {
+      "id": "muslo_posterior",
+      "name": "Muslo posterior: volumen longitudinal",
+      "track": "body",
+      "type": "thigh",
+      "stations": [
+        [
+          383,
+          477,
+          18,
+          18
+        ],
+        [
+          388,
+          499,
+          21,
+          21
+        ],
+        [
+          389,
+          523,
+          20,
+          21
+        ],
+        [
+          388,
+          546,
+          17,
+          18
+        ],
+        [
+          385,
+          569,
+          11,
+          12
+        ]
+      ]
+    },
+    {
+      "id": "pantorrilla_posterior",
+      "name": "Pantorrilla posterior: relieve variable",
+      "track": "shin-far",
+      "type": "calf",
+      "stations": [
+        [
+          385,
+          566,
+          11,
+          11
+        ],
+        [
+          386,
+          581,
+          15,
+          15
+        ],
+        [
+          389,
+          599,
+          19,
+          20
+        ],
+        [
+          386,
+          622,
+          18,
+          19
+        ],
+        [
+          384,
+          647,
+          11,
+          12
+        ],
+        [
+          385,
+          671,
+          8,
+          8
+        ],
+        [
+          386,
+          683,
+          8,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "tobillo_posterior",
+      "name": "Tobillo posterior",
+      "track": "shin-far",
+      "type": "ankle",
+      "stations": [
+        [
+          386,
+          670,
+          8,
+          9
+        ],
+        [
+          386,
+          684,
+          8,
+          8
+        ],
+        [
+          386,
+          694,
+          7,
+          7
+        ]
+      ]
+    },
+    {
+      "id": "pie_posterior",
+      "name": "Pie posterior de apoyo",
+      "track": "foot-far",
+      "type": "foot",
+      "stations": [
+        [
+          383,
+          684,
+          8,
+          8
+        ],
+        [
+          391,
+          690,
+          11,
+          10
+        ],
+        [
+          407,
+          699,
+          12,
+          9
+        ],
+        [
+          418,
+          704,
+          7,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "cadera_frontal",
+      "name": "Cadera y región glútea",
+      "track": "body",
+      "type": "hip",
+      "stations": [
+        [
+          338,
+          453,
+          17,
+          20
+        ],
+        [
+          338,
+          473,
+          25,
+          24
+        ],
+        [
+          336,
+          496,
+          23,
+          23
+        ],
+        [
+          337,
+          513,
+          18,
+          17
+        ]
+      ]
+    },
+    {
+      "id": "muslo_frontal",
+      "name": "Muslo anterior: volumen y rodilla",
+      "track": "body",
+      "type": "thigh",
+      "stations": [
+        [
+          341,
+          470,
+          18,
+          21
+        ],
+        [
+          337,
+          491,
+          22,
+          23
+        ],
+        [
+          334,
+          518,
+          23,
+          21
+        ],
+        [
+          332,
+          545,
+          17,
+          19
+        ],
+        [
+          335,
+          570,
+          12,
+          12
+        ]
+      ]
+    },
+    {
+      "id": "rotula_frontal",
+      "name": "Volumen de la rodilla",
+      "track": "body",
+      "type": "knee",
+      "stations": [
+        [
+          335,
+          557,
+          12,
+          12
+        ],
+        [
+          336,
+          570,
+          13,
+          13
+        ],
+        [
+          333,
+          582,
+          11,
+          10
+        ]
+      ]
+    },
+    {
+      "id": "pantorrilla_frontal",
+      "name": "Gemelos, sóleo y transición a tobillo",
+      "track": "shin-near",
+      "type": "calf",
+      "stations": [
+        [
+          335,
+          569,
+          10,
+          12
+        ],
+        [
+          332,
+          580,
+          17,
+          17
+        ],
+        [
+          332,
+          603,
+          22,
+          21
+        ],
+        [
+          333,
+          623,
+          20,
+          19
+        ],
+        [
+          330,
+          649,
+          12,
+          12
+        ],
+        [
+          330,
+          671,
+          8,
+          9
+        ],
+        [
+          330,
+          684,
+          8,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "tobillo_frontal",
+      "name": "Transición entre pantorrilla y tobillo",
+      "track": "shin-near",
+      "type": "ankle",
+      "stations": [
+        [
+          330,
+          669,
+          8,
+          9
+        ],
+        [
+          330,
+          681,
+          8,
+          9
+        ],
+        [
+          328,
+          690,
+          7,
+          8
+        ]
+      ]
+    },
+    {
+      "id": "pie_frontal",
+      "name": "Pie anterior de apoyo",
+      "track": "foot-near",
+      "type": "foot",
+      "stations": [
+        [
+          328,
+          686,
+          9,
+          9
+        ],
+        [
+          335,
+          692,
+          11,
+          10
+        ],
+        [
+          351,
+          701,
+          12,
+          10
+        ],
+        [
+          360,
+          705,
+          7,
+          6
+        ]
+      ]
+    },
+    {
+      "id": "pectoral_superficial",
+      "name": "Volumen pectoral superficial",
+      "track": "body",
+      "type": "chest",
+      "stations": [
+        [
+          363,
+          316,
+          19,
+          18
+        ],
+        [
+          368,
+          335,
+          18,
+          19
+        ],
+        [
+          365,
+          356,
+          15,
+          15
+        ],
+        [
+          363,
+          373,
+          12,
+          11
+        ]
+      ]
+    },
+    {
+      "id": "deltoides_frontal",
+      "name": "Deltoides anterior",
+      "track": "body",
+      "type": "shoulder",
+      "stations": [
+        [
+          333,
+          305,
+          17,
+          19
+        ],
+        [
+          329,
+          326,
+          22,
+          19
+        ],
+        [
+          324,
+          346,
+          16,
+          16
+        ],
+        [
+          317,
+          361,
+          12,
+          13
+        ]
+      ]
+    },
+    {
+      "id": "brazo_frontal",
+      "name": "Contorno del brazo anterior",
+      "track": "body",
+      "type": "arm",
+      "stations": [
+        [
+          331,
+          325,
+          15,
+          17
+        ],
+        [
+          323,
+          343,
+          18,
+          18
+        ],
+        [
+          313,
+          368,
+          16,
+          15
+        ],
+        [
+          305,
+          395,
+          11,
+          11
+        ]
+      ]
+    },
+    {
+      "id": "antebrazo_frontal",
+      "name": "Contorno del antebrazo anterior",
+      "track": "body",
+      "type": "forearm",
+      "stations": [
+        [
+          305,
+          395,
+          10,
+          11
+        ],
+        [
+          302,
+          420,
+          14,
+          15
+        ],
+        [
+          300,
+          450,
+          12,
+          13
+        ],
+        [
+          300,
+          480,
+          8,
+          9
+        ]
+      ]
+    },
+    {
+      "id": "mano_frontal",
+      "name": "Mano anterior",
+      "track": "body",
+      "type": "hand",
+      "stations": [
+        [
+          300,
+          478,
+          10,
+          9
+        ],
+        [
+          300,
+          493,
+          11,
+          9
+        ],
+        [
+          300,
+          504,
+          7,
+          7
+        ]
+      ]
+    },
+    {
+      "id": "cabeza_exterior",
+      "name": "Contorno externo de cabeza y rostro",
+      "track": "body",
+      "type": "head",
+      "stations": [
+        [
+          357,
+          222,
+          9,
+          11
+        ],
+        [
+          360,
+          233,
+          20,
+          21
+        ],
+        [
+          361,
+          252,
+          25,
+          29
+        ],
+        [
+          361,
+          264,
+          23,
+          29
+        ],
+        [
+          360,
+          275,
+          20,
+          23
+        ],
+        [
+          357,
+          286,
+          12,
+          12
+        ]
+      ]
+    }
+  ],
+  "notes": [
+    "Stations are editable sculpting controls for EXTERIOR silhouette; not anatomically measured cross-sections.",
+    "Muscle peaks shift subtly during calf raise; the base rig and existing aesthetic art are unchanged.",
+    "All 24 profiles share the same original movement bindings, but only calf envelope has an explicit dynamic girth correction."
+  ],
+  "references": [
+    {
+      "title": "OpenStax — Skeletal muscles of pectoral girdle and upper limbs",
+      "url": "https://openstax.org/books/anatomy-and-physiology-2e/pages/11-5-muscles-of-the-pectoral-girdle-and-upper-limbs"
+    },
+    {
+      "title": "OpenStax — Appendicular muscles of pelvis and lower limbs",
+      "url": "https://openstax.org/books/anatomy-and-physiology-2e/pages/11-6-appendicular-muscles-of-the-pelvic-girdle-and-lower-limbs"
+    }
+  ]
+}

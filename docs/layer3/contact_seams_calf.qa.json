@@ -1,0 +1,73 @@
+{
+  "format": "MonarcaC3SeamQA",
+  "version": 2,
+  "exercise": "calf",
+  "motionFrames": 48,
+  "scanStep": 0.05,
+  "seams": {
+    "frontKnee": {
+      "profiles": [
+        "rotula_frontal",
+        "pantorrilla_frontal"
+      ],
+      "framesChecked": 48,
+      "minOverlap": 24.4768,
+      "maxOverlap": 24.4963,
+      "minVerticalOverlap": 18.94319,
+      "maxVerticalOverlap": 19.22605,
+      "minSharedRows": 119,
+      "maxSharedRows": 123,
+      "maxTemporalDelta": 0.0063,
+      "failingFrames": []
+    },
+    "rearKnee": {
+      "profiles": [
+        "muslo_posterior",
+        "pantorrilla_posterior"
+      ],
+      "framesChecked": 48,
+      "minOverlap": 22.5767,
+      "maxOverlap": 22.6808,
+      "minVerticalOverlap": 5.36822,
+      "maxVerticalOverlap": 5.69137,
+      "minSharedRows": 15,
+      "maxSharedRows": 20,
+      "maxTemporalDelta": 0.0124,
+      "failingFrames": []
+    },
+    "frontAnkle": {
+      "profiles": [
+        "pantorrilla_frontal",
+        "tobillo_frontal"
+      ],
+      "framesChecked": 48,
+      "minOverlap": 17,
+      "maxOverlap": 17,
+      "minVerticalOverlap": 15,
+      "maxVerticalOverlap": 16.03725,
+      "minSharedRows": 300,
+      "maxSharedRows": 321,
+      "maxTemporalDelta": 0,
+      "failingFrames": []
+    },
+    "rearAnkle": {
+      "profiles": [
+        "pantorrilla_posterior",
+        "tobillo_posterior"
+      ],
+      "framesChecked": 48,
+      "minOverlap": 15.9647,
+      "maxOverlap": 15.9687,
+      "minVerticalOverlap": 13.7056,
+      "maxVerticalOverlap": 14.65335,
+      "minSharedRows": 246,
+      "maxSharedRows": 263,
+      "maxTemporalDelta": 0.0038,
+      "failingFrames": []
+    }
+  },
+  "limitations": [
+    "This detects positive cross-sectional overlap, not full 2D polygon collision or visual occlusion",
+    "No browser screenshot or inter-patch clipping proof"
+  ]
+}
