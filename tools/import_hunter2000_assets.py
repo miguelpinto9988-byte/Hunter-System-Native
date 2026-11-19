@@ -44,9 +44,11 @@ def validate_installed():
         raise ValueError('Catálogo instalado inválido')
     if any(x.get('approvedForAutoplan') or x.get('autoProgressionApproved') for x in new):
         raise ValueError('Se detectaron fichas sin QA aprobadas para planificación')
-    missing=[x['id'] for x in base+new if not (ASSETS/x.get('demoPath30','')).is_file()]
-    if missing: raise ValueError(f'Faltan {len(missing)} SVG, p.ej.: {missing[:3]}')
-    print('INTEGRADOS: 2000 fichas y recursos presentes; 800 nuevos pendientes de QA.')
+    missing=[x['id'] for x in base if not (ASSETS/'media2d'/(x['id']+'.svg')).is_file()]
+    if missing: raise ValueError(f'Faltan {len(missing)} ilustraciones estáticas, p.ej.: {missing[:3]}')
+    if list((ASSETS/'demos30').glob('*.svg')):
+        raise ValueError('No se permiten animaciones SVG en demos30')
+    print('INTEGRADOS: 2000 fichas, 1200 ilustraciones estáticas y 800 nuevos pendientes de QA.')
 
 def main():
     if len(sys.argv)==2 and sys.argv[1]=='--check':
@@ -54,6 +56,7 @@ def main():
         return
     if len(sys.argv)!=2:
         raise SystemExit('Uso: python3 tools/import_hunter2000_assets.py /ruta/Hunter_System_V41_Paquete_Integracion_2000_SVG.zip')
+    raise SystemExit('La importación de paquetes SVG animados está deshabilitada: no se reintroducen demos30')
     path=Path(sys.argv[1]).resolve()
     names=validate_zip(path)
     with zipfile.ZipFile(path) as pack:

@@ -1,4 +1,4 @@
-# Hunter System V43.12 · Igris, Rey Hormiga y Baran investigados + SVG 2000
+# Hunter System V43.12 · ilustraciones SVG estáticas; sin demos SVG animados
 name: Compilar Hunter System Android APK
 
 on:
@@ -115,10 +115,10 @@ jobs:
       - name: Comprobar estado de recursos Hunter 2000
         run: python3 tools/import_hunter2000_assets.py --check
 
-      - name: Comprobar integridad de 2000 SVG y ausencia de Rive
+      - name: Comprobar ausencia de SVG animados y 1200 ilustraciones estáticas
         run: python3 tools/check_hunter2000_complete.py
 
-      - name: Crear matriz de inspección SVG (todas las filas pendientes)
+      - name: Crear matriz de inspección de ilustraciones (800 pendientes)
         run: python3 tools/generate_svg_qa_queue.py --output "$RUNNER_TEMP/hunter-svg-2000-qa-pendiente.csv"
 
       - name: Validar motor de alarmas V43.12
@@ -138,23 +138,19 @@ jobs:
           chmod +x ./gradlew
           ./gradlew --no-daemon :app:assembleRelease
 
-      - name: Verificar 2000 SVG en la APK y ausencia de Rive
+      - name: Verificar SVG estáticos en la APK y ausencia de animaciones
         run: |
           python3 - <<'PY'
           import zipfile,pathlib,json,hashlib
           apk=next(pathlib.Path('app/build/outputs/apk/release').glob('*.apk'))
           source=pathlib.Path('app/src/main/assets')
-          records=json.loads((source/'catalog.json').read_text())+json.loads((source/'catalog-hunter2000-extra.json').read_text())
-          sha=json.loads((source/'hunter2000-qa-status.json').read_text())['SHA256_by_asset']
-          expected={'assets/'+entry['demoPath30'] for entry in records}
           with zipfile.ZipFile(apk) as z:
             names=z.namelist()
             svgs={p for p in names if p.startswith('assets/demos30/') and p.endswith('.svg')}
-            assert len(svgs)==2000 and svgs==expected,(len(svgs),len(expected))
+            assert not svgs, f'Persisten {len(svgs)} SVG animados'
+            static={p for p in names if p.startswith('assets/media2d/') and p.endswith('.svg')}
+            assert len(static)==1200, f'Se esperaban 1200 SVG estáticos; hay {len(static)}'
             assert not [p for p in names if p.endswith('.riv') or 'librive-android.so' in p], 'Persisten archivos Rive'
-            for path in svgs:
-              raw=z.read(path)
-              assert hashlib.sha256(raw).hexdigest()==sha[path.removeprefix('assets/')],path
             artwork='assets/monarch_splash_background.webp'
             assert artwork in names,'Falta fondo animado de carga'
             data=z.read(artwork)
@@ -180,13 +176,13 @@ jobs:
             print('49 fuentes PNG Pixel Art; recursos raster Android presentes en APK:',len(compiled_pngs))
             extra=json.loads(z.read('assets/catalog-hunter2000-extra.json'))
             assert len(extra)==800 and all(x.get('approvedForAutoplan') is False and x.get('autoProgressionApproved') is False for x in extra)
-            print('APK verificada: 2000 SVG íntegros, 0 Rive, 800 fichas sin QA ni planificación automática')
+            print('APK verificada: 0 SVG animados, 1200 ilustraciones estáticas, 800 fichas nuevas sin QA')
           PY
 
       - name: Publicar matriz de QA pendiente (no es certificacion)
         uses: actions/upload-artifact@v4
         with:
-          name: Hunter-System-V43-SVG-2000-QA-Pendiente
+          name: Hunter-System-V43-Ilustraciones-Estaticas-QA-Pendiente
           path: ${{ runner.temp }}/hunter-svg-2000-qa-pendiente.csv
           if-no-files-found: error
           retention-days: 14
