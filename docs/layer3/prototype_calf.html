@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="es"><head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="color-scheme" content="dark"/>
+<title>Monarca Eclipse · Dos capas con seguimiento real</title>
+<style>
+:root{color-scheme:dark;--bg:#07131d;--panel:#102433;--panel2:#152c3b;--line:#37596d;--ink:#edf8ff;--muted:#a7becc;--cyan:#79e6f0;--warm:#f7a88d}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse 70vw 500px at 50% -300px,#245779 0%,transparent 80%),linear-gradient(135deg,#060e18,#0b1c29 60%,#091822);color:var(--ink);font:14px/1.54 system-ui,-apple-system,'Segoe UI',sans-serif}button,input{font:inherit}button{cursor:pointer;color:inherit}button:focus-visible,input:focus-visible{outline:3px solid #cbfcff;outline-offset:3px}a{color:#b8edff}.wrap{max-width:1210px;margin:auto;padding:28px 23px 56px}.brand{display:flex;align-items:center;gap:11px;font-size:11px;letter-spacing:.17em;font-weight:800;color:var(--cyan)}.brand svg{width:33px;height:33px}.version{font-size:10px;letter-spacing:0;background:#153245;color:#c0e8f4;border:1px solid #517b92;padding:4px 9px;border-radius:30px;margin-left:auto}h1{font-size:clamp(27px,3.8vw,47px);line-height:1.08;letter-spacing:-.035em;margin:14px 0 10px;max-width:900px}p{color:#bacbd6}header p{margin:0;max-width:820px;line-height:1.75;font-size:14px}.exercise-strip{margin:22px 0 16px;padding:15px 19px;border:1px solid #395b6d;background:linear-gradient(115deg,#182f40,#102431);border-radius:15px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}.strip-dot{width:10px;height:10px;background:var(--cyan);border-radius:50%;box-shadow:0 0 15px #75f4fb}.strip-title{font-weight:780;font-size:16px}.strip-desc{font-size:12px;color:#9bb4c4;margin-left:auto}.pill{font-size:10px;font-weight:760;letter-spacing:.07em;color:#b4eff3;background:#153744;border:1px solid #477c87;border-radius:50px;padding:4px 10px}
+.layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:18px}.board{align-self:start;border:1px solid #456579;border-radius:16px;background:linear-gradient(170deg,#132836,#071826);overflow:hidden;box-shadow:0 25px 65px #01070d50}.boardtop{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:16px 17px 13px;border-bottom:1px solid #315166;flex-wrap:wrap}.section-eyebrow{display:block;color:#84d5e6;font-size:10px;letter-spacing:.15em;font-weight:820;text-transform:uppercase}.boardtop h2{font-size:19px;letter-spacing:-.01em;margin:1px 0}.switch{display:flex;flex-wrap:wrap;gap:5px;padding:4px;background:#081824;border:1px solid #34576c;border-radius:10px}.switch button{padding:8px 12px;font-size:12px;border:1px solid transparent;background:none;border-radius:7px;font-weight:680}.switch button[aria-pressed=true]{background:linear-gradient(145deg,#235064,#193c52);border-color:#6bafc3;box-shadow:0 0 14px #60c8da18}.switch button:hover{background:#244456}
+.stage-wrap{background:radial-gradient(circle at 51% 40%,#23465c38,transparent 50%);padding:8px 8px 0}.stage{position:relative;margin:0 auto;width:100%;max-width:620px;aspect-ratio:720/800;min-height:280px;border-radius:12px;overflow:hidden;background:#0c1d2a}.stage svg{width:100%;height:100%;display:block;position:absolute;inset:0}.stage .aesthetic{opacity:1;transition:opacity .2s}.stage .technical{opacity:0;transition:opacity .2s}.stage .tracking{opacity:0;transition:opacity .2s;pointer-events:none}.stage[data-mode=structure] .technical{opacity:1}.stage[data-mode=structure] .aesthetic{opacity:0}.stage[data-mode=aesthetic] .technical{opacity:0}.stage[data-mode=aesthetic] .tracking{opacity:0}.stage[data-mode=overlay] .technical{opacity:.32}.stage[data-mode=overlay] .aesthetic{opacity:1}.stage[data-mode=overlay] .tracking{opacity:1}.stage[data-mode=structure] .tracking{opacity:1}.stage[data-show-tracking=false] .tracking{opacity:0}.stage[data-show-joints=false] .technical-joint{display:none}.stage[data-show-muscles=false] .muscle-accent{opacity:0}.svg-info{position:absolute;left:15px;top:14px;font-size:11px;color:#b6ebf6;background:#071c2bdd;border:1px solid #4d8299;border-radius:8px;padding:7px 11px;letter-spacing:.04em;font-weight:720;pointer-events:none;z-index:2}.svg-phase{position:absolute;right:15px;top:14px;z-index:2;background:#0a1f2dcf;border:1px solid #3d6171;color:#daeff8;font-size:11px;padding:7px 10px;border-radius:8px;pointer-events:none}.boardfoot{padding:14px 18px;background:linear-gradient(120deg,#122837,#102431);border-top:1px solid #304d5f;font-size:12px;color:#b2ccd9}.boardfoot strong{color:#e7f8ff}
+.side{display:flex;flex-direction:column;gap:14px}.panel{padding:17px;background:linear-gradient(150deg,#182e3c,#10222f);border:1px solid #3b5d70;border-radius:14px}.panel h3{font-size:15px;margin:0 0 12px}.smalltitle{font-size:10px;letter-spacing:.15em;text-transform:uppercase;color:#8bdde5;font-weight:820;margin-bottom:5px}.panel p{font-size:12px;line-height:1.65;color:#b0c5d1;margin:7px 0}.actions{display:flex;gap:9px}.primary,.secondary{border-radius:10px;padding:11px 16px;min-height:43px;border:1px solid #629cb0;background:#21465c;font-weight:750}.primary{flex:1;background:linear-gradient(135deg,#36798d,#28556a);border-color:#95e6e9;color:#f7fcff}.secondary{background:#102736;color:#cfe6f4}.primary:hover,.secondary:hover{filter:brightness(1.14)}.primary:disabled{opacity:.55;cursor:not-allowed}.control{margin-top:13px}.control label{display:flex;justify-content:space-between;gap:12px;font-size:12px;color:#d7ebf4;margin-bottom:7px}.value{color:#9ae8ef;font-variant-numeric:tabular-nums}input[type=range]{width:100%;accent-color:#82e3ef;cursor:pointer}.speed-group{display:flex;gap:6px;flex-wrap:wrap}.speed-group button{flex:1;background:#0b202d;border:1px solid #466c80;border-radius:8px;padding:9px;font-size:12px}.speed-group button[aria-pressed=true]{background:#2d6278;border-color:#9be0eb}.check{display:flex;gap:9px;align-items:center;font-size:12px;color:#d8e8f2;cursor:pointer;margin-top:11px}.check input{accent-color:#79e6f0;width:16px;height:16px}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.metric{border:1px solid #355b6d;background:#0d2330;border-radius:10px;padding:11px}.metric small{display:block;color:#a8c4d1;font-size:10px}.metric strong{font-size:21px;color:#e4f8fb;font-weight:790;font-variant-numeric:tabular-nums}.meter{height:6px;background:#304e61;border-radius:10px;overflow:hidden;margin-top:13px}.meter>div{height:100%;background:linear-gradient(90deg,#39bacb,#b4faff);width:0%}.legend-row{display:flex;gap:10px;align-items:flex-start;margin:12px 0}.legend-ico{width:28px;height:28px;flex:0 0 28px;border:1px solid #609bab;border-radius:8px;display:grid;place-items:center;color:#b8eef4;font-size:13px}.legend-row strong{font-size:12px;display:block}.legend-row p{margin:3px 0 0}.legend-structure{background:#2e5669}.legend-visual{background:#4a647b}.legend-track{background:#28475c}.summary-note{font-size:11px!important;line-height:1.7!important;color:#9cb4c1!important}.foot{margin-top:20px;padding:13px 4px;font-size:12px;color:#90a8b4;line-height:1.7}.foot a{color:#b4eaf9}.stats-row{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap}.notice{font-size:11px;color:#b6cddb}.separator{height:1px;background:#345466;margin:15px 0}.desc-main{font-size:12px;color:#b9d1db;margin:0}.status-line{display:flex;justify-content:space-between;gap:7px;color:#97b3c2;font-size:11px;margin-top:11px}.status-line b{color:#e5f5fa;font-weight:750}
+@media(max-width:940px){.layout{grid-template-columns:1fr}.side{display:grid;grid-template-columns:1fr 1fr}.side .panel:last-child{grid-column:1/-1}.stage{max-width:680px}.strip-desc{margin-left:0}}@media(max-width:660px){.wrap{padding:20px 11px 38px}.brand{flex-wrap:wrap}.exercise-strip{padding:12px}.strip-title{font-size:14px}.boardtop{padding:12px}.boardtop h2{font-size:17px}.switch{width:100%}.switch button{flex:1;padding:8px 5px;font-size:11px}.side{grid-template-columns:1fr}.side .panel:last-child{grid-column:auto}.stage{min-height:240px}.svg-info,.svg-phase{font-size:9px;padding:5px 7px}.boardfoot{padding:12px}.layout{gap:10px}}@media(prefers-reduced-motion:reduce){.stage .aesthetic,.stage .technical,.stage .tracking{transition:none!important}}
+
+/* Capa 3 — volumen exterior, independiente de rig y estética. */
+.stage .external-volume{opacity:0;transition:opacity .2s;pointer-events:none}
+.external-volume .volume-patch{stroke:#a4e7e8;stroke-width:1.35;stroke-linejoin:round;filter:none}
+.external-volume .volume-patch[data-depth="far"]{opacity:.85;stroke:#618e9b}
+.external-volume .volume-patch[data-depth="near"]{stroke:#d1f5ec;stroke-width:1.75}
+.external-volume .volume-point{fill:#d0ffdb;stroke:#1b4d53;stroke-width:1.7;pointer-events:none}
+.external-volume .volume-guide{stroke:#73ffe2;stroke-width:1;stroke-dasharray:3 5;fill:none;opacity:.68}
+.stage[data-mode=volume] .technical,.stage[data-mode=volume] .aesthetic{opacity:0}
+.stage[data-mode=volume] .external-volume{opacity:1}
+.stage[data-mode=volume] .tracking{opacity:1}
+.stage[data-mode=volstruct] .technical{opacity:.56}
+.stage[data-mode=volstruct] .aesthetic{opacity:0}
+.stage[data-mode=volstruct] .external-volume{opacity:.92}
+.stage[data-mode=volstruct] .tracking{opacity:1}
+.stage[data-mode=overlay] .technical{opacity:.23}
+.stage[data-mode=overlay] .external-volume{opacity:1}
+.stage[data-mode=overlay] .aesthetic{opacity:.50}
+.stage[data-mode=overlay] .tracking{opacity:1}
+.stage[data-mode=structure] .external-volume,.stage[data-mode=aesthetic] .external-volume{opacity:0}
+.stage[data-mode=structure] .aesthetic{opacity:0}
+.stage[data-show-tracking=false] .tracking{opacity:0}
+.stage[data-show-surface-lines=false] .volume-patch{stroke:transparent}
+.mini-panel{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;background:#09232f;border:1px solid #3e6f7b;padding:10px 12px;border-radius:10px;font-size:11px;margin-top:10px;color:#badfe7}.mini-panel strong{color:#b3ffeb}
+.legend-volume{background:#244e4c;color:#9bffe9;border-color:#69cbbd}
+@media(max-width:670px){.switch button{font-size:10px;padding:7px 6px}.switch{gap:3px}}
+</style></head>
+<body><main class="wrap">
+<header>
+  <div class="brand"><svg viewBox="0 0 38 38" aria-hidden="true"><path d="M3 11L15 26 19 13 23 26 35 11 29 33H9Z" fill="none" stroke="#9eecf6" stroke-width="2.1" stroke-linejoin="round"/><path d="M10 8L19 3 28 8" fill="none" stroke="#b2a0f2" stroke-width="1.8"/></svg>HUNTER SYSTEM · MONARCA ECLIPSE <span class="version">PROTOTIPO · TRES CAPAS INDEPENDIENTES</span></div>
+  <h1>La tercera capa moldea<br>el volumen exterior.</h1>
+  <p>Demostración de <strong>Elevación de talones</strong>: mantuve <strong>intacta</strong> la capa 1 de movimiento del SVG original y la capa 2 ilustrada. Ahora existe una <strong>capa 3 independiente</strong>, formada por siluetas vectoriales con grosor variable para pecho, espalda, cintura, caderas, hombros, brazos, muslos y pantorrillas. La nueva superficie sigue las mismas 48 poses y adapta el relieve de las pantorrillas durante la elevación. No dibuja músculos internos.</p>
+</header>
+<div class="exercise-strip"><span class="strip-dot"></span><span class="strip-title">Elevación de talones</span><span class="pill">48 poses históricas</span><span class="pill">Ciclo 4,8 s</span><span class="strip-desc">Capa 1 intacta · Capa 2 intacta · Capa 3 nueva</span></div>
+<div class="layout">
+<section class="board" aria-label="Visor de capas animadas">
+ <div class="boardtop"><div><span class="section-eyebrow">ESTRUCTURA ORIGINAL · 3 CAPAS SINCRONIZADAS</span><h2 id="stage-title">Capa 3 · Volumen exterior</h2></div>
+ <div class="switch" aria-label="Seleccionar capas"><button type="button" data-mode="structure" aria-pressed="false">1 · Movimiento</button><button type="button" data-mode="volume" aria-pressed="true">3 · Volumen</button><button type="button" data-mode="aesthetic" aria-pressed="false">2 · Estética</button><button type="button" data-mode="volstruct" aria-pressed="false">1 + 3</button><button type="button" data-mode="overlay" aria-pressed="false">Las 3</button></div></div>
+ <div class="stage-wrap"><div class="stage" id="stage" data-mode="volume" data-show-tracking="true" data-show-joints="true" data-show-muscles="true">
+  <div class="svg-info" id="svg-info">Tercera capa de volumen exterior</div><div class="svg-phase" id="svg-phase">Inicio · 0 %</div>
+  <svg viewBox="0 0 720 800" xmlns="http://www.w3.org/2000/svg" aria-label="Elevación de talones: rig estructural y personaje ilustrado moviéndose juntos">
+   <defs>
+    <linearGradient id="skin-near" x1="0" y1="0" x2="1" y2="0.23"><stop stop-color="#94695b"/><stop offset=".23" stop-color="#e5b298"/><stop offset=".62" stop-color="#f2c4a7"/><stop offset="1" stop-color="#a77563"/></linearGradient>
+    <linearGradient id="skin-far" x1="0" y1="0" x2="1" y2=".24"><stop stop-color="#825a54"/><stop offset=".55" stop-color="#c79582"/><stop offset="1" stop-color="#a16c61"/></linearGradient>
+    <linearGradient id="face-grad" x1="0" y1="0" x2="1" y2=".4"><stop stop-color="#b27d6b"/><stop offset=".46" stop-color="#f1c0a1"/><stop offset=".88" stop-color="#deb092"/><stop offset="1" stop-color="#986c61"/></linearGradient>
+    <linearGradient id="hair-grad" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1a202f"/><stop offset=".58" stop-color="#30445e"/><stop offset="1" stop-color="#101625"/></linearGradient>
+    <linearGradient id="shirt-grad" x1="0" y1="0" x2=".91" y2=".24"><stop stop-color="#66879a"/><stop offset=".26" stop-color="#e4eef4"/><stop offset=".65" stop-color="#c3d8e3"/><stop offset="1" stop-color="#607a90"/></linearGradient>
+    <linearGradient id="shirt-sleeve" x1="0" y1="0" x2="1" y2=".5"><stop stop-color="#dfeff6"/><stop offset=".65" stop-color="#94aebf"/><stop offset="1" stop-color="#5d778e"/></linearGradient>
+    <linearGradient id="short-grad" x1="0" y1="0" x2=".9" y2="1"><stop stop-color="#344458"/><stop offset=".4" stop-color="#1d2d44"/><stop offset="1" stop-color="#0e1a2d"/></linearGradient>
+    <linearGradient id="shoe-grad" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#2f5667"/><stop offset=".5" stop-color="#0b273e"/><stop offset="1" stop-color="#131d2c"/></linearGradient>
+    <linearGradient id="aura" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#182c3a" stop-opacity=".95"/><stop offset="1" stop-color="#122d42" stop-opacity=".2"/></linearGradient>
+    <linearGradient id="vol-torso" x1="0" y1="0" x2="1" y2=".2"><stop stop-color="#25475b"/><stop offset=".28" stop-color="#527e88"/><stop offset=".6" stop-color="#6b96a2"/><stop offset="1" stop-color="#2b4b5f"/></linearGradient>
+    <linearGradient id="vol-arm" x1="0" y1="0" x2="1" y2=".4"><stop stop-color="#376075"/><stop offset=".38" stop-color="#7ba9ae"/><stop offset=".75" stop-color="#567f8c"/><stop offset="1" stop-color="#2b5365"/></linearGradient>
+    <linearGradient id="vol-calf" x1="0" y1="0" x2="1" y2=".2"><stop stop-color="#2b5363"/><stop offset=".32" stop-color="#77b6ba"/><stop offset=".56" stop-color="#8ec8c3"/><stop offset="1" stop-color="#2b4d61"/></linearGradient>
+    <linearGradient id="vol-thigh" x1="0" y1="0" x2="1" y2=".17"><stop stop-color="#294e62"/><stop offset=".37" stop-color="#76a0ac"/><stop offset=".64" stop-color="#7cb1b4"/><stop offset="1" stop-color="#2c5266"/></linearGradient>
+    <linearGradient id="vol-dark" x1="0" y1="0" x2="1" y2=".1"><stop stop-color="#203d52"/><stop offset=".5" stop-color="#5d8895"/><stop offset="1" stop-color="#27495e"/></linearGradient>
+    <filter id="ground-glow" x="-1" y="-2" width="3" height="5"><feGaussianBlur stdDeviation="6"/></filter>
+   </defs>
+   <g id="backdrop" aria-hidden="true"><title xmlns="http://www.w3.org/2000/svg">Elevación de talones</title><rect xmlns="http://www.w3.org/2000/svg" width="720" height="800" rx="30" fill="#101f2a" /><circle xmlns="http://www.w3.org/2000/svg" cx="360" cy="370" r="285" fill="#152e3d" /><circle xmlns="http://www.w3.org/2000/svg" cx="360" cy="370" r="230" fill="none" stroke="#284352" stroke-width="1" /><path xmlns="http://www.w3.org/2000/svg" d="M62 115v-42h42M616 73h42v42M62 685v42h42M616 727h42v-42" fill="none" stroke="#7ce2e9" stroke-width="3" opacity=".7" /><text xmlns="http://www.w3.org/2000/svg" x="360" y="86" text-anchor="middle" fill="#b0c6d1" font-size="13" font-family="sans-serif">VISTA LATERAL</text><path xmlns="http://www.w3.org/2000/svg" d="M100 678.85H620" stroke="#47606e" stroke-width="2" /><ellipse cx="360" cy="672" rx="90" ry="12" fill="#5ed8e9" opacity=".08" filter="url(#ground-glow)"/><path d="M128 679H595" stroke="#9bdde7" stroke-opacity=".18" stroke-width="2"/><text x="360" y="754" text-anchor="middle" fill="#7ca5b7" font-size="13" letter-spacing="2">CAPAS VECTORIALES · MOVIMIENTO COORDINADO</text></g>
+   <g class="technical" id="technical-layer" aria-label="Capa estructural original"><g xmlns="http://www.w3.org/2000/svg" id="structure-anatomy" transform="translate(-45.30 -119.41) scale(1.12)"><g data-motion="body" data-part="Grupo original"><g data-apparatus30="none" /></g><g data-motion="body" data-part="Muslo posterior"><path d="M342.00,469.28 Q357.26,453.48 378.00,460.72 L397.65,566.99 Q386.69,577.08 372.35,573.01 Z" fill="#50788b" stroke="#284657" stroke-width="2.4" stroke-linejoin="round" /></g><g data-motion="body" data-part="Fibras del muslo posterior"><path d="M353.45,475.81 Q360.77,468.23 370.72,471.70 L389.24,559.74 Q383.76,564.79 376.59,562.75 Z" fill="#db7e79" stroke="none" stroke-width="2.4" stroke-linejoin="round" /></g><g data-motion="shin-far" data-part="Pantorrilla posterior"><path d="M372.51,570.52 Q384.66,562.01 397.49,569.48 L398.49,688.64 Q390.20,693.76 381.51,689.36 Z" fill="#50788b" stroke="#284657" stroke-width="2.4" stroke-linejoin="round" /></g><g data-motion="shin-far" data-part="Fibras gemelas posteriores"><path d="M379.38,579.24 Q385.22,575.16 391.37,578.74 L393.87,679.83 Q389.72,682.39 385.38,680.19 Z" fill="#db7e79" stroke="none" stroke-width="2.4" stroke-linejoin="round" /></g><g data-motion="body" data-part="Brazo posterior"><path d="M347.63,312.56 Q355.16,297.08 372.37,297.44 L423.53,389.79 Q417.92,399.78 406.47,400.21 Z" fill="#50788b" stroke="#284657" stroke-width="2.4" stroke-linejoin="round" /></g><g data-motion="body" data-part="Antebrazo posterior"><path d="M405.02,395.59 Q414.62,388.61 424.98,394.41 L426.99,479.59 Q420.23,483.91 413.01,480.41 Z" fill="#50788b" stroke="#284657" stroke-width="2.4" stroke-linejoin="round" /></g><g data-motion="body" data-part="Tronco"><path d="M330.00,305.00 Q334.00,372.20 340.00,465.00 Q360.00,485.00 380.00,465.00 Q386.00,372.20 390.00,305.00 Q360.00,292.00 330.00,305.00 Z" fill="#6995a8" stroke="#284758" stroke-width="3" /></g><g data-motion="body" data-part="Eje pectoral"><path data-chest22="true" data-axis22="1.00,0.00" d="M391.00,333.00L391.00,372.20" fill="none" stroke="#9fd6df" stroke-width="3" stroke-linecap="round" /></g><g data-motion="body" data-part="Eje de cadera"><path d="M386.00,465.00L334.00,465.00" stroke="#284758" stroke-width="11" stroke-linecap="round" /></g><g data-motion="body" data-part="Muslo anterior"><path d="M341.03,460.48 Q362.89,452.86 378.97,469.52 L348.13,573.13 Q333.25,577.35 321.87,566.87 Z" fill="#6995a8" stroke="#284657" stroke-width="2.4" stroke-linejoin="round" /></g><g data-motion="body" data-part="Fibras del muslo anterior"><path d="M348.81,471.59 Q359.30,467.93 367.02,475.92 L343.65,562.81 Q336.21,564.92 330.52,559.68 Z" fill="#db7e79" stroke="none" stroke-width="2.4" stroke-linejoin="round" /></g><g data-motion="shin-near" data-part="Pantorrilla anterior"><path d="M321.51,569.43 Q335.36,561.37 348.49,570.57 L338.49,689.36 Q329.80,693.76 321.51,688.64 Z" fill="#6995a8" stroke="#284657" stroke-width="2.4" stroke-linejoin="round" /></g><g data-motion="shin-near" data-part="Fibras gemelas anteriores"><path d="M328.15,578.72 Q334.80,574.85 341.10,579.26 L334.62,680.19 Q330.28,682.39 326.13,679.83 Z" fill="#db7e79" stroke="none" stroke-width="2.4" stroke-linejoin="round" /></g><g data-motion="body" data-part="Brazo anterior"><path d="M347.20,297.18 Q365.01,296.81 372.80,312.82 L313.53,400.21 Q302.08,399.78 296.47,389.79 Z" fill="#6995a8" stroke="#284657" stroke-width="2.4" stroke-linejoin="round" /></g><g data-motion="body" data-part="Antebrazo anterior"><path d="M294.52,394.38 Q305.39,388.29 315.48,395.62 L306.99,480.41 Q299.77,483.91 293.01,479.59 Z" fill="#6995a8" stroke="#284657" stroke-width="2.4" stroke-linejoin="round" /></g><g data-motion="body" data-part="Articulación original"><circle cx="305.00" cy="395.00" r="6.8" fill="#284758" /></g><g data-motion="body" data-part="Articulación original"><circle cx="305.00" cy="395.00" r="2.4" fill="#86e4f0" /></g><g data-motion="body" data-part="Articulación original"><circle cx="415.00" cy="395.00" r="6.8" fill="#284758" /></g><g data-motion="body" data-part="Articulación original"><circle cx="415.00" cy="395.00" r="2.4" fill="#86e4f0" /></g><g data-motion="body" data-part="Rodilla"><g data-knee22="7" data-axis22="0.97,0.23"><circle cx="335.00" cy="570.00" r="6.2" fill="#284758" /><path d="M335.00,570.00L343.76,572.08" stroke="#86e4f0" stroke-width="3.2" stroke-linecap="round" /></g></g><g data-motion="body" data-part="Rodilla"><g data-knee22="9" data-axis22="0.97,-0.23"><circle cx="385.00" cy="570.00" r="6.2" fill="#284758" /><path d="M385.00,570.00L393.76,567.92" stroke="#86e4f0" stroke-width="3.2" stroke-linecap="round" /></g></g><g data-motion="body" data-part="Trazo original"><path d="M369.00,296.00 Q360.00,301.76 351.00,296.00 L351.00,275.00 Q360.00,269.96 369.00,275.00 Z" fill="#86a7b7" stroke="#284657" stroke-width="2.4" stroke-linejoin="round" /></g><g data-motion="body" data-part="Cabeza"><g data-head-view="side" data-axis22="1.00,0.00" transform="rotate(0.00 360.00 255.00)"><ellipse cx="360.00" cy="255.00" rx="26" ry="31" fill="#9cc3cf" stroke="#284758" stroke-width="2.5" /><g transform=""><path d="M334.00,252.00Q330.00,220.00 362.00,222.00Q387.00,224.00 386.00,244.00L369.00,236.00Q352.00,245.00 334.00,252.00" fill="#284758" /><path d="M377.00,253.00l10,8l-8,3" fill="#9cc3cf" stroke="#284758" stroke-width="1.7" /><circle cx="370.00" cy="252.00" r="2.5" fill="#284758" /></g></g></g><g data-motion="body" data-part="Mano"><ellipse cx="300.00" cy="483.00" rx="9" ry="12" fill="#9cc3cf" stroke="#284758" stroke-width="2" /></g><g data-motion="body" data-part="Mano"><ellipse cx="420.00" cy="483.00" rx="9" ry="12" fill="#9cc3cf" stroke="#284758" stroke-width="2" /></g><g data-motion="foot-near" data-part="Pie anterior"><g data-foot22="8" data-foot-view22="side" data-axis22="0.88,0.47" data-heel22="323.83,685.69" data-toe22="358.00,704.00"><path d="M319.82,693.19 Q319.03,683.13 327.84,678.20 L360.83,698.71 Q360.96,705.59 355.17,709.29 Z" fill="#284758" stroke="#284657" stroke-width="2.4" stroke-linejoin="round" /><path d="M363.54,697.89L355.99,712.00" fill="none" stroke="#86e4f0" stroke-width="3" stroke-linecap="round" /></g></g><g data-motion="foot-far" data-part="Pie posterior"><g data-foot22="10" data-foot-view22="side" data-axis22="0.88,0.47" data-heel22="383.83,685.69" data-toe22="418.00,704.00"><path d="M379.82,693.19 Q379.03,683.13 387.84,678.20 L420.83,698.71 Q420.96,705.59 415.17,709.29 Z" fill="#284758" stroke="#284657" stroke-width="2.4" stroke-linejoin="round" /><path d="M423.54,697.89L415.99,712.00" fill="none" stroke="#86e4f0" stroke-width="3" stroke-linecap="round" /></g></g><g data-motion="body" data-joint="Cabeza" class="technical-joint"><circle cx="360" cy="255" r="10" fill="none" stroke="#7fe8ef" stroke-width="1.5" stroke-opacity=".72" /><circle cx="360" cy="255" r="3" fill="#a6f4f5" /><title>Cabeza</title></g><g data-motion="body" data-joint="Hombro" class="technical-joint"><circle cx="360" cy="311" r="10" fill="none" stroke="#7fe8ef" stroke-width="1.5" stroke-opacity=".72" /><circle cx="360" cy="311" r="3" fill="#a6f4f5" /><title>Hombro</title></g><g data-motion="body" data-joint="Cadera" class="technical-joint"><circle cx="360" cy="465" r="10" fill="none" stroke="#7fe8ef" stroke-width="1.5" stroke-opacity=".72" /><circle cx="360" cy="465" r="3" fill="#a6f4f5" /><title>Cadera</title></g><g data-motion="body" data-joint="Codo I" class="technical-joint"><circle cx="305" cy="395" r="10" fill="none" stroke="#7fe8ef" stroke-width="1.5" stroke-opacity=".72" /><circle cx="305" cy="395" r="3" fill="#a6f4f5" /><title>Codo I</title></g><g data-motion="body" data-joint="Codo D" class="technical-joint"><circle cx="415" cy="395" r="10" fill="none" stroke="#7fe8ef" stroke-width="1.5" stroke-opacity=".72" /><circle cx="415" cy="395" r="3" fill="#a6f4f5" /><title>Codo D</title></g><g data-motion="body" data-joint="Muñeca I" class="technical-joint"><circle cx="300" cy="483" r="10" fill="none" stroke="#7fe8ef" stroke-width="1.5" stroke-opacity=".72" /><circle cx="300" cy="483" r="3" fill="#a6f4f5" /><title>Muñeca I</title></g><g data-motion="body" data-joint="Muñeca D" class="technical-joint"><circle cx="420" cy="483" r="10" fill="none" stroke="#7fe8ef" stroke-width="1.5" stroke-opacity=".72" /><circle cx="420" cy="483" r="3" fill="#a6f4f5" /><title>Muñeca D</title></g><g data-motion="body" data-joint="Rodilla I" class="technical-joint"><circle cx="335" cy="570" r="10" fill="none" stroke="#7fe8ef" stroke-width="1.5" stroke-opacity=".72" /><circle cx="335" cy="570" r="3" fill="#a6f4f5" /><title>Rodilla I</title></g><g data-motion="body" data-joint="Rodilla D" class="technical-joint"><circle cx="385" cy="570" r="10" fill="none" stroke="#7fe8ef" stroke-width="1.5" stroke-opacity=".72" /><circle cx="385" cy="570" r="3" fill="#a6f4f5" /><title>Rodilla D</title></g><g data-motion="heel-near" data-joint="Talón I" class="technical-joint"><circle cx="323.83" cy="685.69" r="10" fill="none" stroke="#7fe8ef" stroke-width="1.5" stroke-opacity=".72" /><circle cx="323.83" cy="685.69" r="3" fill="#a6f4f5" /><title>Talón I</title></g><g data-motion="heel-far" data-joint="Talón D" class="technical-joint"><circle cx="383.83" cy="685.69" r="10" fill="none" stroke="#7fe8ef" stroke-width="1.5" stroke-opacity=".72" /><circle cx="383.83" cy="685.69" r="3" fill="#a6f4f5" /><title>Talón D</title></g></g></g>
+
+   <g id="volume-layer" class="external-volume" aria-label="Tercera capa: superficies externas de volumen corporal">
+    <g id="volume-anatomy" transform="translate(-45.30 -119.41) scale(1.12)">
+      <g id="volume-shapes"></g>
+      <g id="volume-annotations" aria-hidden="true"></g>
+    </g>
+   </g>
+   <g class="aesthetic" id="aesthetic-layer" aria-label="Nueva capa estética ilustrada"><g id="aesthetic-anatomy" transform="translate(-45.30 -119.41) scale(1.12)">
+<!-- Deep-side leg behind torso -->
+<g data-motion="body" class="art-part" data-part="Muslo posterior">
+  <path d="M364 458 C380 457 396 467 401 483 L398 561 Q397 574 386 581 Q370 581 363 565 L358 485 Z" fill="url(#skin-far)" stroke="#654a4d" stroke-width="1.5"/>
+  <path d="M379 494 C388 516 388 549 384 567" stroke="#f1c2a5" opacity=".32" fill="none" stroke-width="3" stroke-linecap="round"/>
+</g>
+<g data-motion="shin-far" class="art-part" data-part="Pantorrilla posterior">
+  <path d="M375 562 C396 556 407 572 407 597 Q406 629 398 648 L399 679 Q397 690 387 692 Q378 690 375 677 L371 639 Q362 612 368 579 Q369 567 375 562 Z" fill="url(#skin-far)" stroke="#785b58" stroke-width="1.8"/>
+  <path d="M382 581 Q395 596 392 624 Q391 635 384 641" fill="none" stroke="#f1b293" stroke-width="4" opacity=".37" stroke-linecap="round"/>
+  <path d="M374 596 Q367 615 375 642" fill="none" stroke="#9f6f67" stroke-width="2" opacity=".55"/>
+  <path d="M383 659 L392 667" fill="none" stroke="#f5c4a7" stroke-width="2" opacity=".6"/>
+</g>
+<g data-motion="foot-far" class="art-part" data-part="Zapatilla posterior">
+ <path d="M374 675 Q382 668 393 677 L399 692 Q416 697 426 702 Q431 709 425 714 L382 714 Q374 709 372 699 Z" fill="url(#shoe-grad)" stroke="#b1d4de" stroke-width="2"/>
+ <path d="M376 703 L423 703" stroke="#e9faff" stroke-width="3" opacity=".85"/>
+ <path d="M387 686 L399 688 M384 691 L400 692" stroke="#d7e8f1" stroke-width="2" stroke-linecap="round"/>
+ <path d="M416 708 L425 708" stroke="#71d8e8" stroke-width="3"/>
+</g>
+<!-- Back arm, reads behind torso -->
+<g data-motion="body" class="art-part" data-part="Brazo posterior">
+ <path d="M385 308 Q406 305 413 324 L425 380 Q429 391 422 403 Q413 411 402 401 L391 359 Q377 341 385 308 Z" fill="url(#skin-far)" stroke="#7a5b55" stroke-width="1.7"/>
+ <path d="M400 341 Q406 362 414 382" fill="none" stroke="#f7c6ad" stroke-width="3.3" opacity=".4"/>
+ <path d="M401 381 Q420 374 427 390 L427 471 Q427 485 418 490 Q405 490 405 473 L402 411 Z" fill="url(#skin-far)" stroke="#765653" stroke-width="1.7"/>
+ <path d="M414 425 Q419 452 415 472" fill="none" stroke="#f2b89a" stroke-width="3" opacity=".42"/>
+ <path d="M413 483 Q407 497 413 506 Q418 511 426 503 L429 486 Q427 477 419 477Z" fill="url(#skin-far)" stroke="#634646" stroke-width="1.7"/>
+</g>
+<!-- Near leg and calf -->
+<g data-motion="body" class="art-part" data-part="Muslo anterior">
+ <path d="M326 467 Q341 455 356 462 L355 499 Q348 524 351 544 Q352 557 345 573 Q333 581 323 569 Q315 547 319 517 Q320 485 326 467 Z" fill="url(#skin-near)" stroke="#895c55" stroke-width="1.8"/>
+ <path d="M329 504 Q332 530 326 551" stroke="#f4c4a6" stroke-width="3.8" opacity=".64" fill="none"/>
+ <path d="M347 519 Q342 540 343 554" stroke="#a97064" opacity=".48" stroke-width="2.4" fill="none"/>
+</g>
+<g data-motion="shin-near" class="art-part" data-part="Pantorrilla anterior">
+ <path d="M328 563 Q316 571 318 593 Q320 610 326 621 Q332 637 326 655 L321 679 Q320 691 330 694 Q340 695 342 678 L346 647 Q356 616 350 592 Q349 573 338 565Z" fill="url(#skin-near)" stroke="#865b56" stroke-width="2"/>
+ <path d="M330 576 Q319 599 330 623 Q337 631 335 646" fill="none" stroke="#f5c2a3" stroke-width="5" opacity=".62" stroke-linecap="round"/>
+ <path d="M344 583 Q354 605 345 628" fill="none" stroke="#a96d61" stroke-width="2.8" opacity=".58"/>
+ <path d="M330 583 Q338 577 342 590" fill="none" stroke="#f9d9c0" opacity=".4" stroke-width="2.5"/>
+ <path d="M326 650 Q330 658 332 669" fill="none" stroke="#f6c3a5" stroke-width="3" opacity=".5"/>
+</g>
+<g data-motion="foot-near" class="art-part" data-part="Zapatilla anterior">
+ <path d="M318 673 Q324 671 334 676 L344 693 Q356 696 365 699 Q369 704 364 713 Q359 716 351 716 L320 713 Q314 708 314 700Z" fill="url(#shoe-grad)" stroke="#b1d4de" stroke-width="2"/>
+ <path d="M318 702 Q340 704 363 705" fill="none" stroke="#f1fcff" stroke-width="3.4"/>
+ <path d="M325 683 L338 684 M325 687 L341 689 M328 691 L345 693" fill="none" stroke="#d4e7f3" stroke-width="1.9" stroke-linecap="round"/>
+ <path d="M340 700 Q353 697 361 704" stroke="#66cddf" opacity=".8" stroke-width="2" fill="none"/>
+</g>
+<!-- Hip/shorts; layered over thigh edges -->
+<g data-motion="body" class="art-part" data-part="Pantalón corto">
+ <path d="M327 449 Q359 457 392 449 L397 498 Q397 508 389 513 L366 513 L360 489 L354 513 L326 511 Q321 506 323 498Z" fill="url(#short-grad)" stroke="#2c3c4f" stroke-width="2.4"/>
+ <path d="M330 465 Q351 470 358 467 L356 506 L330 503Z" fill="#223047" opacity=".75"/>
+ <path d="M367 467 L389 464 L390 503 L364 506Z" fill="#1c2a3e" opacity=".77"/>
+ <path d="M362 466 Q361 485 360 500" stroke="#5a7995" stroke-width="1.6" fill="none"/>
+ <path d="M331 501 Q342 507 353 502 M368 503 Q378 505 389 501" stroke="#7896ad" stroke-width="2" opacity=".45" fill="none"/>
+ <path d="M382 480 L388 479" stroke="#7ddbea" stroke-width="2.4" stroke-linecap="round"/>
+ <path d="M330 448 Q359 454 390 449" stroke="#87a0b2" stroke-width="4" opacity=".5" fill="none"/>
+</g>
+<!-- Shirt torso, richer visual volumes -->
+<g data-motion="body" class="art-part" data-part="Camiseta y musculatura del torso">
+ <path d="M345 292 Q360 299 376 291 L393 303 Q405 315 399 341 L392 379 Q391 415 392 457 Q359 468 323 456 L327 408 Q327 384 321 346 Q312 320 327 303Z" fill="url(#shirt-grad)" stroke="#45647b" stroke-width="2.5"/>
+ <path d="M328 308 Q319 332 328 349 L336 361 Q346 369 356 357 Q361 370 376 359 Q386 347 394 309" fill="#496c82" opacity=".17"/>
+ <path d="M329 340 Q343 345 351 345 M364 345 Q378 345 390 340" stroke="#f5ffff" stroke-width="2.4" opacity=".48" fill="none"/>
+ <path d="M331 360 Q355 367 386 360 M330 376 Q350 381 389 376" stroke="#536e81" stroke-width="2.4" opacity=".37" fill="none"/>
+ <path d="M358 321 Q361 350 358 369 Q360 391 360 439" stroke="#e7fbff" stroke-width="3" opacity=".54" fill="none"/>
+ <path d="M334 395 Q347 397 355 394 M366 394 Q379 397 388 392 M334 415 Q348 417 356 414 M366 414 Q379 418 389 412" stroke="#7094a7" stroke-width="2" opacity=".27" fill="none"/>
+ <path d="M328 445 Q357 453 391 444" stroke="#617e91" stroke-width="3" fill="none" opacity=".75"/>
+ <path d="M330 304 Q344 309 344 325 L335 345 Q319 340 317 323Z" fill="url(#shirt-sleeve)" stroke="#46647a" stroke-width="1.7"/>
+ <path d="M378 305 Q393 308 405 325 Q399 341 387 344 L378 323Z" fill="url(#shirt-sleeve)" stroke="#46647a" stroke-width="1.7"/>
+ <path d="M338 305 L359 316 L382 304" stroke="#9eafbe" stroke-width="2" fill="none" opacity=".9"/>
+ <path d="M349 302 Q360 309 371 301" fill="none" stroke="#1d3042" stroke-width="5" stroke-linecap="round"/>
+ <path d="M355 316 L365 316 L361 326Z" fill="#64dce7" opacity=".78"/>
+</g>
+<!-- Near arm on top of shirt -->
+<g data-motion="body" class="art-part" data-part="Brazo y antebrazo anterior">
+ <path d="M320 335 Q326 342 331 350 L320 386 Q320 399 314 403 Q306 409 297 400 L298 382 L304 354 Q306 339 320 335Z" fill="url(#skin-near)" stroke="#805951" stroke-width="1.9"/>
+ <path d="M312 352 Q313 375 308 389" fill="none" stroke="#f9cdb0" stroke-width="4" opacity=".55"/>
+ <path d="M302 394 Q308 398 316 392 Q323 403 318 417 L312 472 Q312 482 305 487 Q295 491 291 481 L292 461 L294 409Q295 397 302 394Z" fill="url(#skin-near)" stroke="#805951" stroke-width="1.7"/>
+ <path d="M305 419 Q300 443 301 467" stroke="#f8c4a4" stroke-width="3.5" fill="none" opacity=".5"/>
+ <path d="M298 478 Q293 488 297 503 Q304 510 310 504 L313 488 Q311 476 305 476Z" fill="url(#skin-near)" stroke="#68474c" stroke-width="1.5"/>
+ <path d="M302 496 L301 504 M306 496 L306 505" stroke="#a56d64" stroke-width="1.2" opacity=".6"/>
+</g>
+<!-- Neck and head, side facing right -->
+<g data-motion="body" class="art-part" data-part="Cuello y cara">
+ <path d="M349 276 L349 300 Q355 306 369 301 L372 282Z" fill="url(#skin-near)" stroke="#7f5b56" stroke-width="1.5"/>
+ <path d="M355 290 L365 297" stroke="#a06a5f" stroke-width="2" opacity=".56" fill="none"/>
+ <path d="M345 219 Q359 207 378 222 Q391 235 386 256 L390 262 L384 271 L379 284 Q370 292 357 286 Q346 283 342 268 Q335 251 339 234Z" fill="url(#face-grad)" stroke="#775754" stroke-width="1.8"/>
+ <path d="M379 244 L385 247 L384 252 L379 251" fill="#d29b80"/>
+ <path d="M356 246 Q361 241 370 244" stroke="#403541" stroke-width="2.1" fill="none"/>
+ <path d="M363 250 Q367 248 371 251" stroke="#342c36" stroke-width="2" fill="none"/>
+ <circle cx="367" cy="250" r="1.5" fill="#1b2936"/>
+ <path d="M381 253 Q385 260 379 261" fill="none" stroke="#996c60" stroke-width="1.7"/>
+ <path d="M369 274 Q376 276 379 271" fill="none" stroke="#8c625c" stroke-width="1.5"/>
+ <path d="M351 264 Q344 257 346 248 Q351 244 355 250Z" fill="#c68e77" stroke="#785351" stroke-width="1.4"/>
+ <path d="M336 238 Q329 218 343 211 Q347 199 364 200 Q382 202 386 220 Q385 230 379 240 L373 235 Q364 240 352 235 L346 249 L336 247Z" fill="url(#hair-grad)" stroke="#243243" stroke-width="2"/>
+ <path d="M338 219 Q354 212 366 212 M345 228 Q361 223 379 230" fill="none" stroke="#7491a6" stroke-width="2.8" opacity=".42" stroke-linecap="round"/>
+ <path d="M354 207 Q358 214 367 216" stroke="#384c60" stroke-width="3" opacity=".7" fill="none"/>
+ <path d="M347 285 Q359 295 369 289" stroke="#eac0a2" stroke-width="2.5" fill="none" opacity=".6"/>
+</g>
+</g></g>
+   <g class="tracking" id="tracking-layer" aria-hidden="true">
+      <g transform="translate(-45.30 -119.41) scale(1.12)">
+       <path d="M315 686L315 664" stroke="#91f5ed" stroke-width="1.7" stroke-dasharray="3 5" opacity=".65"/>
+       <circle cx="323.83" cy="685.69" r="4.5" fill="none" stroke="#86ecf1" stroke-width="1.7" opacity=".5"/>
+       <path id="heel-trajectory" d="M 323.83 685.69 L 323.83 685.69" stroke="#8ef6e8" stroke-width="2.7" stroke-dasharray="6 5" fill="none"/>
+       <circle id="heel-marker" cx="323.83" cy="685.69" r="8" fill="#133b48" stroke="#93f6ee" stroke-width="2.6"/>
+       <circle id="toe-marker" cx="358" cy="704" r="4" fill="#93f6ee"/>
+       <path id="body-centerline" d="M360 255 V465" stroke="#a3fbef" stroke-width="1.5" stroke-dasharray="5 8" opacity=".52"/>
+       <path d="M456 673 V640 M450 646L456 639L462 646" stroke="#90ecec" stroke-width="2.3" fill="none" opacity=".58"/>
+      </g>
+   </g>
+  </svg>
+ </div></div>
+ <div class="boardfoot stats-row"><span id="current-description"><strong>Volumen exterior:</strong> silueta corporal con contornos deformables, sin músculos internos.</span><span id="sync" class="pill">Sincronizadas</span></div>
+</section>
+<aside class="side">
+ <section class="panel"><div class="smalltitle">01 · CONTROL DE MOVIMIENTO</div><h3>Una sola secuencia para las tres capas</h3>
+   <div class="actions"><button class="primary" type="button" id="play">Ⅱ Pausar</button><button class="secondary" type="button" id="restart">↺ Reiniciar</button></div>
+   <div class="control"><label for="scrub">Recorrer las 48 poses <span class="value" id="frame-label">1 / 48</span></label><input id="scrub" type="range" min="0" max="1000" step="1" value="0"/></div>
+   <div class="control"><label>Velocidad del movimiento <span id="speed-label" class="value">1×</span></label><div class="speed-group" id="speeds"><button data-speed="0.5" aria-pressed="false">0,5×</button><button data-speed="1" aria-pressed="true">1×</button><button data-speed="1.5" aria-pressed="false">1,5×</button><button data-speed="2" aria-pressed="false">2×</button></div></div>
+   <div class="separator"></div><label class="check"><input type="checkbox" id="track" checked/> Mostrar seguimiento del movimiento</label><label class="check"><input type="checkbox" id="joints" checked/> Articulaciones visibles (solo capa técnica)</label><label class="check"><input type="checkbox" id="muscle" checked/> Resaltar musculatura estructural</label>
+   <div class="separator"></div><div class="smalltitle">CAPA 3 · ESCULPIR SUPERFICIES</div><div class="control"><label for="relief">Relieve superficial <span class="value" id="relief-value">100 %</span></label><input id="relief" type="range" min="70" max="130" step="5" value="100"/><small>Control técnico del ancho de los contornos exteriores; no modifica la estatura ni el rig.</small></div>
+   <label class="check"><input id="control-points" type="checkbox"/> Mostrar puntos de perfil de la capa 3</label><label class="check"><input id="surface-lines" type="checkbox"/> Mostrar los límites de cada superficie</label>
+   <div class="mini-panel"><strong id="surface-count">24 superficies externas</strong><span id="girth-status">Pantorrilla: reposo</span></div>
+ </section>
+ <section class="panel"><div class="smalltitle">02 · SEGUIMIENTO ARTICULAR</div><h3>Trayectoria y alineación</h3><p>Las 48 poses históricas no se han alterado. La tercera capa recibe las mismas transformaciones articulares y añade volumen superficial.</p>
+  <div class="metrics"><div class="metric"><small>Desplazamiento corporal</small><strong id="body-offset">0,0</strong><small>unidades SVG</small></div><div class="metric"><small>Elevación del talón</small><strong id="heel-offset">0,0</strong><small>unidades SVG</small></div><div class="metric"><small>Ángulo del pie*</small><strong id="angle">0°</strong><small>respecto al apoyo inicial</small></div><div class="metric"><small>Fase del ciclo</small><strong id="phase-text">0%</strong><small id="phase-name">Inicio</small></div></div>
+  <div class="meter"><div id="phase-meter"></div></div><p class="summary-note">*Ángulo estimado geométricamente para la visualización. Son unidades del SVG, no centímetros ni medidas del usuario. No hay cámara ni seguimiento corporal en tiempo real.</p>
+ </section>
+ <section class="panel"><div class="smalltitle">03 · ARQUITECTURA VISUAL</div><h3>Tres capas, un solo movimiento</h3>
+  <div class="legend-row"><span class="legend-ico legend-structure">◇</span><div><strong>Estructura original mejorada</strong><p>Curvas y volúmenes del SVG `media2d/calf.svg`, pivotes, pantorrillas y pies calibrados.</p></div></div>
+  <div class="legend-row"><span class="legend-ico legend-visual">●</span><div><strong>2 · Personaje estético (sin cambios)</strong><p>Arte y ropa originales de la versión anterior, conservados por separado.</p></div></div>
+  <div class="legend-row"><span class="legend-ico legend-volume">◉</span><div><strong>3 · Volumen corporal exterior (nuevo)</strong><p>24 perfiles volumétricos Bézier enlazados a articulaciones, con hombros, pecho, espalda, cintura, caderas, brazos, piernas y pies. No hay atlas muscular interior.</p></div></div>
+  <div class="legend-row"><span class="legend-ico legend-track">↗</span><div><strong>Movimiento compartido</strong><p>48 poses del mismo ciclo. Las piezas del personaje siguen el desplazamiento y la elevación del talón.</p></div></div>
+ </section>
+</aside></div>
+<footer class="foot"><strong>Prototipo HTML autónomo.</strong> La estructura del SVG original y la ilustración estética previa permanecen sin cambios. La tercera capa tiene perfiles independientes, mismos 720×800 y transformaciones compartidas. Las curvas se editan para preparar una futura envoltura estética; no son mediciones anatómicas clínicas. La animación representa el ejercicio, no analiza el movimiento real de una persona. El acoplamiento final a toda la biblioteca Android y la validación de las trayectorias físicas requieren trabajo adicional. <a href="https://github.com/miguelpinto9988-byte/Hunter-System-Native/blob/main/app/src/main/assets/media2d/calf.svg" target="_blank" rel="noopener">Consultar el SVG original</a>.</footer>
+</main>
+<script>
+(()=>{'use strict';
+ const $=id=>document.getElementById(id);
+ const stage=$('stage'),M={body:[0, -0.128, -0.511, -1.142, -2.01, -3.1, -4.393, -5.869, -7.5, -9.26, -11.118, -13.042, -15, -16.958, -18.882, -20.74, -22.5, -24.131, -25.607, -26.9, -27.99, -28.858, -29.489, -29.872, -30, -29.872, -29.489, -28.858, -27.99, -26.9, -25.607, -24.131, -22.5, -20.74, -18.882, -16.958, -15, -13.042, -11.118, -9.26, -7.5, -5.869, -4.393, -3.1, -2.01, -1.142, -0.511, -0.128],heel:[0, -0.094, -0.375, -0.837, -1.474, -2.273, -3.222, -4.304, -5.5, -6.79, -8.153, -9.564, -11, -12.436, -13.847, -15.21, -16.5, -17.696, -18.778, -19.727, -20.526, -21.163, -21.625, -21.906, -22, -21.906, -21.625, -21.163, -20.526, -19.727, -18.778, -17.696, -16.5, -15.21, -13.847, -12.436, -11, -9.564, -8.153, -6.79, -5.5, -4.304, -3.222, -2.273, -1.474, -0.837, -0.375, -0.094]};
+ let playing=!window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+ let phase=0,vel=1,prev=0;
+ let mode='volume';
+ const baseFeet={near:{heel:[323.83,685.69],toe:[358,704],knee:[335,570]},far:{heel:[383.83,685.69],toe:[418,704],knee:[385,570]}};
+
+ const exteriorProfiles=[{"id":"cuello_exterior","name":"Cuello exterior","track":"body","type":"neck","stations":[[359,276,9,10],[358,289,11,12],[356,304,17,16],[355,313,19,20]]},{"id":"trapecio_base_cuello","name":"Trapecio y base del cuello","track":"body","type":"body","stations":[[355,283,12,13],[354,294,20,21],[353,305,27,28],[354,317,25,25]]},{"id":"torso","name":"Pecho, espalda y cintura","track":"body","type":"torso","stations":[[358,301,33,35],[358,325,37,44],[360,349,40,44],[360,381,35,38],[358,410,30,30],[359,443,32,34],[359,460,36,37]]},{"id":"hombro_posterior","name":"Deltoides posterior","track":"body","type":"shoulder","stations":[[388,304,17,20],[392,321,21,19],[399,342,17,17],[399,357,13,12]]},{"id":"brazo_posterior","name":"Volumen superior del brazo posterior","track":"body","type":"arm","stations":[[395,324,15,15],[403,347,18,17],[411,372,14,15],[415,394,11,12]]},{"id":"antebrazo_posterior","name":"Contorno del antebrazo posterior","track":"body","type":"forearm","stations":[[415,395,10,11],[419,422,15,13],[420,450,13,11],[420,477,8,9]]},{"id":"mano_posterior","name":"Mano posterior","track":"body","type":"hand","stations":[[420,476,10,10],[420,492,10,8],[419,502,6,6]]},{"id":"gluteo_posterior","name":"Volumen posterior de cadera","track":"body","type":"hip","stations":[[381,456,17,18],[386,474,21,20],[387,494,20,20],[382,514,14,13]]},{"id":"muslo_posterior","name":"Muslo posterior: volumen longitudinal","track":"body","type":"thigh","stations":[[383,477,18,18],[388,499,21,21],[389,523,20,21],[388,546,17,18],[385,569,11,12]]},{"id":"pantorrilla_posterior","name":"Pantorrilla posterior: relieve variable","track":"shin-far","type":"calf","stations":[[385,566,11,11],[386,581,15,15],[389,599,19,20],[386,622,18,19],[384,647,11,12],[385,671,8,8],[386,683,8,8]]},{"id":"tobillo_posterior","name":"Tobillo posterior","track":"shin-far","type":"ankle","stations":[[386,670,8,9],[386,684,8,8],[386,694,7,7]]},{"id":"pie_posterior","name":"Pie posterior de apoyo","track":"foot-far","type":"foot","stations":[[383,684,8,8],[391,690,11,10],[407,699,12,9],[418,704,7,6]]},{"id":"cadera_frontal","name":"Cadera y región glútea","track":"body","type":"hip","stations":[[338,453,17,20],[338,473,25,24],[336,496,23,23],[337,513,18,17]]},{"id":"muslo_frontal","name":"Muslo anterior: volumen y rodilla","track":"body","type":"thigh","stations":[[341,470,18,21],[337,491,22,23],[334,518,23,21],[332,545,17,19],[335,570,12,12]]},{"id":"rotula_frontal","name":"Volumen de la rodilla","track":"body","type":"knee","stations":[[335,557,12,12],[336,570,13,13],[333,582,11,10]]},{"id":"pantorrilla_frontal","name":"Gemelos, sóleo y transición a tobillo","track":"shin-near","type":"calf","stations":[[335,569,10,12],[332,580,17,17],[332,603,22,21],[333,623,20,19],[330,649,12,12],[330,671,8,9],[330,684,8,8]]},{"id":"tobillo_frontal","name":"Transición entre pantorrilla y tobillo","track":"shin-near","type":"ankle","stations":[[330,669,8,9],[330,681,8,9],[328,690,7,8]]},{"id":"pie_frontal","name":"Pie anterior de apoyo","track":"foot-near","type":"foot","stations":[[328,686,9,9],[335,692,11,10],[351,701,12,10],[360,705,7,6]]},{"id":"pectoral_superficial","name":"Volumen pectoral superficial","track":"body","type":"chest","stations":[[363,316,19,18],[368,335,18,19],[365,356,15,15],[363,373,12,11]]},{"id":"deltoides_frontal","name":"Deltoides anterior","track":"body","type":"shoulder","stations":[[333,305,17,19],[329,326,22,19],[324,346,16,16],[317,361,12,13]]},{"id":"brazo_frontal","name":"Contorno del brazo anterior","track":"body","type":"arm","stations":[[331,325,15,17],[323,343,18,18],[313,368,16,15],[305,395,11,11]]},{"id":"antebrazo_frontal","name":"Contorno del antebrazo anterior","track":"body","type":"forearm","stations":[[305,395,10,11],[302,420,14,15],[300,450,12,13],[300,480,8,9]]},{"id":"mano_frontal","name":"Mano anterior","track":"body","type":"hand","stations":[[300,478,10,9],[300,493,11,9],[300,504,7,7]]},{"id":"cabeza_exterior","name":"Contorno externo de cabeza y rostro","track":"body","type":"head","stations":[[357,222,9,11],[360,233,20,21],[361,252,25,29],[361,264,23,29],[360,275,20,23],[357,286,12,12]]}];
+ const volumeGroups=document.getElementById('volume-shapes');
+ const volumeNotes=document.getElementById('volume-annotations');
+ let relief=1,showControlPoints=false,surfaceLines=false;
+ const ns='http://www.w3.org/2000/svg';
+ const mk=(tag,attrs={})=>{const n=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,String(v));return n};
+ const createdSurfaces=[];
+ const bandColor={torso:'url(#vol-torso)',shoulder:'url(#vol-arm)',arm:'url(#vol-arm)',forearm:'url(#vol-arm)',hand:'url(#vol-dark)',head:'url(#vol-dark)',
+     neck:'url(#vol-torso)',hip:'url(#vol-thigh)',thigh:'url(#vol-thigh)',knee:'url(#vol-thigh)',calf:'url(#vol-calf)',ankle:'url(#vol-dark)',foot:'url(#vol-dark)',chest:'url(#vol-torso)'};
+ function makeSmoothSide(points){
+    let d=`M ${points[0][0].toFixed(2)} ${points[0][1].toFixed(2)}`;
+    for(let i=0;i<points.length-1;i++){
+       const p0=points[Math.max(0,i-1)],p1=points[i],p2=points[i+1],p3=points[Math.min(points.length-1,i+2)];
+       const a=[p1[0]+(p2[0]-p0[0])/6,p1[1]+(p2[1]-p0[1])/6];
+       const b=[p2[0]-(p3[0]-p1[0])/6,p2[1]-(p3[1]-p1[1])/6];
+       d+=` C ${a[0].toFixed(2)} ${a[1].toFixed(2)} ${b[0].toFixed(2)} ${b[1].toFixed(2)} ${p2[0].toFixed(2)} ${p2[1].toFixed(2)}`;
+    }
+    return d;
+ }
+ function profilePath(points,inflate,peak){
+    const A=[],B=[];
+    for(let i=0;i<points.length;i++){
+      const [x,y,l,r]=points[i],prev=points[Math.max(0,i-1)],next=points[Math.min(points.length-1,i+1)];
+      const dx=next[0]-prev[0],dy=next[1]-prev[1],len=Math.hypot(dx,dy)||1;
+      const nx=-dy/len,ny=dx/len;
+      // Calf expansion localized to the thickest part; distal ankle tapers remain anchored.
+      const localized=peak?Math.sin(Math.PI*i/(points.length-1))**1.3:0;
+      const bulge=1+localized*peak;
+      const wl=l*inflate*bulge,wr=r*inflate*bulge;
+      A.push([x+nx*wl,y+ny*wl]);B.push([x-nx*wr,y-ny*wr]);
+    }
+    const q=points[points.length-1],e=points[points.length-2],sx=points[0],sp=points[1];
+    const tx=q[0]-e[0],ty=q[1]-e[1],tn=Math.hypot(tx,ty)||1;
+    const ex=q[0]+tx/tn*5,ey=q[1]+ty/tn*5;
+    const ux=sx[0]-sp[0],uy=sx[1]-sp[1],un=Math.hypot(ux,uy)||1;
+    return makeSmoothSide(A)+` Q ${ex.toFixed(2)} ${ey.toFixed(2)} ${B[B.length-1][0].toFixed(2)} ${B[B.length-1][1].toFixed(2)}`+
+          makeSmoothSide(B.slice().reverse()).replace(/^M\s+[\d.-]+\s+[\d.-]+/,'')+
+          ` Q ${(sx[0]+ux/un*5).toFixed(2)} ${(sx[1]+uy/un*5).toFixed(2)} ${A[0][0].toFixed(2)} ${A[0][1].toFixed(2)} Z`;
+ }
+ for(const profile of exteriorProfiles){
+    const g=mk('g',{'data-motion':profile.track,'data-surface':profile.id});
+    const path=mk('path',{'id':'vol-'+profile.id,'class':'volume-patch','fill':bandColor[profile.type]||'url(#vol-arm)','data-depth':/posterior/.test(profile.id)?'far':'near'});
+    const label=mk('title');label.textContent=profile.name;
+    path.appendChild(label);g.appendChild(path);volumeGroups.appendChild(g);
+    createdSurfaces.push({profile,path});
+ }
+ // Keep technical rig and aesthetic art untouched: only new layer receives these fresh geometry writes.
+ function refreshExterior(phase){
+    const k=(1-Math.cos(2*Math.PI*phase))/2;
+    for(const {profile,path} of createdSurfaces){
+       const swell=profile.type==='calf'?(.12*k):0;
+       path.setAttribute('d',profilePath(profile.stations,relief,swell));
+    }
+    volumeNotes.replaceChildren();
+    if(showControlPoints){
+       for(const prof of exteriorProfiles){
+         const g=mk('g',{'data-motion':prof.track});
+         const sp=prof.stations;
+         const d=makeSmoothSide(sp.map(p=>[p[0],p[1]]));
+         g.appendChild(mk('path',{'d':d,'class':'volume-guide'}));
+         for(const p of sp)g.appendChild(mk('circle',{'cx':p[0],'cy':p[1],r:3.6,'class':'volume-point'}));
+         volumeNotes.appendChild(g);
+       }
+       // Existing transformPart applies to newly-created controls on the next render.
+       for(const node of volumeNotes.querySelectorAll('[data-motion]'))node.setAttribute('transform',transformPart(node.dataset.motion,sample(M.body,phase),sample(M.heel,phase)));
+    }
+    document.getElementById('girth-status').textContent='Contorno de pantorrilla · fase '+Math.round(k*100)+' %';
+ }
+ document.getElementById('relief').addEventListener('input',e=>{relief=Number(e.target.value)/100;document.getElementById('relief-value').textContent=e.target.value+' %';update()});
+ document.getElementById('control-points').addEventListener('change',e=>{showControlPoints=e.target.checked;update()});
+ document.getElementById('surface-lines').addEventListener('change',e=>{surfaceLines=e.target.checked;stage.dataset.showSurfaceLines=String(surfaceLines)});
+
+ const partSets=[...document.querySelectorAll('[data-motion]')];
+ const sample=(values,f)=>{const p=(f*48)%48,a=Math.floor(p),b=(a+1)%48,k=p-a;return values[a]+(values[b]-values[a])*k};
+ const fmt=x=>Math.abs(x)<.05?'0,0':x.toFixed(1).replace('.',',');
+ const grad=(x)=>Math.round(x*180/Math.PI);
+ function rotateAngle(footShift,foot){const dx=foot.heel[0]-foot.toe[0];const y0=foot.heel[1]-foot.toe[1];return (Math.atan2(y0+footShift,dx)-Math.atan2(y0,dx))*180/Math.PI;}
+ function transformPart(name,body,heel){
+   if(name==='body')return `translate(0 ${body.toFixed(4)})`;
+   if(name==='shin-near'||name==='shin-far'){
+      const p=baseFeet[name==='shin-near'?'near':'far'];const ky=p.knee[1],den=p.heel[1]-ky,scale=1+(heel-body)/den;
+      return `translate(0 ${body.toFixed(4)}) translate(0 ${ky}) scale(1 ${scale.toFixed(6)}) translate(0 ${-ky})`;
+   }
+   if(name==='foot-near'||name==='foot-far'){
+      const p=baseFeet[name==='foot-near'?'near':'far'];return `rotate(${rotateAngle(heel,p).toFixed(4)} ${p.toe[0]} ${p.toe[1]})`;
+   }
+   if(name==='heel-near'||name==='heel-far')return `translate(0 ${heel.toFixed(4)})`;
+   return '';
+ }
+ function update(){
+   let y=sample(M.body,phase),h=sample(M.heel,phase);
+   for(const node of partSets){node.setAttribute('transform',transformPart(node.getAttribute('data-motion'),y,h))}
+   refreshExterior(phase);
+   // Ankle arc is informative, not a physical length estimate
+   const marker=$('heel-marker'); marker.setAttribute('cy',(685.69+h).toFixed(2));
+   $('heel-trajectory').setAttribute('d',`M 323.83 685.69 L 323.83 ${(685.69+h).toFixed(2)}`);
+   $('body-centerline').setAttribute('d',`M360 ${(255+y).toFixed(2)} V${(465+y).toFixed(2)}`);
+   $('body-offset').textContent=fmt(-y);
+   $('heel-offset').textContent=fmt(-h);
+   $('angle').textContent=rotateAngle(h,baseFeet.near).toFixed(1).replace('.',',')+'°';
+   $('phase-text').textContent=Math.round(phase*100)+'%';
+   $('phase-meter').style.width=Math.round(phase*100)+'%';
+   $('frame-label').textContent=(Math.floor(phase*48)%48+1)+' / 48';
+   const name=phase<.055||phase>.95?'Inicio':phase<.45?'Ascenso':phase<.55?'Arriba':'Descenso';
+   $('phase-name').textContent=name;
+   $('svg-phase').textContent=name+' · '+Math.round(phase*100)+' %';
+   $('scrub').value=Math.round(phase*1000);
+ }
+ function tick(now){if(!prev)prev=now;const dt=Math.min(64,now-prev);prev=now;if(playing){phase=(phase+(dt/4800)*vel)%1;update()}requestAnimationFrame(tick)}
+ function setPlaying(value){playing=value;$('play').textContent=playing?'Ⅱ Pausar':'▶ Reproducir';$('play').setAttribute('aria-pressed',String(playing))}
+ $('play').addEventListener('click',()=>{setPlaying(!playing)});
+ $('restart').addEventListener('click',()=>{phase=0;update();setPlaying(true)});
+ $('scrub').addEventListener('input',e=>{setPlaying(false);phase=Number(e.target.value)/1000;update()});
+ document.querySelectorAll('[data-speed]').forEach(b=>b.addEventListener('click',()=>{
+   vel=Number(b.dataset.speed);$('speed-label').textContent=b.textContent;document.querySelectorAll('[data-speed]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+ }));
+ const views={structure:'Capa 1 · Movimiento original',volume:'Capa 3 · Volumen exterior',aesthetic:'Capa 2 · Estética original',volstruct:'Estructura + volumen',overlay:'Las tres capas superpuestas'};
+ const labels={structure:'<strong>1:</strong> estructura y movimiento histórico intactos.',volume:'<strong>3:</strong> nuevos contornos externos; cada segmento tiene diferentes anchos y relieve.',aesthetic:'<strong>2:</strong> estética ilustrada de la versión anterior, sin cambios.',volstruct:'<strong>1 + 3:</strong> estructura original bajo la nueva superficie muscular.',overlay:'<strong>1 + 2 + 3:</strong> las tres capas reciben exactamente la misma fase de movimiento.'};
+ document.querySelectorAll('button[data-mode]').forEach(b=>b.addEventListener('click',()=>{
+   mode=b.dataset.mode;stage.dataset.mode=mode;
+   $('svg-info').textContent=views[mode];$('stage-title').textContent=views[mode];$('current-description').innerHTML=labels[mode];
+   document.querySelectorAll('button[data-mode]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));
+ }));
+ for(const key of ['track','joints','muscle'])$(key).addEventListener('change',()=>{
+    stage.dataset.showTracking=$('track').checked?'true':'false';stage.dataset.showJoints=$('joints').checked?'true':'false';stage.dataset.showMuscles=$('muscle').checked?'true':'false';
+ });
+ // Colorize original muscle regions without changing their path geometry
+ const tech=$('structure-anatomy');for(const n of tech.querySelectorAll('[data-part]')){
+   if(n.getAttribute('data-part').startsWith('Fibras'))n.classList.add('muscle-accent');
+ }
+ if(!playing)setPlaying(false);update();requestAnimationFrame(tick);
+})();
+</script></body></html>
