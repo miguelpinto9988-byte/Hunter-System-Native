@@ -99,7 +99,7 @@ import kotlin.math.*
  }}}
  }}}}
 @Composable fun ExerciseDetail(ui:NativeUi,id:String){val s=ui.store;val e=s.catalog.byId[id]?:return;val c=LocalHunter.current;var mirror by remember(id){mutableStateOf(false)}
- var play by remember(id){mutableStateOf(true)}
+ var play by remember(id){mutableStateOf(false)}
  val lifecycle=LocalLifecycleOwner.current.lifecycle
  DisposableEffect(lifecycle){val observer=LifecycleEventObserver{_,event->if(event==Lifecycle.Event.ON_STOP)play=false};lifecycle.addObserver(observer);onDispose{lifecycle.removeObserver(observer)}}
  Eyebrow(listOf(e.group,e.category,e.sport).filter{it.isNotBlank()}.joinToString(" · "));Heading(e.name,size=35);HText("${if(e.unit=="sec")"Por tiempo" else "Por repeticiones"}${if(e.sides)" · Cantidad por lado" else ""} · ${if(e.impact)"Con saltos" else "Sin saltos"}",size=16,color=c.muted)

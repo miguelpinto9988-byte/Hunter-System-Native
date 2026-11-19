@@ -28,7 +28,7 @@ class ComposeSmokeTest {
   for(tab in listOf("home","plan","routines","book","stats","profile")){
    compose.runOnIdle{ui.go(tab)};compose.waitForIdle();if(tab=="profile")compose.onNodeWithText("Tu perfil de cazador").assertExists() else compose.onAllNodesWithText("HUNTER SYSTEM").onFirst().assertIsDisplayed();capture(tab)
   }
-  compose.runOnIdle{ui.open("exercise",obj("id" to "chair"))};compose.waitForIdle();compose.onAllNodesWithText("Sentadilla a silla").onFirst().assertExists();compose.runOnIdle{ui.back()};compose.waitForIdle()
+  compose.runOnIdle{ui.open("exercise",obj("id" to "chair"))};compose.waitForIdle();compose.onAllNodesWithText("Sentadilla a silla").onFirst().assertExists();compose.onNodeWithText("Reproducir demostración").assertExists();compose.runOnIdle{ui.back()};compose.waitForIdle()
  }
  @Test(timeout=60000) fun firstLaunchProfileCanRender(){
   compose.runOnIdle{store.state.put("profile",JSONObject.NULL);store.save();ui.go("profile")};compose.waitForIdle()
