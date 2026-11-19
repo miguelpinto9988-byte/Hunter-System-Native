@@ -80,6 +80,16 @@ internal fun ExerciseActor(motion: ExerciseMotion, modifier: Modifier, play: Boo
         motion.frames.map { (it[2] - it[1]).getDistance() }.sorted().let { it[it.size / 2] }
             .coerceAtLeast(35f) / 165f
     }
+    val firstArmSide = remember(motion) {
+        if (motion.view == ExerciseView.SIDE) 1f else {
+            val separation = motion.frames.sumOf { pose ->
+                val across = normal(direction(pose[1], pose[2]))
+                val elbows = pose[3] - pose[5]
+                (elbows.x * across.x + elbows.y * across.y).toDouble()
+            }
+            if (separation < 0) -1f else 1f
+        }
+    }
     Canvas(modifier) {
         drawRoundRect(Color(0xFF101F2A),cornerRadius=CornerRadius(18f))
         drawCircle(Brush.radialGradient(listOf(Color(0xFF22464D),Color(0xFF142C3A),Color(0xFF101F2A)),
@@ -98,7 +108,7 @@ internal fun ExerciseActor(motion: ExerciseMotion, modifier: Modifier, play: Boo
             drawStage(motion, p, origin, width, height, scaleUnit, maxY)
             motion.props.forEach { drawProp(it, scaleUnit) }
             drawEquipment(motion.equipment,p,scaleUnit,maxY)
-            drawActor(p, scaleUnit, motion, face)
+            drawActor(p, scaleUnit, motion, face, firstArmSide)
         }
     }
 }
@@ -135,13 +145,13 @@ private fun direction(from:Offset,to:Offset):Offset {
 private fun normal(vector:Offset)=Offset(-vector.y,vector.x)
 private fun mix(a:Offset,b:Offset,t:Float)=a+(b-a)*t
 
-private fun smoothBody(points: List<Offset>, widths: List<Float>): Path {
+private fun smoothBody(points: List<Offset>, widths: List<Float>, symmetric: Boolean = false): Path {
     val front=ArrayList<Offset>()
     val back=ArrayList<Offset>()
     for(i in points.indices){
         val side=normal(direction(points[max(0,i-1)],points[min(points.lastIndex,i+1)]))
         front += points[i]+side*widths[i]
-        back += points[i]-side*(widths[i]*.86f)
+        back += points[i]-side*(widths[i] * (if (symmetric) 1f else .86f))
     }
     val outline=front+back.asReversed()
     return Path().apply {
@@ -157,21 +167,27 @@ private fun smoothBody(points: List<Offset>, widths: List<Float>): Path {
     }
 }
 
-private fun DrawScope.drawActor(p: List<Offset>, u: Float, motion: ExerciseMotion, face: Picture?) {
+private fun DrawScope.drawActor(
+    p: List<Offset>, u: Float, motion: ExerciseMotion, face: Picture?, firstArmSide: Float
+) {
     val head=p[0];val shoulder=p[1];val hip=p[2]
     val down=direction(shoulder,hip)
     val side=normal(down)
     val overhead = motion.view == ExerciseView.OVERHEAD
     val broad = motion.view != ExerciseView.SIDE
     val left = if (motion.prone && !broad) down.x > 0f else motion.facing == "left"
+    val shirt = Brush.linearGradient(listOf(tealLight, teal, navy),
+        start = shoulder, end = hip + down * (17f * u))
     fun limb(near:Boolean,leg:Boolean) {
         val joint=if(leg) p[if(near) 7 else 9] else p[if(near) 3 else 5]
         val end=if(leg) p[if(near) 8 else 10] else p[if(near) 4 else 6]
         val center = if (leg) hip else shoulder
-        val lateral = if (broad) {
+        val lateral = if (broad && !leg) {
+            firstArmSide * if (near) 29f else -29f
+        } else if (broad) {
             val projected = ((joint.x - center.x) * side.x + (joint.y - center.y) * side.y)
             val sign = if (abs(projected) > 4f * u) Math.signum(projected) else if (near) 1f else -1f
-            sign * if (leg) 20f else 29f
+            sign * 20f
         } else if (near) -8f else 10f
         val start = center + side * (lateral * u)
         val tip = end - direction(joint, end) * (if (leg) 5f * u else 0f)
@@ -184,7 +200,7 @@ private fun DrawScope.drawActor(p: List<Offset>, u: Float, motion: ExerciseMotio
             else if(near) Color(0xFF57999D) else Color(0xFF3D747F)
         val tone = if (near || broad) skin else skinFar
         val fabricDark=if(leg)navyDark else teal
-        val contour = smoothBody(points, halfWidths.map { it * u })
+        val contour = smoothBody(points, halfWidths.map { it * u }, symmetric = broad && !leg)
         drawPath(contour, tone)
         val armAxis = direction(start, joint)
         val seam = normal(armAxis) * (36f * u)
@@ -201,7 +217,9 @@ private fun DrawScope.drawActor(p: List<Offset>, u: Float, motion: ExerciseMotio
             close()
         }
         clipPath(contour) {
-            drawPath(cuff, Brush.linearGradient(listOf(fabricDark, fabric), start, hem))
+            val shading = if (broad && !leg) shirt
+                else Brush.linearGradient(listOf(fabricDark, fabric), start, hem)
+            drawPath(cuff, shading)
         }
         if (!leg) {
             val planted = motion.handSupport && (overhead || abs(end.y - max(p[4].y, p[6].y)) < 21f * u)
@@ -240,20 +258,23 @@ private fun DrawScope.drawActor(p: List<Offset>, u: Float, motion: ExerciseMotio
             drawLine(Color(0xFF79B7B0),mix(heel,toe,.24f),mix(heel,toe,.83f),1.5f*u,StrokeCap.Round)
         }
     }
-    limb(false,false)
-    limb(false,true)
-    limb(true,true)
+    if (!broad) limb(false, false)
+    limb(false, true)
+    limb(true, true)
+    if (broad) {
+        limb(false, false)
+        limb(true, false)
+    }
     val neckTop=mix(head,shoulder,.46f)
     drawLine(skin,neckTop,shoulder+down*(10*u),18*u,StrokeCap.Round)
     val torso=listOf(shoulder-down*(8*u),mix(shoulder,hip,.19f),
         mix(shoulder,hip,.40f),mix(shoulder,hip,.74f),hip+down*(14*u))
     val torsoWidths = if (broad) listOf(33f, 47f, 40f, 32f, 29f)
         else listOf(14f, 36f, 35f, 26f, 24f)
-    drawPath(smoothBody(torso, torsoWidths.map { it * u }),
-        Brush.linearGradient(listOf(tealLight,teal,navy),end=hip+down*(17*u),start=shoulder))
+    drawPath(smoothBody(torso, torsoWidths.map { it * u }, symmetric = broad), shirt)
     val waist=hip-down*(7*u)
     drawLine(Color(0xFF83ACAE),waist-side*(20*u),waist+side*(20*u),1.2f*u,StrokeCap.Round)
-    limb(true,false)
+    if (!broad) limb(true, false)
     if(face!=null){
         val headScale=u*.96f
         val angle = atan2(down.y, down.x) * 180f / Math.PI.toFloat() - 90f
