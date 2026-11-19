@@ -25,13 +25,15 @@ function smoothStations(stations, subdivisions=4){
     if(len<1e-6)throw Error('duplicate center');dist.push(dist[i-1]+len);
   }
   const mL=monotoneTangents(dist,pts.map(p=>p[2])),mR=monotoneTangents(dist,pts.map(p=>p[3]));
+  // Smooth centerline coordinates as well as widths: C1 joins, no overshoot.
+  const mX=monotoneTangents(dist,pts.map(p=>p[0])),mY=monotoneTangents(dist,pts.map(p=>p[1]));
   const result=[];
   for(let i=0;i<pts.length-1;i++){
     const a=pts[i],b=pts[i+1],h=dist[i+1]-dist[i];
     for(let j=0;j<subdivisions;j++){
       const t=j/subdivisions,u=1-t;
       const interp=(idx,m)=> (2*t*t*t-3*t*t+1)*a[idx]+(t*t*t-2*t*t+t)*h*m[i]+(-2*t*t*t+3*t*t)*b[idx]+(t*t*t-t*t)*h*m[i+1];
-      const p=[a[0]*u+b[0]*t,a[1]*u+b[1]*t,interp(2,mL),interp(3,mR)];
+      const p=[interp(0,mX),interp(1,mY),interp(2,mL),interp(3,mR)];
       if(p[2]<=0||p[3]<=0)throw Error('nonpositive width');
       result.push(p);
     }
