@@ -170,6 +170,20 @@ internal fun profileLegacySelections(equipment:String,values:Map<String,String>)
    HText("Para gimnasio",size=16,bold=true)
    for(option in profileCompactGym)ProfileCompactCheck(values,option)
   }
+  val shownKeys=options.flatMap{it.keys}.toSet()
+  val hunterMaterials=catalog.expansionExercises.flatMap{it.raw.a("materialRequirements").strings()}.toSet()
+   .intersect(profileAllowedMaterials(equipment))
+   .filter{"materials46|$it" !in shownKeys}
+   .sortedBy{catalog.materials.s(it,it)}
+  val hunterPanel="profile-hunter2000-equipment"
+  if(hunterMaterials.isNotEmpty()){
+   HButton("Más material de Hunter 2000",Modifier.fillMaxWidth()){
+    expanded[hunterPanel]=expanded[hunterPanel]!=true
+   }
+   if(expanded[hunterPanel]==true)
+    for(key in hunterMaterials)
+     ProfileCompactCheck(values,ProfileCompactOption(catalog.materials.s(key,key),listOf("materials46|$key")))
+  }
   HText("Habilidades comprobadas (opcional)",size=16,bold=true)
   HText(
    "Se indican solo si ya las realizas con control. Tu nivel no las activa automáticamente.",
