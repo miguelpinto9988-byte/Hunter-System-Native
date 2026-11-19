@@ -11,7 +11,7 @@ player=overlays.split("@Composable fun SessionPlayer(",1)[-1]
 checks={
  "sesión con cabecera específica":'if(overlay.type=="session")' in overlays and 'ENTRENAMIENTO EN CURSO' in overlays,
  "pasos y progreso visibles":'GuidedSessionHeader(preview' in player and 'HProgress(index.toFloat()' in layout,
- "demo adaptativa y sin recorte de ventana":'GuidedSessionDemo(e.name,e.demo' in player and 'BoxWithConstraints' in layout and 'MonarchExerciseStage(' in layout,
+ "demo adaptativa y sin recorte de ventana":'GuidedSessionDemo(e,mirror' in player and 'BoxWithConstraints' in layout and 'MonarchExerciseStage(' in layout,
  "temporizador integrado con progreso":'GuidedSessionTimer(remaining' in player and 'guidedSessionProgress(totalSeconds,remaining)' in layout,
  "botones principales y opciones":all(x in layout for x in ('INICIAR RELOJ','REINICIAR','ESPEJO','onToggle','onRestart','onMirror')),
  "serie y navegación intactas":all(x in player for x in ('ui.open("series"','"‹ Anterior"','"Siguiente ›"','pending=true','persist()')),

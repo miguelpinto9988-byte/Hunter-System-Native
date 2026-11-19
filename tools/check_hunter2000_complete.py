@@ -77,6 +77,35 @@ def verify_sports(items):
     ]
 
 
+def verify_motion(original, extra, sports):
+    original_files = {path.stem: path for path in (ASSETS / "demos30").glob("*.json")}
+    legacy = read_json("hunter2000-poses.json")
+    sporting = read_json("exercise-actor/sports-poses.json")
+    for rows, records in ((original, original_files), (extra, legacy), (sports, sporting)):
+        if {row["id"] for row in rows} != records.keys():
+            raise ValueError("La cobertura de animaciones debe coincidir con el catálogo")
+        for exercise_id, motion in records.items():
+            if isinstance(motion, Path):
+                data = json.loads(motion.read_text(encoding="utf-8"))
+                frames = [frame["p"] for frame in data["frames"]]
+            else:
+                data = motion
+                frames = data["poses"]
+            if not 2 <= len(frames) <= 240 or any(
+                len(frame) != 11 or any(len(point) != 2 or
+                    any(not -2000 <= value <= 2000 for value in point) for point in frame)
+                for frame in frames
+            ):
+                raise ValueError(f"Poses inválidas: {exercise_id}")
+            times = data.get("times")
+            if times is not None and (len(times) != len(frames) or times[0] != 0
+                                      or times[-1] > 1 or any(a >= b for a, b in zip(times, times[1:]))):
+                raise ValueError(f"Tiempos inválidos: {exercise_id}")
+            if not 0.5 <= data.get("duration", 4.8) <= 30:
+                raise ValueError(f"Duración inválida: {exercise_id}")
+    return sum(map(len, (original, extra, sports)))
+
+
 def verify():
     original = read_json("catalog.json")
     extra = read_json("catalog-hunter2000-extra.json")
@@ -122,6 +151,7 @@ def verify():
         svg = ET.fromstring(raw)
         if svg.tag.rsplit("}", 1)[-1] != "svg" or svg.get("data-renderer") != "2d":
             raise ValueError(f"XML inválido: {name}")
+    motion_count = verify_motion(original, extra, read_json("catalog-sports.json"))
     sports_count, distribution, aliases, similar, candidates = verify_sports(items)
     return {"status": "PASS", "catalog_total": len(items) + sports_count, "static_svg": len(static_assets),
             "sports_count": sports_count, "sports_by_level": distribution,
@@ -129,7 +159,7 @@ def verify():
             "source_counts": {"original": len(original), "hunter2000": len(extra), "sports": sports_count},
             "aliases": aliases, "similar_name_candidates": similar,
             "shared_instruction_candidates": candidates,
-            "animated_svg": 0, "mp4_unchanged": True}
+            "motion_count": motion_count, "animated_svg": 0, "mp4_unchanged": True}
 
 def verify_apk(path):
     with ZipFile(path) as apk:
@@ -140,6 +170,12 @@ def verify_apk(path):
                         and name.endswith(".svg")}
         if actual != expected or alternatives:
             raise ValueError("La APK debe contener solo los SVG originales para ilustrar ejercicios")
+        motion_files = ["hunter2000-poses.json", "exercise-actor/sports-poses.json",
+                        "exercise-actor/rostro.svg"]
+        motion_files.extend(str(file.relative_to(ASSETS)) for file in (ASSETS / "demos30").glob("*.json"))
+        for name in motion_files:
+            if apk.read(f"assets/{name}") != (ASSETS / name).read_bytes():
+                raise ValueError(f"Recurso de animación distinto en la APK: {name}")
         for name in ("catalog.json", "catalog-hunter2000-extra.json",
                      "catalog-sports.json", "exercise-aliases.json"):
             if json.loads(apk.read(f"assets/{name}")) != read_json(name):

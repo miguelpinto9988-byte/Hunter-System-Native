@@ -55,7 +55,7 @@ internal fun GuidedSessionHeader(preview:Boolean,title:String,index:Int,total:In
 /** La demostración sigue siendo el foco y se adapta al ancho disponible. */
 @Composable
 internal fun GuidedSessionDemo(
-    name:String,demo:String,mirror:Boolean
+    exercise:Exercise,mirror:Boolean,running:Boolean,reset:Int
 ){
     BoxWithConstraints(Modifier.fillMaxWidth()){
         val demoHeight=when {
@@ -63,7 +63,7 @@ internal fun GuidedSessionDemo(
             maxWidth<440.dp -> 265
             else -> 310
         }
-        MonarchExerciseStage(name,demo,mirror,height=demoHeight)
+        MonarchExerciseStage(exercise,mirror,height=demoHeight,play=running,reset=reset)
     }
 }
 
