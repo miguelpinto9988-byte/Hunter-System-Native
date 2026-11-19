@@ -30,3 +30,9 @@ Este programa valida presencia del rig, número de poses, anchura y rango de coo
 - [ASMR: Adaptive Skeleton–Mesh Rigging and Skinning](https://arxiv.org/abs/2503.13579) — referencia técnica investigada con Nimble.
 
 No introducir SVG animados `demos30/*.svg`, ni mezclar la capa 3 con la estética. Cualquier mejora debe pasar por PR y pruebas antes de integrarse en la aplicación.
+
+## Integración de suavizado en el prototipo (2026-11-19)
+
+`prototype_calf.html` ahora utiliza `smoothStations(..., 4)` directamente en `profilePath` para cada una de las 24 superficies exteriores. Esto refina las estaciones de 104 a 344 sin cambiar los 104 anclajes originales, las pistas de movimiento, el lienzo 720×800 ni la capa estética. Las anchuras interpoladas se mantienen dentro del intervalo de sus anclajes vecinos (Hermite monótono).
+
+Pruebas reproducibles: `node docs/layer3/smooth.test.js` y `node docs/layer3/smooth.profiles.test.js`. En prueba local con Chromium y control de las 48 poses: 1.152 contornos comprobados, sin coordenadas no finitas, sin cajas exteriores fuera del lienzo y sin errores de JavaScript. **Límite:** esta prueba de cajas no demuestra ausencia de autointersecciones, oclusiones erróneas ni mejoras perceptivas en todas las poses; requiere inspección visual y validación de curvas adicional. Los 1.199 ejercicios restantes no están cubiertos por este cambio.
