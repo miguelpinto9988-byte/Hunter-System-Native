@@ -38,7 +38,7 @@ class Rules(val catalog:Catalog){
   return out
  }
  fun materialReasons(e:Exercise,p:JSONObject,maxPlanningLevel:Int=level(p)):List<String>{val out=mutableListOf<String>();val raw=e.raw;val gear=p.s("equipment","body");val gym=p.a("gymEquipment23").strings();val mats=p.a("materials46").strings();val caps=p.a("capabilities46").strings();val req=raw.optJSONArray("materialRequirements")
-  if(req==null)out+="Requisitos de material no disponibles" else for(k in req.strings())if(when(k){"db"->gear !in listOf("db","gym");"gym"->gear!="gym";"bench"->!p.b("bench")&&k !in gym;"step"->!p.b("step");else->if(e.sport.isNotBlank())k !in mats&&k !in gym else gear!="gym"||k !in gym})out+="Falta material: "+(if(e.sport.isBlank())k else catalog.materials.s(k,k))
+  if(req==null)out+="Requisitos de material no disponibles" else for(k in req.strings())if(when(k){"db"->gear !in listOf("db","gym");"gym"->gear!="gym";"bench"->!p.b("bench")&&k !in gym;"step"->!p.b("step");else->if(e.hunter2000||e.sport.isNotBlank())k !in mats&&k !in gym else gear!="gym"||k !in gym})out+="Falta material: "+(if(e.sport.isBlank()&&!e.hunter2000)k else catalog.materials.s(k,k))
   if(e.gym&&gear!="gym"||e.equipment=="gym"&&gear!="gym"||e.equipment=="db"&&gear !in listOf("db","gym"))out+="Equipo no configurado"
   if(raw.i("progressionTierNative")>maxPlanningLevel&&!mode(p).reduced&&!catalog.editorial.o("goalPlans").o(p.s("finalTarget")).b("gentle"))out+="Nivel superior al seleccionado"
   if(e.planningLevel>maxPlanningLevel)out+="Nivel de planificación superior al seleccionado"
@@ -54,13 +54,13 @@ class Rules(val catalog:Catalog){
   }
   return out.distinct()
  }
- fun clinicalReasons(e:Exercise,p:JSONObject,risk:Boolean):List<String>{val r=p.o("restrictions");val raw=e.raw;val out=mutableListOf<String>();val affected=injuries(p).map{it.s("zone")}.toSet();val floor=raw.b("floor");val seated=raw.b("seated");val standing=raw.b("standing");val hand=raw.b("wristLoad");val overhead=raw.b("overhead");val knee=raw.b("kneeBend");val spine=raw.b("spineMove");val external=e.equipment in listOf("db","gym")||"db" in raw.a("requirements").strings();val txt=(e.id+" "+e.name+" "+raw.s("steps")).lowercase()
+ fun clinicalReasons(e:Exercise,p:JSONObject,risk:Boolean):List<String>{val r=p.o("restrictions");val raw=e.raw;val out=mutableListOf<String>();val affected=injuries(p).map{it.s("zone")}.toSet();val floor=raw.b("floor");val seated=raw.b("seated");val standing=raw.b("standing");val hand=raw.b("wristLoad");val overhead=raw.b("overhead");val knee=raw.b("kneeBend");val spine=raw.b("spineMove");val external=e.equipment in listOf("db","gym")||"db" in raw.a("requirements").strings()||e.hunter2000&&raw.a("materialRequirements").strings().any{it in setOf("db","gym","barbell","trapbar","safetybar","cable","machine","smith","plate","kb","band","medball","sled")};val txt=(e.id+" "+e.name+" "+raw.s("steps")).lowercase()
   fun reject(v:Boolean,s:String){if(v)out+=s}
   reject(raw.a("zones").strings().any{it in affected},"Zona declarada afectada")
   reject(r.b("noImpact")&&raw.s("impact")=="Con saltos","Saltos excluidos")
   reject(r.b("noFloor")&&floor,"Trabajo en suelo excluido");reject(r.b("noOverhead")&&overhead,"Elevación sobre la cabeza excluida");reject(r.b("noKnee")&&knee,"Flexión de rodilla excluida");reject(r.b("noWrist")&&hand,"Apoyo sobre manos excluido");reject(r.b("noLoad")&&external,"Carga externa excluida");reject(r.b("seatedOnly")&&!seated,"Solo movimientos sentado");reject(r.b("noSpine")&&spine,"Flexión o giro de tronco excluido")
   if(!risk){reject(!mode(p).ok,"Pendiente de indicaciones individuales");reject(raw.i("level")>(if(mode(p).reduced)0 else if(level(p)==0)1 else 2),"Nivel superior al seleccionado");reject(mode(p).reduced&&raw.s("impact")=="Con saltos","Saltos excluidos");return out}
-  reject(raw.b("sourceOnly")||raw.s("variant")!="base"||raw.i("level")>1||raw.s("impact")=="Con saltos","Ejercicio fuera del filtro de baja exigencia")
+  reject(e.validationBlocked||!e.isBaseVariant||raw.b("compositeSequence")||raw.i("level")>1||raw.s("impact")=="Con saltos","Ejercicio fuera del filtro de baja exigencia")
   reject("knee" in affected&&(knee||(!seated&&floor)||Regex("rodillas apoyadas|cuatro apoyos|cuadrupedia|arrodillad").containsMatchIn(txt)),"Rodilla implicada")
   reject("ankle" in affected&&(Regex("puente de gl[uú]teos|elevaci[oó]n de talones|heel raise|calf raise").containsMatchIn(txt)||!seated&&!floor||standing),"Tobillo implicado")
   reject("hip" in affected&&!seated&&Regex("sentadilla|zancada|estocada|peso muerto|bisagra").containsMatchIn(txt),"Cadera implicada")
@@ -71,7 +71,7 @@ class Rules(val catalog:Catalog){
   reject((r.b("noWrist")||"wrist" in affected)&&(hand||floorHand),"Evitar apoyo en manos");reject("knee" in affected&&floor&&knee,"Rodilla en apoyo")
   return out
  }
- fun reasons(e:Exercise,p:JSONObject,maxPlanningLevel:Int=level(p)):List<String>{if(e.raw.b("pendingTechnicalReview")||e.raw.b("sourceExpansion2k")&&!e.raw.b("approvedForAutoplan"))return listOf("Pendiente de validación biomecánica y de requisitos; excluido de los generadores.");val g=gate(p);if(!g.ok)return listOf(g.reason);val risk=injuries(p).isNotEmpty()||p.b("limits")||p.o("health").b("special")||p.o("health").s("pain") in listOf("mild","moderate","strong");return (groupReasons(e,p)+materialReasons(e,p,maxPlanningLevel)+clinicalReasons(e,p,risk)).distinct()}
+ fun reasons(e:Exercise,p:JSONObject,maxPlanningLevel:Int=level(p)):List<String>{if(e.validationBlocked)return listOf("Pendiente de validación biomecánica y de requisitos; excluido de los generadores.");val g=gate(p);if(!g.ok)return listOf(g.reason);val risk=injuries(p).isNotEmpty()||p.b("limits")||p.o("health").b("special")||p.o("health").s("pain") in listOf("mild","moderate","strong");return (groupReasons(e,p)+materialReasons(e,p,maxPlanningLevel)+clinicalReasons(e,p,risk)).distinct()}
  fun compatible(e:Exercise,p:JSONObject,maxPlanningLevel:Int=level(p))=reasons(e,p,maxPlanningLevel).isEmpty()
  fun missionReasons(e:Exercise,p:JSONObject,item:JSONObject):List<String> {
   val plannedLevel=level(p)+1

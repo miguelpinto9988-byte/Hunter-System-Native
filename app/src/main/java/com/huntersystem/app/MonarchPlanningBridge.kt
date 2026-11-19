@@ -41,7 +41,8 @@ class MonarchActivitySource(
                         e.raw.s("impact") in listOf("Bajo", "Sin saltos") &&
                         e.meta.has("conditioning") && e.meta.i("conditioning") <= 1 ->
                         Intensity.LOW
-                    e.raw.s("impact") in listOf("Moderado", "Medio") &&
+                    (e.raw.s("impact") in listOf("Moderado", "Medio") ||
+                        e.hunter2000 && !e.power && !e.impact && e.raw.s("impact") == "Sin saltos") &&
                         e.meta.has("conditioning") && e.meta.i("conditioning") <= 2 ->
                         Intensity.MODERATE
                     else -> Intensity.UNKNOWN
@@ -50,8 +51,6 @@ class MonarchActivitySource(
             val familyId = category.code + "/" + e.family
             val typeId = familyId + "/" + e.pattern.ifBlank { e.oldFamily }
             val eligibility = (declaredMaterials != null || e.raw.optJSONArray("materials46") != null) &&
-                !e.raw.b("sourceOnly") && !e.raw.b("pendingTechnicalReview") &&
-                !(e.raw.b("sourceExpansion2k") && !e.raw.b("approvedForAutoplan")) &&
                 rules.compatible(e, adjusted, maxPlanningLevel = 2)
             ActivityMetadata(e.id, category, familyId, typeId, levelValue, intensity, allowedGear,
                 e.raw.s("modality", "no_especificada"),

@@ -84,8 +84,8 @@ jobs:
               assert path in ns
               new=json.loads(f.read(path))
               assert len(new)==800
-              assert all(not x.get('approvedForAutoplan',True) for x in new)
-              print(f'APK verificada: 0 SVG animados, 1200 ilustraciones estáticas, 800 pendientes de QA')
+              assert len({x['id'] for x in new})==800
+              print(f'APK verificada: 0 SVG animados, 1200 ilustraciones estáticas, 800 fichas Hunter 2000')
           PY
 
       - name: Publicar APK de 2000 ejercicios

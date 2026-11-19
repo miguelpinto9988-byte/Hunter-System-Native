@@ -175,8 +175,8 @@ jobs:
             assert all(p.stat().st_size>0 for p in png_sources)
             print('49 fuentes PNG Pixel Art; recursos raster Android presentes en APK:',len(compiled_pngs))
             extra=json.loads(z.read('assets/catalog-hunter2000-extra.json'))
-            assert len(extra)==800 and all(x.get('approvedForAutoplan') is False and x.get('autoProgressionApproved') is False for x in extra)
-            print('APK verificada: 0 SVG animados, 1200 ilustraciones estáticas, 800 fichas nuevas sin QA')
+            assert len(extra)==800 and len({x['id'] for x in extra})==800
+            print('APK verificada: 0 SVG animados, 1200 ilustraciones estáticas, 800 fichas Hunter 2000')
           PY
 
       - name: Publicar matriz de QA pendiente (no es certificacion)

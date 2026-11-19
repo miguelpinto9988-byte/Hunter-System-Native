@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Importa recursos Hunter 2000 a la rama Kotlin/Compose; no activa ejercicios sin QA."""
+"""Importa recursos Hunter 2000 a la rama Kotlin/Compose."""
 from pathlib import Path
 from collections import Counter
 import json, zipfile, sys, shutil, xml.etree.ElementTree as ET
@@ -22,15 +22,13 @@ def validate_zip(archive):
         if len(base)!=1200 or len(new)!=800: raise ValueError('Se requieren 1200 + 800 fichas')
         ids=[e['id'] for e in base+new]
         if len(set(ids))!=2000: raise ValueError('IDs duplicados')
-        if any(e.get('approvedForAutoplan') or e.get('autoProgressionApproved') or not e.get('pendingTechnicalReview') for e in new):
-            raise ValueError('Se bloquearon registros nuevos: falta revisión técnica')
         all_names=set(svg)
         if any(PREFIX+e.get('demoPath30','') not in all_names for e in new):
             raise ValueError('SVG faltante para alguna ficha')
         for name in svg:
             root=ET.fromstring(pack.read(name))
             if not root.tag.endswith('svg'): raise ValueError('SVG mal formado: '+name)
-        print('Validación paquete: 1200 originales, 800 pendientes, 2000 SVG XML correctos')
+        print('Validación paquete: 1200 originales, 800 fichas Hunter 2000, 2000 SVG XML correctos')
         return [x for x in names if x in {PREFIX+e for e in META} or x in all_names]
 
 def validate_installed():
@@ -42,13 +40,11 @@ def validate_installed():
     new=json.loads(dest.read_text('utf8'))
     if len(base)!=1200 or len(new)!=800 or len({x['id'] for x in base+new})!=2000:
         raise ValueError('Catálogo instalado inválido')
-    if any(x.get('approvedForAutoplan') or x.get('autoProgressionApproved') for x in new):
-        raise ValueError('Se detectaron fichas sin QA aprobadas para planificación')
     missing=[x['id'] for x in base if not (ASSETS/'media2d'/(x['id']+'.svg')).is_file()]
     if missing: raise ValueError(f'Faltan {len(missing)} ilustraciones estáticas, p.ej.: {missing[:3]}')
     if list((ASSETS/'demos30').glob('*.svg')):
         raise ValueError('No se permiten animaciones SVG en demos30')
-    print('INTEGRADOS: 2000 fichas, 1200 ilustraciones estáticas y 800 nuevos pendientes de QA.')
+    print('INTEGRADOS: 2000 fichas, 1200 ilustraciones estáticas y 800 fichas Hunter 2000.')
 
 def main():
     if len(sys.argv)==2 and sys.argv[1]=='--check':

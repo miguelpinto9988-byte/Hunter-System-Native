@@ -184,12 +184,12 @@ fun ExercisesScreen(ui: NativeUi) {
         val term = normalize(query)
         val profile = if (restricted && store.profile != null) store.adjusted() else null
         store.catalog.exercises.filter { exercise ->
-            (term.isBlank() || term in normalize(exercise.name + " " + exercise.sport)) &&
+            (term.isBlank() || store.catalog.matchesExercise(exercise,term) || term in normalize(exercise.sport)) &&
                 (sport.isBlank() || exercise.sport == sport) &&
                 (category.isBlank() || exercise.category == category) &&
                 (group.isBlank() || exercise.group == group) &&
                 (difficulty.isBlank() || exercise.raw.i("level").toString() == difficulty) &&
-                (variants || exercise.raw.s("variant") == "base") &&
+                (variants || exercise.isBaseVariant) &&
                 (!restricted || profile != null && store.rules.compatible(exercise, profile)) &&
                 when (gear) {
                     "" -> true
@@ -242,7 +242,7 @@ fun ExercisesScreen(ui: NativeUi) {
                 Eyebrow(listOf(exercise.sport, exercise.group, levelLabel)
                     .filter { it.isNotBlank() }.joinToString(" · "))
                 Heading(exercise.name, size = 27)
-                if (exercise.raw.b("pendingTechnicalReview"))
+                if (exercise.validationBlocked)
                     HText("PENDIENTE DE VALIDACIÓN", size = 13, color = LocalHunter.current.accent, bold = true)
                 val equipment = when {
                     exercise.equipment == "body" -> "Sin equipo especial"

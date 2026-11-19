@@ -11,11 +11,11 @@ private data class MaterialGroup(val title:String,val ids:List<String>)
 private val materialGroups=listOf(
  MaterialGroup("Espacio y apoyo",listOf("space","wall","mat","chair","support","table","towel","stick","doorframe","ball","slider","swissball","foamroller","footanchor")),
  MaterialGroup("Bandas y barras",listOf("band","anchor","pullbar","lowbar","parallels","suspension","rings","abwheel")),
- MaterialGroup("Pesas y gimnasio",listOf("kb","landmine","rack","lightlever","romanchair","sled","strap","medball","slamball","throwwall","battlerope","harness","rope")),
+ MaterialGroup("Pesas y gimnasio",listOf("kb","plate","trapbar","safetybar","landmine","rack","lightlever","romanchair","sled","strap","medball","slamball","throwwall","battlerope","harness","rope")),
  MaterialGroup("Cardio y coordinación",listOf("plyobox","cones","ladder","hurdle","throwspace","partner","jumprope"))
 )
-private val specializedTools=setOf("landmine","rack","lightlever","romanchair","sled","strap","battlerope","harness","rope")
-private val weightsTools=setOf("kb","medball","slamball","throwwall")
+private val specializedTools=setOf("trapbar","safetybar","landmine","rack","lightlever","romanchair","sled","strap","battlerope","harness","rope")
+private val weightsTools=setOf("kb","plate","medball","slamball","throwwall")
 internal fun profileAllowedMaterials(equipment:String):Set<String>{
  val all=materialGroups.flatMap{it.ids}.toSet()
  return when(equipment){

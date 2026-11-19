@@ -37,7 +37,7 @@ class Hunter2000CatalogTest {
         assertTrue(c.expansionExercises.isEmpty())
     }
 
-    @Test fun fusiona2000IdsSinAutorizarLas800Propuestas(){
+    @Test fun fusiona2000IdsSinUsarLaRevisionComoBloqueo(){
         val c=catalog(true)
         assertEquals(1200,c.originalExercises.size)
         assertEquals(800,c.expansionExercises.size)
@@ -46,6 +46,7 @@ class Hunter2000CatalogTest {
         val rules=Rules(c)
         for(e in c.expansionExercises){
             assertFalse(e.raw.optBoolean("approvedForAutoplan"))
+            assertFalse(e.validationBlocked)
             assertTrue(rules.reasons(e,JSONObject()).isNotEmpty())
         }
     }
@@ -63,6 +64,26 @@ class Hunter2000CatalogTest {
         profile.put("materials46",JSONArray().put("wall"))
         assertTrue(Rules(c).compatible(wallDrill,profile))
         assertFalse(Rules(c).compatible(c.byId.getValue("sport-futbol-sole"),profile))
+    }
+
+    @Test fun incorporaHunter2000YResuelveAliasHistoricos(){
+        val c=Catalog(loader={java.io.File("src/main/assets",it).readText()})
+        val profile=JSONObject().put("age",30).put("difficulty","basic")
+        val rules=Rules(c)
+        val basic=c.byId.getValue("hx_core_0002")
+        assertTrue(rules.reasons(basic,profile).joinToString(),rules.compatible(basic,profile))
+        assertFalse(rules.compatible(c.byId.getValue("hx_upper_0002"),profile))
+        assertFalse(rules.compatible(c.byId.getValue("hx_upper_0001"),profile))
+        assertTrue(MonarchActivitySource(c,rules,profile).all().any{it.id==basic.id&&it.automaticEligible})
+        val planner=Planner(c,rules)
+        val day=obj("items" to arr(listOf(planner.libraryDose(basic,profile,"strength"))))
+        assertTrue(planner.steps(day,profile).any{it.s("id")==basic.id})
+        val legacy=c.byId.getValue("heelcontrolled")
+        assertEquals("heel_slow",legacy.id)
+        assertTrue(c.matchesExercise(legacy,normalize("Deslizamiento de talón con retorno lento")))
+        assertFalse(c.exercises.any{it.id=="heelcontrolled"||it.id=="birdcontrolled"})
+        day.put("items",arr(listOf(obj("id" to "heelcontrolled","sets" to 1,"target" to 5))))
+        assertTrue(planner.steps(day,profile).any{it.s("id")=="heel_slow"})
     }
 
     @Test(expected=IllegalArgumentException::class)

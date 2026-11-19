@@ -72,7 +72,7 @@ checks={
  "temas conjuntos":'"constellation"' in read(src+"HunterDesignSystem.kt") and '"ice"' in read(src+"HunterDesignSystem.kt"),
  "splash animado":(R/"app/src/main/java/com/huntersystem/app/HunterAnimatedBootArtwork.kt").is_file() and (R/"app/src/main/assets/monarch_splash_background.webp").is_file() and "HunterAnimatedBootArtwork(" in read(src+"MonarchNavigationV42.kt"),
  "catálogo ampliable":'catalog-hunter2000-extra.json' in read(src+"Catalog.kt"),
- "restricción QA":'approvedForAutoplan' in read(src+"Rules.kt"),
+ "filtro de catálogo":'validationBlocked' in read(src+"Rules.kt"),
  "artefacto V43":'Hunter-System-V43-12-Monarca-Eclipse-APK' in read(".github/workflows/android-apk.yml"),
  "sin ventana Evolucionar Monarca":all(
      'EVOLUCIONAR' not in read(src+name)
