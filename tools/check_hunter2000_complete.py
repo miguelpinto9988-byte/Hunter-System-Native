@@ -31,6 +31,9 @@ def verify_sports(items):
         repeated = [value for value, count in Counter(values).items() if count > 1]
         if repeated:
             raise ValueError(f"Duplicados por {key}: {repeated}")
+    material_ids = set(read_json("materials.json"))
+    expansion_poses = read_json("exercise-actor/sports-poses.json")
+    new_signatures = set()
     distribution = defaultdict(Counter)
     for row in sports:
         sport, level = row["sport"], row["level"]
@@ -41,6 +44,17 @@ def verify_sports(items):
             raise ValueError(f"Ficha deportiva incompleta: {row['id']}")
         if row.get("illustration"):
             raise ValueError(f"Ilustración deportiva alternativa: {row['id']}")
+        if row["id"].startswith("sport-ampl-"):
+            if set(row["materialRequirements"]) - material_ids or row["technicalLevel"] != level + 1 or (
+                row["planning49"]["level"] != level or row.get("pendingTechnicalReview")
+            ):
+                raise ValueError(f"Material o progresión inválidos: {row['id']}")
+            motion = expansion_poses[row["id"]]
+            tracks = {tuple(map(tuple, frame)) for frame in motion["poses"]}
+            signature = tuple(tuple(map(tuple, frame)) for frame in motion["poses"])
+            if len(tracks) < 2 or signature in new_signatures:
+                raise ValueError(f"Secuencia ausente o repetida: {row['id']}")
+            new_signatures.add(signature)
         distribution[sport][level] += 1
     candidates = defaultdict(list)
     for row in all_rows:

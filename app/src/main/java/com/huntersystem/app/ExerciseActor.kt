@@ -452,6 +452,17 @@ private fun DrawScope.drawEquipment(kind:String,p:List<Offset>,u:Float,floor:Flo
             drawCircle(muted,13*u,between-Offset(56*u,0f))
             drawCircle(muted,13*u,between+Offset(56*u,0f))
         }
+        "dumbbell" -> {
+            val axis = normal(direction(p[3], a))
+            val end = axis * (13f * u)
+            drawLine(muted, a - end, a + end, 4f * u, StrokeCap.Round)
+            drawCircle(muted, 5.5f * u, a - end)
+            drawCircle(muted, 5.5f * u, a + end)
+        }
+        "rear-wall" -> {
+            val x = p[8].x - 22f * u
+            drawLine(muted, Offset(x, floor - 280f * u), Offset(x, floor + 16f * u), 4f * u)
+        }
         "wall" -> drawLine(muted,a-Offset(0f,82*u),Offset(a.x,floor+16*u),4*u)
         "rope" -> drawLine(muted,a-Offset(70*u,74*u),a+Offset(80*u,-74*u),3*u)
         "racket" -> {

@@ -33,4 +33,20 @@ class ExercisePerspectiveTest {
             assertTrue(motion.handSupport)
         }
     }
+    @Test fun sportsExpansionLoadsFromTheCatalogWithAllThreeDifficultyLevels() {
+        val catalog = Catalog(context)
+        val expansion = catalog.exercises.filter { it.id.startsWith("sport-ampl-") }
+        val disciplines = setOf("Calistenia", "Fútbol", "Atletismo", "Movilidad", "Fuerza")
+        assertEquals(disciplines, expansion.map { it.sport }.toSet())
+        for ((_, group) in expansion.groupBy { it.sport }) {
+            assertEquals(setOf(0, 1, 2), group.map { it.planningLevel }.toSet())
+        }
+        for (exercise in expansion) {
+            assertFalse(exercise.validationBlocked)
+            val motion = checkNotNull(ExerciseMotions.load(context, exercise.id)) { exercise.id }
+            assertTrue(motion.frames.distinct().size > 1)
+            val framing = ExerciseFraming.from(motion)
+            assertTrue(framing.scaleFor(androidx.compose.ui.geometry.Size(200f, 320f)) > 0f)
+        }
+    }
 }

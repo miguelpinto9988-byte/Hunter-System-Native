@@ -649,5 +649,1394 @@
       "rest": 60
     },
     "technicalLevel": 1
+  },
+  {
+    "id": "sport-ampl-wall-plus",
+    "name": "Flexión de pared con empuje escapular final",
+    "sport": "Calistenia",
+    "level": 0,
+    "category": "Fuerza",
+    "group": "Tren superior",
+    "unit": "reps",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [
+      "wall"
+    ],
+    "equipmentLabel": "Pared firme",
+    "setup": "Apoya ambas manos en una pared firme y aleja los pies un paso.",
+    "instructions": [
+      "Lleva el pecho hacia la pared flexionando los codos.",
+      "Extiende los brazos y empuja unos centímetros más separando los omóplatos.",
+      "Regresa sin perder la alineación del cuerpo."
+    ],
+    "commonErrors": "Arquear la espalda al separar los omóplatos.",
+    "initialDose": "4 repeticiones a ritmo controlado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": false,
+    "spineMove": false,
+    "wristLoad": true,
+    "overhead": false,
+    "sides": false,
+    "zones": [
+      "shoulder",
+      "elbow",
+      "wrist"
+    ],
+    "intensity": "low",
+    "impact": "Sin saltos",
+    "technicalLevel": 1,
+    "doseCap46": {
+      "initial": 4,
+      "target": 4,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "upper",
+      "family": "sport-ampl-wall-plus",
+      "pattern": "flexión inclinada con protracción",
+      "level": 0,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    }
+  },
+  {
+    "id": "sport-ampl-hang-knee-pause",
+    "name": "Elevación de rodillas colgado con pelvis recogida",
+    "sport": "Calistenia",
+    "level": 1,
+    "category": "Fuerza",
+    "group": "Core",
+    "unit": "reps",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [
+      "pullbar"
+    ],
+    "equipmentLabel": "Barra fija",
+    "setup": "Cuélgate de una barra fija con los pies libres y el agarre firme.",
+    "instructions": [
+      "Eleva las rodillas sin balancearte.",
+      "Al final acerca suavemente la pelvis a las costillas.",
+      "Desciende hasta quedar quieto antes de repetir."
+    ],
+    "commonErrors": "Tomar impulso arqueando la espalda.",
+    "initialDose": "4 repeticiones a ritmo controlado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": false,
+    "spineMove": true,
+    "wristLoad": true,
+    "overhead": true,
+    "sides": false,
+    "zones": [
+      "shoulder",
+      "wrist",
+      "hip",
+      "back"
+    ],
+    "intensity": "moderate",
+    "impact": "Sin saltos",
+    "technicalLevel": 2,
+    "doseCap46": {
+      "initial": 4,
+      "target": 4,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "core",
+      "family": "sport-ampl-hang-knee-pause",
+      "pattern": "flexión de cadera suspendida",
+      "level": 1,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 2
+    },
+    "requiresSupervision": true
+  },
+  {
+    "id": "sport-ampl-l-sit-single-switch",
+    "name": "Extensión alterna de pierna en apoyo agrupado",
+    "sport": "Calistenia",
+    "level": 2,
+    "category": "Fuerza",
+    "group": "Core",
+    "unit": "reps",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [
+      "parallels"
+    ],
+    "equipmentLabel": "Paralelas bajas",
+    "setup": "Usa paralelas bajas estables y eleva los pies desde un apoyo agrupado.",
+    "instructions": [
+      "Empuja las paralelas con los brazos rectos.",
+      "Extiende una pierna sin bajar la pelvis y vuelve a agruparla.",
+      "Repite con la otra pierna antes de apoyar ambos pies."
+    ],
+    "commonErrors": "Dejar que la cadera caiga al extender.",
+    "initialDose": "4 repeticiones a ritmo controlado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": false,
+    "spineMove": false,
+    "wristLoad": true,
+    "overhead": false,
+    "sides": false,
+    "zones": [
+      "shoulder",
+      "wrist",
+      "hip"
+    ],
+    "intensity": "moderate",
+    "impact": "Sin saltos",
+    "technicalLevel": 3,
+    "doseCap46": {
+      "initial": 4,
+      "target": 4,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "core",
+      "family": "sport-ampl-l-sit-single-switch",
+      "pattern": "apoyo suspendido con extensión alterna",
+      "level": 2,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 3
+    },
+    "requiresSupervision": true
+  },
+  {
+    "id": "sport-ampl-football-inside-out",
+    "name": "Conducción interior-exterior con el mismo pie",
+    "sport": "Fútbol",
+    "level": 0,
+    "category": "Cardio",
+    "group": "Cuerpo completo",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [
+      "ball"
+    ],
+    "equipmentLabel": "Balón",
+    "setup": "Coloca un balón delante del pie dominante.",
+    "instructions": [
+      "Empuja el balón hacia dentro con el interior del pie.",
+      "Da un segundo toque hacia fuera con el exterior del mismo pie.",
+      "Recoge el balón con pasos cortos y practica con ambos pies."
+    ],
+    "commonErrors": "Golpear lejos del cuerpo en el segundo toque.",
+    "initialDose": "15 segundos por lado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": true,
+    "spineMove": false,
+    "wristLoad": false,
+    "overhead": false,
+    "sides": true,
+    "zones": [
+      "hip",
+      "knee",
+      "ankle"
+    ],
+    "intensity": "low",
+    "impact": "Sin saltos",
+    "technicalLevel": 1,
+    "doseCap46": {
+      "initial": 15,
+      "target": 15,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "cardio",
+      "family": "sport-ampl-football-inside-out",
+      "pattern": "doble contacto con balón",
+      "level": 0,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    }
+  },
+  {
+    "id": "sport-ampl-football-hook-behind",
+    "name": "Recorte por detrás del pie de apoyo",
+    "sport": "Fútbol",
+    "level": 1,
+    "category": "Cardio",
+    "group": "Cuerpo completo",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [
+      "ball"
+    ],
+    "equipmentLabel": "Balón",
+    "setup": "Avanza despacio con el balón y deja espacio a ambos lados.",
+    "instructions": [
+      "Planta un pie al lado del balón.",
+      "Lleva el pie de golpeo por detrás del apoyo y recorta con el interior.",
+      "Gira la cadera hacia la salida y recupera el balón en dos pasos."
+    ],
+    "commonErrors": "Recortar con la rodilla del apoyo rígida.",
+    "initialDose": "15 segundos por lado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": true,
+    "spineMove": false,
+    "wristLoad": false,
+    "overhead": false,
+    "sides": true,
+    "zones": [
+      "hip",
+      "knee",
+      "ankle"
+    ],
+    "intensity": "moderate",
+    "impact": "Sin saltos",
+    "technicalLevel": 2,
+    "doseCap46": {
+      "initial": 15,
+      "target": 15,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "cardio",
+      "family": "sport-ampl-football-hook-behind",
+      "pattern": "cambio de sentido con recorte posterior",
+      "level": 1,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 2
+    }
+  },
+  {
+    "id": "sport-ampl-football-shield-exit",
+    "name": "Protección de balón y salida con giro exterior",
+    "sport": "Fútbol",
+    "level": 2,
+    "category": "Cardio",
+    "group": "Cuerpo completo",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [
+      "ball",
+      "cones"
+    ],
+    "equipmentLabel": "Balón y cono",
+    "setup": "Usa un cono como referencia del rival y mantén despejada la salida.",
+    "instructions": [
+      "Coloca el cuerpo entre el cono y el balón con las rodillas blandas.",
+      "Arrastra el balón junto al pie de apoyo y gira hacia el lado libre.",
+      "Sal con un toque exterior manteniendo el balón al alcance."
+    ],
+    "commonErrors": "Separar el balón del cuerpo durante el giro.",
+    "initialDose": "15 segundos por lado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": true,
+    "spineMove": false,
+    "wristLoad": false,
+    "overhead": false,
+    "sides": true,
+    "zones": [
+      "hip",
+      "knee",
+      "ankle"
+    ],
+    "intensity": "moderate",
+    "impact": "Sin saltos",
+    "technicalLevel": 3,
+    "doseCap46": {
+      "initial": 15,
+      "target": 15,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "cardio",
+      "family": "sport-ampl-football-shield-exit",
+      "pattern": "protección con salida orientada",
+      "level": 2,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 3
+    }
+  },
+  {
+    "id": "sport-ampl-track-march-toe",
+    "name": "Marcha técnica con dorsiflexión y pausa",
+    "sport": "Atletismo",
+    "level": 0,
+    "category": "Cardio",
+    "group": "Cuerpo completo",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [],
+    "equipmentLabel": "Sin equipo",
+    "setup": "Colócate erguido con espacio libre delante.",
+    "instructions": [
+      "Eleva una rodilla sin inclinarte hacia atrás.",
+      "Lleva los dedos de ese pie hacia la espinilla y pausa.",
+      "Apoya bajo la cadera y repite del otro lado."
+    ],
+    "commonErrors": "Llevar el pie demasiado por delante al bajar.",
+    "initialDose": "15 segundos a ritmo controlado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": true,
+    "spineMove": false,
+    "wristLoad": false,
+    "overhead": false,
+    "sides": false,
+    "zones": [
+      "hip",
+      "knee",
+      "ankle"
+    ],
+    "intensity": "low",
+    "impact": "Sin saltos",
+    "technicalLevel": 1,
+    "doseCap46": {
+      "initial": 15,
+      "target": 15,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "cardio",
+      "family": "sport-ampl-track-march-toe",
+      "pattern": "marcha técnica de rodilla y tobillo",
+      "level": 0,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    }
+  },
+  {
+    "id": "sport-ampl-track-a-skip",
+    "name": "Skipping A con rebote corto",
+    "sport": "Atletismo",
+    "level": 1,
+    "category": "Cardio",
+    "group": "Cuerpo completo",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [],
+    "equipmentLabel": "Sin equipo",
+    "setup": "Elige un tramo plano con agarre.",
+    "instructions": [
+      "Eleva una rodilla con un rebote ligero del pie de apoyo.",
+      "Baja el pie activo debajo de la cadera.",
+      "Alterna los apoyos con brazos coordinados y rebotes cortos."
+    ],
+    "commonErrors": "Aumentar la altura a costa de aterrizar lejos del cuerpo.",
+    "initialDose": "15 segundos a ritmo controlado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": true,
+    "spineMove": false,
+    "wristLoad": false,
+    "overhead": false,
+    "sides": false,
+    "zones": [
+      "hip",
+      "knee",
+      "ankle"
+    ],
+    "intensity": "moderate",
+    "impact": "Con saltos",
+    "technicalLevel": 2,
+    "doseCap46": {
+      "initial": 15,
+      "target": 15,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "cardio",
+      "family": "sport-ampl-track-a-skip",
+      "pattern": "rebote alterno con rodilla alta",
+      "level": 1,
+      "role": "accessory",
+      "primary": false,
+      "impact": true,
+      "power": true,
+      "conditioning": 2
+    }
+  },
+  {
+    "id": "sport-ampl-track-bound-single",
+    "name": "Zancada rebotada alterna con recepción estable",
+    "sport": "Atletismo",
+    "level": 2,
+    "category": "Cardio",
+    "group": "Cuerpo completo",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [],
+    "equipmentLabel": "Sin equipo",
+    "setup": "Usa una pista plana. Comienza con distancia de salto corta.",
+    "instructions": [
+      "Impúlsate desde un pie y lleva la rodilla contraria hacia delante.",
+      "Recibe sobre el pie adelantado con rodilla y cadera flexibles.",
+      "Recupera el equilibrio y alterna el lado."
+    ],
+    "commonErrors": "Buscar distancia antes de dominar la recepción.",
+    "initialDose": "15 segundos a ritmo controlado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": true,
+    "spineMove": false,
+    "wristLoad": false,
+    "overhead": false,
+    "sides": false,
+    "zones": [
+      "hip",
+      "knee",
+      "ankle"
+    ],
+    "intensity": "high",
+    "impact": "Con saltos",
+    "technicalLevel": 3,
+    "doseCap46": {
+      "initial": 15,
+      "target": 15,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "cardio",
+      "family": "sport-ampl-track-bound-single",
+      "pattern": "salto alterno de longitud controlada",
+      "level": 2,
+      "role": "accessory",
+      "primary": false,
+      "impact": true,
+      "power": true,
+      "conditioning": 3
+    }
+  },
+  {
+    "id": "sport-ampl-mobility-cross-reach",
+    "name": "Inclinación lateral sentada con alcance cruzado",
+    "sport": "Movilidad",
+    "level": 0,
+    "category": "Movilidad",
+    "group": "Cuerpo completo",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [
+      "mat"
+    ],
+    "equipmentLabel": "Colchoneta",
+    "setup": "Siéntate con piernas cruzadas sobre una colchoneta.",
+    "instructions": [
+      "Apoya una mano junto a la cadera.",
+      "Lleva la otra mano por encima de la cabeza hacia el lado del apoyo.",
+      "Vuelve al centro y cambia de lado."
+    ],
+    "commonErrors": "Levantar un lado de la pelvis para llegar más lejos.",
+    "initialDose": "15 segundos por lado.",
+    "standing": false,
+    "seated": true,
+    "floor": true,
+    "kneeBend": false,
+    "spineMove": true,
+    "wristLoad": false,
+    "overhead": true,
+    "sides": true,
+    "zones": [
+      "shoulder",
+      "back"
+    ],
+    "intensity": "low",
+    "impact": "Sin saltos",
+    "technicalLevel": 1,
+    "doseCap46": {
+      "initial": 15,
+      "target": 15,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "mobility",
+      "family": "sport-ampl-mobility-cross-reach",
+      "pattern": "inclinación torácica sentada",
+      "level": 0,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    }
+  },
+  {
+    "id": "sport-ampl-mobility-ankle-halfkneel",
+    "name": "Avance de rodilla con tobillo en semiarrodillado",
+    "sport": "Movilidad",
+    "level": 1,
+    "category": "Movilidad",
+    "group": "Cuerpo completo",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [
+      "mat"
+    ],
+    "equipmentLabel": "Colchoneta",
+    "setup": "Arrodíllate sobre una rodilla y planta el otro pie completo.",
+    "instructions": [
+      "Lleva la rodilla delantera hacia los dedos del pie.",
+      "Mantén el talón apoyado y la rodilla alineada con el pie.",
+      "Retrocede y repite; cambia de lado."
+    ],
+    "commonErrors": "Levantar el talón o dejar caer la rodilla hacia dentro.",
+    "initialDose": "15 segundos por lado.",
+    "standing": false,
+    "seated": false,
+    "floor": true,
+    "kneeBend": true,
+    "spineMove": false,
+    "wristLoad": false,
+    "overhead": false,
+    "sides": true,
+    "zones": [
+      "knee",
+      "ankle"
+    ],
+    "intensity": "moderate",
+    "impact": "Sin saltos",
+    "technicalLevel": 2,
+    "doseCap46": {
+      "initial": 15,
+      "target": 15,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "mobility",
+      "family": "sport-ampl-mobility-ankle-halfkneel",
+      "pattern": "dorsiflexión de tobillo semiarrodillada",
+      "level": 1,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 2
+    }
+  },
+  {
+    "id": "sport-ampl-mobility-deep-squat-rotation",
+    "name": "Rotación torácica con mano de apoyo en sentadilla profunda",
+    "sport": "Movilidad",
+    "level": 2,
+    "category": "Movilidad",
+    "group": "Cuerpo completo",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [],
+    "equipmentLabel": "Sin equipo",
+    "setup": "Entra en una sentadilla cómoda con los talones apoyados.",
+    "instructions": [
+      "Coloca una mano en la cara interna de la rodilla opuesta.",
+      "Gira el pecho y eleva la mano libre, manteniendo la pelvis centrada.",
+      "Vuelve al centro y cambia de lado."
+    ],
+    "commonErrors": "Girar las rodillas o despegar un talón.",
+    "initialDose": "15 segundos por lado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": true,
+    "spineMove": true,
+    "wristLoad": false,
+    "overhead": true,
+    "sides": true,
+    "zones": [
+      "hip",
+      "knee",
+      "ankle",
+      "back",
+      "shoulder"
+    ],
+    "intensity": "moderate",
+    "impact": "Sin saltos",
+    "technicalLevel": 3,
+    "doseCap46": {
+      "initial": 15,
+      "target": 15,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "mobility",
+      "family": "sport-ampl-mobility-deep-squat-rotation",
+      "pattern": "rotación torácica en sentadilla",
+      "level": 2,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 3
+    }
+  },
+  {
+    "id": "sport-ampl-strength-hip-hinge-wall",
+    "name": "Bisagra de cadera con toque posterior de pared",
+    "sport": "Fuerza",
+    "level": 0,
+    "category": "Fuerza",
+    "group": "Piernas",
+    "unit": "reps",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [
+      "wall"
+    ],
+    "equipmentLabel": "Pared firme",
+    "setup": "Ponte de espaldas a una pared, con un paso corto entre los talones y la pared.",
+    "instructions": [
+      "Flexiona un poco las rodillas y lleva la cadera hacia atrás.",
+      "Toca la pared suavemente con los glúteos sin redondear la espalda.",
+      "Empuja el suelo y vuelve a ponerte de pie."
+    ],
+    "commonErrors": "Transformar la bisagra en una sentadilla.",
+    "initialDose": "4 repeticiones a ritmo controlado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": true,
+    "spineMove": true,
+    "wristLoad": false,
+    "overhead": false,
+    "sides": false,
+    "zones": [
+      "hip",
+      "knee",
+      "back"
+    ],
+    "intensity": "low",
+    "impact": "Sin saltos",
+    "technicalLevel": 1,
+    "doseCap46": {
+      "initial": 4,
+      "target": 4,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "lower",
+      "family": "sport-ampl-strength-hip-hinge-wall",
+      "pattern": "bisagra de cadera con referencia posterior",
+      "level": 0,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    }
+  },
+  {
+    "id": "sport-ampl-strength-offset-squat",
+    "name": "Sentadilla con mancuerna en un solo hombro",
+    "sport": "Fuerza",
+    "level": 1,
+    "category": "Fuerza",
+    "group": "Piernas",
+    "unit": "reps",
+    "variant": "base",
+    "equipment": "db",
+    "materialRequirements": [
+      "db"
+    ],
+    "equipmentLabel": "Mancuernas",
+    "setup": "Sujeta una mancuerna ligera junto a un hombro.",
+    "instructions": [
+      "Separa los pies y baja repartiendo el peso en ambos apoyos.",
+      "Mantén los hombros a la misma altura pese a la carga de un lado.",
+      "Sube con control y cambia la mancuerna de hombro."
+    ],
+    "commonErrors": "Inclinar el tronco hacia la mancuerna.",
+    "initialDose": "4 repeticiones por lado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": true,
+    "spineMove": true,
+    "wristLoad": false,
+    "overhead": false,
+    "sides": true,
+    "zones": [
+      "hip",
+      "knee",
+      "ankle",
+      "back",
+      "shoulder"
+    ],
+    "intensity": "moderate",
+    "impact": "Sin saltos",
+    "technicalLevel": 2,
+    "doseCap46": {
+      "initial": 4,
+      "target": 4,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "lower",
+      "family": "sport-ampl-strength-offset-squat",
+      "pattern": "sentadilla con carga frontal asimétrica",
+      "level": 1,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 2
+    }
+  },
+  {
+    "id": "sport-ampl-strength-single-leg-row",
+    "name": "Remo contralateral en bisagra a una pierna",
+    "sport": "Fuerza",
+    "level": 2,
+    "category": "Fuerza",
+    "group": "Tren superior",
+    "unit": "reps",
+    "variant": "base",
+    "equipment": "db",
+    "materialRequirements": [
+      "db"
+    ],
+    "equipmentLabel": "Mancuernas",
+    "setup": "Sujeta una mancuerna ligera con la mano contraria al pie de apoyo.",
+    "instructions": [
+      "Inclínate desde la cadera mientras elevas la pierna libre hacia atrás.",
+      "Lleva el codo de la mancuerna hacia las costillas sin abrir el pecho.",
+      "Baja la mancuerna y recupera la posición inicial con equilibrio."
+    ],
+    "commonErrors": "Girar la pelvis o balancear la mancuerna.",
+    "initialDose": "4 repeticiones por lado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": false,
+    "spineMove": true,
+    "wristLoad": false,
+    "overhead": false,
+    "sides": true,
+    "zones": [
+      "hip",
+      "ankle",
+      "back",
+      "shoulder",
+      "elbow"
+    ],
+    "intensity": "moderate",
+    "impact": "Sin saltos",
+    "technicalLevel": 3,
+    "doseCap46": {
+      "initial": 4,
+      "target": 4,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "upper",
+      "family": "sport-ampl-strength-single-leg-row",
+      "pattern": "tracción asimétrica en equilibrio unilateral",
+      "level": 2,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 3
+    }
+  },
+  {
+    "id": "sport-ampl-pushup-staggered-hands",
+    "name": "Flexión con manos escalonadas longitudinalmente",
+    "sport": "Calistenia",
+    "level": 1,
+    "category": "Fuerza",
+    "group": "Tren superior",
+    "unit": "reps",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [],
+    "equipmentLabel": "Sin equipo",
+    "setup": "Ponte en plancha y adelanta una mano medio palmo.",
+    "instructions": [
+      "Flexiona ambos codos y baja el pecho entre las manos.",
+      "Empuja hacia arriba manteniendo la pelvis alineada.",
+      "Cambia la mano adelantada en la siguiente serie."
+    ],
+    "commonErrors": "Girar el pecho hacia la mano adelantada.",
+    "initialDose": "4 repeticiones por lado.",
+    "standing": false,
+    "seated": false,
+    "floor": true,
+    "kneeBend": false,
+    "spineMove": true,
+    "wristLoad": true,
+    "overhead": false,
+    "sides": true,
+    "zones": [
+      "shoulder",
+      "elbow",
+      "wrist",
+      "back"
+    ],
+    "intensity": "moderate",
+    "impact": "Sin saltos",
+    "technicalLevel": 2,
+    "doseCap46": {
+      "initial": 4,
+      "target": 4,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "upper",
+      "family": "sport-ampl-pushup-staggered-hands",
+      "pattern": "empuje con apoyos escalonados",
+      "level": 1,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 2
+    }
+  },
+  {
+    "id": "sport-ampl-lean-planche",
+    "name": "Transferencia anterior en plancha con codos rectos",
+    "sport": "Calistenia",
+    "level": 2,
+    "category": "Fuerza",
+    "group": "Core",
+    "unit": "reps",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [],
+    "equipmentLabel": "Sin equipo",
+    "setup": "Coloca las manos sobre una superficie firme en posición de plancha.",
+    "instructions": [
+      "Empuja el suelo y mantén ambos codos extendidos.",
+      "Traslada los hombros ligeramente por delante de las muñecas.",
+      "Vuelve antes de perder la posición de la pelvis."
+    ],
+    "commonErrors": "Forzar las muñecas o dejar caer la zona lumbar.",
+    "initialDose": "4 repeticiones a ritmo controlado.",
+    "standing": false,
+    "seated": false,
+    "floor": true,
+    "kneeBend": false,
+    "spineMove": true,
+    "wristLoad": true,
+    "overhead": false,
+    "sides": false,
+    "zones": [
+      "shoulder",
+      "wrist",
+      "back"
+    ],
+    "intensity": "moderate",
+    "impact": "Sin saltos",
+    "technicalLevel": 3,
+    "doseCap46": {
+      "initial": 4,
+      "target": 4,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "core",
+      "family": "sport-ampl-lean-planche",
+      "pattern": "transferencia de apoyo anterior",
+      "level": 2,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 3
+    }
+  },
+  {
+    "id": "sport-ampl-football-v-pull",
+    "name": "Arrastre en V con salida diagonal del balón",
+    "sport": "Fútbol",
+    "level": 1,
+    "category": "Cardio",
+    "group": "Cuerpo completo",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [
+      "ball"
+    ],
+    "equipmentLabel": "Balón",
+    "setup": "Sitúa el balón delante de ti con espacio para salir en diagonal.",
+    "instructions": [
+      "Arrastra el balón hacia ti con la planta.",
+      "Empújalo con el interior del mismo pie formando una V.",
+      "Recoge el balón y repite hacia el otro lado."
+    ],
+    "commonErrors": "Girar sin antes recuperar el balón debajo del cuerpo.",
+    "initialDose": "15 segundos por lado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": true,
+    "spineMove": false,
+    "wristLoad": false,
+    "overhead": false,
+    "sides": true,
+    "zones": [
+      "hip",
+      "knee",
+      "ankle"
+    ],
+    "intensity": "moderate",
+    "impact": "Sin saltos",
+    "technicalLevel": 2,
+    "doseCap46": {
+      "initial": 15,
+      "target": 15,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "cardio",
+      "family": "sport-ampl-football-v-pull",
+      "pattern": "arrastre hacia atrás y empuje diagonal",
+      "level": 1,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 2
+    }
+  },
+  {
+    "id": "sport-ampl-football-toe-taps",
+    "name": "Toques alternos de punta sobre el balón sin salto",
+    "sport": "Fútbol",
+    "level": 0,
+    "category": "Cardio",
+    "group": "Cuerpo completo",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [
+      "ball"
+    ],
+    "equipmentLabel": "Balón",
+    "setup": "Coloca el balón inmóvil delante de los pies.",
+    "instructions": [
+      "Toca la parte superior con la punta de un pie.",
+      "Vuelve a apoyar ese pie antes de levantar el otro.",
+      "Alterna sin desplazar el balón."
+    ],
+    "commonErrors": "Apoyar el peso en el balón.",
+    "initialDose": "15 segundos a ritmo controlado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": true,
+    "spineMove": false,
+    "wristLoad": false,
+    "overhead": false,
+    "sides": false,
+    "zones": [
+      "hip",
+      "knee",
+      "ankle"
+    ],
+    "intensity": "low",
+    "impact": "Sin saltos",
+    "technicalLevel": 1,
+    "doseCap46": {
+      "initial": 15,
+      "target": 15,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "cardio",
+      "family": "sport-ampl-football-toe-taps",
+      "pattern": "contacto alterno ligero desde el sitio",
+      "level": 0,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    }
+  },
+  {
+    "id": "sport-ampl-track-grapevine",
+    "name": "Desplazamiento carioca con cruce anterior y posterior",
+    "sport": "Atletismo",
+    "level": 1,
+    "category": "Cardio",
+    "group": "Cuerpo completo",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [],
+    "equipmentLabel": "Sin equipo",
+    "setup": "Deja libre un tramo lateral plano.",
+    "instructions": [
+      "Da un paso lateral y cruza el otro pie por delante.",
+      "Abre de nuevo y esta vez cruza el pie por detrás.",
+      "Encadena los pasos con el pecho orientado al frente."
+    ],
+    "commonErrors": "Cruzar tan lejos que se pierda el equilibrio.",
+    "initialDose": "15 segundos por lado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": true,
+    "spineMove": false,
+    "wristLoad": false,
+    "overhead": false,
+    "sides": true,
+    "zones": [
+      "hip",
+      "knee",
+      "ankle"
+    ],
+    "intensity": "moderate",
+    "impact": "Sin saltos",
+    "technicalLevel": 2,
+    "doseCap46": {
+      "initial": 15,
+      "target": 15,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "cardio",
+      "family": "sport-ampl-track-grapevine",
+      "pattern": "desplazamiento lateral con cruce alterno",
+      "level": 1,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 2
+    }
+  },
+  {
+    "id": "sport-ampl-track-shuffle-brake",
+    "name": "Paso lateral con frenado sobre el pie exterior",
+    "sport": "Atletismo",
+    "level": 1,
+    "category": "Cardio",
+    "group": "Cuerpo completo",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [],
+    "equipmentLabel": "Sin equipo",
+    "setup": "Marca una distancia corta hacia cada lado.",
+    "instructions": [
+      "Desplázate con pasos laterales sin cruzar los pies.",
+      "Frena sobre el pie exterior flexionando cadera y rodilla.",
+      "Empuja el suelo para volver al centro."
+    ],
+    "commonErrors": "Frenar con la pierna rígida o inclinar solo el cuello.",
+    "initialDose": "15 segundos por lado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": true,
+    "spineMove": false,
+    "wristLoad": false,
+    "overhead": false,
+    "sides": true,
+    "zones": [
+      "hip",
+      "knee",
+      "ankle"
+    ],
+    "intensity": "moderate",
+    "impact": "Sin saltos",
+    "technicalLevel": 2,
+    "doseCap46": {
+      "initial": 15,
+      "target": 15,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "cardio",
+      "family": "sport-ampl-track-shuffle-brake",
+      "pattern": "frenado lateral con apoyo exterior",
+      "level": 1,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 2
+    }
+  },
+  {
+    "id": "sport-ampl-mobility-side-lying-arm-arc",
+    "name": "Arco de brazo acostado de lado con rodillas apoyadas",
+    "sport": "Movilidad",
+    "level": 0,
+    "category": "Movilidad",
+    "group": "Cuerpo completo",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [
+      "mat"
+    ],
+    "equipmentLabel": "Colchoneta",
+    "setup": "Túmbate de lado con ambas rodillas semiflexionadas y juntas.",
+    "instructions": [
+      "Traza un arco despacio con el brazo superior.",
+      "Deja que el pecho acompañe el giro con las rodillas juntas.",
+      "Regresa al inicio y repite del otro lado."
+    ],
+    "commonErrors": "Separar las rodillas o forzar el hombro al final.",
+    "initialDose": "15 segundos por lado.",
+    "standing": false,
+    "seated": false,
+    "floor": true,
+    "kneeBend": false,
+    "spineMove": true,
+    "wristLoad": false,
+    "overhead": false,
+    "sides": true,
+    "zones": [
+      "back",
+      "shoulder"
+    ],
+    "intensity": "low",
+    "impact": "Sin saltos",
+    "technicalLevel": 1,
+    "doseCap46": {
+      "initial": 15,
+      "target": 15,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "mobility",
+      "family": "sport-ampl-mobility-side-lying-arm-arc",
+      "pattern": "movilidad torácica con recorrido circular",
+      "level": 0,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    }
+  },
+  {
+    "id": "sport-ampl-mobility-wall-shoulder-cactus",
+    "name": "Deslizamiento en cactus con antebrazos hacia arriba",
+    "sport": "Movilidad",
+    "level": 0,
+    "category": "Movilidad",
+    "group": "Cuerpo completo",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [
+      "wall"
+    ],
+    "equipmentLabel": "Pared firme",
+    "setup": "Colócate de espaldas a una pared con los codos doblados y los antebrazos levantados.",
+    "instructions": [
+      "Sube ambos brazos sin elevar las costillas.",
+      "Trabaja dentro de un recorrido cómodo.",
+      "Desliza los codos hacia abajo y vuelve a empezar."
+    ],
+    "commonErrors": "Arquear la zona lumbar para acercar las manos a la pared.",
+    "initialDose": "15 segundos a ritmo controlado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": false,
+    "spineMove": true,
+    "wristLoad": false,
+    "overhead": true,
+    "sides": false,
+    "zones": [
+      "back",
+      "shoulder"
+    ],
+    "intensity": "low",
+    "impact": "Sin saltos",
+    "technicalLevel": 1,
+    "doseCap46": {
+      "initial": 15,
+      "target": 15,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "mobility",
+      "family": "sport-ampl-mobility-wall-shoulder-cactus",
+      "pattern": "deslizamiento de hombros en rotación externa",
+      "level": 0,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    }
+  },
+  {
+    "id": "sport-ampl-strength-split-squat-reach",
+    "name": "Sentadilla dividida con alcance contralateral",
+    "sport": "Fuerza",
+    "level": 1,
+    "category": "Fuerza",
+    "group": "Piernas",
+    "unit": "reps",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [],
+    "equipmentLabel": "Sin equipo",
+    "setup": "Adopta una posición de zancada estática con pies separados.",
+    "instructions": [
+      "Desciende doblando ambas rodillas.",
+      "Al llegar abajo, alcanza al frente con la mano contraria a la pierna adelantada.",
+      "Recoge el brazo y sube sin girar la pelvis."
+    ],
+    "commonErrors": "Girar la cadera hacia el lado del alcance.",
+    "initialDose": "4 repeticiones por lado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": true,
+    "spineMove": true,
+    "wristLoad": false,
+    "overhead": false,
+    "sides": true,
+    "zones": [
+      "hip",
+      "knee",
+      "ankle",
+      "back"
+    ],
+    "intensity": "moderate",
+    "impact": "Sin saltos",
+    "technicalLevel": 2,
+    "doseCap46": {
+      "initial": 4,
+      "target": 4,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "lower",
+      "family": "sport-ampl-strength-split-squat-reach",
+      "pattern": "sentadilla dividida con control rotacional",
+      "level": 1,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 2
+    }
+  },
+  {
+    "id": "sport-ampl-strength-calf-opposite-knee",
+    "name": "Elevación de talón con rodilla contraria suspendida",
+    "sport": "Fuerza",
+    "level": 1,
+    "category": "Fuerza",
+    "group": "Piernas",
+    "unit": "reps",
+    "variant": "base",
+    "equipment": "body",
+    "materialRequirements": [
+      "wall"
+    ],
+    "equipmentLabel": "Pared firme",
+    "setup": "Ponte junto a una pared y usa los dedos de una mano como apoyo ligero.",
+    "instructions": [
+      "Eleva la rodilla libre y mantén la pelvis nivelada.",
+      "Despega el talón del pie de apoyo lentamente.",
+      "Baja sin inclinarte y cambia de lado."
+    ],
+    "commonErrors": "Rodar el tobillo hacia el borde externo del pie.",
+    "initialDose": "4 repeticiones por lado.",
+    "standing": true,
+    "seated": false,
+    "floor": false,
+    "kneeBend": false,
+    "spineMove": false,
+    "wristLoad": false,
+    "overhead": false,
+    "sides": true,
+    "zones": [
+      "hip",
+      "ankle"
+    ],
+    "intensity": "moderate",
+    "impact": "Sin saltos",
+    "technicalLevel": 2,
+    "doseCap46": {
+      "initial": 4,
+      "target": 4,
+      "sets": 1,
+      "rest": 60
+    },
+    "planning49": {
+      "group": "lower",
+      "family": "sport-ampl-strength-calf-opposite-knee",
+      "pattern": "flexión plantar unilateral con equilibrio",
+      "level": 1,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 2
+    }
   }
 ]
