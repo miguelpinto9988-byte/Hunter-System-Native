@@ -1,9 +1,9 @@
 {
   "format": "MonarcaC3SeamQA",
-  "version": 1,
+  "version": 2,
   "exercise": "calf",
   "motionFrames": 48,
-  "scanStep": 0.5,
+  "scanStep": 0.05,
   "seams": {
     "frontKnee": {
       "profiles": [
@@ -11,11 +11,13 @@
         "pantorrilla_frontal"
       ],
       "framesChecked": 48,
-      "minOverlap": 24.4396,
-      "maxOverlap": 24.4702,
-      "minSharedRows": 12,
-      "maxSharedRows": 12,
-      "maxTemporalDelta": 0.0024,
+      "minOverlap": 24.4768,
+      "maxOverlap": 24.4963,
+      "minVerticalOverlap": 18.94319,
+      "maxVerticalOverlap": 19.22605,
+      "minSharedRows": 119,
+      "maxSharedRows": 123,
+      "maxTemporalDelta": 0.0063,
       "failingFrames": []
     },
     "rearKnee": {
@@ -24,11 +26,13 @@
         "pantorrilla_posterior"
       ],
       "framesChecked": 48,
-      "minOverlap": 22.4923,
-      "maxOverlap": 22.5927,
-      "minSharedRows": 1,
-      "maxSharedRows": 2,
-      "maxTemporalDelta": 0.0066,
+      "minOverlap": 22.5767,
+      "maxOverlap": 22.6808,
+      "minVerticalOverlap": 5.36822,
+      "maxVerticalOverlap": 5.69137,
+      "minSharedRows": 15,
+      "maxSharedRows": 20,
+      "maxTemporalDelta": 0.0124,
       "failingFrames": []
     },
     "frontAnkle": {
@@ -39,8 +43,10 @@
       "framesChecked": 48,
       "minOverlap": 17,
       "maxOverlap": 17,
-      "minSharedRows": 30,
-      "maxSharedRows": 32,
+      "minVerticalOverlap": 15,
+      "maxVerticalOverlap": 16.03725,
+      "minSharedRows": 300,
+      "maxSharedRows": 321,
       "maxTemporalDelta": 0,
       "failingFrames": []
     },
@@ -50,11 +56,13 @@
         "tobillo_posterior"
       ],
       "framesChecked": 48,
-      "minOverlap": 15.9314,
-      "maxOverlap": 15.9667,
-      "minSharedRows": 24,
-      "maxSharedRows": 27,
-      "maxTemporalDelta": 0.0321,
+      "minOverlap": 15.9647,
+      "maxOverlap": 15.9687,
+      "minVerticalOverlap": 13.7056,
+      "maxVerticalOverlap": 14.65335,
+      "minSharedRows": 246,
+      "maxSharedRows": 263,
+      "maxTemporalDelta": 0.0038,
       "failingFrames": []
     }
   },
