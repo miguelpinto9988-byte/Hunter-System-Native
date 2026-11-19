@@ -56,7 +56,7 @@ class Hunter2000CatalogTest {
         assertEquals(12,c.sportExercises.map{it.sport}.distinct().size)
         assertTrue(c.sportExercises.all{
             it.raw.getJSONArray("instructions").length()>0 &&
-                java.io.File("src/main/assets",it.demo).isFile
+                it.demo.isEmpty()
         })
         val wallDrill=c.byId.getValue("sport-track-a-wall")
         val profile=JSONObject().put("age",30).put("difficulty","basic")

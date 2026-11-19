@@ -39,9 +39,8 @@ def verify_sports(items):
             and row["equipmentLabel"]
         ):
             raise ValueError(f"Ficha deportiva incompleta: {row['id']}")
-        expected = f"sports2d/{row['id']}.svg"
-        if row["illustration"] != expected or ET.parse(ASSETS / expected).getroot().tag != "{http://www.w3.org/2000/svg}svg":
-            raise ValueError(f"Ilustración deportiva inválida: {row['id']}")
+        if row.get("illustration"):
+            raise ValueError(f"Ilustración deportiva alternativa: {row['id']}")
         distribution[sport][level] += 1
     candidates = defaultdict(list)
     for row in all_rows:
@@ -92,6 +91,8 @@ def verify():
            any(not isinstance(material, str) or not material for material in x["materialRequirements"])
            for x in extra):
         raise ValueError("Hay fichas Hunter 2000 sin origen o requisitos de equipo legibles")
+    if list((ASSETS / "sports2d").glob("*.svg")):
+        raise ValueError("Quedan ilustraciones deportivas alternativas")
     animated = list((ASSETS / "demos30").glob("*.svg"))
     if animated:
         raise ValueError(f"Quedan {len(animated)} SVG en demos30")
@@ -113,7 +114,7 @@ def verify():
         if ET.fromstring(raw).tag.rsplit("}", 1)[-1] != "svg":
             raise ValueError(f"XML inválido: {name}")
     sports_count, distribution, aliases, similar, candidates = verify_sports(items)
-    return {"status": "PASS", "catalog_total": len(items) + sports_count, "static_svg": 1200 + sports_count,
+    return {"status": "PASS", "catalog_total": len(items) + sports_count, "static_svg": len(static_assets),
             "sports_count": sports_count, "sports_by_level": distribution,
             "catalog_active": len(items) + sports_count - len(aliases),
             "source_counts": {"original": len(original), "hunter2000": len(extra), "sports": sports_count},
@@ -123,6 +124,13 @@ def verify():
 
 def verify_apk(path):
     with ZipFile(path) as apk:
+        files = set(apk.namelist())
+        expected = {"assets/media2d/" + item.name for item in (ASSETS / "media2d").glob("*.svg")}
+        actual = {name for name in files if name.startswith("assets/media2d/") and name.endswith(".svg")}
+        alternatives = {name for name in files if name.startswith(("assets/sports2d/", "assets/demos30/"))
+                        and name.endswith(".svg")}
+        if actual != expected or alternatives:
+            raise ValueError("La APK debe contener solo los SVG originales para ilustrar ejercicios")
         for name in ("catalog.json", "catalog-hunter2000-extra.json",
                      "catalog-sports.json", "exercise-aliases.json"):
             if json.loads(apk.read(f"assets/{name}")) != read_json(name):

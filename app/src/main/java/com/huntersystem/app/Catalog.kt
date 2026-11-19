@@ -14,7 +14,7 @@ class Exercise(val raw:JSONObject){
  val gymRequirements=if(hunter2000)
   raw.a("materialRequirements").strings().filter{it in setOf("barbell","cable","machine","smith","cardio","bench")}
  else raw.a("gymRequirements23").strings()
- val demo=raw.s("illustration",if(hunter2000) "" else "media2d/$id.svg")
+ val demo=if(hunter2000||sport.isNotBlank()) "" else "media2d/$id.svg"
 }
 class Catalog(val context:Context?=null,val loader:((String)->String)?=null){
  fun text(path:String)=loader?.invoke(path)?:context!!.assets.open(path).bufferedReader().use{it.readText()}

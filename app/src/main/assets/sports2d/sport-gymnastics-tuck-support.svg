@@ -1,8 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240">
-  <rect width="320" height="240" rx="20" fill="#152238"/>
-  <path d="M28 210H292" stroke="#66819b" stroke-width="2"/>
-  <g fill="none" stroke="#eef5fa" stroke-linecap="round" stroke-linejoin="round" stroke-width="8">
-    <circle cx="159" cy="66" r="13"/><polyline points="159,85 160,132 198,115 200,154 218,154" /><polyline points="160,132 179,124 181,155" /><polyline points="147,89 130,126 114,169" /><polyline points="169,89 180,124 195,169" />
-  </g>
-  <path d="M84 173h57m-47 0v33m37-33v33M169 173h57m-47 0v33m37-33v33" fill="none" stroke="#fac76f" stroke-width="5"/>
-</svg>

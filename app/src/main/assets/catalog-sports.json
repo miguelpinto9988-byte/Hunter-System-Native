@@ -10,7 +10,6 @@
     "variant": "base",
     "equipment": "body",
     "equipmentLabel": "Balón de fútbol",
-    "illustration": "sports2d/sport-futbol-sole.svg",
     "materialRequirements": [
       "soccer_ball"
     ],
@@ -64,7 +63,6 @@
     "variant": "base",
     "equipment": "body",
     "equipmentLabel": "Barra fija",
-    "illustration": "sports2d/sport-calisthenics-scapula.svg",
     "materialRequirements": [
       "pullup_bar"
     ],
@@ -118,7 +116,6 @@
     "variant": "base",
     "equipment": "body",
     "equipmentLabel": "Superficie antideslizante",
-    "illustration": "sports2d/sport-yoga-warrior3.svg",
     "materialRequirements": [
       "wall"
     ],
@@ -174,7 +171,6 @@
     "variant": "base",
     "equipment": "body",
     "equipmentLabel": "Esterilla",
-    "illustration": "sports2d/sport-pilates-saw.svg",
     "materialRequirements": [
       "mat"
     ],
@@ -228,7 +224,6 @@
     "variant": "base",
     "equipment": "body",
     "equipmentLabel": "Balón de baloncesto",
-    "illustration": "sports2d/sport-basket-figure8.svg",
     "materialRequirements": [
       "basketball"
     ],
@@ -283,7 +278,6 @@
     "variant": "base",
     "equipment": "body",
     "equipmentLabel": "Balón de voleibol y pared despejada",
-    "illustration": "sports2d/sport-volley-wall-set.svg",
     "materialRequirements": [
       "volleyball"
     ],
@@ -339,7 +333,6 @@
     "variant": "base",
     "equipment": "body",
     "equipmentLabel": "Raqueta de tenis",
-    "illustration": "sports2d/sport-tennis-shadow-forehand.svg",
     "materialRequirements": [
       "tennis_racket"
     ],
@@ -396,7 +389,6 @@
     "variant": "base",
     "equipment": "body",
     "equipmentLabel": "Pared firme",
-    "illustration": "sports2d/sport-track-a-wall.svg",
     "materialRequirements": [
       "wall"
     ],
@@ -452,7 +444,6 @@
     "variant": "base",
     "equipment": "body",
     "equipmentLabel": "Cuerda ligera bien sujeta",
-    "illustration": "sports2d/sport-box-slip-rope.svg",
     "materialRequirements": [
       "light_rope"
     ],
@@ -507,7 +498,6 @@
     "variant": "base",
     "equipment": "body",
     "equipmentLabel": "Paralelas bajas estables",
-    "illustration": "sports2d/sport-gymnastics-tuck-support.svg",
     "materialRequirements": [
       "parallettes"
     ],
@@ -561,7 +551,6 @@
     "variant": "base",
     "equipment": "body",
     "equipmentLabel": "Barra técnica y plataforma",
-    "illustration": "sports2d/sport-weightlift-tall-clean.svg",
     "materialRequirements": [
       "barbell"
     ],
@@ -620,7 +609,6 @@
     "variant": "base",
     "equipment": "body",
     "equipmentLabel": "Bicicleta estática",
-    "illustration": "sports2d/sport-cycling-spinups.svg",
     "materialRequirements": [
       "cardio"
     ],
