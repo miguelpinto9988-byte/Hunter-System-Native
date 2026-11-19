@@ -24,12 +24,21 @@ object MonarchLegacyHistory {
     private fun interrupted(log: JSONObject): Boolean =
         log.b("interrupted") || log.b("pain") || log.b("fatigue")
 
-    fun interruptions(logs: JSONObject): List<SessionInterruption> = logs.entries().mapNotNull { (day, raw) ->
+    private fun interruptionCategory(log: JSONObject, catalog: Catalog?): Category? {
+        CategoryMapper.normalize(log.s("progressCategory"))
+            ?.let { return it }
+        CategoryMapper.normalize(log.s("categoryRpe"))
+            ?.let { return it }
+        if (catalog == null) return null
+        val categories = log.a("items").objects().map { categoryOf(it.s("id"), catalog) }
+        return categories.distinct().singleOrNull()
+    }
+
+    fun interruptions(logs: JSONObject, catalog: Catalog? = null): List<SessionInterruption> = logs.entries().mapNotNull { (day, raw) ->
         val date = validDate(day) ?: return@mapNotNull null
         val log = raw as? JSONObject ?: return@mapNotNull null
         if (!interrupted(log)) return@mapNotNull null
-        val category = CategoryMapper.normalize(log.s("progressCategory"))
-            ?: CategoryMapper.normalize(log.s("categoryRpe")) ?: return@mapNotNull null
+        val category = interruptionCategory(log, catalog) ?: return@mapNotNull null
         SessionInterruption(date, category)
     }
 
@@ -38,6 +47,7 @@ object MonarchLegacyHistory {
         for ((rawDate, rawValue) in logs.entries()) {
             val date = validDate(rawDate) ?: continue
             val log = rawValue as? JSONObject ?: continue
+            val sessionCategory = if (interrupted(log)) interruptionCategory(log, catalog) else null
             for (item in log.a("items").objects()) {
                 val id = item.s("id")
                 val category = categoryOf(id, catalog) ?: continue
@@ -46,10 +56,8 @@ object MonarchLegacyHistory {
                     completed(item) -> ParticipationStatus.COMPLETED
                     else -> ParticipationStatus.PENDING
                 }
-                val sessionCategory = CategoryMapper.normalize(log.s("progressCategory"))
-                    ?: CategoryMapper.normalize(log.s("categoryRpe"))
                 records += Participation(date, id, category, status, item.s("progressNote"),
-                    item.b("interrupted") || (category == sessionCategory && interrupted(log)))
+                    item.b("interrupted") || category == sessionCategory)
             }
         }
         return records

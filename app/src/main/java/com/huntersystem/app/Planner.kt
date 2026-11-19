@@ -52,7 +52,7 @@ class Planner(val catalog:Catalog,val rules:Rules){
             phases:Map<com.huntersystem.app.planning.Category,com.huntersystem.app.planning.TechnicalPhase> = emptyMap(),
             pinned:DailyMission?=null,
             participation:List<Participation> = emptyList(),
-            interruptions:List<SessionInterruption> = MonarchLegacyHistory.interruptions(logs)):JSONObject{
+            interruptions:List<SessionInterruption> = MonarchLegacyHistory.interruptions(logs,catalog)):JSONObject{
   val gate=rules.gate(p)
   if(!gate.ok)return obj("items" to JSONArray(),"blocked" to gate.reason,"requested" to kind)
   if(kind=="rest")return obj("items" to JSONArray(),"effective" to "rest","requested" to "rest",
@@ -222,7 +222,7 @@ class Planner(val catalog:Catalog,val rules:Rules){
   val validated=planningSource(adjusted)
   val category=CategoryMapper.normalize(type)?:return null
   val adaptation=CategoryEffortPolicy.decide(MonarchLegacyHistory.efforts(logs,catalog),
-   localDate,category,MonarchLegacyHistory.interruptions(logs))
+   localDate,category,MonarchLegacyHistory.interruptions(logs,catalog))
   val levelLimit=when(adaptation){
    Adaptation.RECOVER_ONE->1
    Adaptation.REDUCE_TWO->2
