@@ -459,6 +459,13 @@ const L3Sculpt=(()=>{
    g.appendChild(baseline);volumeGroups.appendChild(g);
    createdSurfaces.push({profile,path,baseline,shade,ridge,clipOutline});
  }
+ const C3_PAINTER_ORDER=["hombro_posterior","brazo_posterior","antebrazo_posterior","mano_posterior","gluteo_posterior","muslo_posterior","pantorrilla_posterior","tobillo_posterior","pie_posterior","trapecio_base_cuello","torso","cuello_exterior","pectoral_superficial","cadera_frontal","muslo_frontal","rotula_frontal","pantorrilla_frontal","tobillo_frontal","pie_frontal","deltoides_frontal","brazo_frontal","antebrazo_frontal","mano_frontal","cabeza_exterior"];
+ // Rear exterior silhouettes, then torso, then front silhouettes and head.
+ const C3_groups=new Map([...volumeGroups.children].map(node=>[node.dataset.surface,node]));
+ if(C3_groups.size!==C3_PAINTER_ORDER.length||C3_PAINTER_ORDER.some(id=>!C3_groups.has(id))){
+   throw Error('C3 painter order does not match exterior profile inventory');
+ }
+ for(const id of C3_PAINTER_ORDER)volumeGroups.appendChild(C3_groups.get(id));
  // Keep technical rig and aesthetic art untouched: only new layer receives these fresh geometry writes.
  // Cache geometry that cannot change with the historical calf phase.
  // Only the two calf profiles need path updates during playback.
