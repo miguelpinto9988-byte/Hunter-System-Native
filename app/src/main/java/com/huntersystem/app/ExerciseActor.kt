@@ -174,6 +174,11 @@ private fun DrawScope.drawActor(
     val down=direction(shoulder,hip)
     val side=normal(down)
     val overhead = motion.view == ExerciseView.OVERHEAD
+    val front = motion.view == ExerciseView.FRONT
+    val neckSpan = (shoulder.x - head.x) * down.x + (shoulder.y - head.y) * down.y
+    // The head art extends 33 units toward the collar, which starts 8 units before the shoulders.
+    val visibleNeck = (neckSpan - 41f * u).coerceAtLeast(0f)
+    val headPosition = if (overhead) head + down * (visibleNeck * .25f) else head
     val broad = motion.view != ExerciseView.SIDE
     val armsBehindShirt = overhead || motion.view == ExerciseView.REAR
     val left = if (motion.prone && !broad) down.x > 0f else motion.facing == "left"
@@ -194,8 +199,11 @@ private fun DrawScope.drawActor(
         val tip = end - direction(joint, end) * (if (leg) 5f * u else 0f)
         val points=listOf(start,mix(start,joint,.33f),mix(start,joint,.71f),joint,
             mix(joint,end,.26f),mix(joint,end,.65f),tip)
-        val halfWidths=if(leg) listOf(15f,26f,20f,12.5f,14f,10.7f,7.5f)
-            else listOf(13f,16f,12f,9.5f,9f,7.1f,5.8f)
+        val halfWidths = when {
+            front && leg -> listOf(15f, 20f, 17f, 12.5f, 13f, 9.5f, 7.5f)
+            leg -> listOf(15f, 26f, 20f, 12.5f, 14f, 10.7f, 7.5f)
+            else -> listOf(13f, 16f, 12f, 9.5f, 9f, 7.1f, 5.8f)
+        }
         val hem=mix(start,joint,if(leg) .66f else .58f)
         val fabric=if(leg) { if(near) navy else navyDark }
             else if(near) Color(0xFF57999D) else Color(0xFF3D747F)
@@ -217,7 +225,7 @@ private fun DrawScope.drawActor(
             lineTo(d.x, d.y)
             close()
         }
-        clipPath(contour) {
+        if (!front || !leg) clipPath(contour) {
             val shading = if (broad && !leg) shirt
                 else Brush.linearGradient(listOf(fabricDark, fabric), start, hem)
             drawPath(cuff, shading)
@@ -266,15 +274,37 @@ private fun DrawScope.drawActor(
         limb(false, false)
         limb(true, false)
     }
-    val neckTop=mix(head,shoulder,.46f)
+    val waist = hip - down * (13f * u)
+    if (front) drawFrontShorts(waist, hip, down, side, p[7], p[9], u)
+    val neckTop = mix(headPosition, shoulder, .46f)
     drawLine(skin,neckTop,shoulder+down*(10*u),18*u,StrokeCap.Round)
     val torso=listOf(shoulder-down*(8*u),mix(shoulder,hip,.19f),
-        mix(shoulder,hip,.40f),mix(shoulder,hip,.74f),hip+down*(14*u))
-    val torsoWidths = if (broad) listOf(33f, 47f, 40f, 32f, 29f)
-        else listOf(14f, 36f, 35f, 26f, 24f)
-    drawPath(smoothBody(torso, torsoWidths.map { it * u }, symmetric = broad), shirt)
-    val waist=hip-down*(7*u)
-    drawLine(Color(0xFF83ACAE),waist-side*(20*u),waist+side*(20*u),1.2f*u,StrokeCap.Round)
+        mix(shoulder,hip,.40f), mix(shoulder,hip,.74f),
+        if (front) waist else hip + down * (14f * u))
+    val torsoWidths = when {
+        front -> listOf(33f, 47f, 39f, 31f, 33f)
+        broad -> listOf(33f, 47f, 40f, 32f, 29f)
+        else -> listOf(14f, 36f, 35f, 26f, 24f)
+    }
+    val shirtShape = smoothBody(torso, torsoWidths.map { it * u }, symmetric = broad)
+    if (front) {
+        val halfClip = side * (170f * u)
+        val top = shoulder - down * (80f * u)
+        val hem = Path().apply {
+            moveTo((top - halfClip).x, (top - halfClip).y)
+            lineTo((top + halfClip).x, (top + halfClip).y)
+            lineTo((waist + halfClip).x, (waist + halfClip).y)
+            lineTo((waist - halfClip).x, (waist - halfClip).y)
+            close()
+        }
+        clipPath(hem) { drawPath(shirtShape, shirt) }
+    } else {
+        drawPath(shirtShape, shirt)
+    }
+    val seam = if (front) waist else hip - down * (7f * u)
+    val seamWidth = if (front) 31f else 20f
+    drawLine(Color(0xFF83ACAE), seam - side * (seamWidth * u),
+        seam + side * (seamWidth * u), 1.2f * u, StrokeCap.Round)
     if (!armsBehindShirt) {
         if (broad) limb(false, false)
         limb(true, false)
@@ -290,7 +320,7 @@ private fun DrawScope.drawActor(
         drawIntoCanvas { compose ->
             val c=compose.nativeCanvas
             c.save()
-            c.translate(head.x,head.y)
+            c.translate(headPosition.x, headPosition.y)
             c.rotate(tilt)
             c.scale(if (left && !broad) -headScale else headScale,headScale)
             c.translate(-35f,-45f)
@@ -298,6 +328,42 @@ private fun DrawScope.drawActor(
             c.restore()
         }
     }
+}
+
+private fun DrawScope.drawFrontShorts(
+    waist: Offset, hip: Offset, down: Offset, side: Offset,
+    firstKnee: Offset, secondKnee: Offset, unit: Float
+) {
+    val firstProjection = (firstKnee.x - secondKnee.x) * side.x +
+        (firstKnee.y - secondKnee.y) * side.y
+    val (leftKnee, rightKnee) = if (firstProjection < 0f) firstKnee to secondKnee
+        else secondKnee to firstKnee
+    val leftHip = hip - side * (20f * unit)
+    val rightHip = hip + side * (20f * unit)
+    val leftHem = mix(leftHip, leftKnee, .43f)
+    val rightHem = mix(rightHip, rightKnee, .43f)
+    val leftAcross = normal(direction(leftHip, leftKnee)) * (20f * unit)
+    val rightAcross = normal(direction(rightHip, rightKnee)) * (20f * unit)
+    val leftOuter = leftHem - leftAcross
+    val leftInner = leftHem + leftAcross
+    val rightInner = rightHem - rightAcross
+    val rightOuter = rightHem + rightAcross
+    val leftWaist = waist - side * (33f * unit)
+    val rightWaist = waist + side * (33f * unit)
+    val crotch = hip + down * (25f * unit)
+    val shape = Path().apply {
+        moveTo(leftWaist.x, leftWaist.y)
+        lineTo(rightWaist.x, rightWaist.y)
+        val outerHip = rightHip + side * (19f * unit)
+        quadraticTo(outerHip.x, outerHip.y, rightOuter.x, rightOuter.y)
+        lineTo(rightInner.x, rightInner.y)
+        quadraticTo(crotch.x, crotch.y, leftInner.x, leftInner.y)
+        lineTo(leftOuter.x, leftOuter.y)
+        val innerHip = leftHip - side * (19f * unit)
+        quadraticTo(innerHip.x, innerHip.y, leftWaist.x, leftWaist.y)
+        close()
+    }
+    drawPath(shape, Brush.linearGradient(listOf(navy, navyDark), waist, crotch + down * (25f * unit)))
 }
 
 private fun DrawScope.drawFrontShoe(ankle: Offset, unit: Float, left: Boolean) {
