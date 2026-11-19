@@ -42,26 +42,38 @@ function evaluateSeams(profiles,motion,smoothStations,computeSurface){
        const g=computeSurface(p,stations,frame/48,1);
        return {A:g.A.map(q=>trackPoint(p,q,body,heel)),B:g.B.map(q=>trackPoint(p,q,body,heel))};
      });
+     // Scan the exact common vertical AABB instead of a coarse global grid.
+     // The old 0.5-unit scan could count just one rear-knee row even when
+     // a continuous 5+ unit overlap existed: sampling aliasing, not a gap.
+     const bounds=g=>[Math.min(...g.A.map(p=>p[1]),...g.B.map(p=>p[1])),
+                     Math.max(...g.A.map(p=>p[1]),...g.B.map(p=>p[1]))];
+     const aBounds=bounds(geometries[0]),bBounds=bounds(geometries[1]);
+     const low=Math.max(aBounds[0],bBounds[0]),high=Math.min(aBounds[1],bBounds[1]);
+     const verticalOverlap=Math.max(0,high-low);
      let maxOverlap=0,sharedRows=0;
-     // Half-unit scan through the complete lower-body region; no guessed pose.
-     for(let y=535+body;y<=700+body;y+=.5){
+     // A fixed step from the overlap's own lower boundary is phase-stable.
+     for(let y=low+.025;y<high;y+=.05){
        const a=span(geometries[0],y),b=span(geometries[1],y);
        if(!a||!b)continue;
+       const width=Math.min(a[1],b[1])-Math.max(a[0],b[0]);
+       if(width<=0)continue;
        sharedRows++;
-       maxOverlap=Math.max(maxOverlap,Math.min(a[1],b[1])-Math.max(a[0],b[0]));
+       maxOverlap=Math.max(maxOverlap,width);
      }
-     frames.push({frame,sharedRows,maxOverlap:+maxOverlap.toFixed(4)});
+     frames.push({frame,sharedRows,maxOverlap:+maxOverlap.toFixed(4),verticalOverlap:+verticalOverlap.toFixed(5)});
    }
    results[name]={
      profiles:ids,framesChecked:48,
      minOverlap:+Math.min(...frames.map(f=>f.maxOverlap)).toFixed(4),
      maxOverlap:+Math.max(...frames.map(f=>f.maxOverlap)).toFixed(4),
+     minVerticalOverlap:+Math.min(...frames.map(f=>f.verticalOverlap)).toFixed(5),
+     maxVerticalOverlap:+Math.max(...frames.map(f=>f.verticalOverlap)).toFixed(5),
      minSharedRows:Math.min(...frames.map(f=>f.sharedRows)),
      maxSharedRows:Math.max(...frames.map(f=>f.sharedRows)),
      maxTemporalDelta:+Math.max(...frames.slice(1).map((f,i)=>Math.abs(f.maxOverlap-frames[i].maxOverlap)),Math.abs(frames[0].maxOverlap-frames[47].maxOverlap)).toFixed(4),
-     failingFrames:frames.filter(f=>f.sharedRows===0||f.maxOverlap<=0).map(f=>f.frame)
+     failingFrames:frames.filter(f=>f.sharedRows===0||f.maxOverlap<=0||f.verticalOverlap<1).map(f=>f.frame)
    };
  }
- return {format:'MonarcaC3SeamQA',version:1,exercise:'calf',motionFrames:48,scanStep:0.5,seams:results,limitations:['This detects positive cross-sectional overlap, not full 2D polygon collision or visual occlusion','No browser screenshot or inter-patch clipping proof']};
+ return {format:'MonarcaC3SeamQA',version:2,exercise:'calf',motionFrames:48,scanStep:0.05,seams:results,limitations:['This detects positive cross-sectional overlap, not full 2D polygon collision or visual occlusion','No browser screenshot or inter-patch clipping proof']};
 }
 if(typeof module!=='undefined')module.exports={SEAMS,atY,span,trackPoint,evaluateSeams};
