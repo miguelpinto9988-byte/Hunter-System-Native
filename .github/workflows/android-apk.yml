@@ -118,8 +118,8 @@ jobs:
       - name: Comprobar ausencia de SVG animados y 1000 ilustraciones estáticas
         run: python3 tools/check_hunter2000_complete.py
 
-      - name: Crear matriz de inspección de ilustraciones (800 pendientes)
-        run: python3 tools/generate_svg_qa_queue.py --output "$RUNNER_TEMP/hunter-svg-2000-qa-pendiente.csv"
+      - name: Crear matriz de revisión de demostraciones
+        run: python3 tools/generate_svg_qa_queue.py --output "$RUNNER_TEMP/hunter-demostraciones-qa-pendiente.csv"
 
       - name: Validar motor de alarmas V43.12
         run: python3 tools/check_hunter_alarms.py
@@ -179,11 +179,14 @@ jobs:
             print('APK verificada: 0 SVG animados, 1000 ilustraciones estáticas, 800 fichas Hunter 2000')
           PY
 
+      - name: Verificar catálogo y demostraciones en la APK firmada
+        run: python3 tools/check_hunter2000_complete.py --apk "$(find app/build/outputs/apk/release -name '*.apk' -print -quit)"
+
       - name: Publicar matriz de QA pendiente (no es certificacion)
         uses: actions/upload-artifact@v4
         with:
-          name: Hunter-System-V43-Ilustraciones-Estaticas-QA-Pendiente
-          path: ${{ runner.temp }}/hunter-svg-2000-qa-pendiente.csv
+          name: Hunter-System-V43-Demostraciones-QA-Pendiente
+          path: ${{ runner.temp }}/hunter-demostraciones-qa-pendiente.csv
           if-no-files-found: error
           retention-days: 14
 

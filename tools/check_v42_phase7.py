@@ -19,17 +19,16 @@ def verify(ok,msg):
 verify(len(catalog)==1200,"Catálogo no contiene 1200 ejercicios")
 verify(len(list((R/"app/src/main/assets").rglob("*.mp4")))==342,"Se modificó el conjunto de 342 MP4")
 verify("fun MonarchExerciseStage(" in stage,"Falta escenario nuevo")
-verify("IMAGEN FIJA" in stage,"La ficha debe identificar la imagen estática")
-verify("OriginalSvg(demo" in stage and "play=false" in stage,"La ficha debe usar el SVG estático")
+verify('Eyebrow("DEMOSTRACIÓN")' in stage,"La ficha debe identificar la demostración")
+verify("ExerciseActor(" in stage and "OriginalSvg(exercise.demo" in stage,"Falta el personaje animado o el respaldo estático")
 verify("HunterRiveExercise" not in stage and "app.rive:rive-android" not in build,"El motor Rive debe estar retirado")
-verify("MonarchExerciseStage(e.name,e.demo,playing" in overlays,"Ficha no usa reproductor")
+verify("MonarchExerciseStage(e,mirror,height=360,play=play)" in overlays,"Ficha no usa reproductor")
 # V43.12 puede encapsular la misma demostración en un componente de sesión adaptable.
 guided_layout=(K/"GuidedSessionLayoutV43.kt")
 guided_code=guided_layout.read_text() if guided_layout.exists() else ""
 session_uses_demo=(
-    "MonarchExerciseStage(e.name,e.demo,running" in overlays
-    or ("GuidedSessionDemo(e.name,e.demo,running" in overlays
-        and "MonarchExerciseStage(name,demo,running" in guided_code)
+    "GuidedSessionDemo(e,mirror,running,restartDemo)" in overlays
+    and "MonarchExerciseStage(exercise,mirror,height=demoHeight,play=running,reset=reset)" in guided_code
 )
 verify(session_uses_demo,"Sesión guiada no usa reproductor")
 # La ficha usa los controles originales; la sesión V43 usa los mismos callbacks
@@ -40,7 +39,7 @@ guided_controls=(
     or ("GuidedSessionPlaybackControls(running" in overlays
         and all(x in guided_code for x in
             ("fun GuidedSessionPlaybackControls(", "onToggle", "onRestart",
-             "onSpeed", "onMirror")))
+             "onMirror")))
 )
 verify(exercise_controls and guided_controls,"La ficha debe permitir espejo y la sesión controlar su temporizador")
 verify('ui.open("video",obj("path" to "offline2d/"' in overlays,"No hay acceso a vídeos locales")

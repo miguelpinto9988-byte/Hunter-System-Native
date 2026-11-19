@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Cola de revisión de ilustraciones estáticas (1200 disponibles; 800 pendientes)."""
-import argparse, csv, json
+"""Exporta las fichas activas para la revisión visual y de reproducción."""
+import argparse, csv, hashlib, json
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 ASSETS=ROOT/'app/src/main/assets'
@@ -10,20 +10,28 @@ def read(path): return json.loads((ASSETS/path).read_text(encoding='utf8'))
 def build_queue():
     original=read('catalog.json')
     extra=read('catalog-hunter2000-extra.json')
+    sports=read('catalog-sports.json')
+    aliases=read('exercise-aliases.json')
     if len(original)!=1200 or len(extra)!=800: raise ValueError('Catálogo incompleto')
+    sources = {item['id']: source for source, items in (
+        ('original', original), ('hunter2000', extra), ('deportivo', sports)
+    ) for item in items}
     rows=[]
-    for item in sorted(original+extra,key=lambda x:x['id']):
-        new=item.get('sourceExpansion2k',False)
-        path=ASSETS/'media2d'/(item['id']+'.svg') if not new else None
-        if path is not None and not path.is_file(): raise ValueError('Falta SVG estático: '+item['id'])
-        rows.append(dict(exercise_id=item['id'],source='expansion_800' if new else 'original_1200',
-            svg_asset=('media2d/'+item['id']+'.svg') if path is not None else '',
-            sha256='',bytes=path.stat().st_size if path is not None else 0,
-            visual_review='PENDIENTE',motion_review='NO_APLICA',
-            android_playback_review='NO_APLICA',biomechanics_review='PENDIENTE',
-            autoplan='BLOQUEADO_SIN_QA' if new else 'REGLAS_ORIGINALES',
+    for item in sorted(original+extra+sports,key=lambda x:x['id']):
+        identity = item['id']
+        if identity in aliases:
+            continue
+        source = sources[identity]
+        path = ASSETS / 'media2d' / f'{identity}.svg'
+        static = path.read_bytes() if path.is_file() else b''
+        rows.append(dict(exercise_id=identity,source=source,
+            svg_asset=f'media2d/{identity}.svg' if static else '',
+            sha256=hashlib.sha256(static).hexdigest() if static else '',bytes=len(static),
+            visual_review='PENDIENTE',motion_review='PENDIENTE',
+            android_playback_review='PENDIENTE',biomechanics_review='PENDIENTE',
+            autoplan='REGLAS_DEL_PERFIL',
             device='',android_version='',reviewer='',review_date='',
-            notes='Ilustración estática' if not new else 'Sin demostración SVG'))
+            notes='Demostración de dos gestos' if item.get('sequenceParts') else 'Demostración individual'))
     return rows
 def main():
     parser=argparse.ArgumentParser()
@@ -35,5 +43,5 @@ def main():
         writer=csv.DictWriter(stream,fieldnames=FIELDS)
         writer.writeheader()
         writer.writerows(rows)
-    print(json.dumps({'result':'QA_QUEUE_GENERATED_NOT_VALIDATED','rows':len(rows),'pending_expansion':800}))
+    print(json.dumps({'result':'QA_QUEUE_GENERATED_NOT_VALIDATED','rows':len(rows),'pending_visual_review':len(rows)}))
 if __name__=='__main__': main()

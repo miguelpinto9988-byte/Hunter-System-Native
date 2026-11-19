@@ -5,6 +5,7 @@ No elimina demostraciones SVG/MP4 de detalle ni imágenes de personajes.
 Se puede ejecutar como verificación independiente en CI.
 """
 from pathlib import Path
+import re
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -21,12 +22,15 @@ forbidden = [
 ]
 errors = [f"Recurso de miniaturas presente: {p.relative_to(ROOT)}" for p in forbidden if p.exists()]
 screens = (SRC / "Screens.kt").read_text(encoding="utf-8")
-start = screens.find("@Composable fun ExercisesScreen(")
-end = screens.find("@Composable fun ProgressScreen(", start)
-if start < 0 or end < 0:
+catalog = re.search(
+    r"@Composable\s+fun\s+ExercisesScreen\(.*?(?=@Composable\s+fun\s+ProgressScreen\()",
+    screens,
+    re.DOTALL,
+)
+if not catalog:
     errors.append("No se pudo localizar el catálogo visual de ejercicios.")
 else:
-    section = screens[start:end]
+    section = catalog.group()
     for token in ("V39Artwork(", "OriginalSvg(", "AssetImage(", "Image(", "miniatura", "thumbnail"):
         if token in section:
             errors.append(f"Se encontró representación de miniatura en catálogo: {token}")
