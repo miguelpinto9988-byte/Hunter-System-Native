@@ -451,37 +451,60 @@ const L3Sculpt=(()=>{
    createdSurfaces.push({profile,path,baseline,shade,ridge});
  }
  // Keep technical rig and aesthetic art untouched: only new layer receives these fresh geometry writes.
+ // Cache geometry that cannot change with the historical calf phase.
+ // Only the two calf profiles need path updates during playback.
+ let exteriorGeometryRevision=0,notesRevision=-1;
+ const cachedExterior=new Map();
+ const noteNodes=[];
+ function setPathIfChanged(node,d){
+   if(node.getAttribute('d')!==d)node.setAttribute('d',d);
+ }
  function refreshExterior(phase){
    const k=(1-Math.cos(2*Math.PI*phase))/2;
    for(const {profile,path,baseline,shade,ridge} of createdSurfaces){
      const smoothed=smoothedProfiles.get(profile.id);
-     const base=profilePath(smoothed,relief,profile.type==='calf'?.12*k:0,true);
-     baseline.setAttribute('d',base);
+     const isDynamic=profile.type==='calf';
+     const cached=cachedExterior.get(profile.id);
+     const staticKey=exteriorGeometryRevision;
+     // Cache all static profiles and rebuild only on relief/compare changes.
+     if(!isDynamic&&cached&&cached.revision===staticKey)continue;
+     const base=profilePath(smoothed,relief,isDynamic?.12*k:0,true);
+     setPathIfChanged(baseline,base);
      baseline.style.display=compareImproved?'':'none';
      if(compareImproved){
-       const g=L3Sculpt.computeSurface(profile,smoothed,phase,relief);
-       path.setAttribute('d',sculptOutline(smoothed,g));
+       const g=L3Sculpt.computeSurface(profile,smoothed,isDynamic?phase:0,relief);
+       setPathIfChanged(path,sculptOutline(smoothed,g));
        if(L3Sculpt.presets[profile.id]){
-         ridge.setAttribute('d',makeSmoothSide(g.ridge.slice(2,-2)));
-         shade.setAttribute('d',makeSmoothSide(g.shadow.slice(2,-2)));
+         setPathIfChanged(ridge,makeSmoothSide(g.ridge.slice(2,-2)));
+         setPathIfChanged(shade,makeSmoothSide(g.shadow.slice(2,-2)));
          ridge.style.display='';shade.style.display='';
        }else{ridge.style.display='none';shade.style.display='none';}
-     }else{path.setAttribute('d',base);ridge.style.display='none';shade.style.display='none';}
+     }else{setPathIfChanged(path,base);ridge.style.display='none';shade.style.display='none';}
+     if(!isDynamic)cachedExterior.set(profile.id,{revision:staticKey});
    }
-   volumeNotes.replaceChildren();
    if(showControlPoints){
-     for(const prof of exteriorProfiles){
-       const g=mk('g',{'data-motion':prof.track});
-       const sp=prof.stations;
-       g.appendChild(mk('path',{'d':makeSmoothSide(sp.map(p=>[p[0],p[1]])),'class':'volume-guide'}));
-       for(const p of sp)g.appendChild(mk('circle',{'cx':p[0],cy:p[1],r:3.6,'class':'volume-point'}));
-       volumeNotes.appendChild(g);
+     if(notesRevision!==exteriorGeometryRevision||noteNodes.length!==exteriorProfiles.length){
+       volumeNotes.replaceChildren();
+       noteNodes.length=0;
+       for(const prof of exteriorProfiles){
+         const g=mk('g',{'data-motion':prof.track});
+         const sp=prof.stations;
+         g.appendChild(mk('path',{'d':makeSmoothSide(sp.map(p=>[p[0],p[1]])),'class':'volume-guide'}));
+         for(const p of sp)g.appendChild(mk('circle',{'cx':p[0],cy:p[1],r:3.6,'class':'volume-point'}));
+         volumeNotes.appendChild(g);
+         noteNodes.push(g);
+       }
+       notesRevision=exteriorGeometryRevision;
      }
-     for(const node of volumeNotes.querySelectorAll('[data-motion]'))node.setAttribute('transform',transformPart(node.dataset.motion,sample(M.body,phase),sample(M.heel,phase)));
+     const body=sample(M.body,phase),heel=sample(M.heel,phase);
+     for(const node of noteNodes)node.setAttribute('transform',transformPart(node.dataset.motion,body,heel));
+   }else if(noteNodes.length){
+     volumeNotes.replaceChildren();
+     noteNodes.length=0;
    }
    document.getElementById('girth-status').textContent='C3 '+(compareImproved?'ESCULPIDA V2':'ORIGINAL')+' · fase '+Math.round(k*100)+' %';
  }
- document.getElementById('relief').addEventListener('input',e=>{relief=Number(e.target.value)/100;document.getElementById('relief-value').textContent=e.target.value+' %';update()});
+ document.getElementById('relief').addEventListener('input',e=>{relief=Number(e.target.value)/100;document.getElementById('relief-value').textContent=e.target.value+' %';exteriorGeometryRevision++;update()});
  document.getElementById('control-points').addEventListener('change',e=>{showControlPoints=e.target.checked;update()});
  document.getElementById('surface-lines').addEventListener('change',e=>{surfaceLines=e.target.checked;stage.dataset.showSurfaceLines=String(surfaceLines)});
 
@@ -491,7 +514,7 @@ const L3Sculpt=(()=>{
  compareButton.textContent='C3 ESCULPIDA V2 · alternar antes/después';
  compareButton.style.cssText='position:fixed;bottom:18px;right:18px;z-index:9999;background:#126c76;color:white;border:2px solid #a5f5ff;border-radius:12px;padding:13px 18px;font-weight:800;box-shadow:0 4px 22px #0009';
  document.body.appendChild(compareButton);
- compareButton.addEventListener('click',()=>{compareImproved=!compareImproved;compareButton.textContent=compareImproved?'C3 ESCULPIDA V2 · alternar antes/después':'C3 ORIGINAL · alternar antes/después';update()});
+ compareButton.addEventListener('click',()=>{compareImproved=!compareImproved;compareButton.textContent=compareImproved?'C3 ESCULPIDA V2 · alternar antes/después':'C3 ORIGINAL · alternar antes/después';exteriorGeometryRevision++;update()});
  const partSets=[...document.querySelectorAll('[data-motion]')];
  const sample=(values,f)=>{const p=(f*48)%48,a=Math.floor(p),b=(a+1)%48,k=p-a;return values[a]+(values[b]-values[a])*k};
  const fmt=x=>Math.abs(x)<.05?'0,0':x.toFixed(1).replace('.',',');
