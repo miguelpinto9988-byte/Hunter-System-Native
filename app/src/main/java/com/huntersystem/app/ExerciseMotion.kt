@@ -2,9 +2,11 @@ package com.huntersystem.app
 
 import android.content.Context
 import androidx.compose.ui.geometry.Offset
-import org.json.JSONArray
+import androidx.compose.ui.geometry.Rect
 import org.json.JSONObject
 import kotlin.math.floor
+
+internal data class ExerciseProp(val kind: String, val bounds: Rect)
 
 internal data class ExerciseMotion(
     val frames: List<List<Offset>>,
@@ -13,7 +15,8 @@ internal data class ExerciseMotion(
     val source: String,
     val facing: String,
     val staticHold: Boolean = false,
-    val equipment: String = ""
+    val equipment: String = "",
+    val props: List<ExerciseProp> = emptyList()
 ) {
     fun at(phase: Float): List<Offset> {
         if (staticHold) return frames.first()
@@ -71,10 +74,19 @@ internal object ExerciseMotions {
         else List(keyTimes.length()) { keyTimes.getDouble(it).toFloat() }
         require(times.size == frames.size && times.first() == 0f &&
             times.last() <= 1f && times.zipWithNext().all { (a,b) -> a < b })
-        val duration = json.optDouble("duration",4.8).toFloat()
+        val duration = json.optDouble("duration", json.optDouble("duration46", 4.8)).toFloat()
+        val equipment = if (native) data.getJSONObject(0).optJSONArray("equipment") else null
+        val props = (0 until (equipment?.length() ?: 0)).mapNotNull { index ->
+            val entry = equipment!!.getJSONArray(index)
+            val kind = entry.getString(0)
+            if (kind == "bounds23") return@mapNotNull null
+            val bounds = entry.getJSONArray(1)
+            ExerciseProp(kind, Rect(bounds.getDouble(0).toFloat(), bounds.getDouble(1).toFloat(),
+                bounds.getDouble(2).toFloat(), bounds.getDouble(3).toFloat()))
+        }
         require(duration in .5f..30f)
         return ExerciseMotion(frames,duration,times,source,json.optString("facing23",
             json.optJSONObject("view21")?.optString("primary","right") ?: "right"),
-            json.optBoolean("hold"),json.optString("equipment"))
+            json.optBoolean("hold"),json.optString("equipment"),props)
     }
 }

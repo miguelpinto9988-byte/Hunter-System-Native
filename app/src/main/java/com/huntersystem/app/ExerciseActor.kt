@@ -61,10 +61,14 @@ internal fun ExerciseActor(motion: ExerciseMotion, modifier: Modifier, play: Boo
             previous = next
         }
     }
-    val minX = remember(motion) { motion.frames.minOf { p -> p.minOf(Offset::x) } }
-    val maxX = remember(motion) { motion.frames.maxOf { p -> p.maxOf(Offset::x) } }
-    val minY = remember(motion) { motion.frames.minOf { p -> p.minOf(Offset::y) } }
-    val maxY = remember(motion) { motion.frames.maxOf { p -> p.maxOf(Offset::y) } }
+    val minX = remember(motion) { min(motion.frames.minOf { p -> p.minOf(Offset::x) },
+        motion.props.minOfOrNull { it.bounds.left } ?: Float.POSITIVE_INFINITY) }
+    val maxX = remember(motion) { max(motion.frames.maxOf { p -> p.maxOf(Offset::x) },
+        motion.props.maxOfOrNull { it.bounds.right } ?: Float.NEGATIVE_INFINITY) }
+    val minY = remember(motion) { min(motion.frames.minOf { p -> p.minOf(Offset::y) },
+        motion.props.minOfOrNull { it.bounds.top } ?: Float.POSITIVE_INFINITY) }
+    val maxY = remember(motion) { max(motion.frames.maxOf { p -> p.maxOf(Offset::y) },
+        motion.props.maxOfOrNull { it.bounds.bottom } ?: Float.NEGATIVE_INFINITY) }
     val scaleUnit = remember(motion) {
         motion.frames.map { (it[2] - it[1]).getDistance() }.sorted().let { it[it.size / 2] }
             .coerceAtLeast(35f) / 165f
@@ -86,6 +90,7 @@ internal fun ExerciseActor(motion: ExerciseMotion, modifier: Modifier, play: Boo
         }) {
             drawLine(Color(0xFF47606E),Offset(origin.x-width*.43f,maxY+16*scaleUnit),
                 Offset(origin.x+width*.43f,maxY+16*scaleUnit),strokeWidth=1.6f*scaleUnit)
+            motion.props.forEach { drawProp(it, scaleUnit) }
             drawEquipment(motion.equipment,p,scaleUnit,maxY)
             drawActor(p,scaleUnit,motion.facing,face)
         }
@@ -190,6 +195,25 @@ private fun DrawScope.drawActor(p:List<Offset>,u:Float,facing:String,face:Pictur
             c.drawPicture(face)
             c.restore()
         }
+    }
+}
+
+private fun DrawScope.drawProp(prop: ExerciseProp, unit: Float) {
+    val bounds = prop.bounds
+    val color = Color(0xFF607E8B)
+    val left = Offset(bounds.left, bounds.top)
+    val right = Offset(bounds.right, bounds.top)
+    if (prop.kind == "wall" || prop.kind == "step") {
+        drawRoundRect(color.copy(alpha = .65f), left, bounds.size, CornerRadius(4f * unit))
+        return
+    }
+    val seat = if (prop.kind == "incline") right.copy(y = bounds.center.y) else right
+    drawLine(color, left, seat, 8f * unit, StrokeCap.Round)
+    for (point in listOf(left, seat)) {
+        drawLine(color, point, point.copy(y = bounds.bottom), 4f * unit, StrokeCap.Round)
+    }
+    if (prop.kind == "chair") {
+        drawLine(color, left.copy(y = left.y - bounds.height * .45f), left, 5f * unit, StrokeCap.Round)
     }
 }
 

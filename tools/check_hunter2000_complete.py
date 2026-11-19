@@ -101,7 +101,7 @@ def verify_motion(original, extra, sports):
             if times is not None and (len(times) != len(frames) or times[0] != 0
                                       or times[-1] > 1 or any(a >= b for a, b in zip(times, times[1:]))):
                 raise ValueError(f"Tiempos inválidos: {exercise_id}")
-            if not 0.5 <= data.get("duration", 4.8) <= 30:
+            if not 0.5 <= data.get("duration", data.get("duration46", 4.8)) <= 30:
                 raise ValueError(f"Duración inválida: {exercise_id}")
     return sum(map(len, (original, extra, sports)))
 
