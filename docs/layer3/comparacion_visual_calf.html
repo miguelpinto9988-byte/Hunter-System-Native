@@ -435,7 +435,7 @@ const L3Sculpt=(()=>{
    const ex=q[0]+tx/tn*5,ey=q[1]+ty/tn*5;
    const ux=sx[0]-sp[0],uy=sx[1]-sp[1],un=Math.hypot(ux,uy)||1;
    return makeSmoothSide(A)+` Q ${ex.toFixed(2)} ${ey.toFixed(2)} ${B[B.length-1][0].toFixed(2)} ${B[B.length-1][1].toFixed(2)}`+
-          makeSmoothSide(B.slice().reverse()).replace(/^M\\s+[\\d.-]+\\s+[\\d.-]+/,'')+
+          makeSmoothSide(B.slice().reverse()).replace(/^M\s+[\d.-]+\s+[\d.-]+/,'')+
           ` Q ${(sx[0]+ux/un*5).toFixed(2)} ${(sx[1]+uy/un*5).toFixed(2)} ${A[0][0].toFixed(2)} ${A[0][1].toFixed(2)} Z`;
  }
  for(const profile of exteriorProfiles){
