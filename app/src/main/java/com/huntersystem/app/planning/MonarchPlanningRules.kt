@@ -50,7 +50,7 @@ data class ActivityMetadata(
     val technicalLevel: Int, val intensity: Intensity, val equipment: Set<String>,
     val modality: String, val requiresSupervision: Boolean, val automaticEligible: Boolean,
     val tags: Set<String> = emptySet(), val restrictionTags: Set<String> = emptySet(),
-    val sport: String = "", val displayName: String = ""
+    val sport: String = "", val displayName: String = "", val workUnit: VolumeUnit? = null
 ) {
     init {
         require(id.isNotBlank() && familyId.isNotBlank() && typeId.isNotBlank())
@@ -129,7 +129,8 @@ object EligibilityPolicy {
     fun reason(item: ActivityMetadata, profile: TrainingProfile, maxLevel: Int = 3): String? = when {
         !item.automaticEligible -> "No elegible automáticamente"
         item.requiresSupervision -> "Requiere supervisión"
-        item.technicalLevel == 0 || item.technicalLevel > min(3, maxLevel) ->
+        item.technicalLevel == 0 || item.technicalLevel >
+            min(if (profile.experience == Experience.BEGINNER) 2 else 3, maxLevel) ->
             "Complejidad técnica no permitida"
         item.intensity == Intensity.HIGH || item.intensity == Intensity.UNKNOWN ->
             "Intensidad fuera del filtro conservador"
@@ -191,7 +192,7 @@ object ProfileSignature {
     fun source(rows: List<ActivityMetadata>): String = hash(rows.sortedBy { it.id }.joinToString("\u001f") {
         listOf(it.id, it.category.code, it.familyId, it.typeId, it.technicalLevel,
             it.intensity, it.equipment.sorted(), it.modality, it.requiresSupervision,
-            it.automaticEligible, it.tags.sorted(), it.restrictionTags.sorted(), it.sport).joinToString("|")
+            it.automaticEligible, it.tags.sorted(), it.restrictionTags.sorted(), it.sport, it.workUnit).joinToString("|")
     })
     fun stable(seed: String, id: String): String = hash(seed + "|" + id)
 }
@@ -299,7 +300,8 @@ object MissionDifficultyMixPolicy {
 }
 data class DailyMission(
     val date: LocalDate, val category: Category?, val profileHash: String,
-    val catalogHash: String, val ids: List<String>, val explanation: String
+    val catalogHash: String, val ids: List<String>, val explanation: String,
+    val equivalentFrom: Map<String, String> = emptyMap()
 )
 object DeterministicSelection {
     fun rankScore(item: ActivityMetadata, selected: List<ActivityMetadata>,
@@ -404,7 +406,9 @@ object DailyMissionPlanner {
             goal.recognized -> "Selección compatible priorizada por objetivo escrito reconocido."
             else -> "Selección conservadora; sin evidencia suficiente para aumentar exigencia."
         }
-        return DailyMission(date, category, profileHash, catalogHash, final.map { it.id }, explanation)
+        val equivalentFrom = final.zip(selected).filter { (variant, original) -> variant.id != original.id }
+            .associate { (variant, original) -> variant.id to original.id }
+        return DailyMission(date, category, profileHash, catalogHash, final.map { it.id }, explanation, equivalentFrom)
     }
     private fun selectMissionMix(
         rows: List<ActivityMetadata>, limit: Int, levelThreeSlots: Int, maxLevel: Int,
@@ -445,7 +449,8 @@ object DailyMissionPlanner {
         val original = selected[index]
         val alternate = rows.asSequence().filter {
             it.id != original.id && it.id !in completed && it.typeId == original.typeId &&
-                it.technicalLevel == original.technicalLevel && it.intensity.ordinal <= original.intensity.ordinal
+                it.technicalLevel == original.technicalLevel && it.workUnit == original.workUnit &&
+                it.intensity.ordinal <= original.intensity.ordinal
         }.minByOrNull { ProfileSignature.stable(seed, it.id) } ?: return selected
         return selected.toMutableList().also { it[index] = alternate }
     }
@@ -476,7 +481,9 @@ object RoutineGenerator {
             Adaptation.REDUCE_TWO -> 2
             else -> if (profile.experience == Experience.BEGINNER) 2 else 3
         })
-        val pool = repository.compatible(profile, request.category, technicalLimit)
+        val pool = repository.compatible(profile, request.category, technicalLimit).filter {
+            adaptation != Adaptation.RECOVER_ONE || it.intensity == Intensity.LOW
+        }
         val goal = PersonalGoalInterpreter.interpret(profile.customGoal).tags
         val distinct = linkedMapOf<String, RoutineProposal>()
         for (index in 0 until maxProposals) {

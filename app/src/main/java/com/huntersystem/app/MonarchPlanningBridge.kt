@@ -64,7 +64,8 @@ class MonarchActivitySource(
                     addAll(PersonalGoalInterpreter.affinity(
                         (listOf(e.name, e.sport, e.pattern) + this.toList()).joinToString(" ")
                     ))
-                }, e.raw.a("restrictionTags").strings().toSet(), e.sport, e.name)
+                }, e.raw.a("restrictionTags").strings().toSet(), e.sport, e.name,
+                when (e.unit) { "sec" -> VolumeUnit.SECONDS; "reps" -> VolumeUnit.REPETITIONS; else -> null })
         }
     }
     private val validatedRows by lazy { rows.also(ActivityCatalogValidator::verify) }
@@ -285,7 +286,10 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
         val ids = row.a("ids").strings()
         if (ids.any { it.isBlank() } || ids.distinct().size != ids.size) return null
         return DailyMission(day, CategoryMapper.normalize(row.s("category")),
-            row.s("profileHash"), row.s("catalogHash"), ids, row.s("explanation"))
+            row.s("profileHash"), row.s("catalogHash"), ids, row.s("explanation"),
+            row.o("equivalentFrom").entries().mapNotNull { (id, value) ->
+                (value as? String)?.let { id to it }
+            }.toMap())
     }
     fun pin(mission: DailyMission) {
         val r = root()
@@ -293,7 +297,8 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
         r.put("missions", arr((missions + obj("date" to mission.date.toString(),
             "category" to (mission.category?.code ?: "descanso"),
             "profileHash" to mission.profileHash, "catalogHash" to mission.catalogHash,
-            "ids" to arr(mission.ids), "explanation" to mission.explanation)).takeLast(40)))
+            "ids" to arr(mission.ids), "explanation" to mission.explanation,
+            "equivalentFrom" to JSONObject(mission.equivalentFrom))).takeLast(40)))
         write(r)
     }
     fun phases(): Map<Category, TechnicalPhase> = root().o("phases").entries().mapNotNull { (k, v) ->

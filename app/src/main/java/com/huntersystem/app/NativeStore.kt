@@ -101,7 +101,10 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
    it.s("progressCategory").isNotBlank()&&it.s("progressSettingsHash").isNotBlank()}?.let{
    com.huntersystem.app.planning.DailyMission(localDate,category,
     it.s("progressSettingsHash"),it.s("progressCatalogHash"),
-    it.a("items").objects().map{x->x.s("id")},it.s("planningNote"))
+    it.a("items").objects().map{x->x.s("id")},it.s("planningNote"),
+    it.o("progressEquivalentFrom").entries().mapNotNull { (id, value) ->
+      (value as? String)?.let { original -> id to original }
+    }.toMap())
   }?:progress.pinned(localDate)
   val q=adjusted()
   val result=planner.choose(q,kind,"$date|unificado",
@@ -129,6 +132,7 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
    "progressCategory" to (category?.code?:"descanso"),
    "progressSettingsHash" to result.s("progressSettingsHash"),
    "progressCatalogHash" to result.s("progressCatalogHash"),
+   "progressEquivalentFrom" to result.o("progressEquivalentFrom"),
    "planningNote" to result.s("planningNote","Plan local conservador."))
  }
  fun refreshWeek(){if(profile==null||readError!=null)return;val monday=LocalDate.now().minusDays((LocalDate.now().dayOfWeek.value-1).toLong()).toString();val cycles=state.a("cycles");var c=cycles.objects().firstOrNull{it.s("start")==monday};if(c==null){c=obj("index" to cycles.length()+1,"start" to monday,"days" to JSONArray(),"reviews" to JSONArray());cycles.put(c);state.put("cycles",cycles)};val q=adjusted();val key="monarca-planner-v2|"+planner.profileKey(q)+"|"+today()+"|"+hash(logs.toString()).toString(36)+"|"+MonarchProgressRepository(this).planningRevisionKey();if(c.s("nativeKey")==key)return

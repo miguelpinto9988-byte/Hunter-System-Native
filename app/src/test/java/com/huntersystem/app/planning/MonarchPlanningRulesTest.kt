@@ -238,8 +238,10 @@ class MonarchPlanningRulesTest {
         val history = dates.map { EffortObservation(it, Category.UPPER, 2, true) }
         assertEquals(listOf(first.id), DailyMissionPlanner.plan(date, p, repository,
             history, participation = records).ids)
-        assertEquals(listOf(sameType.id), DailyMissionPlanner.plan(date, p, repository,
-            history + effort(12, Category.UPPER, 4), participation = records).ids)
+        val varied = DailyMissionPlanner.plan(date, p, repository,
+            history + effort(12, Category.UPPER, 4), participation = records)
+        assertEquals(listOf(sameType.id), varied.ids)
+        assertEquals(mapOf(sameType.id to first.id), varied.equivalentFrom)
     }
 
     @Test fun rotationChangesAcrossVariationsAndKeepsAPinnedMission() {

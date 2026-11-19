@@ -149,6 +149,18 @@ class Planner(val catalog:Catalog,val rules:Rules){
    item.put("technicalLevel",metadata.technicalLevel)
    item.put("progressStatus","PENDING")
    item.put("unifiedPlanning",true)
+   mission.equivalentFrom[id]?.let { originalId ->
+    val original=catalog.byId[originalId]
+    if(original!=null && original.unit==e.unit){
+     val initial=libraryDose(original,p,kind)
+     item.put("sets",min(item.i("sets",1),initial.i("sets",1)))
+     item.put("target",min(item.i("target",1),initial.i("target",1)))
+     item.put("rest",max(item.i("rest",30),initial.i("rest",30)))
+    }else{
+     item.put("sets",1)
+    }
+    item.put("noAutoLoad",true)
+   }
    if(progression){
     item.put("progressionFromLevel",baseLevel)
     item.put("sets",1)
@@ -170,6 +182,7 @@ class Planner(val catalog:Catalog,val rules:Rules){
    "count" to items.size,"progressCategory" to requested.code,
    "progressSettingsHash" to mission.profileHash,
    "progressCatalogHash" to mission.catalogHash,
+   "progressEquivalentFrom" to JSONObject(mission.equivalentFrom),
    "planningNote" to mission.explanation,
    "blocked" to if(items.isEmpty()&&doseOptions.isNotEmpty())
     "Ninguna actividad compatible cabe en el tiempo disponible."
@@ -217,7 +230,8 @@ class Planner(val catalog:Catalog,val rules:Rules){
   val maxTechnical=min(n+1,levelLimit)
   val goalTags=PersonalGoalInterpreter.interpret(nativeProfile.customGoal).tags
   val safeMetadata=validated.all().filter{
-   it.category==category && EligibilityPolicy.compatible(it,nativeProfile,maxTechnical)
+   it.category==category && EligibilityPolicy.compatible(it,nativeProfile,maxTechnical) &&
+    (adaptation!=Adaptation.RECOVER_ONE || it.intensity==Intensity.LOW)
   }.associateBy{it.id}
   val candidates=rules.pool(adjusted,kind).filter{it.id in safeMetadata &&
    (if(mode=="gym")it.gym||it.power else !it.gym) &&
