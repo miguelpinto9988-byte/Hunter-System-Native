@@ -175,6 +175,7 @@ private fun DrawScope.drawActor(
     val side=normal(down)
     val overhead = motion.view == ExerciseView.OVERHEAD
     val broad = motion.view != ExerciseView.SIDE
+    val armsBehindShirt = overhead || motion.view == ExerciseView.REAR
     val left = if (motion.prone && !broad) down.x > 0f else motion.facing == "left"
     val shirt = Brush.linearGradient(listOf(tealLight, teal, navy),
         start = shoulder, end = hip + down * (17f * u))
@@ -261,7 +262,7 @@ private fun DrawScope.drawActor(
     if (!broad) limb(false, false)
     limb(false, true)
     limb(true, true)
-    if (broad) {
+    if (armsBehindShirt) {
         limb(false, false)
         limb(true, false)
     }
@@ -274,7 +275,10 @@ private fun DrawScope.drawActor(
     drawPath(smoothBody(torso, torsoWidths.map { it * u }, symmetric = broad), shirt)
     val waist=hip-down*(7*u)
     drawLine(Color(0xFF83ACAE),waist-side*(20*u),waist+side*(20*u),1.2f*u,StrokeCap.Round)
-    if (!broad) limb(true, false)
+    if (!armsBehindShirt) {
+        if (broad) limb(false, false)
+        limb(true, false)
+    }
     if(face!=null){
         val headScale=u*.96f
         val angle = atan2(down.y, down.x) * 180f / Math.PI.toFloat() - 90f
