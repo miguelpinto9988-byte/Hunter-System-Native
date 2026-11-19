@@ -76,6 +76,16 @@ class Hunter2000CatalogTest {
         assertFalse(rules.compatible(c.byId.getValue("hx_upper_0001"),profile))
         assertTrue(MonarchActivitySource(c,rules,profile).all().any{it.id==basic.id&&it.automaticEligible})
         val planner=Planner(c,rules)
+        val coreProfile=profile.copyJson().put("weekFocus",arr(List(7){"core"}))
+        val dayOfTest="2026-11-16"
+        assertTrue((0..15).any{ seed ->
+            planner.choose(coreProfile,"strength","hunter-$seed",date=dayOfTest)
+                .a("items").objects().any{c.byId[it.s("id")]?.hunter2000==true}
+        })
+        assertTrue((0..15).any{ variant ->
+            planner.generateRoutine("home","core",0,variant,"short",1,coreProfile,date=dayOfTest)
+                ?.a("items")?.objects()?.any{c.byId[it.s("id")]?.hunter2000==true}==true
+        })
         val day=obj("items" to arr(listOf(planner.libraryDose(basic,profile,"strength"))))
         assertTrue(planner.steps(day,profile).any{it.s("id")==basic.id})
         val legacy=c.byId.getValue("heelcontrolled")

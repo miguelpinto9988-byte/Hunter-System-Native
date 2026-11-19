@@ -26,6 +26,20 @@ class NativeStoreTest {
  fun profile():JSONObject {val tests=JSONArray(javaClass.classLoader!!.getResource("groups-golden.json")!!.readText()).objects();return tests[7].o("p").copyJson().put("name","Cazador").put("animate",false).put("goalGroup","build").put("finalGoal","Aumentar mi fuerza").put("finalTarget","strength").put("weekPlan",arr(List(7){"train"})).put("weekFocus",arr(List(7){"upper"}))}
  fun store()=NativeStore(context).also{it.saveProfile(profile())}
  @Test(timeout=30000) fun checkboxesDoNotInventQuantitiesAndPersist(){val s=store();val d=s.day(today());assertTrue(d.a("items").length()>0);s.toggleMission(today(),0);assertEquals(0,s.stats().i("series"));assertEquals(0,s.stats().i("reps"));assertTrue(s.logs.o(today()).a("items").getJSONObject(0).b("missionState"));val reopened=NativeStore(context);assertTrue(reopened.logs.o(today()).a("items").getJSONObject(0).b("missionState"));assertEquals(0,reopened.stats().i("series"));val l=reopened.log();for(i in 1 until l.a("items").length())reopened.toggleMission(today(),i);for(i in 0 until l.a("missionTasks").length())reopened.toggleTask(today(),i);reopened.feedback(today(),6,"Sesión hecha");reopened.finish(today());assertEquals(1,reopened.stats().i("days"));assertEquals(0,reopened.stats().i("series"));assertEquals(0,reopened.stats().i("reps"));assertTrue(reopened.stats().i("xp")>0)}
+ @Test fun hunter2000SePuedeGuardarYReproducir(){
+  val s=store()
+  val date=today()
+  val exercise=s.catalog.byId.getValue("hx_core_0002")
+  val compatible=s.adjusted()
+  assertTrue(s.rules.reasons(exercise,compatible).joinToString(),s.rules.compatible(exercise,compatible))
+  val item=s.planner.libraryDose(exercise,compatible,"strength")
+  s.customize(date,listOf(item),emptyList(),"Hunter 2000")
+  val reopened=NativeStore(context)
+  assertEquals(exercise.id,reopened.day(date).a("items").getJSONObject(0).s("id"))
+  assertTrue(reopened.planner.steps(reopened.day(date),reopened.adjusted()).any{it.s("id")==exercise.id})
+  reopened.confirmSet(date,0,0,item.i("target").toDouble(),0.0)
+  assertEquals(1,reopened.stats().i("series"))
+ }
  @Test(timeout=30000) fun futurePreviewDoesNotCreateRecords(){val s=store();val before=s.export();for(i in 30L..39L)s.day(plus(today(),i));assertEquals(before,s.export());assertEquals(0,s.logs.length())}
  @Test(timeout=30000) fun routineAssignmentCopiesExactItemsAndProtectsConfirmedWork(){val s=store();val r=obj("id" to "test-exact","name" to "Mi secuencia","category" to "Fuerza","items" to s.day(today()).a("items").copyJson());s.assign(r,today());assertEquals(r.a("items").toString(),s.day(today()).a("items").toString());s.confirmSet(today(),0,0,3.0,0.0);assertEquals(1,s.stats().i("series"));val recorded=s.export();try{s.assign(r,today());fail("Debe conservar el registro")}catch(_:IllegalArgumentException){};assertEquals(recorded,s.export());s.saveProfile(profile().put("trainingScale",.5));assertTrue(s.logs.o(today()).a("items").getJSONObject(0).a("actual").getJSONObject(0).b("done"))}
  @Test(timeout=30000) fun restoreKeepsLegacyFieldsAndRejectsBrokenBackup(){val s=store();s.state.put("legacyUnknown",obj("retained" to true));s.save();val backup=JSONObject(s.export());s.restore(backup);assertTrue(s.state.o("legacyUnknown").b("retained"));val before=s.export();try{s.restore(obj("profile" to JSONObject(),"cycles" to JSONArray(),"logs" to JSONObject()));fail("Perfil incompleto")}catch(_:IllegalArgumentException){};assertEquals(before,s.export());val reloaded=NativeStore(context);assertTrue(reloaded.state.o("legacyUnknown").b("retained"))}
