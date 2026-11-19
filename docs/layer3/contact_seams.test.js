@@ -18,6 +18,8 @@ for(const [name,seam] of Object.entries(report.seams)){
  assert.equal(seam.framesChecked,48);
  assert.deepEqual(seam.failingFrames,[],name+' has open seam');
  assert(seam.minOverlap>=10,name+' weak overlap');
+ assert(seam.minVerticalOverlap>=1,name+' vertical seam too narrow');
+ assert(seam.minSharedRows>=10,name+' insufficient adaptive contact samples');
  assert(seam.maxTemporalDelta<=2,name+' temporal seam instability');
 }
 console.log('PASS: 192 C3 seam/pose combinations, no open seam, report parity');
