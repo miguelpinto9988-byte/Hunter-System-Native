@@ -68,18 +68,7 @@ internal fun ExerciseActor(motion: ExerciseMotion, modifier: Modifier, play: Boo
             previous = next
         }
     }
-    val minX = remember(motion) { min(motion.frames.minOf { p -> p.minOf(Offset::x) },
-        motion.props.minOfOrNull { it.bounds.left } ?: Float.POSITIVE_INFINITY) }
-    val maxX = remember(motion) { max(motion.frames.maxOf { p -> p.maxOf(Offset::x) },
-        motion.props.maxOfOrNull { it.bounds.right } ?: Float.NEGATIVE_INFINITY) }
-    val minY = remember(motion) { min(motion.frames.minOf { p -> p.minOf(Offset::y) },
-        motion.props.minOfOrNull { it.bounds.top } ?: Float.POSITIVE_INFINITY) }
-    val maxY = remember(motion) { max(motion.frames.maxOf { p -> p.maxOf(Offset::y) },
-        motion.props.maxOfOrNull { it.bounds.bottom } ?: Float.NEGATIVE_INFINITY) }
-    val scaleUnit = remember(motion) {
-        motion.frames.map { (it[2] - it[1]).getDistance() }.sorted().let { it[it.size / 2] }
-            .coerceAtLeast(35f) / 165f
-    }
+    val framing = remember(motion) { ExerciseFraming.from(motion) }
     val firstArmSide = remember(motion) {
         if (motion.view == ExerciseView.SIDE) 1f else {
             val separation = motion.frames.sumOf { pose ->
@@ -91,24 +80,24 @@ internal fun ExerciseActor(motion: ExerciseMotion, modifier: Modifier, play: Boo
         }
     }
     Canvas(modifier) {
+        if (size.minDimension <= 0f) return@Canvas
         drawRoundRect(Color(0xFF101F2A),cornerRadius=CornerRadius(18f))
         drawCircle(Brush.radialGradient(listOf(Color(0xFF22464D),Color(0xFF142C3A),Color(0xFF101F2A)),
             center=Offset(size.width*.48f,size.height*.47f),radius=max(size.width,size.height)*.51f),
             radius=min(size.width,size.height)*.47f,center=Offset(size.width*.5f,size.height*.47f))
-        val width = maxX - minX + 168f * scaleUnit
-        val height = maxY - minY + 140f * scaleUnit
-        val fit = min(size.width / width,size.height / height) * .92f
-        val origin = Offset((minX+maxX)/2,(minY+maxY)/2)
+        val fit = framing.scaleFor(size)
+        if (fit <= 0f) return@Canvas
+        val origin = framing.bounds.center
         val p = motion.at(phase)
         withTransform({
             translate(size.width/2,size.height/2)
             scale(if(mirror) -fit else fit,fit,pivot=Offset.Zero)
             translate(-origin.x,-origin.y)
         }) {
-            drawStage(motion, p, origin, width, height, scaleUnit, maxY)
-            motion.props.forEach { drawProp(it, scaleUnit) }
-            drawEquipment(motion.equipment,p,scaleUnit,maxY)
-            drawActor(p, scaleUnit, motion, face, firstArmSide)
+            drawStage(motion, p, origin, framing.bounds.width, framing.bounds.height, framing.unit, framing.floor)
+            motion.props.forEach { drawProp(it, framing.unit) }
+            drawEquipment(motion.equipment, p, framing.unit, framing.floor)
+            drawActor(p, framing.unit, motion, face, firstArmSide)
         }
     }
 }
