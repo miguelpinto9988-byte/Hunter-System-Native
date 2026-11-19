@@ -350,20 +350,40 @@ private fun DrawScope.drawFrontShorts(
     val rightOuter = rightHem + rightAcross
     val leftWaist = waist - side * (33f * unit)
     val rightWaist = waist + side * (33f * unit)
-    val crotch = hip + down * (25f * unit)
+    val rise = hip + down * (31f * unit)
+    val leftHipLine = leftHip - side * (16f * unit)
+    val rightHipLine = rightHip + side * (16f * unit)
     val shape = Path().apply {
         moveTo(leftWaist.x, leftWaist.y)
         lineTo(rightWaist.x, rightWaist.y)
-        val outerHip = rightHip + side * (19f * unit)
-        quadraticTo(outerHip.x, outerHip.y, rightOuter.x, rightOuter.y)
+        quadraticTo(rightHipLine.x, rightHipLine.y, rightOuter.x, rightOuter.y)
         lineTo(rightInner.x, rightInner.y)
-        quadraticTo(crotch.x, crotch.y, leftInner.x, leftInner.y)
+        val rightCurve = mix(rightInner, rise, .66f)
+        val leftCurve = mix(leftInner, rise, .66f)
+        cubicTo(rightCurve.x, rightCurve.y, leftCurve.x, leftCurve.y, leftInner.x, leftInner.y)
         lineTo(leftOuter.x, leftOuter.y)
-        val innerHip = leftHip - side * (19f * unit)
-        quadraticTo(innerHip.x, innerHip.y, leftWaist.x, leftWaist.y)
+        quadraticTo(leftHipLine.x, leftHipLine.y, leftWaist.x, leftWaist.y)
         close()
     }
-    drawPath(shape, Brush.linearGradient(listOf(navy, navyDark), waist, crotch + down * (25f * unit)))
+    val frontFabric = Brush.radialGradient(
+        listOf(Color(0xFF304D63), navy, navyDark),
+        center = mix(waist, hip, .8f),
+        radius = 66f * unit
+    )
+    drawPath(shape, frontFabric)
+    val stitch = Color(0xFF8FB5C1).copy(alpha = .23f)
+    for ((top, curve, bottom) in listOf(
+        Triple(leftWaist + side * (4f * unit), leftHipLine + side * (4f * unit), mix(leftOuter, leftInner, .11f)),
+        Triple(rightWaist - side * (4f * unit), rightHipLine - side * (4f * unit), mix(rightOuter, rightInner, .11f))
+    )) {
+        val seam = Path().apply {
+            val from = mix(top, curve, .24f)
+            val to = mix(bottom, curve, .12f)
+            moveTo(from.x, from.y)
+            quadraticTo(curve.x, curve.y, to.x, to.y)
+        }
+        drawPath(seam, stitch, style = Stroke(width = 1.25f * unit, cap = StrokeCap.Round))
+    }
 }
 
 private fun DrawScope.drawFrontShoe(ankle: Offset, unit: Float, left: Boolean) {
