@@ -1,0 +1,440 @@
+{
+  "format": "MonarcaC3InterpatchTriage",
+  "version": 1,
+  "exercise": "calf",
+  "source": "interpatch_calf.qa.json",
+  "occlusionSource": "occlusion_order_calf.json",
+  "frames": 48,
+  "profileCount": 24,
+  "overlappingPairs": 38,
+  "counts": {
+    "intended_seam_candidate": 26,
+    "layered_occlusion_candidate": 8,
+    "needs_visual_review": 4
+  },
+  "pairs": [
+    {
+      "ids": [
+        "torso",
+        "pectoral_superficial"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 2016.02,
+      "peakFrame": 1,
+      "frontmost": "pectoral_superficial"
+    },
+    {
+      "ids": [
+        "cadera_frontal",
+        "muslo_frontal"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 1880.75,
+      "peakFrame": 22,
+      "frontmost": "muslo_frontal"
+    },
+    {
+      "ids": [
+        "torso",
+        "deltoides_frontal"
+      ],
+      "category": "layered_occlusion_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 1480.54,
+      "peakFrame": 22,
+      "frontmost": "deltoides_frontal"
+    },
+    {
+      "ids": [
+        "torso",
+        "hombro_posterior"
+      ],
+      "category": "layered_occlusion_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 1450.26,
+      "peakFrame": 22,
+      "frontmost": "torso"
+    },
+    {
+      "ids": [
+        "gluteo_posterior",
+        "muslo_posterior"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 1413.49,
+      "peakFrame": 18,
+      "frontmost": "muslo_posterior"
+    },
+    {
+      "ids": [
+        "deltoides_frontal",
+        "brazo_frontal"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 1261.01,
+      "peakFrame": 19,
+      "frontmost": "brazo_frontal"
+    },
+    {
+      "ids": [
+        "hombro_posterior",
+        "brazo_posterior"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 1071.77,
+      "peakFrame": 22,
+      "frontmost": "brazo_posterior"
+    },
+    {
+      "ids": [
+        "torso",
+        "brazo_frontal"
+      ],
+      "category": "layered_occlusion_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 1004.54,
+      "peakFrame": 22,
+      "frontmost": "brazo_frontal"
+    },
+    {
+      "ids": [
+        "torso",
+        "brazo_posterior"
+      ],
+      "category": "layered_occlusion_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 963.01,
+      "peakFrame": 22,
+      "frontmost": "torso"
+    },
+    {
+      "ids": [
+        "cuello_exterior",
+        "trapecio_base_cuello"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 870.98,
+      "peakFrame": 6,
+      "frontmost": "cuello_exterior"
+    },
+    {
+      "ids": [
+        "trapecio_base_cuello",
+        "torso"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 846.39,
+      "peakFrame": 0,
+      "frontmost": "torso"
+    },
+    {
+      "ids": [
+        "hombro_posterior",
+        "pectoral_superficial"
+      ],
+      "category": "layered_occlusion_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 470.47,
+      "peakFrame": 21,
+      "frontmost": "pectoral_superficial"
+    },
+    {
+      "ids": [
+        "cuello_exterior",
+        "torso"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 419.43,
+      "peakFrame": 0,
+      "frontmost": "cuello_exterior"
+    },
+    {
+      "ids": [
+        "muslo_frontal",
+        "rotula_frontal"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 317.09,
+      "peakFrame": 13,
+      "frontmost": "rotula_frontal"
+    },
+    {
+      "ids": [
+        "rotula_frontal",
+        "pantorrilla_frontal"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 306.55,
+      "peakFrame": 23,
+      "frontmost": "pantorrilla_frontal"
+    },
+    {
+      "ids": [
+        "trapecio_base_cuello",
+        "deltoides_frontal"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 296.3,
+      "peakFrame": 21,
+      "frontmost": "deltoides_frontal"
+    },
+    {
+      "ids": [
+        "pantorrilla_frontal",
+        "tobillo_frontal"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 265.48,
+      "peakFrame": 23,
+      "frontmost": "tobillo_frontal"
+    },
+    {
+      "ids": [
+        "torso",
+        "cadera_frontal"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 247.17,
+      "peakFrame": 22,
+      "frontmost": "cadera_frontal"
+    },
+    {
+      "ids": [
+        "cuello_exterior",
+        "cabeza_exterior"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 216.4,
+      "peakFrame": 6,
+      "frontmost": "cabeza_exterior"
+    },
+    {
+      "ids": [
+        "pantorrilla_posterior",
+        "tobillo_posterior"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 213.48,
+      "peakFrame": 24,
+      "frontmost": "tobillo_posterior"
+    },
+    {
+      "ids": [
+        "tobillo_posterior",
+        "pie_posterior"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 181.05,
+      "peakFrame": 2,
+      "frontmost": "pie_posterior"
+    },
+    {
+      "ids": [
+        "torso",
+        "gluteo_posterior"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 128.28,
+      "peakFrame": 22,
+      "frontmost": "torso"
+    },
+    {
+      "ids": [
+        "brazo_posterior",
+        "pectoral_superficial"
+      ],
+      "category": "layered_occlusion_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 123.8,
+      "peakFrame": 22,
+      "frontmost": "pectoral_superficial"
+    },
+    {
+      "ids": [
+        "tobillo_frontal",
+        "pie_frontal"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 29,
+      "maxAreaEstimate": 95.62,
+      "peakFrame": 0,
+      "frontmost": "pie_frontal"
+    },
+    {
+      "ids": [
+        "muslo_posterior",
+        "pantorrilla_posterior"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 76,
+      "peakFrame": 17,
+      "frontmost": "pantorrilla_posterior"
+    },
+    {
+      "ids": [
+        "trapecio_base_cuello",
+        "hombro_posterior"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 70.32,
+      "peakFrame": 9,
+      "frontmost": "trapecio_base_cuello"
+    },
+    {
+      "ids": [
+        "trapecio_base_cuello",
+        "cabeza_exterior"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 69.14,
+      "peakFrame": 5,
+      "frontmost": "cabeza_exterior"
+    },
+    {
+      "ids": [
+        "cuello_exterior",
+        "deltoides_frontal"
+      ],
+      "category": "layered_occlusion_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 68.97,
+      "peakFrame": 22,
+      "frontmost": "deltoides_frontal"
+    },
+    {
+      "ids": [
+        "muslo_frontal",
+        "pantorrilla_frontal"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 48.01,
+      "peakFrame": 23,
+      "frontmost": "pantorrilla_frontal"
+    },
+    {
+      "ids": [
+        "pectoral_superficial",
+        "deltoides_frontal"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 34.88,
+      "peakFrame": 3,
+      "frontmost": "deltoides_frontal"
+    },
+    {
+      "ids": [
+        "antebrazo_frontal",
+        "mano_frontal"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 34.29,
+      "peakFrame": 0,
+      "frontmost": "mano_frontal"
+    },
+    {
+      "ids": [
+        "pantorrilla_posterior",
+        "pie_posterior"
+      ],
+      "category": "needs_visual_review",
+      "framesWithOverlap": 21,
+      "maxAreaEstimate": 32.62,
+      "peakFrame": 0,
+      "frontmost": "pie_posterior"
+    },
+    {
+      "ids": [
+        "trapecio_base_cuello",
+        "pectoral_superficial"
+      ],
+      "category": "needs_visual_review",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 31.04,
+      "peakFrame": 11,
+      "frontmost": "pectoral_superficial"
+    },
+    {
+      "ids": [
+        "pantorrilla_frontal",
+        "pie_frontal"
+      ],
+      "category": "needs_visual_review",
+      "framesWithOverlap": 19,
+      "maxAreaEstimate": 23.79,
+      "peakFrame": 2,
+      "frontmost": "pie_frontal"
+    },
+    {
+      "ids": [
+        "cuello_exterior",
+        "hombro_posterior"
+      ],
+      "category": "layered_occlusion_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 19.1,
+      "peakFrame": 9,
+      "frontmost": "cuello_exterior"
+    },
+    {
+      "ids": [
+        "antebrazo_posterior",
+        "mano_posterior"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 17.14,
+      "peakFrame": 4,
+      "frontmost": "mano_posterior"
+    },
+    {
+      "ids": [
+        "brazo_frontal",
+        "antebrazo_frontal"
+      ],
+      "category": "intended_seam_candidate",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 10.41,
+      "peakFrame": 14,
+      "frontmost": "antebrazo_frontal"
+    },
+    {
+      "ids": [
+        "cuello_exterior",
+        "pectoral_superficial"
+      ],
+      "category": "needs_visual_review",
+      "framesWithOverlap": 48,
+      "maxAreaEstimate": 9.5,
+      "peakFrame": 19,
+      "frontmost": "pectoral_superficial"
+    }
+  ],
+  "limitations": [
+    "Categories are hypotheses, not evidence of correct physical contact",
+    "Polygon overlap is not exact Bézier penetration",
+    "Browser screenshots and visual verification remain pending"
+  ]
+}
