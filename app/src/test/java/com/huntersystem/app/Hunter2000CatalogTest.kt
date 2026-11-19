@@ -53,7 +53,11 @@ class Hunter2000CatalogTest {
 
     @Test fun deportesDisponiblesYMaterialesObligatorios() {
         val c=Catalog(loader={java.io.File("src/main/assets",it).readText()})
-        assertEquals(12,c.sportExercises.map{it.sport}.distinct().size)
+        val originalDisciplines = setOf(
+            "Fútbol", "Calistenia", "Yoga", "Pilates", "Baloncesto", "Voleibol",
+            "Tenis", "Atletismo", "Boxeo", "Gimnasia", "Levantamiento de pesas", "Ciclismo"
+        )
+        assertTrue(c.sportExercises.map { it.sport }.toSet().containsAll(originalDisciplines))
         assertTrue(c.sportExercises.all{
             it.raw.getJSONArray("instructions").length()>0 &&
                 it.demo.isEmpty()
