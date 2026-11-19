@@ -18,7 +18,7 @@ for(const profile of data.profiles){
       const p=smooth[i*4+j];
       assert(p.every(Number.isFinite),profile.id);
       assert(p[0]>0&&p[0]<720&&p[1]>0&&p[1]<800,profile.id);
-      for(const k of [2,3]){
+      for(const k of [0,1,2,3]){
         assert(p[k]>=Math.min(stations[i][k],stations[i+1][k])-1e-8,profile.id);
         assert(p[k]<=Math.max(stations[i][k],stations[i+1][k])+1e-8,profile.id);
       }
@@ -27,4 +27,4 @@ for(const profile of data.profiles){
 }
 assert.equal(original,104);
 assert.equal(refined,344);
-console.log('PASS: 24 exterior profiles; 104 original stations preserved; 344 interpolated stations; bounded widths');
+console.log('PASS: 24 exterior profiles; 104 original stations preserved; 344 interpolated stations; bounded centerlines and widths');
