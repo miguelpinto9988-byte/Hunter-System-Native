@@ -48,7 +48,7 @@ class MonarchActivitySource(
             val eligibility = (declaredMaterials != null || e.raw.optJSONArray("materials46") != null) &&
                 !e.raw.b("sourceOnly") && !e.raw.b("pendingTechnicalReview") &&
                 !(e.raw.b("sourceExpansion2k") && !e.raw.b("approvedForAutoplan")) &&
-                rules.compatible(e, adjusted)
+                rules.compatible(e, adjusted, maxPlanningLevel = 2)
             ActivityMetadata(e.id, category, familyId, typeId, levelValue, intensity, allowedGear,
                 e.raw.s("modality", "no_especificada"),
                 e.raw.b("requiresSupervision") || e.raw.b("supervisionRequired") ||
@@ -58,7 +58,7 @@ class MonarchActivitySource(
                     addAll(e.raw.a("goalTags").strings())
                     addAll(e.raw.a("tags").strings())
                     if (e.pattern.isNotBlank()) add(e.pattern)
-                }, e.raw.a("restrictionTags").strings().toSet())
+                }, e.raw.a("restrictionTags").strings().toSet(), e.sport)
         }
     }
     private val validatedRows by lazy { rows.also(ActivityCatalogValidator::verify) }

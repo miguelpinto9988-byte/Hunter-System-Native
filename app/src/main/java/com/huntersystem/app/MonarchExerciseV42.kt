@@ -47,7 +47,7 @@ fun MonarchExerciseStage(
         .padding(12.dp),verticalArrangement=Arrangement.spacedBy(9.dp)){
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
             verticalAlignment=Alignment.CenterVertically){
-            Eyebrow("DEMOSTRACIÓN · DOS CAPAS")
+            Eyebrow(if(rig==null)"DEMOSTRACIÓN" else "DEMOSTRACIÓN · DOS CAPAS")
             HText(if(!hasArtwork)"SIN ILUSTRACIÓN"
                 else if(layer=="appearance")"IMAGEN FIJA"
                 else if(rig==null)"RIG NO DISPONIBLE"

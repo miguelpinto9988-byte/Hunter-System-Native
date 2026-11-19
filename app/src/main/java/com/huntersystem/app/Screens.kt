@@ -165,7 +165,97 @@ fun HomeScreen(ui:NativeUi) {
 @Composable fun RoutineLibrary(ui:NativeUi,mode:String){MonarchRoutinesLibrary(ui,mode)}
 @Composable fun RoutineGenerator(ui:NativeUi,mode:String){MonarchRoutineGenerator(ui,mode){}}
 @Composable fun RoutineTile(ui:NativeUi,r:JSONObject){MonarchRoutineCard(ui,r,ui.store.adjusted())}
-@Composable fun ExercisesScreen(ui:NativeUi){val s=ui.store;var query by remember{mutableStateOf("")};var category by remember{mutableStateOf("")};var group by remember{mutableStateOf("")};var n by remember{mutableStateOf("")};var gear by remember{mutableStateOf("")};var variants by remember{mutableStateOf(true)};var restricted by remember{mutableStateOf(false)};val list=remember(query,category,group,n,gear,variants,restricted,s.revision.intValue){s.catalog.exercises.filter{e->(query.isBlank()||normalize(e.name).contains(normalize(query)))&&(category.isBlank()||e.category==category)&&(group.isBlank()||e.group==group)&&(n.isBlank()||e.raw.i("level").toString()==n)&&(variants||e.raw.s("variant")=="base")&&(!restricted||s.profile!=null&&s.rules.compatible(e,s.adjusted()))&&(gear.isBlank()||when(gear){"body"->e.equipment=="body"&&!e.gym;"db"->e.equipment=="db";"gym"->e.gym;else->gear in e.raw.a("materialRequirements").strings()})}}
- LazyColumn(Modifier.fillMaxSize().padding(horizontal=18.dp),verticalArrangement=Arrangement.spacedBy(14.dp),contentPadding=PaddingValues(top=20.dp,bottom=30.dp)){item{Header(ui)};item{AcademyTile(ui)};item{Eyebrow("ARCHIVO DE ENTRENAMIENTO");Heading("Todos los ejercicios");HText("${s.catalog.exercises.size} fichas: ${s.catalog.originalExercises.size} originales + ${s.catalog.expansionExercises.size} nuevas pendientes de validación técnica",size=16,color=LocalHunter.current.muted)};item{HInput(query,{query=it},"Buscar ejercicio");Spacer(Modifier.height(12.dp));Chips(listOf("" to "Todas","Fuerza" to "Fuerza","Cardio" to "Cardio","Movilidad" to "Movilidad"),category){category=it}};item{Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){HSelect("Grupo muscular",group,listOf("" to "Todos")+s.catalog.exercises.map{it.group}.distinct().map{it to it},Modifier.weight(1f)){group=it};HSelect("Nivel",n,listOf("" to "Todos","0" to "Inicial","1" to "Intermedio","2" to "Avanzado"),Modifier.weight(1f)){n=it};HSelect("Equipo",gear,listOf("" to "Todos","body" to "Sin equipo","db" to "Mancuernas","bench" to "Banco","step" to "Plataforma","gym" to "Gimnasio","barbell" to "Barras","cable" to "Poleas","machine" to "Máquinas","smith" to "Smith","cardio" to "Cinta o ergómetro"),Modifier.weight(1f)){gear=it}};HCheck("Incluir variantes de técnica y ritmo",variants){variants=!variants};HCheck("Aplicar mis restricciones",restricted){restricted=!restricted};HText("${list.size} resultados",size=15,color=LocalHunter.current.muted)};items(list,key={it.id}){e->HPanel(onClick={ui.open("exercise",obj("id" to e.id))},padding=18){Eyebrow("${e.group} · ${listOf("Inicial","Intermedio","Avanzado")[e.raw.i("level").coerceIn(0,2)]}");Heading(e.name,size=27);if(e.raw.b("sourceExpansion2k"))HText("PROPUESTA NUEVA · PENDIENTE DE VALIDACIÓN",size=13,color=LocalHunter.current.accent,bold=true);HText(if(e.equipment=="body")"Sin equipo especial" else if(e.gym)"Equipo de gimnasio" else "Mancuernas",size=15,color=LocalHunter.current.muted);HText("${if(e.impact)"Con saltos" else "Sin saltos"} · ${if(e.unit=="sec")"Por tiempo" else "Por repeticiones"}  ↗",size=15,color=LocalHunter.current.muted)}}}
+@Composable
+fun ExercisesScreen(ui: NativeUi) {
+    val store = ui.store
+    var query by remember { mutableStateOf("") }
+    var sport by remember { mutableStateOf("") }
+    var category by remember { mutableStateOf("") }
+    var group by remember { mutableStateOf("") }
+    var difficulty by remember { mutableStateOf("") }
+    var gear by remember { mutableStateOf("") }
+    var variants by remember { mutableStateOf(true) }
+    var restricted by remember { mutableStateOf(false) }
+    val levels = listOf("Inicial", "Intermedio", "Avanzado")
+    val sports = store.catalog.sportExercises.map { it.sport }.distinct().sorted()
+    val all = "" to "Todos"
+    val list = remember(query, sport, category, group, difficulty, gear, variants,
+        restricted, store.revision.intValue) {
+        val term = normalize(query)
+        val profile = if (restricted && store.profile != null) store.adjusted() else null
+        store.catalog.exercises.filter { exercise ->
+            (term.isBlank() || term in normalize(exercise.name + " " + exercise.sport)) &&
+                (sport.isBlank() || exercise.sport == sport) &&
+                (category.isBlank() || exercise.category == category) &&
+                (group.isBlank() || exercise.group == group) &&
+                (difficulty.isBlank() || exercise.raw.i("level").toString() == difficulty) &&
+                (variants || exercise.raw.s("variant") == "base") &&
+                (!restricted || profile != null && store.rules.compatible(exercise, profile)) &&
+                when (gear) {
+                    "" -> true
+                    "body" -> exercise.equipment == "body" && !exercise.gym &&
+                        (exercise.sport.isBlank() || exercise.raw.a("materialRequirements").length() == 0)
+                    "db" -> exercise.equipment == "db"
+                    "gym" -> exercise.gym
+                    else -> gear in exercise.raw.a("materialRequirements").strings()
+                }
+        }
+    }
+    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 18.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(top = 20.dp, bottom = 30.dp)) {
+        item { Header(ui) }
+        item { AcademyTile(ui) }
+        item {
+            Eyebrow("ARCHIVO DE ENTRENAMIENTO")
+            Heading("Todos los ejercicios")
+            HText("${store.catalog.exercises.size} fichas", size = 16, color = LocalHunter.current.muted)
+        }
+        item {
+            HInput(query, { query = it }, "Buscar ejercicio")
+            Spacer(Modifier.height(12.dp))
+            Chips(listOf("" to "Todas", "Fuerza" to "Fuerza", "Cardio" to "Cardio",
+                "Movilidad" to "Movilidad"), category) { category = it }
+        }
+        item {
+            Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                HSelect("Grupo muscular", group,
+                    listOf(all) + store.catalog.exercises.map { it.group }.distinct().map { it to it },
+                    Modifier.weight(1f)) { group = it }
+                HSelect("Nivel", difficulty, listOf(all) + levels.mapIndexed { index, label ->
+                    index.toString() to label
+                }, Modifier.weight(1f)) { difficulty = it }
+                HSelect("Equipo", gear, listOf(all, "body" to "Sin equipo", "db" to "Mancuernas",
+                    "bench" to "Banco", "step" to "Plataforma", "gym" to "Gimnasio",
+                    "barbell" to "Barras", "cable" to "Poleas", "machine" to "Máquinas",
+                    "smith" to "Smith", "cardio" to "Cinta o ergómetro"),
+                    Modifier.weight(1f)) { gear = it }
+            }
+            HSelect("Deporte", sport, listOf(all) + sports.map { it to it }) { sport = it }
+            HCheck("Incluir variantes de técnica y ritmo", variants) { variants = !variants }
+            HCheck("Aplicar mis restricciones", restricted) { restricted = !restricted }
+            HText("${list.size} resultados", size = 15, color = LocalHunter.current.muted)
+        }
+        items(list, key = { it.id }) { exercise ->
+            HPanel(onClick = { ui.open("exercise", obj("id" to exercise.id)) }, padding = 18) {
+                val levelLabel = levels[exercise.raw.i("level").coerceIn(0, 2)]
+                Eyebrow(listOf(exercise.sport, exercise.group, levelLabel)
+                    .filter { it.isNotBlank() }.joinToString(" · "))
+                Heading(exercise.name, size = 27)
+                if (exercise.raw.b("pendingTechnicalReview"))
+                    HText("PENDIENTE DE VALIDACIÓN", size = 13, color = LocalHunter.current.accent, bold = true)
+                val equipment = when {
+                    exercise.equipment == "body" -> "Sin equipo especial"
+                    exercise.gym -> "Equipo de gimnasio"
+                    else -> "Mancuernas"
+                }
+                HText(exercise.raw.s("equipmentLabel", equipment),
+                    size = 15, color = LocalHunter.current.muted)
+                val impact = if (exercise.impact) "Con saltos" else "Sin saltos"
+                val unit = if (exercise.unit == "sec") "Por tiempo" else "Por repeticiones"
+                HText("$impact · $unit  ↗", size = 15, color = LocalHunter.current.muted)
+            }
+        }
+    }
 }
 @Composable fun ProgressScreen(ui:NativeUi){ MonarchProgressScreen(ui) }

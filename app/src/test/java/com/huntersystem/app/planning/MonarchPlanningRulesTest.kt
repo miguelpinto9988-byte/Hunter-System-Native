@@ -174,6 +174,40 @@ class MonarchPlanningRulesTest {
         assertEquals(60, MissionDifficultyMixPolicy.levelThreeTarget(Experience.INTERMEDIATE, 2))
         assertEquals(75, MissionDifficultyMixPolicy.levelThreeTarget(Experience.ADVANCED, 2))
     }
+    @Test fun progressiveRotationKeepsOneStretchAndNeverRepeatsAFamily() {
+        val rows = listOf(activity("base-a", family = "a"),
+            activity("base-a-variant", family = "a"), activity("base-b"),
+            activity("hard-a", level = 2), activity("hard-b", level = 2),
+            activity("too-hard", level = 3))
+        val beginner = profile(experience = Experience.BEGINNER)
+        val repo = FakeRepo(rows)
+        val baseline = DailyMissionPlanner.plan(date, beginner, repo, emptyList())
+        assertEquals(2, baseline.ids.size)
+        assertTrue(baseline.ids.all { it.startsWith("base-") })
+        val priority = mapOf("hard-a" to 100, "hard-b" to 100)
+        val progressed = DailyMissionPlanner.plan(date, beginner, repo, emptyList(),
+            historicalPriority = priority, progressionReady = true)
+        assertEquals(1, progressed.ids.count { it.startsWith("hard-") })
+        assertTrue(progressed.ids.first().startsWith("base-"))
+        val recovery = DailyMissionPlanner.plan(date, beginner, repo,
+            listOf(effort(1, Category.UPPER, 10)), historicalPriority = priority,
+            progressionReady = true)
+        assertEquals(1, recovery.ids.size)
+        assertTrue(recovery.ids.single().startsWith("base-"))
+    }
+
+    @Test fun rotationChangesAcrossVariationsAndKeepsAPinnedMission() {
+        val rows = (1..12).map { activity("item-$it") }
+        val repo = FakeRepo(rows)
+        val p = profile()
+        val choices = (0..15).map {
+            DailyMissionPlanner.plan(date, p, repo, emptyList(), variation = "$it")
+        }
+        assertTrue(choices.map { it.ids.toSet() }.distinct().size > 1)
+        assertEquals(choices.first(), DailyMissionPlanner.plan(date, p, repo, emptyList(),
+            pinned = choices.first(), variation = "another"))
+    }
+
     @Test fun routinesHaveValidDurationsStepsAndDeterministicVariants() {
         val pool = (1..12).map { activity("synthetic-" + it) }
         val repo = FakeRepo(pool)

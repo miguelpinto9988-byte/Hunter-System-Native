@@ -37,13 +37,13 @@ class Rules(val catalog:Catalog){
   if(e.power&&"clean" in e.family&&("ballistichinge" !in caps||"olympic" !in caps))out+="Falta práctica previa de la cargada y su recepción"
   return out
  }
- fun materialReasons(e:Exercise,p:JSONObject):List<String>{val out=mutableListOf<String>();val raw=e.raw;val gear=p.s("equipment","body");val gym=p.a("gymEquipment23").strings();val mats=p.a("materials46").strings();val caps=p.a("capabilities46").strings();val req=raw.optJSONArray("materialRequirements")
-  if(req==null)out+="Requisitos de material no disponibles" else for(k in req.strings())if(when(k){"db"->gear !in listOf("db","gym");"gym"->gear!="gym";"bench"->!p.b("bench")&&k !in gym;"step"->!p.b("step");else->gear!="gym"||k !in gym})out+="Falta material: $k"
+ fun materialReasons(e:Exercise,p:JSONObject,maxPlanningLevel:Int=level(p)):List<String>{val out=mutableListOf<String>();val raw=e.raw;val gear=p.s("equipment","body");val gym=p.a("gymEquipment23").strings();val mats=p.a("materials46").strings();val caps=p.a("capabilities46").strings();val req=raw.optJSONArray("materialRequirements")
+  if(req==null)out+="Requisitos de material no disponibles" else for(k in req.strings())if(when(k){"db"->gear !in listOf("db","gym");"gym"->gear!="gym";"bench"->!p.b("bench")&&k !in gym;"step"->!p.b("step");else->if(e.sport.isNotBlank())k !in mats&&k !in gym else gear!="gym"||k !in gym})out+="Falta material: "+(if(e.sport.isBlank())k else catalog.materials.s(k,k))
   if(e.gym&&gear!="gym"||e.equipment=="gym"&&gear!="gym"||e.equipment=="db"&&gear !in listOf("db","gym"))out+="Equipo no configurado"
-  if(raw.i("progressionTierNative")>level(p)&&!mode(p).reduced&&!catalog.editorial.o("goalPlans").o(p.s("finalTarget")).b("gentle"))out+="Nivel superior al seleccionado"
-  if(e.planningLevel>level(p))out+="Nivel de planificación superior al seleccionado"
+  if(raw.i("progressionTierNative")>maxPlanningLevel&&!mode(p).reduced&&!catalog.editorial.o("goalPlans").o(p.s("finalTarget")).b("gentle"))out+="Nivel superior al seleccionado"
+  if(e.planningLevel>maxPlanningLevel)out+="Nivel de planificación superior al seleccionado"
   if(raw.b("pack46")&&raw.has("materials46")){
-   if(raw.i("level")>level(p))out+="Nivel superior al seleccionado"
+   if(raw.i("level")>maxPlanningLevel)out+="Nivel superior al seleccionado"
    for(k in raw.a("materials46").strings()){
     val has=when(k){"db"->gear in listOf("db","gym");"bench"->p.b("bench")||"bench" in gym;"step"->p.b("step");"barbell","cable"->gear=="gym"&&k in gym;else->k in mats}
     if(!has)out+="Falta material: "+catalog.materials.s(k,k)
@@ -71,8 +71,14 @@ class Rules(val catalog:Catalog){
   reject((r.b("noWrist")||"wrist" in affected)&&(hand||floorHand),"Evitar apoyo en manos");reject("knee" in affected&&floor&&knee,"Rodilla en apoyo")
   return out
  }
- fun reasons(e:Exercise,p:JSONObject):List<String>{if(e.raw.b("sourceExpansion2k")&&!e.raw.b("approvedForAutoplan"))return listOf("Pendiente de validación biomecánica y de requisitos; excluido de los generadores.");val g=gate(p);if(!g.ok)return listOf(g.reason);val risk=injuries(p).isNotEmpty()||p.b("limits")||p.o("health").b("special")||p.o("health").s("pain") in listOf("mild","moderate","strong");return (groupReasons(e,p)+materialReasons(e,p)+clinicalReasons(e,p,risk)).distinct()}
- fun compatible(e:Exercise,p:JSONObject)=reasons(e,p).isEmpty()
+ fun reasons(e:Exercise,p:JSONObject,maxPlanningLevel:Int=level(p)):List<String>{if(e.raw.b("pendingTechnicalReview")||e.raw.b("sourceExpansion2k")&&!e.raw.b("approvedForAutoplan"))return listOf("Pendiente de validación biomecánica y de requisitos; excluido de los generadores.");val g=gate(p);if(!g.ok)return listOf(g.reason);val risk=injuries(p).isNotEmpty()||p.b("limits")||p.o("health").b("special")||p.o("health").s("pain") in listOf("mild","moderate","strong");return (groupReasons(e,p)+materialReasons(e,p,maxPlanningLevel)+clinicalReasons(e,p,risk)).distinct()}
+ fun compatible(e:Exercise,p:JSONObject,maxPlanningLevel:Int=level(p))=reasons(e,p,maxPlanningLevel).isEmpty()
+ fun missionReasons(e:Exercise,p:JSONObject,item:JSONObject):List<String> {
+  val plannedLevel=level(p)+1
+  val guidedProgression=item.b("unifiedPlanning")&&item.i("progressionFromLevel")==plannedLevel
+  return reasons(e,p,maxPlanningLevel=if(guidedProgression)minOf(2,plannedLevel) else level(p))
+ }
+ fun compatibleWithMission(e:Exercise,p:JSONObject,item:JSONObject)=missionReasons(e,p,item).isEmpty()
  fun matches(e:Exercise,type:String)=e.type==type||type=="cardio"&&e.meta.b("jumpPower")
  fun inKind(e:Exercise,kind:String)=when(kind){"strength"->e.type in listOf("upper","lower","core");"cardio"->matches(e,"cardio");"recovery"->e.type=="mobility";else->false}
  fun pool(p:JSONObject,kind:String)=if(!gate(p).ok) emptyList() else catalog.exercises.filter{inKind(it,kind)&&compatible(it,p)}

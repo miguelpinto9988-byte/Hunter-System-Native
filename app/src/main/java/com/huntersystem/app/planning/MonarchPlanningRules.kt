@@ -49,7 +49,8 @@ data class ActivityMetadata(
     val id: String, val category: Category, val familyId: String, val typeId: String,
     val technicalLevel: Int, val intensity: Intensity, val equipment: Set<String>,
     val modality: String, val requiresSupervision: Boolean, val automaticEligible: Boolean,
-    val tags: Set<String> = emptySet(), val restrictionTags: Set<String> = emptySet()
+    val tags: Set<String> = emptySet(), val restrictionTags: Set<String> = emptySet(),
+    val sport: String = ""
 ) {
     init {
         require(id.isNotBlank() && familyId.isNotBlank() && typeId.isNotBlank())
@@ -172,7 +173,7 @@ object ProfileSignature {
     fun source(rows: List<ActivityMetadata>): String = hash(rows.sortedBy { it.id }.joinToString("\u001f") {
         listOf(it.id, it.category.code, it.familyId, it.typeId, it.technicalLevel,
             it.intensity, it.equipment.sorted(), it.modality, it.requiresSupervision,
-            it.automaticEligible, it.tags.sorted(), it.restrictionTags.sorted()).joinToString("|")
+            it.automaticEligible, it.tags.sorted(), it.restrictionTags.sorted(), it.sport).joinToString("|")
     })
     fun stable(seed: String, id: String): String = hash(seed + "|" + id)
 }
@@ -270,29 +271,41 @@ data class DailyMission(
     val catalogHash: String, val ids: List<String>, val explanation: String
 )
 object DeterministicSelection {
+    fun rankScore(item: ActivityMetadata, selected: List<ActivityMetadata>,
+                  seed: String, baseLevel: Int, priority: Double): Double {
+        val rotation = (seed + "|" + selected.size + "|" + item.id).hashCode()
+        // Mix the string hash before using it so adjacent catalog IDs get different weights.
+        val mixed = (rotation xor (rotation ushr 16)) * 0x45d9f3b
+        val variety = Math.floorMod(mixed xor (mixed ushr 16), 25)
+        val sportPenalty = if (item.sport.isBlank()) 0 else selected.count { it.sport == item.sport } * 14
+        val patternPenalty = selected.count { it.typeId.substringAfterLast('/') ==
+            item.typeId.substringAfterLast('/') } * 18
+        return priority + variety - sportPenalty - patternPenalty -
+            (baseLevel - item.technicalLevel).coerceAtLeast(0) * 12
+    }
+
     fun select(rows: List<ActivityMetadata>, count: Int, seed: String,
                goalTags: Set<String>, experience: Experience, phase: Int,
-               historicalPriority: Map<String, Int> = emptyMap()): List<ActivityMetadata> {
+               historicalPriority: Map<String, Int> = emptyMap(),
+               baseLevel: Int = experience.ordinal + 1,
+               stretchSlots: Int = if (phase > 0) 1 else 0): List<ActivityMetadata> {
         val selected = mutableListOf<ActivityMetadata>()
-        val target = MissionDifficultyMixPolicy.levelThreeTarget(experience, phase)
-        val maxThree = (count * target / 100.0).roundToInt()
-        val pool = rows.distinctBy { it.id }
+        val usedFamilies = mutableSetOf<String>()
+        var stretches = 0
         while (selected.size < count) {
-            val remaining = pool.filter { entry -> selected.none { it.id == entry.id } }
-            if (remaining.isEmpty()) break
-            val three = selected.count { it.technicalLevel == 3 }
-            val ranked = remaining.sortedWith(
-                compareByDescending<ActivityMetadata> { item ->
-                    (historicalPriority[item.id] ?: 0) +
-                    (if (item.tags.any { it in goalTags }) 100 else 0) +
-                    (if (selected.none { it.familyId == item.familyId }) 40 else 0) +
-                    (if (selected.none { it.typeId == item.typeId }) 20 else 0) +
-                    (if (item.technicalLevel == 3 && three < maxThree) 12 else 0) -
-                    (if (item.technicalLevel == 3 && three >= maxThree) 40 else 0) -
-                    (if (experience == Experience.ADVANCED && item.technicalLevel == 1) 10 else 0)
-                }.thenBy { ProfileSignature.stable(seed + selected.size, it.id) }.thenBy { it.id }
-            )
-            selected += ranked.first()
+            val next = rows.asSequence().filter {
+                it.familyId !in usedFamilies &&
+                    (it.technicalLevel <= baseLevel ||
+                        it.technicalLevel == baseLevel + 1 && selected.isNotEmpty() && stretches < stretchSlots)
+            }.maxWithOrNull(compareBy<ActivityMetadata> {
+                val priority = (historicalPriority[it.id] ?: 0) +
+                    (if (it.tags.any { tag -> tag in goalTags }) 55 else 0) +
+                    (if (it.technicalLevel > baseLevel && selected.isNotEmpty()) 12 else 0)
+                rankScore(it, selected, seed, baseLevel, priority.toDouble())
+            }.thenBy { it.id }) ?: break
+            selected += next
+            usedFamilies += next.familyId
+            if (next.technicalLevel > baseLevel) stretches++
         }
         return selected
     }
@@ -302,20 +315,21 @@ object DailyMissionPlanner {
              efforts: List<EffortObservation>, phases: Map<Category, TechnicalPhase> = emptyMap(),
              pinned: DailyMission? = null,
              historicalPriority: Map<String, Int> = emptyMap(),
-             excludedIds: Set<String> = emptySet()): DailyMission {
+             recentWeekIds: Set<String> = emptySet(),
+             variation: String = "", progressionReady: Boolean = false): DailyMission {
         val category = profile.category(date)
         val profileHash = ProfileSignature.of(profile)
         val rows = repository.verified()
         val catalogHash = repository.signature()
         val previous = pinned?.takeIf {
             it.date == date && it.category == category && it.profileHash == profileHash &&
-                it.catalogHash == catalogHash && it.ids.distinct().size == it.ids.size &&
+                it.ids.distinct().size == it.ids.size &&
                 it.ids.all { id -> repository.byId(id)?.let { a ->
                     category == a.category && EligibilityPolicy.compatible(a, profile,
-                        if (profile.experience == Experience.BEGINNER) 2 else 3)
+                        min(3, profile.experience.ordinal + 2))
                 } == true }
         }
-        if (previous != null) return previous
+        if (previous != null) return previous.copy(catalogHash = catalogHash)
         if (category == null)
             return DailyMission(date, null, profileHash, catalogHash, emptyList(), "Descanso programado.")
         val adaptation = CategoryEffortPolicy.decide(efforts, date, category)
@@ -331,18 +345,25 @@ object DailyMissionPlanner {
             else -> 3
         }
         val candidates = rows.filter { it.category == category &&
-            it.id !in excludedIds &&
             EligibilityPolicy.compatible(it, profile, maxLevel) &&
             (adaptation != Adaptation.RECOVER_ONE || it.technicalLevel == 1) }
         val goal = PersonalGoalInterpreter.interpret(profile.customGoal)
         val weekly = WeeklyCategoryChallengePolicy.review(efforts, date, category)
+        val phase = phases[category]?.phase ?: 0
+        val priority = candidates.associate {
+            it.id to ((historicalPriority[it.id] ?: 0) - if (it.id in recentWeekIds) 250 else 0)
+        }
         val selected = DeterministicSelection.select(candidates, limit,
-            profileHash + catalogHash + date + category.code, goal.tags,
-            profile.experience, phases[category]?.phase ?: 0, historicalPriority)
+            profileHash + catalogHash + date + category.code + variation + phase, goal.tags,
+            profile.experience, phase, priority,
+            baseLevel = min(maxLevel, profile.experience.ordinal + 1),
+            stretchSlots = if (progressionReady && adaptation in setOf(Adaptation.MAINTAIN, Adaptation.EQUIVALENT_VARIATION)) 1 else 0)
         val explanation = when {
-            candidates.isEmpty() -> "No existen alternativas compatibles con el perfil y las restricciones."
+            selected.isEmpty() -> "No existen alternativas compatibles con el perfil y las restricciones."
             adaptation == Adaptation.RECOVER_ONE -> "Esfuerzo reciente 9–10: recuperación y máximo una alternativa sencilla; descansar sigue disponible."
             adaptation == Adaptation.REDUCE_TWO -> "Esfuerzo reciente 8: máximo dos alternativas de baja complejidad."
+            selected.any { it.technicalLevel > profile.experience.ordinal + 1 } ->
+                "La revisión del grupo permite una variante técnica con dosis inicial reducida."
             weekly == WeeklyDecision.EQUIVALENT_VARIATION ->
                 "Evidencia de dos sesiones completadas y valoradas: variedad equivalente opcional."
             goal.recognized -> "Selección compatible priorizada por objetivo escrito reconocido."
@@ -374,7 +395,7 @@ object RoutineGenerator {
         for (index in 0 until maxProposals) {
             val picked = DeterministicSelection.select(pool, count,
                 request.date.toString() + request.variation + index + ProfileSignature.of(profile),
-                goal, profile.experience, 0)
+                goal, profile.experience, 0, baseLevel = request.level.maxTechnical)
             if (picked.isEmpty()) break
             val ids = picked.map { it.id }
             distinct.putIfAbsent(ids.joinToString("|"),

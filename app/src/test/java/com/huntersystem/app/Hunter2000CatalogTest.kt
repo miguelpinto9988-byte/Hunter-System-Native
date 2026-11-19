@@ -25,7 +25,7 @@ class Hunter2000CatalogTest {
         when(path){
             "catalog.json"->original
             "catalog-hunter2000-extra.json"->if(withExtra)expansion else error("Recursos no importados")
-            "routines.json","profile-form.json"->"[]"
+            "routines.json","profile-form.json","catalog-sports.json"->"[]"
             else->"{}"
         }
     })
@@ -48,6 +48,21 @@ class Hunter2000CatalogTest {
             assertFalse(e.raw.optBoolean("approvedForAutoplan"))
             assertTrue(rules.reasons(e,JSONObject()).isNotEmpty())
         }
+    }
+
+    @Test fun deportesDisponiblesYMaterialesObligatorios() {
+        val c=Catalog(loader={java.io.File("src/main/assets",it).readText()})
+        assertEquals(12,c.sportExercises.map{it.sport}.distinct().size)
+        assertTrue(c.sportExercises.all{
+            it.raw.getJSONArray("instructions").length()>0 &&
+                java.io.File("src/main/assets",it.demo).isFile
+        })
+        val wallDrill=c.byId.getValue("sport-track-a-wall")
+        val profile=JSONObject().put("age",30).put("difficulty","basic")
+        assertFalse(Rules(c).compatible(wallDrill,profile))
+        profile.put("materials46",JSONArray().put("wall"))
+        assertTrue(Rules(c).compatible(wallDrill,profile))
+        assertFalse(Rules(c).compatible(c.byId.getValue("sport-futbol-sole"),profile))
     }
 
     @Test(expected=IllegalArgumentException::class)

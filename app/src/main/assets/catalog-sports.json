@@ -1,0 +1,665 @@
+[
+  {
+    "id": "sport-futbol-sole",
+    "name": "Arrastre lateral de balón con la planta",
+    "sport": "Fútbol",
+    "level": 0,
+    "category": "Cardio",
+    "group": "Piernas",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "equipmentLabel": "Balón de fútbol",
+    "illustration": "sports2d/sport-futbol-sole.svg",
+    "materialRequirements": [
+      "soccer_ball"
+    ],
+    "setup": "Pon el balón sobre suelo plano y despeja un paso a cada lado.",
+    "instructions": [
+      "Apoya suavemente la planta derecha sobre el balón con el peso en la pierna izquierda.",
+      "Arrastra el balón hacia el centro y recíbelo con la planta izquierda.",
+      "Alterna sin pisar fuerte el balón."
+    ],
+    "commonErrors": "Desplazar el peso sobre el balón o mirar al suelo todo el tiempo.",
+    "initialDose": "15 segundos a ritmo lento.",
+    "pendingTechnicalReview": true,
+    "impact": "Sin saltos",
+    "intensity": "moderate",
+    "floor": false,
+    "wristLoad": false,
+    "zones": [
+      "ankle",
+      "knee",
+      "hip"
+    ],
+    "planning49": {
+      "group": "cardio",
+      "family": "sport-futbol-sole",
+      "pattern": "control de balón",
+      "level": 0,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    },
+    "standing": true,
+    "kneeBend": true,
+    "doseCap46": {
+      "initial": 15,
+      "target": 15,
+      "sets": 1,
+      "rest": 60
+    },
+    "technicalLevel": 1
+  },
+  {
+    "id": "sport-calisthenics-scapula",
+    "name": "Retracción escapular en suspensión",
+    "sport": "Calistenia",
+    "level": 1,
+    "category": "Fuerza",
+    "group": "Espalda",
+    "unit": "reps",
+    "variant": "base",
+    "equipment": "body",
+    "equipmentLabel": "Barra fija",
+    "illustration": "sports2d/sport-calisthenics-scapula.svg",
+    "materialRequirements": [
+      "pullup_bar"
+    ],
+    "setup": "Usa una barra fija al alcance y comprueba que puedes sujetarla sin dolor.",
+    "instructions": [
+      "Cuélgate con brazos rectos y manos a la anchura de los hombros.",
+      "Aleja los hombros de las orejas y eleva el pecho unos centímetros sin doblar los codos.",
+      "Regresa lentamente; baja de la barra si pierdes el agarre."
+    ],
+    "commonErrors": "Doblar los codos, balancear las piernas o forzar el cuello.",
+    "initialDose": "4 repeticiones controladas.",
+    "pendingTechnicalReview": true,
+    "impact": "Sin saltos",
+    "intensity": "moderate",
+    "floor": false,
+    "wristLoad": true,
+    "zones": [
+      "shoulder",
+      "elbow",
+      "wrist"
+    ],
+    "planning49": {
+      "group": "upper",
+      "family": "sport-calisthenics-scapula",
+      "pattern": "tracción escapular",
+      "level": 1,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    },
+    "overhead": true,
+    "requiresSupervision": true,
+    "doseCap46": {
+      "initial": 4,
+      "target": 4,
+      "sets": 1,
+      "rest": 60
+    },
+    "technicalLevel": 2
+  },
+  {
+    "id": "sport-yoga-warrior3",
+    "name": "Guerrero III con brazos junto al cuerpo",
+    "sport": "Yoga",
+    "level": 2,
+    "category": "Movilidad",
+    "group": "Piernas",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "equipmentLabel": "Superficie antideslizante",
+    "illustration": "sports2d/sport-yoga-warrior3.svg",
+    "materialRequirements": [
+      "wall"
+    ],
+    "setup": "Colócate junto a una pared por si necesitas apoyo. Mira a un punto fijo del suelo.",
+    "instructions": [
+      "Lleva el peso a un pie y flexiona ligeramente la rodilla de apoyo.",
+      "Inclina el tronco al frente desde la cadera al elevar la otra pierna hacia atrás.",
+      "Mantén ambas caderas orientadas hacia el suelo y vuelve despacio. Cambia de lado."
+    ],
+    "commonErrors": "Abrir la cadera elevada o bloquear la rodilla de apoyo.",
+    "initialDose": "8 segundos por lado.",
+    "pendingTechnicalReview": false,
+    "impact": "Sin saltos",
+    "intensity": "low",
+    "floor": false,
+    "wristLoad": false,
+    "zones": [
+      "ankle",
+      "knee",
+      "hip",
+      "back"
+    ],
+    "planning49": {
+      "group": "mobility",
+      "family": "sport-yoga-warrior3",
+      "pattern": "equilibrio unilateral",
+      "level": 2,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    },
+    "sides": true,
+    "standing": true,
+    "kneeBend": true,
+    "doseCap46": {
+      "initial": 8,
+      "target": 8,
+      "sets": 1,
+      "rest": 60
+    },
+    "technicalLevel": 3
+  },
+  {
+    "id": "sport-pilates-saw",
+    "name": "Sierra sentada de pilates",
+    "sport": "Pilates",
+    "level": 1,
+    "category": "Fuerza",
+    "group": "Core",
+    "unit": "reps",
+    "variant": "base",
+    "equipment": "body",
+    "equipmentLabel": "Esterilla",
+    "illustration": "sports2d/sport-pilates-saw.svg",
+    "materialRequirements": [
+      "mat"
+    ],
+    "setup": "Siéntate con las piernas abiertas cómodamente y los brazos extendidos hacia los lados.",
+    "instructions": [
+      "Gira el tronco a la derecha manteniendo ambos isquiones apoyados.",
+      "Al exhalar, alcanza el lado externo del pie derecho con la mano izquierda, dentro de tu rango cómodo.",
+      "Vuelve erguido al centro y repite hacia el otro lado."
+    ],
+    "commonErrors": "Rebotar al alcanzar el pie o levantar una cadera.",
+    "initialDose": "4 repeticiones por lado.",
+    "pendingTechnicalReview": false,
+    "impact": "Sin saltos",
+    "intensity": "low",
+    "floor": true,
+    "wristLoad": false,
+    "zones": [
+      "back",
+      "hip"
+    ],
+    "planning49": {
+      "group": "core",
+      "family": "sport-pilates-saw",
+      "pattern": "rotación de tronco",
+      "level": 1,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    },
+    "sides": true,
+    "seated": true,
+    "spineMove": true,
+    "doseCap46": {
+      "initial": 4,
+      "target": 4,
+      "sets": 1,
+      "rest": 60
+    },
+    "technicalLevel": 2
+  },
+  {
+    "id": "sport-basket-figure8",
+    "name": "Pase de balón en ocho entre las piernas",
+    "sport": "Baloncesto",
+    "level": 0,
+    "category": "Cardio",
+    "group": "Piernas",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "equipmentLabel": "Balón de baloncesto",
+    "illustration": "sports2d/sport-basket-figure8.svg",
+    "materialRequirements": [
+      "basketball"
+    ],
+    "setup": "Separa los pies y flexiona ligeramente las rodillas. Sujeta el balón con ambas manos.",
+    "instructions": [
+      "Pasa el balón entre las piernas hacia la mano que espera detrás.",
+      "Rodéalo por fuera de la pierna y pásalo de nuevo por el centro al otro lado.",
+      "Invierte el recorrido después de completar el intervalo."
+    ],
+    "commonErrors": "Redondear la espalda para bajar o botar el balón durante el traspaso.",
+    "initialDose": "15 segundos a ritmo cómodo.",
+    "pendingTechnicalReview": true,
+    "impact": "Sin saltos",
+    "intensity": "moderate",
+    "floor": false,
+    "wristLoad": false,
+    "zones": [
+      "ankle",
+      "knee",
+      "hip",
+      "back"
+    ],
+    "planning49": {
+      "group": "cardio",
+      "family": "sport-basket-figure8",
+      "pattern": "manipulación de balón",
+      "level": 0,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    },
+    "standing": true,
+    "kneeBend": true,
+    "doseCap46": {
+      "initial": 15,
+      "target": 15,
+      "sets": 1,
+      "rest": 60
+    },
+    "technicalLevel": 1
+  },
+  {
+    "id": "sport-volley-wall-set",
+    "name": "Toques de dedos contra pared",
+    "sport": "Voleibol",
+    "level": 1,
+    "category": "Fuerza",
+    "group": "Hombros",
+    "unit": "reps",
+    "variant": "base",
+    "equipment": "body",
+    "equipmentLabel": "Balón de voleibol y pared despejada",
+    "illustration": "sports2d/sport-volley-wall-set.svg",
+    "materialRequirements": [
+      "volleyball"
+    ],
+    "setup": "Sitúate frente a una pared lisa, con espacio libre y un balón ligero.",
+    "instructions": [
+      "Recibe el balón por encima de la frente con las manos abiertas.",
+      "Extiende piernas y brazos para dirigirlo hacia un punto de la pared.",
+      "Deja que vuelva a tu zona de contacto y reinicia si el rebote se desvía."
+    ],
+    "commonErrors": "Recibir con los brazos rectos o golpear con las palmas.",
+    "initialDose": "5 repeticiones a baja altura.",
+    "pendingTechnicalReview": true,
+    "impact": "Sin saltos",
+    "intensity": "moderate",
+    "floor": false,
+    "wristLoad": false,
+    "zones": [
+      "shoulder",
+      "elbow",
+      "wrist",
+      "knee"
+    ],
+    "planning49": {
+      "group": "upper",
+      "family": "sport-volley-wall-set",
+      "pattern": "toque de dedos",
+      "level": 1,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    },
+    "overhead": true,
+    "standing": true,
+    "kneeBend": true,
+    "doseCap46": {
+      "initial": 5,
+      "target": 5,
+      "sets": 1,
+      "rest": 60
+    },
+    "technicalLevel": 2
+  },
+  {
+    "id": "sport-tennis-shadow-forehand",
+    "name": "Derecha de tenis en sombra con recuperación",
+    "sport": "Tenis",
+    "level": 1,
+    "category": "Cardio",
+    "group": "Piernas",
+    "unit": "reps",
+    "variant": "base",
+    "equipment": "body",
+    "equipmentLabel": "Raqueta de tenis",
+    "illustration": "sports2d/sport-tennis-shadow-forehand.svg",
+    "materialRequirements": [
+      "tennis_racket"
+    ],
+    "setup": "Despeja el espacio alrededor y coloca una marca en el suelo como punto de partida.",
+    "instructions": [
+      "Desde la marca, da un paso lateral y gira ambos hombros para preparar la derecha.",
+      "Simula un golpe de derecha suave por delante del cuerpo y deja que la raqueta termine alta.",
+      "Vuelve a la marca con pasos cortos y recupera la posición de espera."
+    ],
+    "commonErrors": "Forzar el giro solo con el brazo o cruzar los pies al detenerte.",
+    "initialDose": "4 repeticiones cómodas.",
+    "pendingTechnicalReview": true,
+    "impact": "Sin saltos",
+    "intensity": "moderate",
+    "floor": false,
+    "wristLoad": false,
+    "zones": [
+      "shoulder",
+      "wrist",
+      "back",
+      "hip",
+      "ankle"
+    ],
+    "planning49": {
+      "group": "cardio",
+      "family": "sport-tennis-shadow-forehand",
+      "pattern": "rotación y paso lateral",
+      "level": 1,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    },
+    "standing": true,
+    "spineMove": true,
+    "sides": true,
+    "doseCap46": {
+      "initial": 4,
+      "target": 4,
+      "sets": 1,
+      "rest": 60
+    },
+    "technicalLevel": 2
+  },
+  {
+    "id": "sport-track-a-wall",
+    "name": "Marcha técnica de aceleración contra pared",
+    "sport": "Atletismo",
+    "level": 0,
+    "category": "Fuerza",
+    "group": "Piernas",
+    "unit": "reps",
+    "variant": "base",
+    "equipment": "body",
+    "equipmentLabel": "Pared firme",
+    "illustration": "sports2d/sport-track-a-wall.svg",
+    "materialRequirements": [
+      "wall"
+    ],
+    "setup": "Apoya las manos en una pared firme a la altura de los hombros y aleja ambos pies medio paso.",
+    "instructions": [
+      "Inclina todo el cuerpo hacia la pared manteniendo una línea desde el talón hasta el hombro.",
+      "Eleva una rodilla sin girar la pelvis y mantén el tobillo de ese lado activo.",
+      "Devuelve el pie al suelo con control y alterna."
+    ],
+    "commonErrors": "Hundir la zona lumbar o elevar los hombros hacia las orejas.",
+    "initialDose": "5 repeticiones por lado.",
+    "pendingTechnicalReview": false,
+    "impact": "Sin saltos",
+    "intensity": "low",
+    "floor": false,
+    "wristLoad": true,
+    "zones": [
+      "shoulder",
+      "wrist",
+      "hip",
+      "knee",
+      "ankle"
+    ],
+    "planning49": {
+      "group": "lower",
+      "family": "sport-track-a-wall",
+      "pattern": "marcha con apoyo inclinado",
+      "level": 0,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    },
+    "standing": true,
+    "sides": true,
+    "doseCap46": {
+      "initial": 5,
+      "target": 5,
+      "sets": 1,
+      "rest": 60
+    },
+    "technicalLevel": 1
+  },
+  {
+    "id": "sport-box-slip-rope",
+    "name": "Esquiva en U bajo una cuerda",
+    "sport": "Boxeo",
+    "level": 1,
+    "category": "Cardio",
+    "group": "Piernas",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "equipmentLabel": "Cuerda ligera bien sujeta",
+    "illustration": "sports2d/sport-box-slip-rope.svg",
+    "materialRequirements": [
+      "light_rope"
+    ],
+    "setup": "Tensa una cuerda visible a la altura aproximada del hombro. Retira objetos del espacio lateral.",
+    "instructions": [
+      "Adopta una guardia cómoda al lado de la cuerda.",
+      "Flexiona suavemente cadera y rodillas para pasar por debajo sin tocarla con la cabeza.",
+      "Sube al otro lado manteniendo el equilibrio. Regresa en sentido contrario."
+    ],
+    "commonErrors": "Inclinar solo el cuello o cruzar los pies al pasar.",
+    "initialDose": "15 segundos sin acelerar.",
+    "pendingTechnicalReview": true,
+    "impact": "Sin saltos",
+    "intensity": "moderate",
+    "floor": false,
+    "wristLoad": false,
+    "zones": [
+      "back",
+      "hip",
+      "knee",
+      "ankle"
+    ],
+    "planning49": {
+      "group": "cardio",
+      "family": "sport-box-slip-rope",
+      "pattern": "esquiva lateral",
+      "level": 1,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    },
+    "standing": true,
+    "kneeBend": true,
+    "doseCap46": {
+      "initial": 15,
+      "target": 15,
+      "sets": 1,
+      "rest": 60
+    },
+    "technicalLevel": 2
+  },
+  {
+    "id": "sport-gymnastics-tuck-support",
+    "name": "Apoyo agrupado en paralelas bajas",
+    "sport": "Gimnasia",
+    "level": 2,
+    "category": "Fuerza",
+    "group": "Core",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "equipmentLabel": "Paralelas bajas estables",
+    "illustration": "sports2d/sport-gymnastics-tuck-support.svg",
+    "materialRequirements": [
+      "parallettes"
+    ],
+    "setup": "Coloca dos paralelas firmes sobre una superficie antideslizante. Empieza con los pies apoyados.",
+    "instructions": [
+      "Empuja las barras con los brazos rectos y aleja los hombros de las orejas.",
+      "Agrupa las rodillas y despega los pies unos centímetros sin balancearte.",
+      "Vuelve a apoyar ambos pies antes de relajar los hombros."
+    ],
+    "commonErrors": "Colapsar los hombros o intentar elevar las piernas mediante un impulso.",
+    "initialDose": "5 segundos con apoyo disponible.",
+    "pendingTechnicalReview": true,
+    "impact": "Sin saltos",
+    "intensity": "moderate",
+    "floor": false,
+    "wristLoad": true,
+    "zones": [
+      "shoulder",
+      "elbow",
+      "wrist",
+      "hip"
+    ],
+    "planning49": {
+      "group": "core",
+      "family": "sport-gymnastics-tuck-support",
+      "pattern": "suspensión en apoyo",
+      "level": 2,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    },
+    "requiresSupervision": true,
+    "doseCap46": {
+      "initial": 5,
+      "target": 5,
+      "sets": 1,
+      "rest": 60
+    },
+    "technicalLevel": 3
+  },
+  {
+    "id": "sport-weightlift-tall-clean",
+    "name": "Cargada alta con barra técnica",
+    "sport": "Levantamiento de pesas",
+    "level": 2,
+    "category": "Fuerza",
+    "group": "Piernas",
+    "unit": "reps",
+    "variant": "base",
+    "equipment": "body",
+    "equipmentLabel": "Barra técnica y plataforma",
+    "illustration": "sports2d/sport-weightlift-tall-clean.svg",
+    "materialRequirements": [
+      "barbell"
+    ],
+    "setup": "Practica con supervisión y una barra técnica ligera. Aprende primero a sostener la barra sobre los hombros.",
+    "instructions": [
+      "Empieza erguido con la barra pegada a los muslos y sin tomar impulso desde una sentadilla.",
+      "Pasa rápidamente debajo de la barra y gira los codos delante para recibirla sobre los hombros.",
+      "Levántate con control y devuelve la barra a la posición inicial."
+    ],
+    "commonErrors": "Alejar la barra del cuerpo o recibirla con los codos apuntando al suelo.",
+    "initialDose": "3 repeticiones con barra técnica.",
+    "pendingTechnicalReview": true,
+    "impact": "Sin saltos",
+    "intensity": "moderate",
+    "floor": false,
+    "wristLoad": false,
+    "zones": [
+      "shoulder",
+      "elbow",
+      "wrist",
+      "back",
+      "hip",
+      "knee",
+      "ankle"
+    ],
+    "planning49": {
+      "group": "lower",
+      "family": "sport-weightlift-tall-clean",
+      "pattern": "recepción de cargada",
+      "level": 2,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    },
+    "standing": true,
+    "kneeBend": true,
+    "requiresSupervision": true,
+    "doseCap46": {
+      "initial": 3,
+      "target": 3,
+      "sets": 1,
+      "rest": 60
+    },
+    "technicalLevel": 3
+  },
+  {
+    "id": "sport-cycling-spinups",
+    "name": "Aceleraciones de cadencia sentado",
+    "sport": "Ciclismo",
+    "level": 0,
+    "category": "Cardio",
+    "group": "Piernas",
+    "unit": "sec",
+    "variant": "base",
+    "equipment": "body",
+    "equipmentLabel": "Bicicleta estática",
+    "illustration": "sports2d/sport-cycling-spinups.svg",
+    "materialRequirements": [
+      "cardio"
+    ],
+    "setup": "Ajusta el sillín a una altura cómoda y pedalea suavemente con resistencia baja.",
+    "instructions": [
+      "Aumenta la cadencia de manera gradual durante unos segundos, sentado.",
+      "Mantén estable la pelvis y conserva un pedaleo redondo y cómodo.",
+      "Vuelve al ritmo inicial si aparece rebote sobre el sillín."
+    ],
+    "commonErrors": "Subir mucho la resistencia o pedalear tan rápido que se pierda el control.",
+    "initialDose": "15 segundos de aumento suave.",
+    "pendingTechnicalReview": true,
+    "impact": "Sin saltos",
+    "intensity": "moderate",
+    "floor": false,
+    "wristLoad": false,
+    "zones": [
+      "hip",
+      "knee",
+      "ankle"
+    ],
+    "planning49": {
+      "group": "cardio",
+      "family": "sport-cycling-spinups",
+      "pattern": "aumento de cadencia",
+      "level": 0,
+      "role": "accessory",
+      "primary": false,
+      "impact": false,
+      "power": false,
+      "conditioning": 1
+    },
+    "seated": true,
+    "doseCap46": {
+      "initial": 15,
+      "target": 15,
+      "sets": 1,
+      "rest": 60
+    },
+    "technicalLevel": 1
+  }
+]

@@ -46,7 +46,7 @@ object GroupEvolution {
  data class Adjustment(
   val group:String, val steps:Int=0, val lastDate:String="",
   val lastRpe:Int=0, val samples7:Int=0, val samples14:Int=0,
-  val samples21:Int=0
+  val samples21:Int=0,val technicalReady:Boolean=false
  )
 
  fun evaluate(logs:JSONObject,date:String,group:String,p:JSONObject?,catalog:Catalog):Adjustment {
@@ -84,9 +84,8 @@ object GroupEvolution {
     else -> 0
    }
   }
-  steps+=review(seven,2)
-  steps+=review(fourteen,3)
-  steps+=review(twentyOne,5)
+  val reviews=listOf(review(seven,2),review(fourteen,3),review(twentyOne,5))
+  steps+=reviews.sum()
   // A stopped or painful session must block progression even if a previous
   // completed session was easy. It remains visible to the existing risk filters.
   val recentProblem=logs.entries().any{(d,v)->
@@ -98,7 +97,8 @@ object GroupEvolution {
   }
   if(high||recentProblem)steps=steps.coerceAtMost(0)
   // Global safety and medical gates are still enforced by the existing Rules.
-  return Adjustment(group,steps.coerceIn(-2,2),last.first,latestRpe,seven.size,fourteen.size,twentyOne.size)
+  return Adjustment(group,steps.coerceIn(-2,2),last.first,latestRpe,seven.size,
+   fourteen.size,twentyOne.size,!high&&!recentProblem&&latestRpe<=4&&reviews.any{it>0})
  }
 
  fun feedback(logs:JSONObject,date:String,group:String,p:JSONObject?,catalog:Catalog):Feedback {

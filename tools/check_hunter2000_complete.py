@@ -1,12 +1,50 @@
 #!/usr/bin/env python3
 """Comprueba el catálogo Hunter 2000 después de retirar los SVG animados."""
 from pathlib import Path
-import json, re, xml.etree.ElementTree as ET
+import json, re, unicodedata, xml.etree.ElementTree as ET
+from collections import Counter, defaultdict
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "app/src/main/assets"
 def read_json(name):
     return json.loads((ASSETS / name).read_text(encoding="utf-8"))
+
+def exercise_name(name):
+    name = unicodedata.normalize("NFKD", name.casefold())
+    return " ".join(re.findall(r"[a-z0-9]+", name.encode("ascii", "ignore").decode()))
+
+
+def verify_sports(items):
+    sports = read_json("catalog-sports.json")
+    all_rows = items + sports
+    for key, values in (
+        ("ID", [x["id"] for x in all_rows]),
+        ("nombre normalizado", [exercise_name(x["name"]) for x in all_rows]),
+    ):
+        repeated = [value for value, count in Counter(values).items() if count > 1]
+        if repeated:
+            raise ValueError(f"Duplicados por {key}: {repeated}")
+    distribution = defaultdict(Counter)
+    for row in sports:
+        sport, level = row["sport"], row["level"]
+        if not sport or level not in (0, 1, 2) or not (
+            row["instructions"] and row["commonErrors"] and row["initialDose"]
+            and row["equipmentLabel"]
+        ):
+            raise ValueError(f"Ficha deportiva incompleta: {row['id']}")
+        expected = f"sports2d/{row['id']}.svg"
+        if row["illustration"] != expected or ET.parse(ASSETS / expected).getroot().tag != "{http://www.w3.org/2000/svg}svg":
+            raise ValueError(f"Ilustración deportiva inválida: {row['id']}")
+        distribution[sport][level] += 1
+    candidates = defaultdict(list)
+    for row in all_rows:
+        if row.get("steps"):
+            key = tuple(row.get(k) for k in ("steps", "equipment", "unit", "level", "variant"))
+            candidates[key + (row["planning49"].get("pattern"),)].append(row["id"])
+    return len(sports), dict(distribution), [
+        ids for ids in candidates.values() if len(ids) > 1
+    ]
+
 
 def verify():
     original = read_json("catalog.json")
@@ -45,7 +83,10 @@ def verify():
             raise ValueError(f"SVG no estático o inseguro: {name}")
         if ET.fromstring(raw).tag.rsplit("}", 1)[-1] != "svg":
             raise ValueError(f"XML inválido: {name}")
-    return {"status": "PASS", "catalog_total": 2000, "static_svg": 1200,
+    sports_count, distribution, candidates = verify_sports(items)
+    return {"status": "PASS", "catalog_total": len(items) + sports_count, "static_svg": 1200 + sports_count,
+            "sports_count": sports_count, "sports_by_level": distribution,
+            "shared_instruction_candidates": candidates,
             "animated_svg": 0, "pending_new": 800, "mp4_unchanged": True}
 
 if __name__ == "__main__":

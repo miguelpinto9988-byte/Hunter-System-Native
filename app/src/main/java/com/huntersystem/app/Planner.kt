@@ -1,5 +1,6 @@
 package com.huntersystem.app
 
+import com.huntersystem.app.planning.DeterministicSelection
 import org.json.JSONObject
 import org.json.JSONArray
 import kotlin.math.*
@@ -78,8 +79,14 @@ class Planner(val catalog:Catalog,val rules:Rules){
    dailyLimit=min(baseProfile.dailyLimit,timeLimit))
   val source=planningSource(p)
   val history=observations?:MonarchLegacyHistory.efforts(logs)
-  val previous=recent(logs,date,21).filter{it.second.b("complete")}
-    .flatMap{it.second.a("items").objects().map{x->x.s("id")}}.toSet()
+  val lastUse=mutableMapOf<String, String>()
+  for((day,log) in recent(logs,date,21)) {
+   if(!log.b("complete"))continue
+   for(item in log.a("items").objects()) {
+    val family=catalog.byId[item.s("id")]?.family?:continue
+    if(day>(lastUse[family]?:""))lastUse[family]=day
+   }
+  }
   val load=load(logs,date)
   val priority=source.all().associate{item->
    val e=catalog.byId[item.id]
@@ -87,7 +94,7 @@ class Planner(val catalog:Catalog,val rules:Rules){
     -min(24,(load.first[e.group]?:0)*2)
     -min(15,(load.second[e.pattern]?:0)*2)
     -min(25,(load.third[e.oldFamily]?:0)*7)
-    -(if(e.id in previous)22 else 0)
+    -(lastUse[e.family]?.let{(30-distance(it,date).toInt()).coerceAtLeast(0)}?:0)
     -min(20,planned.filter{distance(it.date,date)<=6&&it.group==e.group}.sumOf{it.sets}*2)
     +supportScore(e,p)+metadataScore(e,p,kind)
     +(rules.score(e,p,kind,emptyList())/5.0).coerceIn(-25.0,25.0).roundToInt()
@@ -101,8 +108,6 @@ class Planner(val catalog:Catalog,val rules:Rules){
   val excluded=if(candidateFresh)source.all().filter{item->
     catalog.byId[item.id]?.let{e->e.family in usedBases}?:true
   }.map{it.id}.toSet() else emptySet()
-  val mission=com.huntersystem.app.planning.DailyMissionPlanner.plan(
-   localDate,profile,source,history,phases,pinned,priority,excluded)
   val adaptation=com.huntersystem.app.planning.CategoryEffortPolicy.decide(
    history,localDate,requested)
   val stop=gate.reduced||rules.active(p)||
@@ -116,12 +121,16 @@ class Planner(val catalog:Catalog,val rules:Rules){
    com.huntersystem.app.planning.Category.CARDIO->"cardio"
   }
   val oldReview=GroupEvolution.evaluate(logs,date,group,p,catalog)
+  val progressionReady=!stop&&!limited&&oldReview.technicalReady&&
+   java.time.temporal.ChronoUnit.DAYS.between(profile.experienceStart,localDate)>=7
+  val mission=com.huntersystem.app.planning.DailyMissionPlanner.plan(
+   localDate,profile,source,history,phases,pinned,priority,excluded,seed,progressionReady)
   val safeReview=oldReview.copy(steps=min(0,oldReview.steps))
   val groupFeedback=GroupEvolution.feedback(logs,date,group,p,catalog)
   val items=mission.ids.mapNotNull{id->
    val e=catalog.byId[id]?:return@mapNotNull null
    val metadata=source.byId(id)?:return@mapNotNull null
-   if(!rules.compatible(e,p))return@mapNotNull null
+   if(!rules.compatible(e,p,maxPlanningLevel=2))return@mapNotNull null
    val first=libraryDose(e,p,kind)
    if(stop)first.put("sets",1)
    else if(limited)first.put("sets",min(2,first.i("sets",1)))
@@ -134,6 +143,13 @@ class Planner(val catalog:Catalog,val rules:Rules){
    item.put("technicalLevel",metadata.technicalLevel)
    item.put("progressStatus","PENDING")
    item.put("unifiedPlanning",true)
+   if(metadata.technicalLevel>profile.experience.ordinal+1){
+    item.put("progressionFromLevel",profile.experience.ordinal+1)
+    item.put("sets",1)
+    item.put("noAutoLoad",true)
+    val limit=e.raw.o("doseCap46").i("initial",if(e.unit=="sec")15 else 5)
+    item.put("target",min(item.i("target",1),limit))
+   }
    item
   }
   for(item in items){val e=catalog.byId[item.s("id")]?:continue
@@ -175,21 +191,24 @@ class Planner(val catalog:Catalog,val rules:Rules){
   val nativeProfile=MonarchProfileAdapter.from(adjusted,
    runCatching{java.time.LocalDate.parse(date)}.getOrNull()?:java.time.LocalDate.now())?:return null
   val validated=planningSource(adjusted)
-  val maxTechnical=when(n){0->2;1->3;else->3}
-  val safeIds=validated.all().filter{
+  val maxTechnical=n+1
+  val safeMetadata=validated.all().filter{
    com.huntersystem.app.planning.EligibilityPolicy.compatible(
     it,nativeProfile,maxTechnical)
-  }.map{it.id}.toSet()
-  val candidates=rules.pool(adjusted,kind).filter{it.id in safeIds &&
+  }.associateBy{it.id}
+  val candidates=rules.pool(adjusted,kind).filter{it.id in safeMetadata &&
    (if(mode=="gym")it.gym||it.power else !it.gym) &&
    rules.matches(it,type) &&
    (mode!="gym"||it.raw.a("gymRequirements23").strings().all{
      key->key in adjusted.a("gymEquipment23").strings()})}
   if(candidates.isEmpty())return null
   val seed="$epoch|$mode|$type|$n|$variant";val status=rules.gate(adjusted);val fb=GroupEvolution.feedback(logs,date,type,adjusted,catalog);val rawEvolution=GroupEvolution.evaluate(logs,date,type,adjusted,catalog);val evolution=if(status.reduced||rules.active(adjusted))rawEvolution.copy(steps=min(0,rawEvolution.steps)) else rawEvolution;val ready=rules.powerReady(adjusted,logs,date,status,fb.strain);var winner:List<JSONObject>?=null;var winMinutes=0;var winScore=Double.POSITIVE_INFINITY
-  for(count in 2..min(candidates.size,if(range=="short")5 else 7)){val picked=mutableListOf<Exercise>();val used=mutableSetOf<String>();val groups=mutableMapOf<String,Int>();while(picked.size<count){val possible=candidates.filter{it.family !in used};val allowed=rules.selection(possible,picked,count,adjusted,kind,type,ready);if(allowed.isEmpty())break;val e=allowed.sortedWith(compareByDescending<Exercise>{rules.score(it,adjusted,kind,picked)-(groups[it.group]?:0)*14}.thenBy{hash("$seed|${it.id}")}).first();picked+=e;used+=e.family;groups[e.group]=(groups[e.group]?:0)+1};if(picked.size<count)break;if(mode=="gym"&&picked.none{it.gym})continue
+  for(count in 2..min(candidates.size,if(range=="short")5 else 7)){val picked=mutableListOf<Exercise>();val used=mutableSetOf<String>();val groups=mutableMapOf<String,Int>();while(picked.size<count){val possible=candidates.filter{it.family !in used};val allowed=rules.selection(possible,picked,count,adjusted,kind,type,ready);if(allowed.isEmpty())break;val selectedMetadata=picked.mapNotNull{safeMetadata[it.id]};val e=allowed.maxWithOrNull(compareBy<Exercise>{
+      DeterministicSelection.rankScore(safeMetadata.getValue(it.id),selectedMetadata,seed,maxTechnical,
+       rules.score(it,adjusted,kind,picked)-(groups[it.group]?:0)*14)
+     }.thenBy{it.id})?:break;picked+=e;used+=e.family;groups[e.group]=(groups[e.group]?:0)+1};if(picked.size<count)break;if(mode=="gym"&&picked.none{it.gym})continue
    for(sets in 1..3){val items=picked.map{e->val base=libraryDose(e,adjusted,kind);val x=obj("id" to e.id,"sets" to min(sets,base.i("sets",1)).coerceAtLeast(1),"target" to base.i("target",8).coerceIn(1,if(e.unit=="sec")50 else 15),"rest" to max(30,base.i("rest",60)),"libraryGen3845" to true);GroupEvolution.apply(e,cap(e,adjusted,rules.groupDose(e,adjusted,kind,x,logs,date,status,fb.strain),logs,date,status,fb),evolution)};val mins=minutes(obj("items" to arr(items)),adjusted);if(mins !in low..high)continue;val aim=if(range=="short")8 else if(range=="medium")15 else 25;val score=abs(aim-mins)*10.0+abs(count-if(range=="short")3 else 5)*2;if(score<winScore){winner=items;winMinutes=mins;winScore=score}}
   }
-  val result=winner?:return null;return obj("id" to "hlib3845-$mode-$epoch-$type-$n-$variant","name" to "${groupLabels[type]} · ${listOf("Básico","Intermedio","Avanzado")[n]} · ${if(mode=="gym")"Gimnasio" else "Sin conexión"} ${variant+1}","category" to kindLabel(kind),"focus3845" to type,"mode3845" to mode,"level" to n,"items" to arr(result),"gymOnly23" to (mode=="gym"),"gymRequirements23" to arr(result.flatMap{catalog.byId[it.s("id")]!!.raw.a("gymRequirements23").strings()}.distinct()),"minutes" to winMinutes,"impact" to if(result.any{catalog.byId[it.s("id")]!!.impact})"Con saltos" else "Sin saltos","family" to "dynamic","safe381" to true,"description" to "Secuencia generada desde las demostraciones 2D locales, filtrada por categoría, equipo y restricciones del perfil. Estimación de tiempo con descansos. No altera las misiones del día.")
+  val result=winner?:return null;return obj("id" to "hlib3845-$mode-$epoch-$type-$n-$variant","name" to "${groupLabels[type]} · ${listOf("Básico","Intermedio","Avanzado")[n]} · ${if(mode=="gym")"Gimnasio" else "Sin conexión"} ${variant+1}","category" to kindLabel(kind),"focus3845" to type,"mode3845" to mode,"level" to n,"items" to arr(result),"gymOnly23" to (mode=="gym"),"gymRequirements23" to arr(result.flatMap{catalog.byId[it.s("id")]!!.raw.a("gymRequirements23").strings()}.distinct()),"minutes" to winMinutes,"impact" to if(result.any{catalog.byId[it.s("id")]!!.impact})"Con saltos" else "Sin saltos","family" to "dynamic","safe381" to true,"description" to "Secuencia generada por categoría, equipo y restricciones del perfil. Estimación de tiempo con descansos. No altera las misiones del día.")
  }
 }
