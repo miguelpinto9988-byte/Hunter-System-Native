@@ -113,11 +113,11 @@ import kotlin.math.*
  val lifecycle=LocalLifecycleOwner.current.lifecycle
  DisposableEffect(lifecycle){val observer=LifecycleEventObserver{_,event->if(event==Lifecycle.Event.ON_STOP)play=false};lifecycle.addObserver(observer);onDispose{lifecycle.removeObserver(observer)}}
  Eyebrow(listOf(e.group,e.category,e.sport).filter{it.isNotBlank()}.joinToString(" · "));Heading(e.name,size=35);HText("${if(e.unit=="sec")"Por tiempo" else "Por repeticiones"}${if(e.sides)" · Cantidad por lado" else ""} · ${if(e.impact)"Con saltos" else "Sin saltos"}",size=16,color=c.muted)
- MonarchExerciseStage(e,mirror,height=360,play=play)
  Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
   HButton(if(play)"Pausar demostración" else "Reproducir demostración"){play=!play}
   HButton(if(mirror)"⇄ ESPEJO ✓" else "⇄ ESPEJO"){mirror=!mirror}
  }
+ MonarchExerciseStage(e,mirror,height=360,play=play)
  if(e.raw.a("instructions").length()==0&&e.raw.s("steps").isNotBlank())
   HPanel(decor=false,padding=16){Heading("Ejecución",size=25);HText(e.raw.s("steps"),size=17)}
  for((key,label)in listOf("setup" to "Preparación","instructions" to "Ejecución","commonErrors" to "Errores comunes","initialDose" to "Dosis inicial","control" to "Control","breath" to "Respiración","tempo" to "Ritmo","muscles" to "Músculos implicados","cue" to "Punto clave")){val text=if(key=="instructions")e.raw.a(key).strings().mapIndexed{i,t->"${i+1}. $t"}.joinToString("\n") else e.raw.s(key);if(text.isNotBlank())HPanel(decor=false,padding=16){Heading(label,size=25);HText(text,size=17)}}
