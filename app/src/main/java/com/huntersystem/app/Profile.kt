@@ -88,8 +88,8 @@ internal class ProfileRegistration(private val ui:NativeUi) {
   ),
   "legacyArtwork" to obj(
    "edge" to HunterAppearanceV43.borderHex(value("theme"),value("outlineColor")),
-   "scene" to "/"+chosenSceneArtwork(value("scene")),
-   "figure" to "/"+chosenHunterArtwork(value("collection"),value("gender"))
+   "scene" to "/assets/"+chosenSceneArtwork(value("scene")),
+   "figure" to "/assets/"+chosenHunterArtwork(value("collection"),value("gender"))
   )
  )
 
