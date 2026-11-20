@@ -33,7 +33,13 @@ jobs:
           arch: x86_64
           target: google_apis
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
-          script: bash gradlew --no-daemon --max-workers=2 :app:connectedDebugAndroidTest
+          script: |
+            set +e
+            bash gradlew --no-daemon --max-workers=2 :app:connectedDebugAndroidTest
+            result=$?
+            mkdir -p app/build/qa
+            adb logcat -d -s HunterStartup HunterProfile AndroidRuntime '*:S' > app/build/qa/startup-logcat.txt || true
+            exit "$result"
       - name: Guardar informes de prueba
         if: always()
         uses: actions/upload-artifact@v4
@@ -42,5 +48,6 @@ jobs:
           path: |
             app/build/reports/androidTests/
             app/build/outputs/androidTest-results/
+            app/build/qa/
           if-no-files-found: ignore
           retention-days: 14
