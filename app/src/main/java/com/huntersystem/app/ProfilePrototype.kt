@@ -4,6 +4,7 @@ import android.graphics.Color
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import android.view.View
 import android.webkit.ConsoleMessage
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebChromeClient
@@ -16,7 +17,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
@@ -115,6 +118,7 @@ internal fun ProfilePrototype(
                         val allowed = profileAllowedAssets(context, initial.o("legacyArtwork"))
                         val loader = profileAssetLoader(context)
                         view.setBackgroundColor(android.graphics.Color.rgb(4, 10, 20))
+                        view.visibility = View.INVISIBLE // Keep WebView offscreen until rendered DOM is verified.
                         view.settings.apply {
                             javaScriptEnabled = true
                             allowFileAccess = false
@@ -176,7 +180,7 @@ internal fun ProfilePrototype(
                                 )
                                 // A loaded empty HTML shell is not a successful profile screen.
                                 view.evaluateJavascript(
-                                    "Boolean(document.querySelector('#app')?.childElementCount)"
+                                    "(() => { const a=document.querySelector('#app'); return !!(a && a.childElementCount > 0 && a.innerText && a.innerText.trim().length > 30 && a.getBoundingClientRect().height > 40) })()"
                                 ) { result ->
                                     if (currentAttempt == attempt && loadIssue == null) {
                                         if (result == "true") pageReady = true
@@ -217,7 +221,8 @@ internal fun ProfilePrototype(
                     runCatching { view.destroy() }
                 },
                 update = { view ->
-                    if (pageReady) view.evaluateJavascript(
+                    view.visibility = if (pageReady && loadIssue == null) View.VISIBLE else View.INVISIBLE
+                    if (pageReady && loadIssue == null) view.evaluateJavascript(
                         "window.profileAvatar?.(${JSONObject.quote(avatar)})", null
                     )
                 }
@@ -236,6 +241,8 @@ internal fun ProfilePrototype(
                     CircularProgressIndicator(color = ComposeColor(0xFF25C8FF))
                     Spacer(Modifier.height(20.dp))
                     Text("Cargando perfil del cazador...", color = ComposeColor.White)
+                    Spacer(Modifier.height(12.dp))
+                    Text("Hunter System 43.12.1", color = ComposeColor(0xFFAEC6DF))
                 } else {
                     Text("NO SE PUDO ABRIR EL PERFIL", color = ComposeColor(0xFFF3B0B8))
                     Spacer(Modifier.height(12.dp))
@@ -249,6 +256,22 @@ internal fun ProfilePrototype(
                 }
             }
         }
+    }
+    // Separate Android dialog window: visible even if a WebView uses a hardware layer
+    // above the Compose content on a particular device.
+    if (loadIssue != null) {
+        AlertDialog(
+            onDismissRequest = {},
+            title = { Text("Error al iniciar el perfil") },
+            text = { Text(loadIssue ?: "No se pudo cargar el perfil local.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    pageReady = false
+                    loadIssue = null
+                    attempt++
+                }) { Text("Reintentar") }
+            }
+        )
     }
 }
 
