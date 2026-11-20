@@ -8,7 +8,10 @@ source=root/"app/src/main/java/com/huntersystem/app"
 def read(name):
     return (source/name).read_text(encoding="utf-8")
 profile=read("Profile.kt")
-layout=read("HunterProfileLayoutV43.kt")
+host=read("ProfilePrototype.kt")
+assets=root/"app/src/main/assets/profile-monarca"
+prototype=(assets/"profile.js").read_text(encoding="utf-8")
+css=(assets/"profile.css").read_text(encoding="utf-8")
 fields=read("HunterProfileFieldsV43.kt")
 pickers=read("EclipseComponents.kt")
 companions=read("MonarchCompanionsV42.kt")
@@ -16,28 +19,32 @@ screens=read("Screens.kt")
 main=read("MainActivity.kt")
 dashboard=read("MonarchDashboardV42.kt")
 checks={
- "perfil independiente":'profileStandalone -> ProfileScreen(ui)' in main and 'ProfileWindow(stage,' in profile,
- "cuatro etapas navegables":all(x in profile for x in
-     ('"Identidad del cazador", "Entrenamiento", "Personalización", "Activación del sistema"',
-      'validateIdentity();move(1)','weights();move(2)','2->move(3)','ACTIVAR PERFIL')),
- "calendario por toques":'week[i]=(cat+1)%6' in profile and '"weeklyCategories",arr(week)' in profile,
- "controles por modalidad":all(x in profile for x in
-     ('select("restSeconds"','select("dailyMissions"','select("minutes"','select("blockMode22"')),
+ "perfil independiente":'profileStandalone -> ProfileScreen(ui)' in main and
+     'ProfilePrototype(ui,session,' in profile and 'view.loadUrl(profilePrototypeUrl)' in host,
+ "cuatro etapas navegables":all(x in prototype for x in
+     ('Identidad del cazador','Entrenamiento','Personalización','Activación del sistema',
+      'changeStep(step+1)','ACTIVAR PERFIL')),
+ "calendario por toques":'week[i]=(week[i]+1)%categories.length' in prototype and
+     '"weeklyCategories",arr(week)' in profile and 'repeat(7,minmax(0,1fr))' in css,
+ "controles por modalidad":all(x in prototype for x in
+     ("tile('rest')","tile('missions')","tile('time')","tile('format')")),
  "carrusel horizontal con Tusk":'MonarchCompanions.profileChoices' in profile and
-     'horizontalScroll(rememberScrollState())' in profile and
+     'scroll-snap-type:x mandatory' in css and 'companion-tusk.webp' in prototype and
      (root/"app/src/main/assets/ui33/companion-tusk.webp").is_file(),
- "arte de los cuatro pasos":all((root/"app/src/main/assets/profile-monarca"/name).is_file()
+ "arte de los cuatro pasos":all((assets/name).is_file()
      for name in ("identity.webp","training.webp","appearance.webp","activation.webp")),
- "vista previa seleccionada":'HunterProfileCardPreview(' in profile and
-     'profileMonarchHunterArtwork(collection,gender,rank)' in layout and
-     'chosenSceneArtwork(scene)' in layout,
+ "vista previa seleccionada":all(x in prototype for x in
+     ('images.scenes[selections.scene]','images.figures[selections.figure]','companion-mark')) and
+     'data-dark=false' in css,
+ "perfil offline":'shouldInterceptRequest' in host and 'allowFileAccess=false' in host and
+     "default-src 'none'" in (assets/"index.html").read_text(encoding="utf-8"),
  "ilustraciones originales HD sin recorte":all(
      (root/"app/src/main/assets/ui34"/name).is_file()
      for name in ("reader-d.webp","regressor-e.webp","hunter-male-e.webp","hunter-female-e.webp"))
      and 'height(278.dp)' in pickers
      and 'ContentScale.Fit' in pickers.split('@Composable fun HunterPicker(',1)[1].split('@Composable fun BackgroundPicker(',1)[0]
      and 'ContentScale.Crop' not in pickers.split('@Composable fun HunterPicker(',1)[1].split('@Composable fun BackgroundPicker(',1)[0],
- "sincronización HD entre perfil y Monarca":'profileMonarchHunterArtwork(collection,gender,rank)' in layout
+ "selección guardada y leída por el Panel Monarca":'put("collection",value("collection")).put("scene",value("scene"))' in profile
      and 'profileMonarchHunterArtwork(' in dashboard
      and 'chosenHunterArtwork(collection,gender)' in dashboard,
  "24 evoluciones restauradas E-S en GitHub":all(
@@ -46,7 +53,6 @@ checks={
      for name in ("reader","regressor","hunter-male","hunter-female")
      for rank in "edcbas")
      and 'HunterEvolutionImage(' in pickers
-     and 'HunterEvolutionImage(' in layout
      and 'HunterEvolutionImage(' in dashboard,
  "8 escenarios HD":len(list((root/"app/src/main/assets/hunter-scenes-hd").glob("*.webp")))==8
      and all(key in pickers for key in (
@@ -56,7 +62,7 @@ checks={
  "panel usa selección guardada":'val hunterArtwork = profileMonarchHunterArtwork(' in dashboard
      and 'appearance.s("collection","hunter")' in dashboard
      and 'chosenSceneArtwork(selectedScene)' in dashboard,
- "guardar perfil nuevo y editado":'ui.profileSaved()' in profile and 'stage<3||confirmed' in profile
+ "guardar perfil nuevo y editado":'ui.profileSaved()' in host and 'require(input.b("confirmed"))' in profile
      and 'fun profileSaved()' in screens and 'tab="home"' in screens,
  "todos los campos permanecen":all(x in profile+fields for x in
       ('name','age','height','weight','goalGroup','finalGoal','difficulty',

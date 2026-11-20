@@ -7,6 +7,8 @@ src=root/"app/src/main/java/com/huntersystem/app"
 main=(src/"MainActivity.kt").read_text(encoding="utf-8")
 screens=(src/"Screens.kt").read_text(encoding="utf-8")
 profile=(src/"Profile.kt").read_text(encoding="utf-8")
+prototype=(src/"ProfilePrototype.kt").read_text(encoding="utf-8")
+profile_js=(root/"app/src/main/assets/profile-monarca/profile.js").read_text(encoding="utf-8")
 nav=(src/"MonarchNavigationV42.kt").read_text(encoding="utf-8")
 store=(src/"NativeStore.kt").read_text(encoding="utf-8")
 checks={
@@ -16,10 +18,10 @@ checks={
  "edicion desde avatar":'ui.go("profile")' in screens and
      'fun openProfile()' in screens and 'if(t=="profile" || store.profile==null)' in screens,
  "sin barra inferior en perfil":'if(hasProfile && !profileStandalone' in main and
-     'ProfileWindow(stage,' in profile,
+     'ProfilePrototype(ui,session,' in profile,
  "el perfil no es una pestaña":'setOf("objectives","stats","profile")' not in nav and
      'MonarchScreenTransition(ui.tab' in main,
- "guardar vuelve al Panel":'ui.profileSaved()' in profile and 'ENTRAR AL SISTEMA' in profile and
+ "guardar vuelve al Panel":'ui.profileSaved()' in prototype and 'ENTRAR AL SISTEMA' in profile_js and
      'tab="home"' in screens and 'fun profileSaved()' in screens,
  "persistencia y plan":'store.saveProfile(p,appearance,ui.pendingAvatar)' in profile and
      'save();refreshWeek()' in store and 'saveProfile(p:JSONObject' in store,

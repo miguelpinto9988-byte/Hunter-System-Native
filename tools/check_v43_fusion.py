@@ -3,6 +3,7 @@ import json
 from pathlib import Path
 R=Path(__file__).resolve().parents[1]
 def read(path):return (R/path).read_text(encoding="utf8")
+prototype=read("app/src/main/assets/profile-monarca/profile.js")
 src="app/src/main/java/com/huntersystem/app/"
 gradle=read("app/build.gradle.kts")
 checks={
@@ -43,8 +44,8 @@ checks={
     and 'if(hasProfile && !profileStandalone' in read(src+"MainActivity.kt")
     and 'fun openProfile()' in read(src+"Screens.kt")
     and 'fun profileSaved()' in read(src+"Screens.kt")
-    and 'ProfileWindow(stage,' in read(src+"Profile.kt")
-    and 'ui.profileSaved()' in read(src+"Profile.kt")
+    and 'ProfilePrototype(ui,session,' in read(src+"Profile.kt")
+    and 'ui.profileSaved()' in read(src+"ProfilePrototype.kt")
     and 'setOf("objectives","stats","profile")' not in read(src+"MonarchNavigationV42.kt"),
  "recompensa real":'if(!log.b("complete")) return' in read(src+"HunterMissionCompletedCard.kt")
     and 'HunterMissionCompletedCard(ui,selected)' in read(src+"MonarchMissionsV42.kt"),
@@ -77,7 +78,7 @@ checks={
  "artefacto V43":'Hunter-System-V43-12-Monarca-Eclipse-APK' in read(".github/workflows/android-apk.yml"),
  "sin ventana Evolucionar Monarca":all(
      'EVOLUCIONAR' not in read(src+name)
-     for name in ("MonarchDashboardV42.kt","HunterProfileLayoutV43.kt"))
+     for name in ("MonarchDashboardV42.kt","Profile.kt"))
      and '"evolution"->' not in read(src+"Overlays.kt")
      and 'fun MonarchEvolutionScreen(' not in read(src+"MonarchProgressV42.kt")
      and 'fun Evolution(ui:NativeUi)' not in read(src+"Supplement.kt")
@@ -101,8 +102,8 @@ checks={
      for fragment in ('fun mode(', 'fun outline(', 'fun tokens(', 'val profileOutlines=listOf('))
     and all(hexcode in read(src+"HunterAppearanceV43.kt")
         for hexcode in ("#258FE6","#9A68F2","#ED72B8","#34BC91","#E65260","#F2F5FF"))
-    and 'ProfileChoices(themes,value("theme"))' in read(src+"Profile.kt")
-    and 'edges.chunked(2)' in read(src+"Profile.kt")
+    and """theme:['theme',['light','dark']]""" in prototype
+    and """edge:['outlineColor',['ocean','purple','pink','green','red','white']]""" in prototype
     and '.put("outlineColor",HunterAppearanceV43.outline(outlineColor))' in read(src+"NativeStore.kt")
     and 'HunterAppearanceV43.tokens(mode,border)' in read(src+"Design.kt")
     and 'c.outlineAccent.copy(alpha=.96f)' in read(src+"MonarchOutlineV43.kt"),

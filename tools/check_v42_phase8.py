@@ -7,6 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 K = ROOT / "app/src/main/java/com/huntersystem/app"
 ASSETS = ROOT / "app/src/main/assets"
 profile = (K / "Profile.kt").read_text()
+prototype=(ASSETS / "profile-monarca/profile.js").read_text(encoding="utf-8")
 companion = (K / "MonarchCompanionsV42.kt").read_text()
 dashboard = (K / "MonarchDashboardV42.kt").read_text()
 design = (K / "Design.kt").read_text()
@@ -32,8 +33,8 @@ check(not (ASSETS / "exercise_thumbnails").exists(), "Miniaturas no solicitadas"
 for title in ["IGRIS", "IRON", "TANK", "BERU", "DOKJA KIM"]:
     check('"'+title+'"' in companion, f"Falta {title}")
 check('"visualQuality"' in profile, "No se guarda el modo único de calidad")
-check('ProfileChoices(themes,value("theme"))' in profile and
-      'edges.chunked(2)' in profile,
+check("""theme:['theme',['light','dark']]""" in prototype and
+        """edge:['outlineColor',['ocean','purple','pink','green','red','white']]""" in prototype,
       "Temas y contornos independientes no conectados")
 check("MonarchCompanions.profileChoices" in profile, "Selector no conectado a Perfil")
 check("MonarchCompanionOptions(" not in profile, "Opciones visuales duplicadas en Perfil")

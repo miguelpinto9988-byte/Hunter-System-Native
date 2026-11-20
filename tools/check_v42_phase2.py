@@ -26,11 +26,12 @@ for theme in ("eclipse", "umbral", "abismo", "runa", "hielo", "lavanda",
               "aurora", "ceniza", "amanecer"):
     require(f'HunterThemeSpec("{theme}"' in themes, f"Tema no registrado: {theme}")
 profile = (src / "Profile.kt").read_text(encoding="utf-8")
+prototype=(assets / "profile-monarca/profile.js").read_text(encoding="utf-8")
 design = (src / "Design.kt").read_text(encoding="utf-8")
 screens = (src / "Screens.kt").read_text(encoding="utf-8")
 appearance=(src/"HunterAppearanceV43.kt").read_text(encoding="utf-8")
-require('ProfileChoices(themes,value("theme"))' in profile and
-        'edges.chunked(2)' in profile and
+require("""theme:['theme',['light','dark']]""" in prototype and
+        """edge:['outlineColor',['ocean','purple','pink','green','red','white']]""" in prototype and
         'val profileOutlines=listOf(' in appearance,
         "Faltan dos temas y seis colores de contornos en Perfil")
 require("HunterDesignSystem.tokens(name,source)" in design or "HunterDesignSystem.tokens(name,source,accent)" in design, "No se usan tokens semanticos")
