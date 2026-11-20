@@ -89,7 +89,6 @@ class ProfileOnDeviceTest {
                     assertTrue("Missing native profile fields", fields.size >= 2)
                     fields[0].text = "Auditoría Android"
                     fields[1].text = "30"
-                    device.pressBack()
                     val create = By.text("Crear perfil y abrir Hunter System")
                     repeat(8) {
                         if (!device.hasObject(create)) {
@@ -106,7 +105,6 @@ class ProfileOnDeviceTest {
                     assertTrue("Catalog did not load", device.wait(Until.hasObject(By.text("5000 fichas")), 20_000))
                     val search = checkNotNull(device.wait(Until.findObject(By.clazz("android.widget.EditText")), 10_000))
                     search.text = "Sentadilla a silla"
-                    device.pressBack()
                     val exercise = By.text("Sentadilla a silla")
                     repeat(5) {
                         if (!device.hasObject(exercise)) {
