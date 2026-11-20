@@ -49,28 +49,20 @@ checks={
     and 'setOf("objectives","stats","profile")' not in read(src+"MonarchNavigationV42.kt"),
  "recompensa real":'if(!log.b("complete")) return' in read(src+"HunterMissionCompletedCard.kt")
     and 'HunterMissionCompletedCard(ui,selected)' in read(src+"MonarchMissionsV42.kt"),
- "portadas originales descargables":(R/"tools/download_monarch_boss_originals.py").is_file()
-    and 'monarch-boss-original/' in read(src+"MonarchSpecialMissionUI.kt")
-    and not any((R/("app/src/main/assets/monarch-boss/"+boss+".svg")).exists()
-      for boss in ("guardia","fortaleza","trono")),
+ "jefes y demostraciones sin conexión":all(
+    (R/"app/src/main/assets"/asset).is_file()
+    for asset in ("profile-monarca/training.webp","profile-monarca/beru.webp","hunter-scenes-hd/ciudadela-boreal.webp"))
+    and 'MonarchExerciseStage(exercise,mirror' in read(src+"MonarchBossScreen.kt"),
  "reubicación Monarca":read(src+"Screens.kt").index("MonarchSpecialMissionsPanel(ui)") < read(src+"Screens.kt").index("MonarchHero(ui,stats)") and read(src+"Screens.kt").count("MonarchSpecialMissionsPanel(ui)")==1,
- "Monarca voluntario con calendario y elegibilidad":
-    'ACEPTAR CICLO DE CINCO DÍAS' in read(src+"MonarchPlanningPanels.kt")
-    and 'if (!accepted || profile.weekly.all { it == 5 })' in read(src+"planning/MonarchPlanningRules.kt")
-    and 'repository.compatible(profile, category, level)' in read(src+"planning/MonarchPlanningRules.kt"),
- "resultados heredados consultables y arte integrado en tarjeta":
-    'detailsExpanded' in read(src+"MonarchSpecialMissionUI.kt")
-    and 'legacy.o("counts")' in read(src+"MonarchSpecialMissionUI.kt")
-    and 'MonarchBossMissionCard(id)' in read(src+"MonarchSpecialMissionUI.kt")
-    and 'MonarchBossMissionHeading(' in read(src+"MonarchSpecialMissionUI.kt")
-    and 'MonarchBossMissionArtwork(' not in read(src+"MonarchSpecialMissionUI.kt"),
- "fondo de los tres jefes hasta borde inferior":'MonarchBossMissionCard(id)' in read(src+"MonarchSpecialMissionUI.kt")
-    and 'AssetImage(' in read(src+"MonarchSpecialMissionUI.kt")
-    and '"monarch-boss-original/"+id+".jpg"' in read(src+"MonarchSpecialMissionUI.kt")
-    and 'Modifier.matchParentSize()' in read(src+"MonarchSpecialMissionUI.kt").split('private fun MonarchBossMissionCard(',1)[1].split('private fun MonarchBossMissionHeading(',1)[0]
-    and 'alignment=Alignment.BottomCenter' in read(src+"MonarchSpecialMissionUI.kt")
-    and '.height(355.dp)' not in read(src+"MonarchSpecialMissionUI.kt")
-    and all('"'+name+'"' in read(src+"MonarchSpecialMissionState.kt") for name in ("guardia","fortaleza","trono")),
+ "Monarca voluntario, acumulativo y separado del calendario":
+    'Aceptar desafío' in read(src+"MonarchBossScreen.kt")
+    and 'Duration.ofDays(5)' in read(src+"MonarchBossChallenge.kt")
+    and 'EligibilityPolicy.compatible(it,profile)' in read(src+"MonarchBossChallenge.kt")
+    and 'profile.weekly' not in read(src+"MonarchBossChallenge.kt"),
+ "resultados heredados consultables":
+    'LegacyMonarchMissionPanel(ui)' in read(src+"MonarchBossScreen.kt")
+    and 'monarchCompletion' in read(src+"MonarchSpecialMissionUI.kt")
+    and 'run.o("counts")' in read(src+"MonarchSpecialMissionUI.kt"),
  "temas conjuntos":'"constellation"' in read(src+"HunterDesignSystem.kt") and '"ice"' in read(src+"HunterDesignSystem.kt"),
  "splash animado":(R/"app/src/main/java/com/huntersystem/app/HunterAnimatedBootArtwork.kt").is_file() and (R/"app/src/main/assets/monarch_splash_background.webp").is_file() and "HunterAnimatedBootArtwork(" in read(src+"MonarchNavigationV42.kt"),
  "catálogo ampliable":'catalog-hunter2000-extra.json' in read(src+"Catalog.kt"),

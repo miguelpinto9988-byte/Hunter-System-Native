@@ -1,0 +1,118 @@
+package com.huntersystem.app
+
+import android.content.Context
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.test.core.app.ApplicationProvider
+import com.huntersystem.app.planning.*
+import org.json.JSONArray
+import org.junit.*
+import org.junit.Assert.*
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.*
+import java.time.LocalDate
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk=[35],qualifiers="w393dp-h851dp-mdpi")
+@LooperMode(LooperMode.Mode.PAUSED)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+class MonarchBossChallengeTest {
+    @get:Rule val compose=createAndroidComposeRule<ComponentActivity>()
+    private lateinit var context:Context
+    private lateinit var store:NativeStore
+    private val date=LocalDate.of(2026,11,20)
+    private val start=1_800_000_000_000L
+
+    @Before fun setup(){
+        context=ApplicationProvider.getApplicationContext()
+        context.filesDir.listFiles()?.filter { it.name.startsWith("hunter-system-native") }?.forEach { it.delete() }
+        val fixture=JSONArray(javaClass.classLoader!!.getResource("groups-golden.json")!!.readText())
+            .objects()[7].o("p")
+        val profile=fixture.copyJson().put("name","Cazador").put("animate",false).put("theme","dark")
+            .put("weeklyCategories",arr(List(7){5}))
+        store=NativeStore(context)
+        store.saveProfile(profile)
+    }
+
+    @Test fun drawAcrossCategoriesOnlyUsesCompatibleRepetitionActivities() {
+        val profile=TrainingProfile(Experience.INTERMEDIATE,date,List(7){5})
+        val compatible=Category.values().mapIndexed { index,category ->
+            ActivityMetadata("id-$index",category,"family-$index","type-$index",2,Intensity.LOW,
+                emptySet(),"body",false,true,displayName="Actividad $index",workUnit=VolumeUnit.REPETITIONS)
+        }
+        val candidates=compatible+listOf(
+            compatible[0].copy(id="duplicate"),
+            compatible[0].copy(id="timed",displayName="Tiempo",workUnit=VolumeUnit.SECONDS),
+            compatible[0].copy(id="equipment",displayName="Equipo",equipment=setOf("db")),
+            compatible[0].copy(id="advanced",displayName="Nivel",technicalLevel=4),
+            compatible[0].copy(id="no-demo",displayName="Sin demo")
+        )
+        val offer=planMonarchBoss(MonarchBoss.IGRIS,profile,candidates,7){it!="no-demo"}!!
+        assertEquals(5,offer.goals.size)
+        assertEquals(compatible.map { it.displayName }.toSet(),
+            offer.goals.map { goal -> candidates.single { it.id==goal.id }.displayName }.toSet())
+        assertTrue(offer.goals.all { it.target in 80..100 })
+        assertEquals(offer,planMonarchBoss(MonarchBoss.IGRIS,profile,candidates.reversed(),7){it!="no-demo"})
+        assertNull(planMonarchBoss(MonarchBoss.IGRIS,profile,compatible.dropLast(1),7))
+    }
+
+    @Test fun accumulateAcrossDaysWithoutChangingNormalMissionsAndKeepProgressAfterReload(){
+        val snapshot=store.logs.toString()
+        val repository=MonarchBossChallenges(store)
+        val offer=repository.offer(date)!!
+        val goal=offer.goals.first()
+        assertNull(repository.current())
+        repository.start(offer,date,start)
+        assertThrows(IllegalArgumentException::class.java){repository.start(offer,date,start+1)}
+        val dayThree=start+2*86_400_000L
+        repository.record(start,goal.id,11,0,start)
+        repository.record(start,goal.id,12,11,dayThree)
+        assertThrows(IllegalArgumentException::class.java){repository.record(start,goal.id,12,11,dayThree)}
+        assertThrows(IllegalStateException::class.java){
+            repository.record(start,goal.id,3,23,start+monarchBossDuration)
+        }
+        val restored=NativeStore(context)
+        val reopened=MonarchBossChallenges(restored)
+        val run=reopened.current()!!
+        assertEquals(3,run.day(dayThree))
+        assertEquals(23,run.offer.goals.first().count)
+        assertEquals(BossStatus.EXPIRED,run.status(start+monarchBossDuration))
+        assertEquals(snapshot,restored.logs.toString())
+        val rotated=reopened.offer(date.plusDays(5))!!
+        assertEquals(MonarchBoss.BERU,rotated.boss)
+        reopened.start(rotated,date.plusDays(5),start+monarchBossDuration)
+        assertEquals(1,restored.state.a("monarchBossHistory").length())
+    }
+
+    @Test fun challengeOnlyCompletesWhenAllDeclaredTargetsAreReached(){
+        val repository=MonarchBossChallenges(store)
+        val offer=repository.offer(date)!!
+        repository.start(offer,date,start)
+        offer.goals.forEach { goal -> repository.record(start,goal.id,goal.target,0,start+1) }
+        assertEquals(BossStatus.COMPLETED,repository.current()!!.status(start+2))
+        assertThrows(IllegalStateException::class.java){repository.abandon(start,start+2)}
+    }
+
+    @Test(timeout=120000) fun catalogDemonstrationPrecedesCounterAndOnlyExplicitSaveAddsRepetitions(){
+        val ui=NativeUi(store)
+        compose.setContent{HunterTheme(store){HunterRoot(ui)}}
+        compose.onNodeWithText("Ver Misiones Monarca").performClick()
+        val repository=MonarchBossChallenges(store)
+        val offer=repository.offer(LocalDate.now())!!
+        val goal=offer.goals.first()
+        val name=store.catalog.byId.getValue(goal.id).name
+        compose.onNodeWithText("Aceptar desafío").performScrollTo().performClick()
+        compose.onNodeWithText(name).performScrollTo().performClick()
+        compose.onNodeWithText("DEMOSTRACIÓN").assertExists()
+        compose.onNodeWithText("Registrar repeticiones").assertExists()
+        compose.onNodeWithText("Reproducir demostración").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("+").performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(0,repository.current()!!.offer.goals.first().count) }
+        compose.onNodeWithText("Guardar repeticiones").performScrollTo().performClick()
+        compose.onNodeWithText("1 / ${goal.target} repeticiones acumuladas").assertExists()
+        compose.runOnIdle { assertEquals(1,repository.current()!!.offer.goals.first().count) }
+
+    }
+}

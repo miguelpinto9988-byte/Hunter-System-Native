@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.unit.*
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.window.*
@@ -28,6 +29,12 @@ import kotlin.math.*
       Eyebrow("ENTRENAMIENTO EN CURSO")
       HButton("×"){ui.stack.clear()}
   }
+ }else if(overlay.type=="monarch-boss"||overlay.type=="monarch-boss-exercise"){
+  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){
+   HButton("‹"){ui.back()}
+   HText("Misiones Monarca",bold=true)
+   Image(painterResource(R.drawable.launcher_sello_ascenso),null,Modifier.size(34.dp).clip(RoundedCornerShape(8.dp)))
+  }
  }else{
   Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,verticalAlignment=Alignment.CenterVertically){HButton("‹"){ui.back()};OriginalSvg("decor/crest.svg",Modifier.width(72.dp).height(22.dp),accent=c.hex("accent"),metal=c.hex("metal26"),ornament=c.hex("ornament26"));HButton("×"){ui.stack.clear()}}
  }
@@ -42,10 +49,13 @@ import kotlin.math.*
        }
     }
  }
- Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState())
+ val scroll = if(overlay.type.startsWith("monarch-boss")) key(overlay) { rememberScrollState() } else rememberScrollState()
+ Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(scroll)
     .padding(top=if(overlay.type=="session")10.dp else 18.dp,bottom=20.dp),
     verticalArrangement=Arrangement.spacedBy(if(overlay.type=="session")12.dp else 16.dp)){key(overlay){when(overlay.type){
  "exercise"->ExerciseDetail(ui,overlay.data.s("id"))
+ "monarch-boss"->MonarchBossScreen(ui)
+ "monarch-boss-exercise"->MonarchBossExercise(ui,overlay.data)
  "mission"->{val date=overlay.data.s("date",today());Eyebrow(date);MissionContent(ui,date)}
  "mission-calendar"->{Eyebrow("CALENDARIO DE MISIONES");Heading("Selecciona una fecha",size=28);MonarchMissionsCalendar(ui)}
  "confirm-finish"->{
