@@ -128,6 +128,25 @@ class MonarchBossChallengeTest {
         assertThrows(IllegalStateException::class.java){repository.abandon(start,start+2)}
     }
 
+    @Test fun exerciseBadgesIdentifyDifferentMovementsAndColors() {
+        val examples=mapOf(
+            "squat" to MonarchExerciseIcon.SQUAT,
+            "pushup" to MonarchExerciseIcon.PUSH,
+            "row" to MonarchExerciseIcon.PULL,
+            "plank" to MonarchExerciseIcon.CORE,
+            "reverselunge" to MonarchExerciseIcon.LUNGE,
+            "sport-cycling-spinups" to MonarchExerciseIcon.CYCLE
+        )
+        for((id,expected) in examples) {
+            assertEquals(id,expected,monarchExerciseIcon(store.catalog.byId.getValue(id)))
+        }
+        assertEquals(examples.size,examples.values.map { it.darkInk }.distinct().size)
+        assertEquals(examples.size,examples.values.map { it.lightInk }.distinct().size)
+        val plancha=Exercise(obj("name" to "Plancha con toque de rodilla","planning49" to obj("group" to "core")))
+        assertEquals(MonarchExerciseIcon.CORE,monarchExerciseIcon(plancha))
+        assertEquals(MonarchExerciseIcon.GENERAL,monarchExerciseIcon(null))
+    }
+
     @Test(timeout=120000) fun eachNewBossDisplaysItsCoverInTheChallengeWindow() {
         val ui=NativeUi(store)
         compose.setContent { HunterTheme(store) { HunterRoot(ui) } }

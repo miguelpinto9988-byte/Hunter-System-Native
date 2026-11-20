@@ -116,7 +116,7 @@ internal fun MonarchBossScreen(ui:NativeUi,windowState:JSONObject) {
                     "start" to (run?.startedAt?.takeIf { showRun }?:0L)))},decor=false,padding=9){
                     Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
                         horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                        HunterPngIcon("dumbbell",Modifier.size(27.dp))
+                        MonarchExerciseBadge(remember(exercise) { monarchExerciseIcon(exercise) })
                         Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(3.dp)){
                             HText(exercise?.name?:goal.id,bold=true,size=16)
                             exercise?.let { e ->
@@ -223,7 +223,10 @@ internal fun MonarchBossExercise(ui:NativeUi,data:JSONObject) {
     val reps=amount.toIntOrNull()?:0
 
     Eyebrow("MISIÓN MONARCA · ${run?.offer?.boss?.title ?: "VISTA PREVIA"}")
-    Heading(exercise.name,size=34)
+    Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)) {
+        MonarchExerciseBadge(remember(exercise) { monarchExerciseIcon(exercise) })
+        Heading(exercise.name,Modifier.weight(1f),size=34)
+    }
     MonarchExerciseStage(exercise,mirror,height=265,play=play)
     Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){
         HButton(if(play) "Pausar demostración" else "Reproducir demostración"){play=!play}
