@@ -1,8 +1,8 @@
-# Hunter System V43.12.1 — Monarca con mejoras Eclipse, catálogo de 2000 ejercicios sin SVG animados
+# Hunter System V43.12.2 — Monarca con mejoras Eclipse, catálogo de 5000 ejercicios sin SVG animados
 
 Rama principal: `main`. El código integra Monarca V43.11 y las mejoras recientes de Eclipse. Las dos historias se conservan en el commit de fusión.
 
-Monarca 42.9 + Eclipse 41.0, realizados en Kotlin y Jetpack Compose. La compilación de pruebas usa `versionCode=131` y `versionName=43.12.1-monarca-eclipse` (`applicationId=com.huntersystem.app`).
+Monarca 42.9 + Eclipse 41.0, realizados en Kotlin y Jetpack Compose. La compilación de pruebas usa `versionCode=132` y `versionName=43.12.2-monarca-eclipse` (`applicationId=com.huntersystem.app`).
 
 ## Un solo planificador: Monarca Eclipse
 
@@ -36,3 +36,7 @@ bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest :app:assembleRel
 `.github/workflows/android-apk.yml` realiza las auditorías, pruebas Kotlin/Compose y compilación firmada. Verifica que no queden SVG animados en la APK y que las 1000 ilustraciones estáticas estén empaquetadas. Esta verificación **no acredita** fidelidad visual en Android, rendimiento ni validación biomecánica.
 
 La validación visual en teléfono físico y la evaluación técnica de las 800 fichas siguen pendientes. Los 800 ejercicios nuevos no tienen demostración SVG. Consultar [QA SVG](docs/QA-ANDROID-SVG-V43.md). Las 800 fichas continúan excluidas de la planificación automática.
+
+## Pantalla de inicio V43.12.2
+
+El perfil nativo Compose se abre por defecto. La compilación 132 aparece junto al formulario. La prueba de dispositivo comprueba los campos y los píxeles de la pantalla, no solamente la URL. Para errores exclusivos de teléfonos físicos se necesita su registro adb logcat; no borrar datos.

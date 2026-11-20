@@ -1,5 +1,6 @@
 package com.huntersystem.app
 
+import android.graphics.Color
 import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
@@ -30,6 +31,26 @@ class ProfileOnDeviceTest {
         else -> null
     }
 
+    private fun assertScreenIsNotBlank() {
+        val image = InstrumentationRegistry.getInstrumentation()
+            .uiAutomation.takeScreenshot()
+            ?: throw AssertionError("Screenshot unavailable")
+        try {
+            var bright = 0
+            val step = (image.width / 260).coerceAtLeast(2)
+            for (y in (image.height / 6) until (image.height * 5 / 6) step step) {
+                for (x in (image.width / 10) until (image.width * 9 / 10) step step) {
+                    val c = image.getPixel(x, y)
+                    if (maxOf(Color.red(c), Color.green(c), Color.blue(c)) > 125)
+                        bright++
+                }
+            }
+            assertTrue("Application area appears blank: $bright bright pixels", bright > 120)
+        } finally {
+            image.recycle()
+        }
+    }
+
     @Test
     fun freshInstallRendersActualProfileText() {
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
@@ -54,11 +75,17 @@ class ProfileOnDeviceTest {
                 latch.await(1500, TimeUnit.MILLISECONDS)
                 val result = lastResult.get()
                 if (result.contains("Identidad del cazador") &&
-                    result.contains("Nombre")) return
+                    result.contains("Nombre")) { assertScreenIsNotBlank(); return }
                 // Some devices crash the WebView renderer. In that case the
                 // native recovery profile must be rendered and usable instead.
                 val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-                if (device.hasObject(By.textContains("PERFIL NATIVO DE RECUPERACIÓN"))) return
+                if (device.hasObject(By.textContains("PERFIL NATIVO DE RECUPERACIÓN")) &&
+                    device.hasObject(By.textContains("Nombre del cazador")) &&
+                    device.hasObject(By.textContains("Edad en años")) &&
+                    device.hasObject(By.textContains("43.12.2"))) {
+                    assertScreenIsNotBlank()
+                    return
+                }
                 Thread.sleep(500)
             }
             assertTrue(

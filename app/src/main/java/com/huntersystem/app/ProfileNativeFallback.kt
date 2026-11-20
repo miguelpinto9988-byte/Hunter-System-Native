@@ -58,6 +58,7 @@ internal fun ProfileNativeFallback(
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         Text("PERFIL NATIVO DE RECUPERACIÓN", color = accent, fontSize = 18.sp)
+        Text("Hunter System 43.12.2 · compilación 132", color = muted, fontSize = 13.sp)
         Text(
             "El navegador integrado no pudo mostrar el perfil. Puedes continuar aquí " +
                 "sin borrar tus datos. Los ajustes no modificados se conservan.",
