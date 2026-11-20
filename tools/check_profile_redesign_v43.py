@@ -36,7 +36,8 @@ checks={
  "vista previa seleccionada":all(x in prototype for x in
      ('images.scenes[selections.scene]','images.figures[selections.figure]','companion-mark')) and
      'data-dark=false' in css,
- "perfil offline":'shouldInterceptRequest' in host and 'allowFileAccess=false' in host and
+ "perfil offline":'shouldInterceptRequest' in host and 'WebViewAssetLoader' in host and
+     'allowFileAccess = false' in host and
      "default-src 'none'" in (assets/"index.html").read_text(encoding="utf-8"),
  "ilustraciones originales HD sin recorte":all(
      (root/"app/src/main/assets/ui34"/name).is_file()
