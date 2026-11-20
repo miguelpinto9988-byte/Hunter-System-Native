@@ -23,6 +23,7 @@ import org.json.JSONObject
 internal fun ProfileNativeFallback(
     ui: NativeUi,
     registration: ProfileRegistration,
+    visualRecovery: Boolean,
     onRetry: () -> Unit
 ) {
     val initial = remember(registration) { registration.initialData() }
@@ -57,14 +58,14 @@ internal fun ProfileNativeFallback(
             .padding(horizontal = 20.dp, vertical = 24.dp),
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Text("PERFIL NATIVO DE RECUPERACIÓN", color = accent, fontSize = 18.sp)
+        Text(if (visualRecovery) "PERFIL NATIVO DE RECUPERACIÓN" else "PERFIL DEL CAZADOR", color = accent, fontSize = 18.sp)
         Text("Hunter System 43.12.2 · compilación 132", color = muted, fontSize = 13.sp)
-        Text(
+        if (visualRecovery) Text(
             "El navegador integrado no pudo mostrar el perfil. Puedes continuar aquí " +
                 "sin borrar tus datos. Los ajustes no modificados se conservan.",
             color = muted, fontSize = 14.sp
         )
-        TextButton(onClick = onRetry) { Text("Volver a intentar el perfil visual") }
+        TextButton(onClick = onRetry) { Text(if (visualRecovery) "Volver a intentar el perfil visual" else "Abrir perfil visual") }
         if (registration.editing) {
             TextButton(onClick = { ui.closeProfile() }) { Text("Volver al panel") }
         }

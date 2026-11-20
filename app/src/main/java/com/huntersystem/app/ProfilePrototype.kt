@@ -98,6 +98,7 @@ internal fun ProfilePrototype(
     // Prefer a native profile on first launch: some Android WebView renderers crash
     // before onRenderProcessGone can deliver a callback.
     var nativeFallback by remember { mutableStateOf(true) }
+    var visualRecovery by remember { mutableStateOf(false) }
     val avatar = ui.pendingAvatar ?: ui.store.state.s("avatar")
 
     BackHandler(enabled = handlesBack && ui.stack.isEmpty()) {
@@ -172,6 +173,7 @@ internal fun ProfilePrototype(
                                 // The Compose form does not need the WebView process.
                                 if (currentAttempt == attempt) {
                                     nativeFallback = true
+                                    visualRecovery = true
                                     loadIssue = null
                                 }
                                 return true
@@ -235,7 +237,7 @@ internal fun ProfilePrototype(
         }
 
         if (nativeFallback) {
-            ProfileNativeFallback(ui, registration, onRetry = {
+            ProfileNativeFallback(ui, registration, visualRecovery, onRetry = {
                 nativeFallback = false
                 pageReady = false
                 loadIssue = null
@@ -286,6 +288,7 @@ internal fun ProfilePrototype(
             dismissButton = {
                 TextButton(onClick = {
                     nativeFallback = true
+                    visualRecovery = true
                     loadIssue = null
                 }) { Text("Abrir perfil nativo") }
             }
