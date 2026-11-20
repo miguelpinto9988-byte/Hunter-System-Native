@@ -10,9 +10,27 @@ import java.time.Duration
 import java.time.LocalDate
 import kotlin.random.Random
 
-internal enum class MonarchBoss(val title:String,val encounter:String,val artwork:String,val portrait:String?=null) {
-    IGRIS("Igris","Guardia del Umbral","profile-monarca/training.webp"),
-    BERU("Beru","Asalto a la Fortaleza","hunter-scenes-hd/ciudadela-boreal.webp","profile-monarca/beru.webp")
+/** Escala del desafío inspirada en los encuentros de Jinwoo, independiente del plan diario. */
+internal enum class MonarchBoss(
+    val title:String,
+    val encounter:String,
+    val difficulty:String,
+    val repetitions:IntRange,
+    val artwork:String,
+    val portrait:String?=null
+) {
+    IGRIS("Igris","Guardia del Umbral","Inicial",75..110,"profile-monarca/training.webp"),
+    BARUKA("Baruka","Puerta Roja","Intermedia",90..125,"hunter-scenes-hd/ciudadela-boreal.webp"),
+    TUSK("Kargalgan (Tusk)","Chamán de los Altos Orcos","Avanzada",105..140,
+        "hunter-scenes-hd/biblioteca-lunar.webp","ui33/companion-tusk.webp"),
+    BARAN("Baran","Castillo Demoníaco","Élite",120..155,"hunter-scenes-hd/trono-volcanico.webp"),
+    BERU("Beru","Rey Hormiga de Jeju","Monarca",135..170,
+        "hunter-scenes-hd/ciudadela-boreal.webp","profile-monarca/beru.webp");
+
+    val rangeLabel get()="${repetitions.first}–${repetitions.last}"
+
+    // Beru se guardaba con el rango de Igris antes de incorporar las dificultades.
+    fun acceptsSavedTarget(target:Int)=target in repetitions || (this==BERU&&target in IGRIS.repetitions)
 }
 
 internal data class BossExerciseGoal(val id:String,val target:Int,val count:Int=0)
@@ -45,10 +63,11 @@ internal fun planMonarchBoss(
         .distinctBy { normalize(it.displayName.ifBlank { it.id }).trim().replace(Regex("\\s+")," ") }
         .take(5).toList()
     if(selected.size<5)return null
+    val limits=boss.repetitions
     val range=when(profile.experience){
-        Experience.BEGINNER->75..85
-        Experience.INTERMEDIATE->80..100
-        Experience.ADVANCED->90..110
+        Experience.BEGINNER->limits.first..(limits.first+10)
+        Experience.INTERMEDIATE->(limits.first+5)..(limits.last-10)
+        Experience.ADVANCED->(limits.first+15)..limits.last
     }
     return BossOffer(boss,selected.map { BossExerciseGoal(it.id,range.random(random)) })
 }
@@ -66,16 +85,15 @@ internal class MonarchBossChallenges(private val store:NativeStore) {
         }
         if(start<=0||start>Long.MAX_VALUE-monarchBossDuration||goals.size!=5||
             goals.map { it.id }.distinct().size!=5||
-            goals.any { it.id.isBlank()||it.target !in 75..110||it.count !in 0..it.target }) return null
+            goals.any { it.id.isBlank()||!boss.acceptsSavedTarget(it.target)||it.count !in 0..it.target }) return null
         val closed=BossStatus.entries.firstOrNull { it!=BossStatus.ACTIVE&&it.name==row.s("closedStatus") }
         return BossRun(BossOffer(boss,goals),start,closed)
     }
 
-    fun offer(date:LocalDate):BossOffer? {
+    fun offer(date:LocalDate,boss:MonarchBoss=MonarchBoss.IGRIS):BossOffer? {
         val configured=profile?:return null
-        val previous=current()
-        val boss=if(previous?.offer?.boss==MonarchBoss.IGRIS) MonarchBoss.BERU else MonarchBoss.IGRIS
-        return planMonarchBoss(boss,configured,source.all(),date.toEpochDay() xor (previous?.startedAt?:0)) { id ->
+        val seed=date.toEpochDay() xor (current()?.startedAt?:0L) xor boss.name.hashCode().toLong()
+        return planMonarchBoss(boss,configured,source.all(),seed) { id ->
             val exercise=store.catalog.byId.getValue(id)
             ExerciseMotions.loadSequence(store.context,exercise)!=null||
                 ExerciseMotions.load(store.context,id)!=null||
@@ -101,7 +119,7 @@ internal class MonarchBossChallenges(private val store:NativeStore) {
             val previous=current()
             require(previous?.status(now)!=BossStatus.ACTIVE){"Ya hay un desafío Monarca activo."}
             // El usuario acepta exactamente los objetivos que vio en la propuesta.
-            require(MonarchBossChallenges(store).offer(date)==offer){"La propuesta cambió. Vuelve a revisar el desafío."}
+            require(MonarchBossChallenges(store).offer(date,offer.boss)==offer){"La propuesta cambió. Vuelve a revisar el desafío."}
             save(BossRun(offer,now),previous?.copy(closedStatus=previous.status(now)))
         }
     }

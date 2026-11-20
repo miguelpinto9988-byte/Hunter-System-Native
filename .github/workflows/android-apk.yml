@@ -153,7 +153,12 @@ jobs:
             data=z.read(artwork)
             assert data[:4]==b'RIFF' and data[8:12]==b'WEBP','WebP splash corrupto'
             print('Fondo Monarca empaquetado:',len(data),'bytes')
-            for asset in ('profile-monarca/training.webp','profile-monarca/beru.webp','hunter-scenes-hd/ciudadela-boreal.webp'):
+            boss_art=(
+              'profile-monarca/training.webp','profile-monarca/beru.webp','ui33/companion-tusk.webp',
+              'hunter-scenes-hd/ciudadela-boreal.webp','hunter-scenes-hd/biblioteca-lunar.webp',
+              'hunter-scenes-hd/trono-volcanico.webp',
+            )
+            for asset in boss_art:
               raw=z.read('assets/'+asset)
               assert raw[:4]==b'RIFF' and raw[8:12]==b'WEBP',f'Arte de Monarca inválido: {asset}'
             assert not any(p.startswith('assets/hunter-png/wallpapers/') for p in names),'Persisten fondos PNG de sombras'

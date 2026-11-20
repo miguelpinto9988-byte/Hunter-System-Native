@@ -80,10 +80,39 @@ class MonarchBossChallengeTest {
         assertEquals(23,run.offer.goals.first().count)
         assertEquals(BossStatus.EXPIRED,run.status(start+monarchBossDuration))
         assertEquals(snapshot,restored.logs.toString())
-        val rotated=reopened.offer(date.plusDays(5))!!
-        assertEquals(MonarchBoss.BERU,rotated.boss)
-        reopened.start(rotated,date.plusDays(5),start+monarchBossDuration)
+        assertEquals(MonarchBoss.IGRIS,reopened.offer(date.plusDays(5))!!.boss)
+        val chosen=reopened.offer(date.plusDays(5),MonarchBoss.BERU)!!
+        assertTrue(chosen.goals.all { it.target in 135..170 })
+        reopened.start(chosen,date.plusDays(5),start+monarchBossDuration)
+        assertEquals(chosen,MonarchBossChallenges(NativeStore(context)).current()!!.offer)
         assertEquals(1,restored.state.a("monarchBossHistory").length())
+    }
+
+    @Test fun legacyBeruRetainsHisTargetsAndProgressWhenUpdated() {
+        val repository=MonarchBossChallenges(store)
+        val original=repository.offer(date)!!
+        repository.start(original,date,start)
+        store.state.o("monarchBossChallenge").put("boss","BERU")
+        store.save()
+        val restored=NativeStore(context)
+        val migrated=MonarchBossChallenges(restored)
+        val goal=original.goals.first()
+        migrated.record(start,goal.id,12,0,start+1)
+        val saved=MonarchBossChallenges(NativeStore(context)).current()!!
+        assertEquals(MonarchBoss.BERU,saved.offer.boss)
+        assertEquals(goal.copy(count=12),saved.offer.goals.first())
+        assertEquals(start+monarchBossDuration,saved.deadline)
+    }
+
+    @Test fun selectedDifficultyIncreasesTheRangeKeepingProfileFilters() {
+        val repository=MonarchBossChallenges(store)
+        val offers=MonarchBoss.entries.map { repository.offer(date,it)!! }
+        assertEquals(listOf(75..110,90..125,105..140,120..155,135..170),
+            offers.map { it.boss.repetitions })
+        for(offer in offers) {
+            assertEquals(5,offer.goals.distinctBy { it.id }.size)
+            assertTrue(offer.goals.all { it.target in offer.boss.repetitions && repository.compatible(it.id) })
+        }
     }
 
     @Test fun challengeOnlyCompletesWhenAllDeclaredTargetsAreReached(){
@@ -99,10 +128,17 @@ class MonarchBossChallengeTest {
         val ui=NativeUi(store)
         compose.setContent{HunterTheme(store){HunterRoot(ui)}}
         compose.onNodeWithText("Ver Misiones Monarca").performClick()
+        compose.onNodeWithText("Igris · Inicial · 75–110 reps",substring=true).performScrollTo().performClick()
+        compose.onNodeWithText("Beru · Monarca · 135–170 reps").performClick()
+        compose.onNodeWithText("135–170").assertExists()
         val repository=MonarchBossChallenges(store)
-        val offer=repository.offer(LocalDate.now())!!
+        val offer=repository.offer(LocalDate.now(),MonarchBoss.BERU)!!
         val goal=offer.goals.first()
         val name=store.catalog.byId.getValue(goal.id).name
+        compose.onNodeWithText(name).performScrollTo().performClick()
+        compose.onNodeWithText("El registro se habilita al aceptar el desafío.").assertExists()
+        compose.runOnIdle { ui.back() }
+        compose.onNodeWithText("135–170").assertExists()
         compose.onNodeWithText("Aceptar desafío").performScrollTo().performClick()
         compose.onNodeWithText(name).performScrollTo().performClick()
         compose.onNodeWithText("DEMOSTRACIÓN").assertExists()
@@ -112,7 +148,9 @@ class MonarchBossChallengeTest {
         compose.runOnIdle { assertEquals(0,repository.current()!!.offer.goals.first().count) }
         compose.onNodeWithText("Guardar repeticiones").performScrollTo().performClick()
         compose.onNodeWithText("1 / ${goal.target} repeticiones acumuladas").assertExists()
-        compose.runOnIdle { assertEquals(1,repository.current()!!.offer.goals.first().count) }
-
+        compose.runOnIdle {
+            assertEquals(MonarchBoss.BERU,repository.current()!!.offer.boss)
+            assertEquals(1,repository.current()!!.offer.goals.first().count)
+        }
     }
 }

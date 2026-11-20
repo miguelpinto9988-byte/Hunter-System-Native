@@ -54,7 +54,7 @@ import kotlin.math.*
     .padding(top=if(overlay.type=="session")10.dp else 18.dp,bottom=20.dp),
     verticalArrangement=Arrangement.spacedBy(if(overlay.type=="session")12.dp else 16.dp)){key(overlay){when(overlay.type){
  "exercise"->ExerciseDetail(ui,overlay.data.s("id"))
- "monarch-boss"->MonarchBossScreen(ui)
+ "monarch-boss"->MonarchBossScreen(ui,overlay.data)
  "monarch-boss-exercise"->MonarchBossExercise(ui,overlay.data)
  "mission"->{val date=overlay.data.s("date",today());Eyebrow(date);MissionContent(ui,date)}
  "mission-calendar"->{Eyebrow("CALENDARIO DE MISIONES");Heading("Selecciona una fecha",size=28);MonarchMissionsCalendar(ui)}

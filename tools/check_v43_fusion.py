@@ -51,7 +51,9 @@ checks={
     and 'HunterMissionCompletedCard(ui,selected)' in read(src+"MonarchMissionsV42.kt"),
  "jefes y demostraciones sin conexión":all(
     (R/"app/src/main/assets"/asset).is_file()
-    for asset in ("profile-monarca/training.webp","profile-monarca/beru.webp","hunter-scenes-hd/ciudadela-boreal.webp"))
+    for asset in ("profile-monarca/training.webp","profile-monarca/beru.webp","ui33/companion-tusk.webp",
+                  "hunter-scenes-hd/ciudadela-boreal.webp","hunter-scenes-hd/biblioteca-lunar.webp",
+                  "hunter-scenes-hd/trono-volcanico.webp"))
     and 'MonarchExerciseStage(exercise,mirror' in read(src+"MonarchBossScreen.kt"),
  "reubicación Monarca":read(src+"Screens.kt").index("MonarchSpecialMissionsPanel(ui)") < read(src+"Screens.kt").index("MonarchHero(ui,stats)") and read(src+"Screens.kt").count("MonarchSpecialMissionsPanel(ui)")==1,
  "Monarca voluntario, acumulativo y separado del calendario":

@@ -41,7 +41,7 @@ fun MonarchSpecialMissionsPanel(ui:NativeUi) {
     val revision=store.revision.intValue
     val run=remember(revision) { MonarchBossChallenges(store).current() }
     val active=run?.status(monarchClock())==BossStatus.ACTIVE
-    val boss=run?.takeIf { active }?.offer?.boss ?: MonarchBoss.IGRIS
+    val boss=run?.offer?.boss ?: MonarchBoss.IGRIS
     MonarchBossBanner(boss,if(active) "Desafío activo" else "Desafío voluntario",compact=true)
     HButton(if(active) "Continuar desafío Monarca" else "Ver Misiones Monarca",
         Modifier.fillMaxWidth(),primary=true){ui.open("monarch-boss")}
@@ -49,27 +49,30 @@ fun MonarchSpecialMissionsPanel(ui:NativeUi) {
 }
 
 @Composable
-internal fun MonarchBossScreen(ui:NativeUi) {
+internal fun MonarchBossScreen(ui:NativeUi,windowState:JSONObject) {
     val store=ui.store
     val revision=store.revision.intValue
     val repository=remember(store,revision) { MonarchBossChallenges(store) }
     val run=repository.current()
     val now=monarchClock()
     val status=run?.status(now)
-    var next by remember(run?.startedAt) { mutableStateOf(false) }
+    var next by remember(run?.startedAt) { mutableStateOf(windowState.b("previewNext")) }
     var confirmAbandon by remember(run?.startedAt) { mutableStateOf(false) }
     val showRun=run!=null&&!next
     val date=LocalDate.now()
-    val preview=remember(repository,date,showRun) { if(showRun)null else repository.offer(date) }
+    var selectedBoss by remember(run?.startedAt) {
+        mutableStateOf(MonarchBoss.entries.firstOrNull { it.name==windowState.s("selectedBoss") } ?: MonarchBoss.IGRIS)
+    }
+    val preview=remember(repository,date,showRun,selectedBoss) { if(showRun)null else repository.offer(date,selectedBoss) }
     val offer=if(showRun) run?.offer else preview
-    val boss=offer?.boss ?: MonarchBoss.IGRIS
+    val boss=offer?.boss ?: selectedBoss
 
     MonarchBossBanner(boss,if(showRun) when(status){
         BossStatus.ACTIVE->"Desafío activo"
         BossStatus.COMPLETED->"Desafío completado"
         BossStatus.ABANDONED->"Desafío abandonado"
         else->"Tiempo finalizado"
-    } else "Desafío disponible",compact=showRun)
+    } else if(preview==null) "Sin propuesta compatible" else "Desafío disponible",compact=showRun)
 
     if(showRun){
         val done=run.offer.goals.sumOf { it.count }
@@ -84,8 +87,14 @@ internal fun MonarchBossScreen(ui:NativeUi) {
             if(status==BossStatus.ACTIVE) HText(remainingTime(run.deadline-now),size=14)
         }
     }else{
+        HSelect("Elige un jefe",selectedBoss.name,MonarchBoss.entries.map {
+            it.name to "${it.title} · ${it.difficulty} · ${it.rangeLabel} reps"
+        }) {
+            windowState.put("selectedBoss",it)
+            selectedBoss=MonarchBoss.valueOf(it)
+        }
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(5.dp)){
-            listOf("5 días" to "Desde que aceptas","5 ejercicios" to "Según tu perfil","75–110" to "Reps por ejercicio").forEach { (title,description) ->
+            listOf("5 días" to "Desde que aceptas","5 ejercicios" to "Según tu perfil",boss.rangeLabel to "Reps por ejercicio").forEach { (title,description) ->
                 HPanel(Modifier.weight(1f),decor=false,padding=7){
                     HText(title,size=17,bold=true)
                     HText(description,size=12,color=LocalHunter.current.muted)
@@ -137,13 +146,23 @@ internal fun MonarchBossScreen(ui:NativeUi) {
                     HButton("Seguir en el desafío",Modifier.weight(1f)){confirmAbandon=false}
                 }
             }else HButton("Abandonar desafío",Modifier.fillMaxWidth()){confirmAbandon=true}
-        }else HButton("Ver nuevo desafío",Modifier.fillMaxWidth(),primary=true){next=true}
+        }else HButton("Ver nuevo desafío",Modifier.fillMaxWidth(),primary=true){
+            windowState.put("previewNext",true)
+            next=true
+        }
     }else{
-        HText("Desafío opcional e independiente de tus misiones y rutinas del día.",size=14,
+        HText("Metas acumuladas durante cinco días. El desafío es opcional e independiente de tus misiones y rutinas.",size=14,
             color=LocalHunter.current.muted)
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
             HButton("Aceptar desafío",Modifier.weight(1.5f),primary=true,enabled=preview!=null){
-                preview?.let { ui.attempt { repository.start(it,date);next=false } }
+                preview?.let {
+                    ui.attempt {
+                        repository.start(it,date)
+                        windowState.remove("previewNext")
+                        windowState.remove("selectedBoss")
+                        next=false
+                    }
+                }
             }
             HButton("Ahora no",Modifier.weight(1f)){ui.back()}
         }
@@ -166,7 +185,8 @@ private fun MonarchBossBanner(boss:MonarchBoss,status:String,compact:Boolean) {
             listOf(Color.Transparent,Color(0x98091221)))))
         Column(Modifier.align(Alignment.BottomStart).padding(15.dp)){
             HText("JEFE MONARCA",size=13,bold=true,color=bossBlue)
-            HText(boss.title,size=if(compact) 36 else 48,bold=true,color=bossGold)
+            val titleSize=if(boss==MonarchBoss.TUSK) 30 else if(compact) 36 else 48
+            HText(boss.title,size=titleSize,bold=true,color=bossGold)
             HText(boss.encounter,size=17,color=Color(0xFFF3F6FD))
             HText(status,size=14,bold=true,color=bossBlue)
         }
