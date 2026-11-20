@@ -58,24 +58,13 @@ class Hunter2000CatalogTest {
             "Tenis", "Atletismo", "Boxeo", "Gimnasia", "Levantamiento de pesas", "Ciclismo"
         )
         assertTrue(c.sportExercises.map { it.sport }.toSet().containsAll(originalDisciplines))
-        assertTrue(c.sportExercises.all{
-            it.raw.getJSONArray("instructions").length()>0 &&
-                it.demo.isEmpty()
-        })
+        assertTrue(c.sportExercises.all{it.raw.getJSONArray("instructions").length()>0})
         val wallDrill=c.byId.getValue("sport-track-a-wall")
         val profile=JSONObject().put("age",30).put("difficulty","basic")
         assertFalse(Rules(c).compatible(wallDrill,profile))
         profile.put("materials46",JSONArray().put("wall"))
         assertTrue(Rules(c).compatible(wallDrill,profile))
         assertFalse(Rules(c).compatible(c.byId.getValue("sport-futbol-sole"),profile))
-    }
-
-    @Test fun limitaLasDemostracionesAlEstiloOriginal(){
-        val c=Catalog(loader={java.io.File("src/main/assets",it).readText()})
-        assertEquals("media2d/fastmarch.svg",c.byId.getValue("fastmarch").demo)
-        assertTrue(c.byId.getValue("new46-stepdown").demo.isEmpty())
-        assertTrue(c.byId.getValue("hs379-palms").demo.isEmpty())
-        assertEquals(1000,c.originalExercises.count{it.demo.isNotBlank()})
     }
 
     @Test fun incorporaHunter2000YResuelveAliasHistoricos(){

@@ -93,15 +93,7 @@ internal class MonarchBossChallenges(private val store:NativeStore) {
         return planMonarchBoss(boss,configured,source.all(),seed) { id ->
             val exercise=store.catalog.byId.getValue(id)
             ExerciseMotions.loadSequence(store.context,exercise)!=null||
-                ExerciseMotions.load(store.context,id)!=null||
-                (exercise.demo.isNotBlank() && runCatching {
-                    store.context.assets.open(exercise.demo).close()
-                }.isSuccess) ||
-                store.catalog.editorial.o("clips").optJSONObject(id)?.s("file")?.let { file ->
-                    file.isNotBlank()&&runCatching {
-                        store.context.assets.open("offline2d/$file").close()
-                    }.isSuccess
-                }==true
+                ExerciseMotions.load(store.context,exercise.id)!=null
         }
     }
 

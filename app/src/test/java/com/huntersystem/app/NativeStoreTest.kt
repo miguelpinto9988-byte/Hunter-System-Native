@@ -43,26 +43,11 @@ class NativeStoreTest {
  @Test(timeout=30000) fun futurePreviewDoesNotCreateRecords(){val s=store();val before=s.export();for(i in 30L..39L)s.day(plus(today(),i));assertEquals(before,s.export());assertEquals(0,s.logs.length())}
  @Test(timeout=30000) fun routineAssignmentCopiesExactItemsAndProtectsConfirmedWork(){val s=store();val r=obj("id" to "test-exact","name" to "Mi secuencia","category" to "Fuerza","items" to s.day(today()).a("items").copyJson());s.assign(r,today());assertEquals(r.a("items").toString(),s.day(today()).a("items").toString());s.confirmSet(today(),0,0,3.0,0.0);assertEquals(1,s.stats().i("series"));val recorded=s.export();try{s.assign(r,today());fail("Debe conservar el registro")}catch(_:IllegalArgumentException){};assertEquals(recorded,s.export());s.saveProfile(profile().put("trainingScale",.5));assertTrue(s.logs.o(today()).a("items").getJSONObject(0).a("actual").getJSONObject(0).b("done"))}
  @Test(timeout=30000) fun restoreKeepsLegacyFieldsAndRejectsBrokenBackup(){val s=store();s.state.put("legacyUnknown",obj("retained" to true));s.save();val backup=JSONObject(s.export());s.restore(backup);assertTrue(s.state.o("legacyUnknown").b("retained"));val before=s.export();try{s.restore(obj("profile" to JSONObject(),"cycles" to JSONArray(),"logs" to JSONObject()));fail("Perfil incompleto")}catch(_:IllegalArgumentException){};assertEquals(before,s.export());val reloaded=NativeStore(context);assertTrue(reloaded.state.o("legacyUnknown").b("retained"))}
- @Test(timeout=30000) fun screenshotStyleExerciseDemosRemainOriginalMedia2d(){
-  val ids=listOf("chair","row","plank","fastmarch","calf")
-  val catalog=Catalog(context)
-  for(id in ids){
-   val demo=catalog.byId[id]?.demo ?: error("Falta el ejercicio $id")
-   assertEquals("media2d/$id.svg",demo)
-   val svg=context.assets.open(demo).bufferedReader().use{it.readText()}
-   assertTrue("SVG original de $id",svg.contains("<svg"))
-   assertFalse("No añadir animación SVG alternativa a $id",svg.contains("<animate"))
-  }
-  val calf=context.assets.open("media2d/calf.svg").bufferedReader().use{it.readText()}
-  assertTrue("El diseño original de elevación de talones debe conservarse",calf.contains("Elevación de talones"))
-  assertTrue("Debe conservarse la vista lateral",calf.contains("VISTA LATERAL"))
-  val qa=JSONObject(context.assets.open("hunter2000-qa-status.json").bufferedReader().use{it.readText()})
-  assertEquals(0,qa.getInt("animatedSvgAssets"))
-  assertEquals(1000,qa.getInt("staticSvgAssets"))
-  assertEquals(1000,context.assets.list("media2d").orEmpty().count{it.endsWith(".svg")})
-  assertEquals("",catalog.byId.getValue("new46-pullup").demo)
-  val allAssets=context.assets.list("demos30").orEmpty()
-  assertFalse("No debe quedar ningún SVG de demostración alternativa",allAssets.any{it.endsWith(".svg")})
+ @Test fun deprecatedExerciseMediaIsAbsentFromAndroidAssets(){
+  for(folder in listOf("media2d","offline2d","demos120","sports2d","demos-rive"))
+   assertTrue(folder,context.assets.list(folder).orEmpty().isEmpty())
+  assertFalse(context.assets.list("demos30").orEmpty().any{it.endsWith(".svg")})
+  assertEquals(0,Catalog(context).editorial.o("clips").length())
  }
 
  @Test fun reminderTimesRespectChosenDays(){

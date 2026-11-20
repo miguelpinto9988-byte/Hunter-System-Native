@@ -14,7 +14,7 @@ def require(ok, description):
 
 catalog = json.loads((assets / "catalog.json").read_text(encoding="utf-8"))
 require(isinstance(catalog, list) and len(catalog) == 1200, "El catalogo debe conservar 1200 ejercicios")
-require(len(list(assets.rglob("*.mp4"))) == 342, "Se esperaban 342 demostraciones MP4")
+require(len(list(assets.rglob("*.mp4"))) == 0, "Quedan clips históricos empaquetados")
 require(not (assets / "exercise_thumbnails").exists(), "Se encontraron miniaturas de ejercicios")
 require(not (assets / "v39-miniatures").exists(), "Se encontraron miniaturas historicas")
 modules = ("Rules.kt", "Planner.kt", "NativeStore.kt", "Profile.kt",
@@ -42,7 +42,7 @@ require("MonarchStatTile(value.toString()" in screens or
         "Las tarjetas de metricas no se migraron")
 require("MonarchHero(ui,stats)" in screens, "Se perdio la portada Monarca")
 require("V39Artwork(" not in screens, "Se recuperaron miniaturas del catalogo")
-out = {"fase": "02", "ejercicios": len(catalog), "demostraciones_mp4": 342,
+out = {"fase": "02", "ejercicios": len(catalog), "demostraciones_mp4": 0,
        "temas": 9, "estado": "OK" if not errors else "ERROR", "errores": errors}
 print(json.dumps(out, ensure_ascii=False, indent=2))
 if errors:

@@ -24,7 +24,7 @@ ci = (root / ".github/workflows/android-apk.yml").read_text(encoding="utf-8")
 catalog = json.loads((assets / "catalog.json").read_text(encoding="utf-8"))
 
 check(isinstance(catalog, list) and len(catalog) == 1200, "Se alteró el catálogo de 1200 ejercicios")
-check(len(list(assets.rglob("*.mp4"))) == 342, "Faltan recursos MP4 locales")
+check(len(list(assets.rglob("*.mp4"))) == 0, "Quedan clips históricos empaquetados")
 check(not (assets / "exercise_thumbnails").exists() and
       not (assets / "v39-miniatures").exists(), "Se reintrodujeron miniaturas")
 
@@ -40,7 +40,8 @@ check("MonarchMissionsCalendar(ui)" in screens and
       '"mission-calendar"' in overlays, "Calendario no enlazado")
 check('s.day(date)' in m and 's.logs.optJSONObject(date)' in m,
       "La vista no consulta la planificación y registro reales")
-check('s.fraction(log)' in m, "El progreso de misión no procede del motor")
+check('ProgressSummary(' in m and 'summary.percent?.let' in m,
+      "El progreso de misión no procede del resumen de participación")
 check('s.toggleMission(date,index)' in m, "Ejercicios no vinculados a registro")
 check('s.toggleTask(date,index)' in m, "Tareas no vinculadas a registro")
 check('ui.open("session"' in m and 'ui.open("record"' in m,
@@ -78,7 +79,7 @@ check("Auditoria Monarca V42 fase 05" in ci,
 
 print(json.dumps({
     "fase": "05", "version": "42.4-monarca-fase5",
-    "ejercicios": len(catalog), "videos_mp4": 342,
+    "ejercicios": len(catalog), "videos_mp4": 0,
     "resultado": "OK" if not errors else "ERROR", "errores": errors
 }, indent=2, ensure_ascii=False))
 if errors:

@@ -25,8 +25,8 @@ workflow = (root / ".github/workflows/android-apk.yml").read_text(encoding="utf-
 catalog = json.loads((assets / "catalog.json").read_text(encoding="utf-8"))
 check(isinstance(catalog, list) and len(catalog) == 1200,
       "La colección de 1200 ejercicios no debe cambiar")
-check(len(list(assets.rglob("*.mp4"))) == 342,
-      "Las 342 demostraciones MP4 deben mantenerse")
+check(len(list(assets.rglob("*.mp4"))) == 0,
+      "Quedan clips históricos empaquetados")
 check(all(not (assets / folder).exists() for folder in
           ("exercise_thumbnails", "v39-miniatures")),
       "No se deben reintroducir miniaturas de ejercicios")
@@ -93,7 +93,7 @@ check("Auditoria Monarca V42 fase 04" in workflow,
       "No se configuró la auditoría 04 en GitHub Actions")
 result = {
     "fase": "04", "version": "42.3-monarca-fase4",
-    "ejercicios": len(catalog), "mp4": 342,
+    "ejercicios": len(catalog), "mp4": 0,
     "componentes": len(required),
     "resultado": "CORRECTO" if not errors else "ERROR",
     "errores": errors,

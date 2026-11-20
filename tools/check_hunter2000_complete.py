@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-"""Comprueba el catálogo Hunter 2000 después de retirar los SVG animados."""
+"""Comprueba el catálogo y las demostraciones del personaje vectorial."""
 from pathlib import Path
-import argparse, itertools, json, re, unicodedata, xml.etree.ElementTree as ET
+import argparse, itertools, json, re, unicodedata
 from collections import Counter, defaultdict
 from zipfile import ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "app/src/main/assets"
+RETIRED_DEMOS = ("media2d", "offline2d", "demos120", "sports2d", "demos-rive")
+RETIRED_ARCHIVE = ROOT / ".hunter2000/source/hunter2000-assets.tar.xz"
 def read_json(name):
     return json.loads((ASSETS / name).read_text(encoding="utf-8"))
 
@@ -170,56 +172,30 @@ def verify():
            any(not isinstance(material, str) or not material for material in x["materialRequirements"])
            for x in extra):
         raise ValueError("Hay fichas Hunter 2000 sin origen o requisitos de equipo legibles")
-    if list((ASSETS / "sports2d").glob("*.svg")):
-        raise ValueError("Quedan ilustraciones deportivas alternativas")
-    animated = list((ASSETS / "demos30").glob("*.svg"))
-    if animated:
-        raise ValueError(f"Quedan {len(animated)} SVG en demos30")
-    if (ASSETS / "demos-rive").exists():
-        raise ValueError("No deben existir recursos Rive")
-    static_assets = list((ASSETS / "media2d").glob("*.svg"))
-    if len(static_assets) != 1000:
-        raise ValueError(f"Se esperaban 1000 ilustraciones 2D, hay {len(static_assets)}")
-    expected = {item["id"] for item in original
-                if not item["id"].startswith(("new46-", "hs379-"))}
-    if {path.stem for path in static_assets} != expected:
-        raise ValueError("Las ilustraciones deben corresponder a las fichas del estilo original")
-    if any(path.stem not in expected for path in (ASSETS / "offline2d").glob("*.mp4")):
-        raise ValueError("Quedan clips fuera del conjunto de ilustraciones originales")
-    for item in original:
-        if item["id"] not in expected:
-            continue
-        name = item["id"]
-        if not re.fullmatch(r"[a-zA-Z0-9_-]+", name):
-            raise ValueError(f"ID inválido: {name}")
-        path = ASSETS / "media2d" / (name + ".svg")
-        if not path.is_file():
-            raise ValueError(f"Falta ilustración 2D: {name}")
-        raw = path.read_bytes()
-        if re.search(rb"<!\\s*(DOCTYPE|ENTITY)|<\\s*(script|foreignObject|animate|animateTransform|animateMotion|set)\\b", raw, re.I):
-            raise ValueError(f"SVG no estático o inseguro: {name}")
-        svg = ET.fromstring(raw)
-        if svg.tag.rsplit("}", 1)[-1] != "svg" or svg.get("data-renderer") != "2d":
-            raise ValueError(f"XML inválido: {name}")
+    for folder in RETIRED_DEMOS:
+        if any(path.is_file() for path in (ASSETS / folder).rglob("*")):
+            raise ValueError(f"Quedan demostraciones retiradas en {folder}")
+    if list((ASSETS / "demos30").glob("*.svg")) or RETIRED_ARCHIVE.exists():
+        raise ValueError("Quedan SVG animados históricos en el repositorio")
+    if read_json("editorial.json").get("clips"):
+        raise ValueError("El índice editorial todavía ofrece clips históricos")
     motion_count = verify_motion(original, extra, read_json("catalog-sports.json"))
     sports_count, distribution, aliases, similar, candidates = verify_sports(items)
-    return {"status": "PASS", "catalog_total": len(items) + sports_count, "static_svg": len(static_assets),
+    return {"status": "PASS", "catalog_total": len(items) + sports_count, "static_svg": 0,
             "sports_count": sports_count, "sports_by_level": distribution,
             "catalog_active": len(items) + sports_count - len(aliases),
             "source_counts": {"original": len(original), "hunter2000": len(extra), "sports": sports_count},
             "aliases": aliases, "similar_name_candidates": similar,
             "shared_instruction_candidates": candidates,
-            "motion_count": motion_count, "animated_svg": 0, "mp4_unchanged": True}
+            "motion_count": motion_count, "animated_svg": 0, "legacy_exercise_clips": 0}
 
 def verify_apk(path):
     with ZipFile(path) as apk:
         files = set(apk.namelist())
-        expected = {"assets/media2d/" + item.name for item in (ASSETS / "media2d").glob("*.svg")}
-        actual = {name for name in files if name.startswith("assets/media2d/") and name.endswith(".svg")}
-        alternatives = {name for name in files if name.startswith(("assets/sports2d/", "assets/demos30/"))
-                        and name.endswith(".svg")}
-        if actual != expected or alternatives:
-            raise ValueError("La APK debe contener solo los SVG originales para ilustrar ejercicios")
+        retired = tuple(f"assets/{folder}/" for folder in RETIRED_DEMOS)
+        if any(name.startswith(retired) or name.startswith("assets/demos30/") and name.endswith(".svg")
+               for name in files):
+            raise ValueError("La APK incluye demostraciones históricas")
         motion_files = ["hunter2000-poses.json", "exercise-actor/sports-poses.json",
                         "exercise-actor/rostro.svg", "exercise-actor/rostro-frontal.svg",
                         "exercise-actor/rostro-superior.svg"]

@@ -23,11 +23,9 @@ Las pruebas Android/JVM y la APK debug de QA están en [planificación y tests](
 - Conservación del historial de sesiones y recursos propios de Monarca.
 
 ## Recursos de ejercicio
-- **2000 fichas**: 1200 originales y 800 adicionales, con identificadores únicos.
-- **Se retiraron los 2000 SVG animados** de `app/src/main/assets/demos30/`. Se conservan los JSON complementarios, las 1000 ilustraciones 2D estáticas de `media2d/` y los 342 MP4 locales.
-- La sesión guiada y la ficha utilizan las 1000 ilustraciones originales de `media2d/`. Las fichas sin ese recurso muestran su guía escrita.
-- El motor Rive y los 2000 `.riv` se han retirado del código y recursos empaquetados. El workflow verifica **0 archivos .riv** y **0 bibliotecas nativas de Rive** dentro de la APK.
-- Las **800 fichas nuevas** continúan `pendingTechnicalReview=true`, `approvedForAutoplan=false` y `autoProgressionApproved=false`; quedan excluidas de planificación automática.
+- El catálogo tiene **5.000 ejercicios activos** con identificadores estables. Los alias conservan la compatibilidad con el historial.
+- La ficha, la sesión guiada y Misiones Monarca usan el personaje vectorial de Compose con las poses del catálogo. Las secuencias reutilizan los movimientos de sus dos gestos.
+- La auditoría comprueba la cobertura de poses y la ausencia de las ilustraciones y clips históricos en los recursos de la APK. Los SVG faciales forman parte del personaje actual.
 
 ## Auditoría y compilación
 ```sh

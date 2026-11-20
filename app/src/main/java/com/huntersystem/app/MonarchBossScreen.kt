@@ -232,9 +232,6 @@ internal fun MonarchBossExercise(ui:NativeUi,data:JSONObject) {
         HButton(if(play) "Pausar demostración" else "Reproducir demostración"){play=!play}
         HButton(if(mirror) "Espejo ✓" else "Espejo"){mirror=!mirror}
     }
-    store.catalog.editorial.o("clips").optJSONObject(exercise.id)?.let { clip ->
-        HButton("Ver clip local"){play=false;ui.open("video",obj("path" to "offline2d/"+clip.s("file")))}
-    }
     HPanel(decor=false,padding=13){
         Heading("Registrar repeticiones",size=25)
         HText(if(goal==null) "Meta del desafío: ${data.i("target")} repeticiones"

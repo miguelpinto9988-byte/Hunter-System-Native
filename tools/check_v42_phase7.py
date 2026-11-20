@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Comprobación estática de integración V42 fase 07 (no sustituye QA físico)."""
-import json
+import json, re
 from pathlib import Path
 R=Path(__file__).resolve().parents[1]
 K=R/"app/src/main/java/com/huntersystem/app"
@@ -17,39 +17,28 @@ errors=[]
 def verify(ok,msg):
     if not ok: errors.append(msg)
 verify(len(catalog)==1200,"Catálogo no contiene 1200 ejercicios")
-verify(len(list((R/"app/src/main/assets").rglob("*.mp4")))==342,"Se modificó el conjunto de 342 MP4")
+verify(len(list((R/"app/src/main/assets").rglob("*.mp4")))==0,"Quedan clips históricos empaquetados")
 verify("fun MonarchExerciseStage(" in stage,"Falta escenario nuevo")
 verify('Eyebrow("DEMOSTRACIÓN")' in stage,"La ficha debe identificar la demostración")
-verify("ExerciseActor(" in stage and "OriginalSvg(exercise.demo" in stage,"Falta el personaje animado o el respaldo estático")
+verify("ExerciseActor(" in stage and "OriginalSvg(exercise.demo" not in stage,"La demostración debe usar el personaje vectorial aprobado")
 verify("HunterRiveExercise" not in stage and "app.rive:rive-android" not in build,"El motor Rive debe estar retirado")
 verify("MonarchExerciseStage(e,mirror,height=360,play=play)" in overlays,"Ficha no usa reproductor")
 # V43.12 puede encapsular la misma demostración en un componente de sesión adaptable.
 guided_layout=(K/"GuidedSessionLayoutV43.kt")
 guided_code=guided_layout.read_text() if guided_layout.exists() else ""
-session_uses_demo=(
-    "GuidedSessionDemo(e,mirror,running,restartDemo)" in overlays
-    and "MonarchExerciseStage(exercise,mirror,height=demoHeight,play=running,reset=reset)" in guided_code
-)
-verify(session_uses_demo,"Sesión guiada no usa reproductor")
-# La ficha usa los controles originales; la sesión V43 usa los mismos callbacks
-# separados para reducir densidad de botones, sin alterar su comportamiento.
-exercise_controls='HButton(if(mirror)"⇄ ESPEJO' in overlays
-guided_controls=(
-    overlays.count("MonarchPlaybackControls(")>=2
-    or ("GuidedSessionPlaybackControls(running" in overlays
-        and all(x in guided_code for x in
-            ("fun GuidedSessionPlaybackControls(", "onToggle", "onRestart",
-             "onMirror")))
-)
-verify(exercise_controls and guided_controls,"La ficha debe permitir espejo y la sesión controlar su temporizador")
-verify('ui.open("video",obj("path" to "offline2d/"' in overlays,"No hay acceso a vídeos locales")
+session_uses_demo = "GuidedSessionDemo(e,mirror" in overlays and "MonarchExerciseStage(" in guided_code
+verify(session_uses_demo,"Sesión guiada no usa el personaje aprobado")
+verify('HButton(if(mirror)"⇄ ESPEJO' in overlays and
+       all(x in guided_code for x in ("onToggle", "onRestart")),
+       "Faltan los controles de espejo o del temporizador")
+verify('offline2d/' not in overlays,"Se reintrodujo un clip histórico")
 verify("fun SessionRecord(" in overlays and 'ui.open("series"' in overlays,"Se perdió el registro real")
-verify("fun SessionPlayer(" in overlays and "nativeSignature" in overlays,"Se perdió persistencia de sesión")
-verify(any(x in build for x in ['versionName = "42.6-monarca-fase7"','versionName = "42.7-monarca-fase8"','versionName = "42.8-monarca-fase9"','versionName = "42.9-monarca-fase10"']),"Versión inferior a fase 07")
-verify("Auditoria Monarca V42 fase 07" in wf,"Auditoría 07 no integrada en CI")
-verify(any(x in wf for x in ["Hunter-System-V42-Monarca-Fase07-APK","Hunter-System-V42-Monarca-Fase08-APK","Hunter-System-V42-Monarca-Fase09-APK","Hunter-System-V42-Monarca-Fase10-APK"]),"Artefacto desde fase 07 sin nombre")
+verify("SessionPlayer(" in overlays and "nativeSignature" in overlays,"Se perdió persistencia de sesión")
+verify(re.search(r'versionName = "(?:42\.[6-9]|43\.)', build), "Versión inferior a fase 07")
+verify("Auditoria Monarca V42 fase 07" in wf, "Auditoría 07 no integrada en CI")
+verify("name: Hunter-System-V" in wf, "Artefacto de APK sin nombre")
 verify(not (R/"app/src/main/assets/exercise_thumbnails").exists(),"No incorporar miniaturas")
 print(json.dumps({"fase":7,"version":"42.6-monarca-fase7",
-  "ejercicios":len(catalog),"demostraciones_mp4":342,
+  "ejercicios":len(catalog),"demostraciones_mp4":0,
   "resultado":"OK" if not errors else "ERROR","errores":errors},ensure_ascii=False,indent=2))
 if errors: raise SystemExit(1)

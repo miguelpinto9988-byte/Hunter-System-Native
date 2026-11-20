@@ -1,12 +1,25 @@
 #!/usr/bin/env python3
 """Exporta las fichas activas para la revisión visual y de reproducción."""
 import argparse, csv, hashlib, json
+from functools import lru_cache
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 ASSETS=ROOT/'app/src/main/assets'
-FIELDS=['exercise_id','source','svg_asset','sha256','bytes','visual_review','motion_review',
+FIELDS=['exercise_id','source','motion_asset','sha256','bytes','visual_review','motion_review',
 'android_playback_review','biomechanics_review','autoplan','device','android_version','reviewer','review_date','notes']
 def read(path): return json.loads((ASSETS/path).read_text(encoding='utf8'))
+def motion_path(exercise_id):
+    if exercise_id.startswith('sport-'):
+        return 'exercise-actor/sports-poses.json'
+    if exercise_id.startswith('hx_'):
+        return 'hunter2000-poses.json'
+    return f'demos30/{exercise_id}.json'
+
+@lru_cache(maxsize=None)
+def asset_digest(path):
+    payload = (ASSETS / path).read_bytes()
+    return hashlib.sha256(payload).hexdigest(), len(payload)
+
 def build_queue():
     original=read('catalog.json')
     extra=read('catalog-hunter2000-extra.json')
@@ -22,11 +35,12 @@ def build_queue():
         if identity in aliases:
             continue
         source = sources[identity]
-        path = ASSETS / 'media2d' / f'{identity}.svg'
-        static = path.read_bytes() if path.is_file() else b''
+        paths = list(dict.fromkeys(map(motion_path, item.get('sequenceParts') or [identity])))
+        fingerprints = [asset_digest(path) for path in paths]
         rows.append(dict(exercise_id=identity,source=source,
-            svg_asset=f'media2d/{identity}.svg' if static else '',
-            sha256=hashlib.sha256(static).hexdigest() if static else '',bytes=len(static),
+            motion_asset='; '.join(paths),
+            sha256='; '.join(digest for digest, _ in fingerprints),
+            bytes=sum(size for _, size in fingerprints),
             visual_review='PENDIENTE',motion_review='PENDIENTE',
             android_playback_review='PENDIENTE',biomechanics_review='PENDIENTE',
             autoplan='REGLAS_DEL_PERFIL',

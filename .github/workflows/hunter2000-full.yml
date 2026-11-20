@@ -1,4 +1,4 @@
-name: Validar Hunter 2000 sin SVG animados
+name: Validar catálogo y demostraciones de Hunter System
 
 on:
   workflow_dispatch:
@@ -16,14 +16,14 @@ permissions:
 
 jobs:
   verify-and-build:
-    name: Auditoría de ilustraciones estáticas + APK
+    name: Auditoría del personaje vectorial y la APK
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
       - name: Obtener código fuente
         uses: actions/checkout@v4
 
-      - name: Exigir 0 animaciones SVG y 800 fichas pendientes de QA
+      - name: Comprobar catálogo y ausencia de demostraciones históricas
         run: python3 tools/check_hunter2000_complete.py
 
       - name: Configurar Java 17
@@ -65,33 +65,13 @@ jobs:
           HUNTER_STORE_PASSWORD: ${{ secrets.HUNTER_STORE_PASSWORD }}
         run: bash gradlew --no-daemon --max-workers=2 :app:assembleRelease
 
-      - name: Comprobar contenido de la APK
-        shell: bash
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          from zipfile import ZipFile
-          import json
-          apk = next(iter(Path('app/build/outputs/apk/release').glob('*.apk')))
-          with ZipFile(apk) as f:
-              ns=set(f.namelist())
-              svg={x for x in ns if x.startswith('assets/demos30/') and x.endswith('.svg')}
-              assert not svg, f'Persisten {len(svg)} SVG animados'
-              static={x for x in ns if x.startswith('assets/media2d/') and x.endswith('.svg')}
-              assert len(static)==1000, f'Se esperaban 1000 SVG estáticos; hay {len(static)}'
-              assert not [x for x in ns if x.endswith('.riv') or 'librive-android.so' in x]
-              path='assets/catalog-hunter2000-extra.json'
-              assert path in ns
-              new=json.loads(f.read(path))
-              assert len(new)==800
-              assert len({x['id'] for x in new})==800
-              print(f'APK verificada: 0 SVG animados, 1000 ilustraciones estáticas, 800 fichas Hunter 2000')
-          PY
+      - name: Comprobar catálogo y animaciones en la APK
+        run: python3 tools/check_hunter2000_complete.py --apk "$(find app/build/outputs/apk/release -name '*.apk' -print -quit)"
 
-      - name: Publicar APK de 2000 ejercicios
+      - name: Publicar APK verificada
         uses: actions/upload-artifact@v4
         with:
-          name: Hunter-System-V43-2-Sin-Animaciones-SVG-APK
+          name: Hunter-System-V43-Animaciones-Nativas-APK
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 14

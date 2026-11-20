@@ -44,7 +44,7 @@ fun MonarchExerciseStage(exercise:Exercise,mirror:Boolean,height:Int=340,
         .padding(if(thumbnail)0.dp else if(guided)8.dp else 12.dp),
         verticalArrangement=Arrangement.spacedBy(if(guided)4.dp else 9.dp)){
         if(!guided)Eyebrow("DEMOSTRACIÓN")
-        if(motion==null && parts==null && exercise.demo.isBlank()){
+        if(motion==null && parts==null){
             if(!thumbnail)HText("Este ejercicio aún no tiene demostración.",size=15,color=c.muted)
         }else{
             Box(Modifier.fillMaxWidth().height(height.dp)
@@ -59,7 +59,6 @@ fun MonarchExerciseStage(exercise:Exercise,mirror:Boolean,height:Int=340,
                     }
                 } else if(motion!=null) ExerciseActor(motion,Modifier.fillMaxSize(),play,mirror,reset,
                     themedStage=guided,controlsWidth=controlsWidth)
-                else OriginalSvg(exercise.demo,Modifier.fillMaxSize(),mirror=mirror)
                 if(hasPlaybackControl&&onTogglePlayback!=null)
                     GuidedSessionButton(if(play)"Pausar demostración" else "Reproducir demostración",
                         if(play)GuidedSessionGlyph.PAUSE else GuidedSessionGlyph.PLAY,

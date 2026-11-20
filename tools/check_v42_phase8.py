@@ -28,7 +28,7 @@ def check(value, msg):
 
 catalog = json.loads((ASSETS / "catalog.json").read_text())
 check(len(catalog) == 1200, "Catálogo de 1200 ejercicios alterado")
-check(len(list(ASSETS.rglob("*.mp4"))) == 342, "Colección de 342 MP4 alterada")
+check(len(list(ASSETS.rglob("*.mp4"))) == 0, "Quedan clips históricos empaquetados")
 check(not (ASSETS / "exercise_thumbnails").exists(), "Miniaturas no solicitadas")
 for title in ["IGRIS", "IRON", "TANK", "BERU", "DOKJA KIM"]:
     check('"'+title+'"' in companion, f"Falta {title}")
@@ -50,7 +50,7 @@ check(any(x in gradle for x in ['versionName = "42.7-monarca-fase8"','versionNam
 check("Auditoria Monarca V42 fase 08" in ci, "CI no incluye auditoría 08")
 check(any(x in ci for x in ["Hunter-System-V42-Monarca-Fase08-APK","Hunter-System-V42-Monarca-Fase09-APK","Hunter-System-V42-Monarca-Fase10-APK"]), "Nombre artefacto incorrecto")
 print(json.dumps({"fase":8,"version":"42.7-monarca-fase8",
-    "ejercicios":len(catalog),"videos_mp4":342,
+    "ejercicios":len(catalog),"videos_mp4":0,
     "personajes":5,"temas":9,"acentos":9,
     "estado":"OK" if not errors else "ERROR","errores":errors},
     ensure_ascii=False,indent=2))

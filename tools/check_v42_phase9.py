@@ -24,7 +24,7 @@ def check(test, label):
         errs.append(label)
 
 check(len(exercises) == 1200, "No se conservan 1200 ejercicios")
-check(len(list(assets.rglob("*.mp4"))) == 342, "No se conservan 342 videos")
+check(len(list(assets.rglob("*.mp4"))) == 0, "Quedan clips históricos empaquetados")
 check(not (assets / "exercise_thumbnails").exists(), "Han vuelto miniaturas")
 for label, fragment in [
     ("Pantalla de estadísticas", "fun MonarchProgressScreen(ui:NativeUi)"),
@@ -55,7 +55,7 @@ check("Auditoria Monarca V42 fase 09" in workflow, "Falta auditoría fase 09 en 
 
 print(json.dumps({
     "fase":9, "version":"42.8-monarca-fase9",
-    "ejercicios":len(exercises), "videos_mp4":342,
+    "ejercicios":len(exercises), "videos_mp4":0,
     "estadisticas":"sólo registros reales",
     "estado":"OK" if not errs else "ERROR", "errores":errs
 },ensure_ascii=False,indent=2))

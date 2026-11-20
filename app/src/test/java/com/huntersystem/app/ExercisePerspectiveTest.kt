@@ -51,6 +51,16 @@ class ExercisePerspectiveTest {
         }
     }
 
+    @Test fun everyStandaloneExerciseLoadsThroughTheApprovedRenderer() {
+        val catalog = Catalog(context)
+        val standalone = catalog.exercises.filter { it.raw.a("sequenceParts").length() == 0 }
+        assertEquals(2_031, standalone.size)
+        for (exercise in standalone) {
+            val motion = checkNotNull(ExerciseMotions.load(context, exercise.id)) { exercise.id }
+            assertTrue(exercise.id, ExerciseFraming.from(motion).scaleFor(Size(320f, 220f)) > 0f)
+        }
+    }
+
     @Test fun everyNewSequenceLoadsWithItsOwnPerspectiveAndACommonScale() {
         val catalog = Catalog(context)
         assertEquals(5_000, catalog.exercises.size)
