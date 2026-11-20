@@ -154,9 +154,8 @@ jobs:
             assert data[:4]==b'RIFF' and data[8:12]==b'WEBP','WebP splash corrupto'
             print('Fondo Monarca empaquetado:',len(data),'bytes')
             boss_art=(
-              'profile-monarca/training.webp','profile-monarca/beru.webp','ui33/companion-tusk.webp',
-              'hunter-scenes-hd/ciudadela-boreal.webp','hunter-scenes-hd/biblioteca-lunar.webp',
-              'hunter-scenes-hd/trono-volcanico.webp',
+              'profile-monarca/training.webp','monarch-boss/baruka.webp','monarch-boss/kargalgan.webp',
+              'monarch-boss/baran.webp','monarch-boss/beru.webp',
             )
             for asset in boss_art:
               raw=z.read('assets/'+asset)

@@ -16,16 +16,13 @@ internal enum class MonarchBoss(
     val encounter:String,
     val difficulty:String,
     val repetitions:IntRange,
-    val artwork:String,
-    val portrait:String?=null
+    val artwork:String
 ) {
     IGRIS("Igris","Guardia del Umbral","Inicial",75..110,"profile-monarca/training.webp"),
-    BARUKA("Baruka","Puerta Roja","Intermedia",90..125,"hunter-scenes-hd/ciudadela-boreal.webp"),
-    TUSK("Kargalgan (Tusk)","Chamán de los Altos Orcos","Avanzada",105..140,
-        "hunter-scenes-hd/biblioteca-lunar.webp","ui33/companion-tusk.webp"),
-    BARAN("Baran","Castillo Demoníaco","Élite",120..155,"hunter-scenes-hd/trono-volcanico.webp"),
-    BERU("Beru","Rey Hormiga de Jeju","Monarca",135..170,
-        "hunter-scenes-hd/ciudadela-boreal.webp","profile-monarca/beru.webp");
+    BARUKA("Baruka","Puerta Roja","Intermedia",90..125,"monarch-boss/baruka.webp"),
+    TUSK("Kargalgan (Tusk)","Chamán de los Altos Orcos","Avanzada",105..140,"monarch-boss/kargalgan.webp"),
+    BARAN("Baran","Castillo Demoníaco","Élite",120..155,"monarch-boss/baran.webp"),
+    BERU("Beru","Rey Hormiga de Jeju","Monarca",135..170,"monarch-boss/beru.webp");
 
     val rangeLabel get()="${repetitions.first}–${repetitions.last}"
 

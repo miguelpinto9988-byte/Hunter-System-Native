@@ -173,16 +173,20 @@ internal fun MonarchBossScreen(ui:NativeUi,windowState:JSONObject) {
 private fun MonarchBossBanner(boss:MonarchBoss,status:String,compact:Boolean) {
     val frame=RoundedCornerShape(15.dp)
     Box(Modifier.fillMaxWidth().height(if(compact) 145.dp else 205.dp).clip(frame).monarchOutline(frame)){
-        AssetImage(boss.artwork,Modifier.matchParentSize().graphicsLayer {
-            if(boss==MonarchBoss.IGRIS)scaleX=-1f
-        },ContentScale.Crop,alignment=Alignment.TopCenter)
-        boss.portrait?.let { portrait ->
-            AssetImage(portrait,Modifier.align(Alignment.CenterEnd).width(165.dp).fillMaxHeight(),ContentScale.Fit)
+        val isIgris=boss==MonarchBoss.IGRIS
+        key(boss) {
+            AssetImage(boss.artwork,Modifier.matchParentSize().graphicsLayer {
+                if(isIgris)scaleX=-1f
+            },ContentScale.Crop,description="Ilustración de ${boss.title}",alignment=Alignment.TopCenter)
         }
-        Box(Modifier.matchParentSize().background(Brush.horizontalGradient(
-            listOf(Color(0xF0081324),Color(0xB0081324),Color.Transparent))))
-        Box(Modifier.matchParentSize().background(Brush.verticalGradient(
-            listOf(Color.Transparent,Color(0x98091221)))))
+        val scrim=if(isIgris) Brush.horizontalGradient(
+            listOf(Color(0xF0081324),Color(0xB0081324),Color.Transparent))
+        else Brush.horizontalGradient(
+            0f to Color(0xDC081324),.35f to Color(0xA8081324),.68f to Color.Transparent)
+        Box(Modifier.matchParentSize().background(scrim))
+        val bottomScrim=if(isIgris) Brush.verticalGradient(listOf(Color.Transparent,Color(0x98091221)))
+        else Brush.verticalGradient(.56f to Color.Transparent,1f to Color(0x69091221))
+        Box(Modifier.matchParentSize().background(bottomScrim))
         Column(Modifier.align(Alignment.BottomStart).padding(15.dp)){
             HText("JEFE MONARCA",size=13,bold=true,color=bossBlue)
             val titleSize=if(boss==MonarchBoss.TUSK) 30 else if(compact) 36 else 48

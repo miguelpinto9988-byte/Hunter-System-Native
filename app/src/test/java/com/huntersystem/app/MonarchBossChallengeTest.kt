@@ -1,6 +1,8 @@
 package com.huntersystem.app
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -12,6 +14,8 @@ import org.junit.Assert.*
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.*
+import org.robolectric.shadows.ShadowDialog
+import java.io.File
 import java.time.LocalDate
 
 @RunWith(RobolectricTestRunner::class)
@@ -122,6 +126,31 @@ class MonarchBossChallengeTest {
         offer.goals.forEach { goal -> repository.record(start,goal.id,goal.target,0,start+1) }
         assertEquals(BossStatus.COMPLETED,repository.current()!!.status(start+2))
         assertThrows(IllegalStateException::class.java){repository.abandon(start,start+2)}
+    }
+
+    @Test(timeout=120000) fun eachNewBossDisplaysItsCoverInTheChallengeWindow() {
+        val ui=NativeUi(store)
+        compose.setContent { HunterTheme(store) { HunterRoot(ui) } }
+        val output=File("../qa").apply { mkdirs() }
+        for(boss in MonarchBoss.entries.filter { it!=MonarchBoss.IGRIS }) {
+            compose.runOnIdle {
+                ui.stack.clear()
+                ui.open("monarch-boss",obj("selectedBoss" to boss.name))
+            }
+            val cover=hasContentDescription("Ilustración de ${boss.title}")
+            compose.waitUntil(10_000) { compose.onAllNodes(cover).fetchSemanticsNodes().isNotEmpty() }
+            compose.onNode(cover).assertIsDisplayed()
+            compose.runOnIdle {
+                val view=ShadowDialog.getLatestDialog()?.window?.decorView ?: return@runOnIdle
+                if(view.width>0&&view.height>0) {
+                    val bitmap=Bitmap.createBitmap(view.width,view.height,Bitmap.Config.ARGB_8888)
+                    view.draw(Canvas(bitmap))
+                    File(output,"native-monarca-${boss.name.lowercase()}.png").outputStream().use {
+                        bitmap.compress(Bitmap.CompressFormat.PNG,100,it)
+                    }
+                }
+            }
+        }
     }
 
     @Test(timeout=120000) fun catalogDemonstrationPrecedesCounterAndOnlyExplicitSaveAddsRepetitions(){
