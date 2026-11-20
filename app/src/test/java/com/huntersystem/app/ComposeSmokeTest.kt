@@ -37,6 +37,17 @@ class ComposeSmokeTest {
   }
   compose.runOnIdle{ui.open("exercise",obj("id" to "chair"))};compose.waitForIdle();compose.onAllNodesWithText("Sentadilla a silla").onFirst().assertExists();compose.onNodeWithText("Reproducir demostración").assertExists();compose.runOnIdle{ui.back()};compose.waitForIdle()
  }
+ @Test(timeout=60000) fun catalogSearchOpensMatchingExercise() {
+  compose.runOnIdle { ui.go("book") }
+  val catalog = compose.onNode(hasScrollAction())
+  catalog.performScrollToNode(hasSetTextAction())
+  compose.onNode(hasSetTextAction()).performTextReplacement("Sentadilla a silla")
+  val card = hasContentDescription("Abrir ejercicio: Sentadilla a silla")
+  catalog.performScrollToNode(card)
+  compose.onNode(card).performClick()
+  compose.onNodeWithText("DEMOSTRACIÓN").assertExists()
+  compose.onNodeWithText("Reproducir demostración").assertExists()
+ }
  @Test(timeout=60000) fun sequencePreviewCanOpenBothGestures() {
   val exercise = store.catalog.exercises.first { it.id.startsWith("sport-seq-") }
   val labels = exercise.raw.a("sequenceLabels").strings()

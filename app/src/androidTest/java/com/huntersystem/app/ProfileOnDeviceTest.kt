@@ -4,7 +4,6 @@ import android.graphics.Color
 import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowInsets
 import android.webkit.WebView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
@@ -106,20 +105,11 @@ class ProfileOnDeviceTest {
                     scenario.recreate()
                     checkNotNull(device.wait(Until.findObject(exercises), 20_000)).click()
                     assertTrue("Catalog did not load", device.wait(Until.hasObject(By.text("5000 fichas")), 20_000))
-                    val search = checkNotNull(device.wait(Until.findObject(By.clazz("android.widget.EditText")), 10_000))
-                    search.text = "Sentadilla a silla"
-                    device.waitForIdle()
-                    var keyboardVisible = false
-                    scenario.onActivity {
-                        keyboardVisible = it.window.decorView.rootWindowInsets
-                            ?.isVisible(WindowInsets.Type.ime()) == true
-                    }
-                    if (keyboardVisible) device.pressBack()
-                    val exerciseLabel = "Abrir ejercicio: Sentadilla a silla"
+                    val exercise = By.descStartsWith("Abrir ejercicio: ")
                     val scroll = UiScrollable(UiSelector().scrollable(true)).setMaxSearchSwipes(12)
-                    assertTrue("Exercise card not found in catalog",
-                        scroll.scrollIntoView(UiSelector().description(exerciseLabel)))
-                    checkNotNull(device.findObject(By.desc(exerciseLabel))).click()
+                    assertTrue("Exercise cards were not reachable",
+                        scroll.scrollIntoView(UiSelector().descriptionStartsWith("Abrir ejercicio: ")))
+                    checkNotNull(device.findObject(exercise)).click()
                     assertTrue("The exercise detail did not open",
                         device.wait(Until.hasObject(By.text("DEMOSTRACIÓN")), 15_000))
                     val play = By.text("Reproducir demostración")
