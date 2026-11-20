@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="650" height="416" viewBox="0 0 650 416">
+  <title>Pavimento del gimnasio en vista cenital</title>
+  <defs>
+    <radialGradient id="floor">
+      <stop stop-color="#253e4b"/>
+      <stop offset=".76" stop-color="#1c303e"/>
+      <stop offset="1" stop-color="#122735"/>
+    </radialGradient>
+    <pattern id="rubber" width="82" height="82" patternUnits="userSpaceOnUse">
+      <path d="M0 0H82M0 0V82" fill="none" stroke="#557984" stroke-width="2" opacity=".22"/>
+      <g fill="#678795" opacity=".14">
+        <circle cx="19" cy="24" r="1.1"/>
+        <circle cx="61" cy="51" r="1"/>
+        <circle cx="38" cy="71" r="1.2"/>
+      </g>
+    </pattern>
+  </defs>
+  <rect width="650" height="416" fill="url(#floor)"/>
+  <rect width="650" height="416" fill="url(#rubber)"/>
+  <g fill="none" stroke="#678795" stroke-width="2.6" opacity=".55">
+    <path d="M44 91V50h41m480 0h41v41M44 325v41h41m480 0h41v-41"/>
+  </g>
+</svg>

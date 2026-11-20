@@ -2,6 +2,7 @@ package com.huntersystem.app
 
 import android.graphics.Picture
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.LaunchedEffect
@@ -89,39 +90,34 @@ internal fun ExerciseActor(motion: ExerciseMotion, modifier: Modifier, play: Boo
             if (separation < 0) -1f else 1f
         }
     }
-    val lightStage=themedStage&&LocalHunter.current.isLight
-    val stageBase=when{
-        lightStage->Color(0xFFE4EDF9)
-        themedStage->Color(0xFF0C1B32)
-        else->Color(0xFF101F2A)
-    }
-    val stageGlow=when{
-        lightStage->listOf(Color.White,Color(0xFFEDF4FF),stageBase)
-        themedStage->listOf(Color(0xFF1C3C62),Color(0xFF142948),stageBase)
-        else->listOf(Color(0xFF22464D),Color(0xFF142C3A),stageBase)
-    }
-    Canvas(modifier) {
-        if (size.minDimension <= 0f) return@Canvas
-        val stage = Size((size.width - controlsWidth.toPx()).coerceAtLeast(0f), size.height)
-        val lightCenter = Offset(stage.width * .5f, stage.height * .47f)
-        drawRoundRect(stageBase,cornerRadius=CornerRadius(18f))
-        drawCircle(Brush.radialGradient(stageGlow,center=lightCenter,
-            radius=max(stage.width,stage.height)*.51f),
-            radius=stage.minDimension*.47f,center=lightCenter)
-        val commonScale = sequenceFraming.minOfOrNull { it.scaleFor(stage, themedStage) * it.unit }
-        val fit = commonScale?.div(framing.unit) ?: framing.scaleFor(stage, themedStage)
-        if (fit <= 0f) return@Canvas
-        val origin = framing.bounds.center
-        val p = motion.at(phaseOverride?.invoke() ?: playback.floatValue)
-        withTransform({
-            translate(stage.width/2,stage.height/2)
-            scale(if(mirror) -fit else fit,fit,pivot=Offset.Zero)
-            translate(-origin.x,-origin.y)
-        }) {
-            drawStage(motion, p, origin, framing.bounds.width, framing.bounds.height, framing.unit, framing.floor)
-            motion.props.forEach { drawProp(it, framing.unit) }
-            drawEquipment(motion.equipment, p, framing.unit, framing.floor)
-            drawActor(p, framing.unit, motion, face, firstArmSide)
+    val lightStage = LocalHunter.current.isLight
+    val backdrop = ExerciseGymBackdrop.forView(motion.view)
+    val gymPicture = remember(context, backdrop, lightStage) { backdrop.load(context, lightStage) }
+    val stageBase = if (lightStage) Color(0xFFE4EDF9) else Color(0xFF101F2A)
+
+    Box(modifier) {
+        Canvas(Modifier.matchParentSize()) {
+            if (gymPicture != null && size.minDimension > 0f) drawGymBackdrop(gymPicture)
+            else drawRoundRect(stageBase, cornerRadius = CornerRadius(18f))
+        }
+        Canvas(Modifier.matchParentSize()) {
+            if (size.minDimension <= 0f) return@Canvas
+            val stage = Size((size.width - controlsWidth.toPx()).coerceAtLeast(0f), size.height)
+            val commonScale = sequenceFraming.minOfOrNull { it.scaleFor(stage, themedStage) * it.unit }
+            val fit = commonScale?.div(framing.unit) ?: framing.scaleFor(stage, themedStage)
+            if (fit <= 0f) return@Canvas
+            val origin = framing.bounds.center
+            val p = motion.at(phaseOverride?.invoke() ?: playback.floatValue)
+            withTransform({
+                translate(stage.width/2,stage.height/2)
+                scale(if(mirror) -fit else fit,fit,pivot=Offset.Zero)
+                translate(-origin.x,-origin.y)
+            }) {
+                drawStage(motion, p, origin, framing.bounds.width, framing.bounds.height, framing.unit, framing.floor)
+                motion.props.forEach { drawProp(it, framing.unit) }
+                drawEquipment(motion.equipment, p, framing.unit, framing.floor)
+                drawActor(p, framing.unit, motion, face, firstArmSide)
+            }
         }
     }
 }

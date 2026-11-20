@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="650" height="416" viewBox="0 0 650 416">
+  <title>Gimnasio de frente</title>
+  <defs>
+    <linearGradient id="wall" x2="0" y2="1">
+      <stop stop-color="#213748"/>
+      <stop offset="1" stop-color="#152836"/>
+    </linearGradient>
+    <linearGradient id="floor" x2="0" y2="1">
+      <stop stop-color="#253e4b"/>
+      <stop offset="1" stop-color="#122735"/>
+    </linearGradient>
+    <linearGradient id="glass" x2="0" y2="1">
+      <stop stop-color="#435f70"/>
+      <stop offset="1" stop-color="#29424f"/>
+    </linearGradient>
+    <radialGradient id="ambient">
+      <stop stop-color="#8badbc" stop-opacity=".16"/>
+      <stop offset="1" stop-color="#8badbc" stop-opacity="0"/>
+    </radialGradient>
+    <g id="rack">
+      <path d="M0 194V65h105v129M0 82h105M0 120h105M0 159h105"
+            fill="none" stroke="#577580" stroke-width="4" stroke-linecap="round"/>
+      <path d="M10 98h11v-6h9v6h12v10H30v6h-9v-6H10zm47-3h13v-6h10v6h13v13H80v6H70v-6H57z
+               M10 135h12v-5h8v5h11v11H30v6h-8v-6H10zm46-1h12v-6h10v6h13v12H78v6H68v-6H56z"
+            fill="#1c303e" stroke="#496876" stroke-width="2"/>
+    </g>
+  </defs>
+  <rect width="650" height="216" fill="url(#wall)"/>
+  <path d="M0 213H650V416H0Z" fill="url(#floor)"/>
+  <path d="M0 213H650" stroke="#41606c" opacity=".55"/>
+  <path d="M0 233H650m-650 32h650m-650 55h650m-650 71h650M325 213v203M283 213l-60 203m144-203l60 203
+           M229 213L40 416m381-203l189 203"
+        fill="none" stroke="#557984" stroke-width="1.2" opacity=".24"/>
+  <ellipse cx="325" cy="262" rx="246" ry="140" fill="url(#ambient)"/>
+  <g opacity=".47">
+    <rect x="174" y="30" width="302" height="6" rx="3" fill="#678795" opacity=".55"/>
+    <g fill="url(#glass)" stroke="#172c39" stroke-width="5">
+      <rect x="180" y="54" width="140" height="96" rx="7"/>
+      <rect x="330" y="54" width="140" height="96" rx="7"/>
+    </g>
+    <path d="M250 57v90m150-90v90M184 103h132m18 0h132M173 158h304"
+          fill="none" stroke="#678795" stroke-width="2.5" opacity=".57"/>
+    <use xlink:href="#rack" x="38"/>
+    <use xlink:href="#rack" x="507"/>
+    <path d="M156 44v150m338-150v150" stroke="#34505d" stroke-width="4"/>
+  </g>
+  <path d="M0 210H650" stroke="#0f212e" stroke-width="3" opacity=".48"/>
+</svg>

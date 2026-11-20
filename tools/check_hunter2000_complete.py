@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 ASSETS = ROOT / "app/src/main/assets"
 RETIRED_DEMOS = ("media2d", "offline2d", "demos120", "sports2d", "demos-rive")
 RETIRED_ARCHIVE = ROOT / ".hunter2000/source/hunter2000-assets.tar.xz"
+GYM_BACKDROPS = tuple(f"exercise-backdrops/{view}.svg" for view in ("front", "side", "overhead"))
 def read_json(name):
     return json.loads((ASSETS / name).read_text(encoding="utf-8"))
 
@@ -179,6 +180,9 @@ def verify():
         raise ValueError("Quedan SVG animados históricos en el repositorio")
     if read_json("editorial.json").get("clips"):
         raise ValueError("El índice editorial todavía ofrece clips históricos")
+    for backdrop in GYM_BACKDROPS:
+        if not (ASSETS / backdrop).is_file():
+            raise ValueError(f"Falta el fondo de gimnasio: {backdrop}")
     motion_count = verify_motion(original, extra, read_json("catalog-sports.json"))
     sports_count, distribution, aliases, similar, candidates = verify_sports(items)
     return {"status": "PASS", "catalog_total": len(items) + sports_count, "static_svg": 0,
@@ -200,9 +204,9 @@ def verify_apk(path):
                         "exercise-actor/rostro.svg", "exercise-actor/rostro-frontal.svg",
                         "exercise-actor/rostro-superior.svg"]
         motion_files.extend(str(file.relative_to(ASSETS)) for file in (ASSETS / "demos30").glob("*.json"))
-        for name in motion_files:
+        for name in [*motion_files, *GYM_BACKDROPS]:
             if apk.read(f"assets/{name}") != (ASSETS / name).read_bytes():
-                raise ValueError(f"Recurso de animación distinto en la APK: {name}")
+                raise ValueError(f"Recurso de demostración distinto en la APK: {name}")
         for name in ("catalog.json", "catalog-hunter2000-extra.json",
                      "catalog-sports.json", "exercise-aliases.json"):
             if json.loads(apk.read(f"assets/{name}")) != read_json(name):

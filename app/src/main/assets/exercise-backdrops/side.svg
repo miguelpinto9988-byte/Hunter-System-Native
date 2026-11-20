@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="650" height="416" viewBox="34 238 325 208">
+  <title>Gimnasio de perfil</title>
+  <g id="gimnasio-vectorial">
+      <defs>
+        <linearGradient id="gym-wall" x2="0" y2="1" gradientUnits="objectBoundingBox">
+          <stop stop-color="#213748" /><stop offset="1" stop-color="#152836" />
+        </linearGradient>
+        <linearGradient id="gym-floor" x2="0" y2="1" gradientUnits="objectBoundingBox">
+          <stop stop-color="#253e4b" /><stop offset="1" stop-color="#122735" />
+        </linearGradient>
+        <linearGradient id="gym-glass" x2="0" y2="1" gradientUnits="objectBoundingBox">
+          <stop stop-color="#435f70" /><stop offset="1" stop-color="#29424f" />
+        </linearGradient>
+        <radialGradient id="gym-glow">
+          <stop stop-color="#8badbc" stop-opacity=".15" /><stop offset="1" stop-color="#8badbc" stop-opacity="0" />
+        </radialGradient>
+      </defs>
+      <rect x="34" y="238" width="325" height="112" fill="url(#gym-wall)" />
+      <path d="M34 345H359V446H34Z" fill="url(#gym-floor)" />
+      <path d="M34 345H359" stroke="#41606c" opacity=".65" />
+      <path d="M34 356H359M34 375H359M34 408H359M110 346L34 414M152 346L100 446M198 346V446M245 346L295 446M292 346L359 414" fill="none" stroke="#557984" stroke-width=".65" opacity=".26" />
+      <ellipse cx="193" cy="379" rx="122" ry="68" fill="url(#gym-glow)" />
+      <g opacity=".48">
+        <path d="M42 252H348M42 258H348" stroke="#34505d" stroke-width="1.5" opacity=".72" />
+        <g fill="url(#gym-glass)" stroke="#172c39" stroke-width="3">
+          <rect x="119" y="256" width="48" height="46" rx="4" />
+          <rect x="173" y="256" width="48" height="46" rx="4" />
+          <rect x="227" y="256" width="48" height="46" rx="4" />
+        </g>
+        <g stroke="#678795" stroke-width="1" opacity=".51">
+          <path d="M143 258V301m54-43v43m54-43v43M120 285h47m6 0h48m6 0h48" />
+          <path d="M119 307H275" />
+        </g>
+        <g fill="none" stroke="#577580" stroke-width="2.5" stroke-linecap="round">
+          <path d="M46 336v-67h55v67M46 279h55M46 301h55M46 324h55" />
+          <path d="M291 335v-47h49v47m-49-9h49m-49-18h49" />
+        </g>
+        <g fill="#1c303e" stroke="#496876" stroke-width="1.2">
+          <circle cx="57" cy="288" r="8" /><circle cx="57" cy="313" r="8" />
+          <circle cx="71" cy="290" r="7" /><circle cx="71" cy="314" r="7" />
+          <circle cx="85" cy="292" r="6" /><circle cx="85" cy="315" r="6" />
+          <path d="M297 301h6v-3h4v3h7v6h-7v3h-4v-3h-6zM317 299h6v-3h5v3h7v8h-7v3h-5v-3h-6z" />
+          <path d="M297 319h6v-3h5v3h7v7h-7v3h-5v-3h-6zM318 319h5v-3h5v3h7v7h-7v3h-5v-3h-5z" />
+        </g>
+      </g>
+      <path d="M34 343H359" stroke="#0f212e" stroke-width="2" opacity=".52" />
+    </g>
+    </svg>
