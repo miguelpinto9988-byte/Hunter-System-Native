@@ -26,7 +26,7 @@ import kotlin.math.*
   Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
       verticalAlignment=Alignment.CenterVertically){
       HButton("‹ VOLVER"){ui.back()}
-      Eyebrow("ENTRENAMIENTO EN CURSO")
+      HText("Sesión paso a paso",Modifier.weight(1f).padding(horizontal=9.dp),size=16,bold=true)
       HButton("×"){ui.stack.clear()}
   }
  }else if(overlay.type=="monarch-boss"||overlay.type=="monarch-boss-exercise"){
@@ -49,10 +49,13 @@ import kotlin.math.*
        }
     }
  }
+ if(overlay.type=="session"){
+  key(overlay){SessionPlayer(ui,overlay.data)}
+ }else{
  val scroll = if(overlay.type.startsWith("monarch-boss")) key(overlay) { rememberScrollState() } else rememberScrollState()
  Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(scroll)
-    .padding(top=if(overlay.type=="session")10.dp else 18.dp,bottom=20.dp),
-    verticalArrangement=Arrangement.spacedBy(if(overlay.type=="session")12.dp else 16.dp)){key(overlay){when(overlay.type){
+    .padding(top=18.dp,bottom=20.dp),
+    verticalArrangement=Arrangement.spacedBy(16.dp)){key(overlay){when(overlay.type){
  "exercise"->ExerciseDetail(ui,overlay.data.s("id"))
  "monarch-boss"->MonarchBossScreen(ui,overlay.data)
  "monarch-boss-exercise"->MonarchBossExercise(ui,overlay.data)
@@ -87,7 +90,6 @@ import kotlin.math.*
  "series"->SeriesEditor(ui,overlay.data)
  "routine"->RoutineDetail(ui,overlay.data.s("id"))
  "assign"->AssignRoutine(ui,overlay.data.s("id"))
- "session"->SessionPlayer(ui,overlay.data)
  "custom","routine-editor"->CustomEditor(ui,overlay.type,overlay.data)
  "academy"->Academy(ui)
  "guide"->GuideDetail(ui,overlay.data.i("index"))
@@ -107,6 +109,7 @@ import kotlin.math.*
  "review"->ReviewPanel(ui)
  else->HNotice("Selecciona una sección para continuar.")
  }}}
+ }
  }}}}
 @Composable fun ExerciseDetail(ui:NativeUi,id:String){val s=ui.store;val e=s.catalog.byId[id]?:return;val c=LocalHunter.current;var mirror by remember(id){mutableStateOf(false)}
  var play by remember(id){mutableStateOf(false)}
@@ -159,14 +162,14 @@ import kotlin.math.*
  if(!id.startsWith("monarca-routine-"))HButton("Usar esta rutina",Modifier.fillMaxWidth(),primary=true,enabled=reasons.isEmpty()){ui.open("assign",obj("id" to id))}
 }
 @Composable fun AssignRoutine(ui:NativeUi,id:String){val r=ui.routine(id)?:return;var date by remember{mutableStateOf(today())};Heading("Usar esta rutina",size=35);HText(r.s("name"),bold=true);HText("Los ejercicios y cantidades mostrados se copiarán a la fecha elegida.",size=17,color=LocalHunter.current.muted);HSelect("Fecha",date,(0L..20L).map{val d=plus(today(),it);d to "$d${if(it==0L)" · Hoy" else ""}"}){date=it};for(x in r.a("items").objects())HText("${ui.store.catalog.byId[x.s("id")]?.name} · ${x.i("sets")} × ${x.i("target")}",size=16);HButton("Confirmar asignación",Modifier.fillMaxWidth(),primary=true){ui.attempt{ui.store.assign(r,date);ui.stack.clear();ui.go("plan");ui.message("Rutina asignada a $date")}}}
-@Composable fun SessionPlayer(ui:NativeUi,data:JSONObject){val s=ui.store;val date=data.s("date",today());val preview=data.has("routineId");val day=if(preview)ui.routine(data.s("routineId"))?:return else s.day(date);val p=s.adjusted();val reasons=day.a("items").objects().flatMap{item->s.catalog.byId[item.s("id")]?.let{s.rules.missionReasons(it,p,item)}?:listOf("Ejercicio desconocido")};if(reasons.isNotEmpty()){Heading("Revisa tu perfil");HNotice(reasons.distinct().joinToString("\n"));return};val steps=remember(day.toString(),p.toString()){s.planner.steps(day,p)};if(steps.isEmpty()){Heading("No hay ejercicios para esta sesión");return};val signature=hash(arr(steps).toString()).toString(16);val saved=if(preview)JSONObject() else s.state.o("guidedSessions").o(date).takeIf{it.s("nativeSignature")==signature}?:JSONObject();var index by remember(signature){mutableIntStateOf(saved.i("index").coerceIn(0,steps.size))};var remaining by remember(signature){mutableIntStateOf(saved.i("remaining",steps.getOrNull(index)?.i("seconds")?:0).coerceAtLeast(0))};var running by remember{mutableStateOf(false)};var pending by remember(index){mutableStateOf(false)};var mirror by remember{mutableStateOf(false)};var restartDemo by remember(index){mutableIntStateOf(0)};val scope=rememberCoroutineScope();val latestIndex by rememberUpdatedState(index);val latestRemaining by rememberUpdatedState(remaining)
+@Composable fun ColumnScope.SessionPlayer(ui:NativeUi,data:JSONObject){val s=ui.store;val date=data.s("date",today());val preview=data.has("routineId");val day=if(preview)ui.routine(data.s("routineId"))?:return else s.day(date);val p=s.adjusted();val reasons=day.a("items").objects().flatMap{item->s.catalog.byId[item.s("id")]?.let{s.rules.missionReasons(it,p,item)}?:listOf("Ejercicio desconocido")};if(reasons.isNotEmpty()){GuidedSessionContent { Heading("Revisa tu perfil");HNotice(reasons.distinct().joinToString("\n")) };return};val steps=remember(day.toString(),p.toString()){s.planner.steps(day,p)};if(steps.isEmpty()){GuidedSessionContent { Heading("No hay ejercicios para esta sesión") };return};val signature=hash(arr(steps).toString()).toString(16);val saved=if(preview)JSONObject() else s.state.o("guidedSessions").o(date).takeIf{it.s("nativeSignature")==signature}?:JSONObject();var index by remember(signature){mutableIntStateOf(saved.i("index").coerceIn(0,steps.size))};var remaining by remember(signature){mutableIntStateOf(saved.i("remaining",steps.getOrNull(index)?.i("seconds")?:0).coerceAtLeast(0))};var running by remember{mutableStateOf(false)};var pending by remember(index){mutableStateOf(false)};var mirror by remember{mutableStateOf(false)};var restartDemo by remember(index){mutableIntStateOf(0)};val scope=rememberCoroutineScope();val latestIndex by rememberUpdatedState(index);val latestRemaining by rememberUpdatedState(remaining)
  fun persist(){if(!preview){val all=s.state.o("guidedSessions");all.put(date,obj("nativeSignature" to signature,"index" to latestIndex,"remaining" to latestRemaining,"mode22" to p.s("blockMode22","exercise")));s.state.put("guidedSessions",all);s.save()}}
  if(preview && day.s("id").startsWith("monarca-routine-")){
      val repository=remember(s){MonarchProgressRepository(s)}
      val revision=s.revision.intValue
      val localDate=java.time.LocalDate.now()
      if(!remember(revision,localDate,day){repository.canRunOptionalRoutine(localDate,day)}){
-         HNotice("La guía requiere una fecha de actividad y un perfil compatible.")
+         GuidedSessionContent { HNotice("La guía requiere una fecha de actividad y un perfil compatible.") }
          return
      }
  }
@@ -175,76 +178,109 @@ import kotlin.math.*
 
  GuidedSessionHeader(preview,day.s("title",day.s("name")),min(index+1,steps.size),steps.size)
  if(index>=steps.size){
-     Heading("Secuencia terminada",size=30)
-     HText(CompanionDialogue.message(s.profile,LocalVisualTier.current,DialogueContext(
-         DialogueMoment.COMPLETED,group=GroupEvolution.sessionGroup(day,s.profile,s.catalog)?:"")),
-         size=15,color=LocalHunter.current.muted)
-     HNotice("El registro se completa únicamente con las series o misiones que confirmes.")
-     if (preview && day.s("id").startsWith("monarca-routine-")) {
-         val repository = remember(s) { MonarchProgressRepository(s) }
-         val localDay = java.time.LocalDate.now()
-         if (repository.canRunOptionalRoutine(localDay, day)) {
-             HButton("DECLARAR RUTINA COMPLETADA", Modifier.fillMaxWidth(), primary = true) {
-                 ui.attempt {
-                     val points = repository.declareOptionalRoutine(localDay, day, true)
-                     ui.message(if (points > 0) "Participación registrada · +10 puntos" else
-                         "La participación de hoy ya está registrada.")
+     GuidedSessionContent {
+         Heading("Secuencia terminada",size=30)
+         HText(CompanionDialogue.message(s.profile,LocalVisualTier.current,DialogueContext(
+             DialogueMoment.COMPLETED,group=GroupEvolution.sessionGroup(day,s.profile,s.catalog)?:"")),
+             size=15,color=LocalHunter.current.muted)
+         HNotice("El registro se completa únicamente con las series o misiones que confirmes.")
+         if (preview && day.s("id").startsWith("monarca-routine-")) {
+             val repository = remember(s) { MonarchProgressRepository(s) }
+             val localDay = java.time.LocalDate.now()
+             if (repository.canRunOptionalRoutine(localDay, day)) {
+                 HButton("DECLARAR RUTINA COMPLETADA", Modifier.fillMaxWidth(), primary = true) {
+                     ui.attempt {
+                         val points = repository.declareOptionalRoutine(localDay, day, true)
+                         ui.message(if (points > 0) "Participación registrada · +10 puntos" else
+                             "La participación de hoy ya está registrada.")
+                     }
                  }
-             }
-         } else HNotice("La rutina queda disponible para consulta. Revisa el calendario y la compatibilidad del perfil.")
+             } else HNotice("La rutina queda disponible para consulta. Revisa el calendario y la compatibilidad del perfil.")
+         }
+         if(!preview&&date==today())HButton("Revisar y completar sesión",
+             Modifier.fillMaxWidth(),primary=true){ui.open("record",obj("date" to date))}
      }
-     if(!preview&&date==today())HButton("Revisar y completar sesión",
-         Modifier.fillMaxWidth(),primary=true){ui.open("record",obj("date" to date))}
      return
  }
  val step=steps[index]
  val e=s.catalog.byId[step.s("id")]
- Heading(step.s("label"),size=25)
- if(e!=null&&step.s("kind")=="exercise"){
-     HText(CompanionDialogue.message(s.profile,LocalVisualTier.current,
-         DialogueContext(DialogueMoment.EXERCISE,group=e.type,exercise=e.name,
-             target=step.i("target"),set=step.i("setIndex")+1,
-             sets=step.i("sets"),seconds=e.unit=="sec",cue=e.raw.s("cue"))),
-         size=14,color=LocalHunter.current.muted,maxLines=3)
+ val kind=step.s("kind")
+ val isExercise=kind=="exercise"
+ val canRecord=!preview&&date==today()
+ val summary=when(kind){
+     "exercise"->"Serie ${step.i("setIndex")+1} de ${step.i("sets")} · ${step.i("target")} ${if(step.s("unit")=="sec")"segundos" else "repeticiones"}${if(e?.sides==true)" por lado" else ""}"
+     "rest"->"Intervalo de recuperación"
+     else->"${step.i("seconds")} segundos"
  }
- if(e!=null)GuidedSessionDemo(e,mirror,running,restartDemo)
- val summary=if(step.s("kind")=="exercise")
-     "SERIE ${step.i("setIndex")+1}/${step.i("sets")} · ${step.i("target")} ${if(step.s("unit")=="sec")"segundos" else "repeticiones"}${if(e?.sides==true)" por lado" else ""}"
-     else "INTERVALO DE RECUPERACIÓN"
- GuidedSessionTimer(remaining,step.i("seconds"),summary,running)
- GuidedSessionPlaybackControls(running,mirror,e!=null,
-     onToggle={running=!running},
-     onRestart={running=false;remaining=step.i("seconds");restartDemo++},
-     onMirror={mirror=!mirror})
- if(step.s("kind")=="exercise"&&!preview&&date==today())
-     HButton("✓ COMPLETAR Y REGISTRAR",Modifier.fillMaxWidth(),primary=true){
-         running=false
-         ui.attempt{s.log(date);ui.open("series",obj(
-             "date" to date,"itemIndex" to step.i("itemIndex"),
-             "setIndex" to step.i("setIndex")))}
-     }
- if(pending)HNotice("La serie sigue pendiente. Pulsa de nuevo «Siguiente» para avanzar sin registrarla.")
- Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
-     HButton("‹ Anterior",Modifier.weight(1f),enabled=index>0){
-         running=false;index--;remaining=steps[index].i("seconds");pending=false
-     }
-     HButton("Siguiente ›",Modifier.weight(1f)){
-         running=false
-         val done=preview||step.s("kind")!="exercise"||
-             s.logs.o(date).a("items").optJSONObject(step.i("itemIndex"))
-                 ?.a("actual")?.optJSONObject(step.i("setIndex"))?.b("done")==true
-         if(!done&&!pending)pending=true
-         else{
-             index++;remaining=steps.getOrNull(index)?.i("seconds")?:0
-             pending=false;persist()
+ val title=if(kind=="preparation"||kind=="cooldown") e?.name?:step.s("label") else step.s("label")
+ key(index){
+     GuidedSessionContent {
+         GuidedSessionStep(title,summary,kind)
+         if(e!=null)GuidedSessionDemo(e,mirror,running,restartDemo)
+         GuidedSessionTimer(remaining,step.i("seconds"),running,emphasized=kind=="rest",
+             onToggle={running=!running},
+             onRestart={running=false;remaining=step.i("seconds");restartDemo++})
+         if(e!=null){
+             var showGuide by remember { mutableStateOf(false) }
+             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+                 HButton(if(mirror)"Espejo ✓" else "Espejo",Modifier.weight(1f)){
+                     mirror=!mirror
+                 }
+                 if(isExercise)HButton(if(showGuide)"Ocultar indicaciones" else "Indicaciones",
+                     Modifier.weight(1.4f)){showGuide=!showGuide}
+             }
+             if(isExercise&&showGuide)HNotice(CompanionDialogue.message(s.profile,LocalVisualTier.current,
+                 DialogueContext(DialogueMoment.EXERCISE,group=e.type,exercise=e.name,
+                     target=step.i("target"),set=step.i("setIndex")+1,sets=step.i("sets"),
+                     seconds=e.unit=="sec",cue=e.raw.s("cue"))))
+         }else if(kind=="rest"){
+             steps.getOrNull(index+1)?.takeIf { it.s("kind")=="exercise" }?.let { next ->
+                 HPanel(decor=false,padding=12){
+                     Eyebrow("A CONTINUACIÓN")
+                     HText(next.s("label"),size=19,bold=true)
+                     HText("Serie ${next.i("setIndex")+1} de ${next.i("sets")}",
+                         size=14,color=LocalHunter.current.muted)
+                 }
+             }
          }
      }
  }
- if(!preview&&date==today()){
-     HButton("Registrar interrupción",Modifier.fillMaxWidth()){
-         running=false
-         ui.attempt{s.interruptSession(date);ui.back()}
+ GuidedSessionFooter {
+     if(isExercise&&canRecord)
+         HButton("Completar y registrar",Modifier.fillMaxWidth(),primary=true){
+             running=false
+             ui.attempt{s.log(date);ui.open("series",obj(
+                 "date" to date,"itemIndex" to step.i("itemIndex"),
+                 "setIndex" to step.i("setIndex")))}
+         }
+     if(pending)HNotice("La serie sigue pendiente. Pulsa de nuevo «Siguiente» para avanzar sin registrarla.")
+     Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+         HButton("‹ Anterior",Modifier.weight(1f),enabled=index>0){
+             running=false;index--;remaining=steps[index].i("seconds");pending=false
+         }
+         HButton("Siguiente ›",Modifier.weight(1.4f),primary=!isExercise||!canRecord){
+             running=false
+             val done=preview||step.s("kind")!="exercise"||
+                 s.logs.o(date).a("items").optJSONObject(step.i("itemIndex"))
+                     ?.a("actual")?.optJSONObject(step.i("setIndex"))?.b("done")==true
+             if(!done&&!pending)pending=true
+             else{
+                 index++;remaining=steps.getOrNull(index)?.i("seconds")?:0
+                 pending=false;persist()
+             }
+         }
      }
-     GuidedSessionStopButton{running=false;ui.open("pain",obj("date" to date))}
+     if(canRecord){
+         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(8.dp)){
+             HButton("Interrumpir",Modifier.weight(1f)){
+                 running=false
+                 ui.attempt{s.interruptSession(date);ui.back()}
+             }
+             GuidedSessionStopButton(Modifier.weight(1.4f)){
+                 running=false
+                 ui.open("pain",obj("date" to date))
+             }
+         }
+     }
  }
 }

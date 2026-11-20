@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun MonarchExerciseStage(exercise:Exercise,mirror:Boolean,height:Int=340,
-                         play:Boolean=true, reset:Int=0){
+                         play:Boolean=true, reset:Int=0, showExerciseName:Boolean=true){
     val context=LocalContext.current
     val parts = remember(context, exercise.id) {
         ExerciseMotions.loadSequence(context, exercise)
@@ -65,6 +65,6 @@ fun MonarchExerciseStage(exercise:Exercise,mirror:Boolean,height:Int=340,
             if(parts != null || motion?.source in listOf("historical","sport"))
                 HText("Animación ilustrativa. Consulta la guía del ejercicio.",size=12,color=c.muted)
         }
-        HText(exercise.name,size=14,color=c.text,maxLines=1)
+        if(showExerciseName)HText(exercise.name,size=14,color=c.text,maxLines=1)
     }
 }
