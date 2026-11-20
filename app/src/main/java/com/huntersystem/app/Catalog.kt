@@ -14,6 +14,12 @@ class Exercise(val raw:JSONObject){
  val gymRequirements=if(hunter2000)
   raw.a("materialRequirements").strings().filter{it in setOf("barbell","cable","machine","smith","cardio","bench")}
  else raw.a("gymRequirements23").strings()
+ val cardioEquipment=when{
+  id.startsWith("gym-bike")||id.startsWith("gym-airbike")||id.startsWith("gym-recumbent")->"bike"
+  id.startsWith("gym-row")->"rower"
+  id.startsWith("gym-elliptical")->"elliptical"
+  else->null
+ }
  val demo=if(hunter2000||sport.isNotBlank()||id.startsWith("new46-")||id.startsWith("hs379-")) "" else "media2d/$id.svg"
 }
 class Catalog(val context:Context?=null,val loader:((String)->String)?=null){

@@ -18,6 +18,12 @@ class HunterAppearanceV43Test {
   assertEquals(5,HunterAppearanceV43.outlines.map{it.id}.distinct().size)
  }
 
+ @Test fun sixNewProfileBordersHaveTheApprovedColors() {
+  val expected=listOf("#258FE6","#9A68F2","#ED72B8","#34BC91","#E65260","#F2F5FF")
+  val profile=HunterAppearanceV43.profileOutlines
+  assertEquals(expected,profile.map { HunterAppearanceV43.tokens("light",it.id).s("--outlineAccent") })
+  assertEquals(expected,profile.map { HunterAppearanceV43.tokens("dark",it.id).s("--outlineAccent") })
+ }
  @Test fun borderChoiceDoesNotChangeSurfaceThemeOrText() {
   for(mode in listOf("light","dark")){
    val original=HunterAppearanceV43.tokens(mode,"eclipse")

@@ -29,10 +29,10 @@ profile = (src / "Profile.kt").read_text(encoding="utf-8")
 design = (src / "Design.kt").read_text(encoding="utf-8")
 screens = (src / "Screens.kt").read_text(encoding="utf-8")
 appearance=(src/"HunterAppearanceV43.kt").read_text(encoding="utf-8")
-require('HunterModePicker(values["theme"]' in profile and
-        'HunterOutlinePicker(values["outlineColor"]' in profile and
-        appearance.count('Outline("')==5,
-        "Faltan dos temas y cinco colores de contornos en Perfil")
+require('ProfileChoices(themes,value("theme"))' in profile and
+        'edges.chunked(2)' in profile and
+        'val profileOutlines=listOf(' in appearance,
+        "Faltan dos temas y seis colores de contornos en Perfil")
 require("HunterDesignSystem.tokens(name,source)" in design or "HunterDesignSystem.tokens(name,source,accent)" in design, "No se usan tokens semanticos")
 dashboard = src / "MonarchDashboardV42.kt"
 require("MonarchStatTile(value.toString()" in screens or

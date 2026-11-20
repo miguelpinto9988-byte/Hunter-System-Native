@@ -9,7 +9,6 @@ class Rules(val catalog:Catalog){
  fun active(p:JSONObject):Boolean{val h=p.o("health");return injuries(p).isNotEmpty()||p.b("limits")||h.b("special")||h.b("acute")||h.b("redFlags")||h.s("pain","none")!="none"}
  fun impactStatus(p:JSONObject):Gate{
   val a=injuries(p);val h=p.o("health");val zones=a.map{it.s("zone")};val known=setOf("neck","shoulder","elbow","wrist","back","hip","knee","ankle")
-  if(p.n("age")<18)return Gate(false,reason="Se requiere una planificación individual apropiada para la edad.")
   if(h.b("acute")||h.s("pain")=="strong"||a.any{it.s("type") in listOf("bone","surgery")}||listOf("emergency","neurological","unstable","redFlags").any{h.b(it)})return Gate(false,reason="Se registró dolor intenso, una lesión reciente grave o una condición que requiere valoración. No es seguro asignar automáticamente ejercicios, incluso para otras zonas.")
   if(zones.any{it !in known})return Gate(false,reason="Indica qué zona está afectada para excluirla de todos los movimientos. Una zona desconocida no puede filtrarse de forma fiable.")
   if(h.b("special")&&!h.b("approved"))return Gate(false,reason="Existe una condición especial que necesita indicaciones individuales antes de programar ejercicio.")
@@ -20,26 +19,28 @@ class Rules(val catalog:Catalog){
  fun mode(p:JSONObject):Gate{
   val h=p.o("health");val a=injuries(p)
   if((a.isNotEmpty()||p.b("limits")||h.s("pain","none")!="none")&&impactStatus(p).ok)return Gate(true,true,"Entrenamiento limitado a otros grupos musculares. Ejercicios orientativos de intensidad reducida; no representan autorización médica.")
-  if(p.n("age")<18)return Gate(false,reason="Organizador disponible. Para menores, utiliza un plan indicado por un profesional.")
   if(p.b("limits")&&!p.has("health"))return Gate(false,reason="Actualiza las zonas y restricciones de tu perfil para revisar la selección.")
   if(h.s("pain") in listOf("strong","moderate")||h.b("acute"))return Gate(false,reason="Dolor actual o lesión reciente: conserva tus misiones personales y revisa con un profesional antes de generar ejercicios.")
   if(a.any{it.s("type") in listOf("bone","surgery")||it.s("zone")=="other"})return Gate(false,reason="Este caso requiere indicaciones individuales. Puedes organizar aquí el plan que recibas.")
   if((a.isNotEmpty()||h.b("special"))&&(!h.b("approved")||!h.b("translated")))return Gate(false,reason="Completa las recomendaciones recibidas y confirma qué actividad te han permitido antes de filtrar ejercicios.")
-  return Gate(true,a.isNotEmpty()||h.b("special")||p.n("age")>=65||h.s("pain")=="mild","Selección según objetivo, experiencia, equipo y calendario.")
+  return Gate(true,a.isNotEmpty()||h.b("special")||h.s("pain")=="mild","Selección según objetivo, experiencia, equipo y calendario.")
  }
  fun gate(p:JSONObject):Gate{val h=p.o("health");return if(injuries(p).isNotEmpty()||p.b("limits")||h.b("special")||h.s("pain") in listOf("mild","moderate","strong"))impactStatus(p) else mode(p)}
  fun reduced(p:JSONObject,status:Gate?=null)=status?.reduced==true||active(p)||(if(p.has("_adaptationReduced"))p.b("_adaptationReduced") else mode(p).reduced)
  fun groupReasons(e:Exercise,p:JSONObject):List<String>{val out=mutableListOf<String>();val caps=p.a("capabilities46").strings();val noImpact=listOf("restrictions","physicalLimits","preferences").any{p.o(it).b("noImpact")}
   if(e.impact&&noImpact)out+="Saltos e impactos excluidos por el perfil"
-  if((e.power||e.impact)&&(reduced(p)||p.n("age")<18))out+="Potencia e impactos pendientes de revisión individual"
+  if((e.power||e.impact)&&reduced(p))out+="Potencia e impactos pendientes de revisión individual"
   if(e.impact&&e.type!="upper"&&"landing" !in caps)out+="Confirma primero tu control de aterrizaje en Perfil"
   if(e.power&&e.type=="upper"&&"supporthold" !in caps)out+="Falta confirmar control de apoyos para el empuje explosivo"
   if(e.power&&"clean" in e.family&&("ballistichinge" !in caps||"olympic" !in caps))out+="Falta práctica previa de la cargada y su recepción"
   return out
  }
  fun materialReasons(e:Exercise,p:JSONObject,maxPlanningLevel:Int=level(p)):List<String>{val out=mutableListOf<String>();val raw=e.raw;val gear=p.s("equipment","body");val gym=p.a("gymEquipment23").strings();val mats=p.a("materials46").strings();val caps=p.a("capabilities46").strings();val req=raw.optJSONArray("materialRequirements")
-  if(req==null)out+="Requisitos de material no disponibles" else for(k in req.strings())if(when(k){"db"->gear !in listOf("db","gym");"gym"->gear!="gym";"bench"->!p.b("bench")&&k !in gym;"step"->!p.b("step");else->if(e.hunter2000||e.sport.isNotBlank())k !in mats&&k !in gym else gear!="gym"||k !in gym})out+="Falta material: "+(if(e.sport.isBlank()&&!e.hunter2000)k else catalog.materials.s(k,k))
-  if(e.gym&&gear!="gym"||e.equipment=="gym"&&gear!="gym"||e.equipment=="db"&&gear !in listOf("db","gym"))out+="Equipo no configurado"
+  val hasCardio="cardio" in gym || e.cardioEquipment?.let { it in gym }==true
+  if(p.has("bodyAvailable")&&"cardio" in e.gymRequirements&&!hasCardio)out+="Falta la máquina de cardio correspondiente"
+  if(!p.b("bodyAvailable",true)&&e.equipment=="body"&&req?.strings().orEmpty().all { it=="body" })out+="Peso corporal desactivado en Perfil"
+  if(req==null)out+="Requisitos de material no disponibles" else for(k in req.strings())if(when(k){"db"->!p.b("dumbbellsAvailable",gear in listOf("db","gym"));"gym"->gear!="gym";"cardio"->!hasCardio;"bench"->!p.b("bench")&&k !in gym;"step"->!p.b("step");else->if(e.hunter2000||e.sport.isNotBlank())k !in mats&&k !in gym else gear!="gym"||k !in gym})out+="Falta material: "+(if(e.sport.isBlank()&&!e.hunter2000)k else catalog.materials.s(k,k))
+  if(e.gym&&gear!="gym"||e.equipment=="gym"&&gear!="gym"||e.equipment=="db"&&!p.b("dumbbellsAvailable",gear in listOf("db","gym")))out+="Equipo no configurado"
   if(raw.i("progressionTierNative")>maxPlanningLevel&&!mode(p).reduced&&!catalog.editorial.o("goalPlans").o(p.s("finalTarget")).b("gentle"))out+="Nivel superior al seleccionado"
   if(e.planningLevel>maxPlanningLevel)out+="Nivel de planificación superior al seleccionado"
   if(raw.b("pack46")&&raw.has("materials46")){
@@ -49,7 +50,7 @@ class Rules(val catalog:Catalog){
     if(!has)out+="Falta material: "+catalog.materials.s(k,k)
    }
    for(k in raw.a("capabilities46").strings())if(k !in caps)out+="Capacidad previa pendiente: "+catalog.capabilities.s(k,k)
-   if(raw.b("highSkill46")&&(p.n("age")<18||active(p)))out+="Movimiento complejo: revisar capacidad y restricciones individuales antes de asignar"
+   if(raw.b("highSkill46")&&active(p))out+="Movimiento complejo: revisar capacidad y restricciones individuales antes de asignar"
    if(raw.b("loaded46")&&p.o("restrictions").b("noLoad"))out+="Carga o resistencia externa excluida"
   }
   return out.distinct()

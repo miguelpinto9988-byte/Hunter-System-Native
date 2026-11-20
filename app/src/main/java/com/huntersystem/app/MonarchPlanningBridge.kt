@@ -137,12 +137,14 @@ object MonarchProfileAdapter {
             }
         }
         val declared = buildSet {
-            add("body")
+            if(p.b("bodyAvailable",true))add("body")
             val gear = p.s("equipment", "body")
-            if (gear == "db" || gear == "gym") add("db")
+            if (p.b("dumbbellsAvailable", gear in listOf("db", "gym"))) add("db")
             if (gear == "gym") add("gym")
             addAll(p.a("materials46").strings())
-            addAll(p.a("gymEquipment23").strings())
+            val gym=p.a("gymEquipment23").strings()
+            addAll(gym)
+            if(gym.any { it in setOf("bike","rower","elliptical") })add("cardio")
             if (p.b("bench")) add("bench")
             if (p.b("step")) add("step")
         }

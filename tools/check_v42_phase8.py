@@ -32,10 +32,10 @@ check(not (ASSETS / "exercise_thumbnails").exists(), "Miniaturas no solicitadas"
 for title in ["IGRIS", "IRON", "TANK", "BERU", "DOKJA KIM"]:
     check('"'+title+'"' in companion, f"Falta {title}")
 check('"visualQuality"' in profile, "No se guarda el modo único de calidad")
-check('HunterModePicker(values["theme"]' in profile and
-      'HunterOutlinePicker(values["outlineColor"]' in profile,
+check('ProfileChoices(themes,value("theme"))' in profile and
+      'edges.chunked(2)' in profile,
       "Temas y contornos independientes no conectados")
-check("MonarchCompanionPicker(" in profile, "Selector no conectado a Perfil")
+check("MonarchCompanions.profileChoices" in profile, "Selector no conectado a Perfil")
 check("MonarchCompanionOptions(" not in profile, "Opciones visuales duplicadas en Perfil")
 check("MonarchAccentPicker(" not in profile, "Selector de acentos adicional visible")
 check("MonarchFloatingCompanion(ui,modifier)" in main, "Flotante nativo no actualizado")

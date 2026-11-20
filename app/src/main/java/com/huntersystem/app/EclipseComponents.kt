@@ -117,6 +117,7 @@ fun chosenHunterArtwork(collection:String,gender:String):String{
  return when(selected){
   // El lector con abrigo y fragmentos es el arte Monarca solicitado.
   "reader"->"ui34/reader-d.webp"
+  "reader-female"->"ui33/hunter-female-b.webp"
   "regressor"->"ui34/regressor-e.webp"
   "hunter-male"->"ui34/hunter-male-e.webp"
   "hunter-female"->"ui34/hunter-female-e.webp"

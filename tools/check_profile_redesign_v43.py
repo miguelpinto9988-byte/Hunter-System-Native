@@ -16,22 +16,18 @@ screens=read("Screens.kt")
 main=read("MainActivity.kt")
 dashboard=read("MonarchDashboardV42.kt")
 checks={
- "perfil independiente":'profileStandalone -> ProfileScreen(ui)' in main and
-     'SceneColumn(ui,showHeader=false)' in profile,
- "tres etapas navegables":all(x in profile for x in
-     ('profileStage==0','profileStage==1','HunterProfileStageTabs(profileStage)',
-      'profileStage=1','profileStage=2')),
- "13 secciones con numeración":profile.count("HunterProfileSection(")==13 and
-     all('HunterProfileSection('+str(i)+',' in profile for i in range(1,14)),
- "línea numerada":'HunterProfileNumberedHeading' in layout and
-     'Brush.horizontalGradient' in layout and
-     'number.toString().padStart(2' in layout,
- "descanso junto a nivel y modalidad":profile.index('HunterProfileSection(6,')<
-     profile.index('HSelect("Descanso entre series"')<
-     profile.index('HunterProfileSection(7,'),
- "compañero original horizontal":'MonarchCompanionPicker(values["companionCharacter"]' in profile and
-     'fun MonarchCompanionPicker(' in companions and
-     '.horizontalScroll(rememberScrollState())' in companions,
+ "perfil independiente":'profileStandalone -> ProfileScreen(ui)' in main and 'ProfileWindow(stage,' in profile,
+ "cuatro etapas navegables":all(x in profile for x in
+     ('"Identidad del cazador", "Entrenamiento", "Personalización", "Activación del sistema"',
+      'validateIdentity();move(1)','weights();move(2)','2->move(3)','ACTIVAR PERFIL')),
+ "calendario por toques":'week[i]=(cat+1)%6' in profile and '"weeklyCategories",arr(week)' in profile,
+ "controles por modalidad":all(x in profile for x in
+     ('select("restSeconds"','select("dailyMissions"','select("minutes"','select("blockMode22"')),
+ "carrusel horizontal con Tusk":'MonarchCompanions.profileChoices' in profile and
+     'horizontalScroll(rememberScrollState())' in profile and
+     (root/"app/src/main/assets/ui33/companion-tusk.webp").is_file(),
+ "arte de los cuatro pasos":all((root/"app/src/main/assets/profile-monarca"/name).is_file()
+     for name in ("identity.webp","training.webp","appearance.webp","activation.webp")),
  "vista previa seleccionada":'HunterProfileCardPreview(' in profile and
      'profileMonarchHunterArtwork(collection,gender,rank)' in layout and
      'chosenSceneArtwork(scene)' in layout,
@@ -60,7 +56,7 @@ checks={
  "panel usa selección guardada":'val hunterArtwork = profileMonarchHunterArtwork(' in dashboard
      and 'appearance.s("collection","hunter")' in dashboard
      and 'chosenSceneArtwork(selectedScene)' in dashboard,
- "guardar perfil nuevo y editado":profile.count('ui.profileSaved()')==2
+ "guardar perfil nuevo y editado":'ui.profileSaved()' in profile and 'stage<3||confirmed' in profile
      and 'fun profileSaved()' in screens and 'tab="home"' in screens,
  "todos los campos permanecen":all(x in profile+fields for x in
       ('name','age','height','weight','goalGroup','finalGoal','difficulty',
@@ -72,6 +68,6 @@ checks={
      and 'HSelect("Iluminación"' not in profile,
 }
 failed=[name for name,ok in checks.items() if not ok]
-print(json.dumps({"version":"43.12-perfil-tres-etapas","checks":checks,
+print(json.dumps({"version":"perfil-cuatro-pasos","checks":checks,
   "status":"ERROR" if failed else "OK","errors":failed},ensure_ascii=False,indent=2))
 if failed:raise SystemExit(1)

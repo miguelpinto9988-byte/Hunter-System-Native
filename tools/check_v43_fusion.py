@@ -43,7 +43,7 @@ checks={
     and 'if(hasProfile && !profileStandalone' in read(src+"MainActivity.kt")
     and 'fun openProfile()' in read(src+"Screens.kt")
     and 'fun profileSaved()' in read(src+"Screens.kt")
-    and 'SceneColumn(ui,showHeader=false)' in read(src+"Profile.kt")
+    and 'ProfileWindow(stage,' in read(src+"Profile.kt")
     and 'ui.profileSaved()' in read(src+"Profile.kt")
     and 'setOf("objectives","stats","profile")' not in read(src+"MonarchNavigationV42.kt"),
  "recompensa real":'if(!log.b("complete")) return' in read(src+"HunterMissionCompletedCard.kt")
@@ -96,14 +96,13 @@ checks={
     and '.monarchPressable(' in read(src+"EclipseComponents.kt")
     and '.monarchOutline(' in read(src+"Overlays.kt")
     and '.monarchPressable(' in read(src+"MonarchMissionsV42.kt"),
- "selector dual de temas y cinco contornos":all(
+ "selector dual de temas y seis contornos":all(
      fragment in read(src+"HunterAppearanceV43.kt")
-     for fragment in ('fun mode(', 'fun outline(', 'fun tokens(',
-                     'fun HunterModePicker(', 'fun HunterOutlinePicker('))
-    and read(src+"HunterAppearanceV43.kt").count('Outline("')==5
-    and 'HunterModePicker(values["theme"]' in read(src+"Profile.kt")
-    and 'HunterOutlinePicker(values["outlineColor"]' in read(src+"Profile.kt")
-    and 'outlineColor=values["outlineColor"]' in read(src+"Profile.kt")
+     for fragment in ('fun mode(', 'fun outline(', 'fun tokens(', 'val profileOutlines=listOf('))
+    and all(hexcode in read(src+"HunterAppearanceV43.kt")
+        for hexcode in ("#258FE6","#9A68F2","#ED72B8","#34BC91","#E65260","#F2F5FF"))
+    and 'ProfileChoices(themes,value("theme"))' in read(src+"Profile.kt")
+    and 'edges.chunked(2)' in read(src+"Profile.kt")
     and '.put("outlineColor",HunterAppearanceV43.outline(outlineColor))' in read(src+"NativeStore.kt")
     and 'HunterAppearanceV43.tokens(mode,border)' in read(src+"Design.kt")
     and 'c.outlineAccent.copy(alpha=.96f)' in read(src+"MonarchOutlineV43.kt"),

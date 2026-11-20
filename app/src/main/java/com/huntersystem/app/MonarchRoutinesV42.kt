@@ -251,8 +251,8 @@ fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->Unit){
     val scope=rememberCoroutineScope()
     val c=LocalHunter.current
     var selected by rememberSaveable(mode){mutableStateOf("")}
-    var duration by rememberSaveable(mode){mutableStateOf("20")}
-    var level by rememberSaveable(mode){mutableStateOf("0")}
+    var duration by rememberSaveable(mode){mutableStateOf((s.profile?.i("minutes",30)?.takeIf { it in listOf(10,15,20,30,45,60) }?:30).toString())}
+    var level by rememberSaveable(mode){mutableStateOf(level(s.profile?:JSONObject()).toString())}
     var noImpact by rememberSaveable(mode){mutableStateOf(false)}
     var noGear by rememberSaveable(mode){mutableStateOf(false)}
     var busy by remember{mutableStateOf(false)}

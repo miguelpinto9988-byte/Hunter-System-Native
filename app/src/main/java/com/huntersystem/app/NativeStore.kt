@@ -24,24 +24,36 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
  fun export()=state.toString(2)
  fun validateBackup(data:JSONObject):JSONObject{
   require(data.has("version")||data.has("profile")){"No es una copia de Hunter System"};require(data.optJSONObject("logs")!=null&&data.optJSONArray("cycles")!=null){"La copia no contiene registros y ciclos válidos"};require(data.toString().length<=40*1024*1024){"Copia demasiado grande"}
-  data.optJSONObject("profile")?.let{p->require(p.n("age") in 13.0..100.0&&p.n("height") in 100.0..250.0&&p.n("weight") in 30.0..350.0){"Medidas del perfil fuera de rango"}}
+  data.optJSONObject("profile")?.let(::validateProfileMeasures)
   for((date,v)in data.o("logs").entries()){LocalDate.parse(date);val l=v as? JSONObject?:error("Registro inválido");for(x in l.a("items").objects()){require(catalog.byId.containsKey(x.s("id"))){"Ejercicio desconocido en la copia"};require(x.i("sets") in 1..30&&x.n("target")>0&&x.n("target")<=3600){"Dosis inválida"};for(a in x.a("actual").objects())require(a.n("value") in 0.0..3600.0&&a.n("kg") in 0.0..1000.0){"Serie inválida"}}}
   val out=catalog.defaultState.copyJson();for((k,v)in data.entries())out.put(k,v);return out
  }
  fun restore(data:JSONObject){val checked=validateBackup(data);state=checked;readError=null;save();refreshWeek()}
- fun updateAppearanceOnly(theme:String,appearance:JSONObject,avatar:String?=null,outlineColor:String="eclipse"){
+ fun updateAppearanceOnly(theme:String,appearance:JSONObject,avatar:String?=null,outlineColor:String="eclipse",companion:String?=null){
   val existing=profile?:error("Perfil no disponible")
   // Visual-only changes cannot silently re-interpret goals or rewrite training settings.
-  state.put("profile",existing.copyJson().put("theme",theme).put("outlineColor",HunterAppearanceV43.outline(outlineColor)))
+  val updated=existing.copyJson().put("theme",theme).put("outlineColor",HunterAppearanceV43.outline(outlineColor))
+  companion?.let { updated.put("companionCharacter",it) }
+  state.put("profile",updated)
   state.put("appearance33",appearance.copyJson())
   avatar?.let{state.put("avatar",it)}
   save()
  }
+ private fun validateProfileMeasures(p:JSONObject){
+  val age=p.n("age",Double.NaN)
+  require(age>=0&&age==kotlin.math.floor(age)&&age<=Int.MAX_VALUE){"Escribe una edad válida en años"}
+  for(key in listOf("height","weight")){
+   if(p.isNull(key))continue
+   require(p.n(key,Double.NaN)>0){if(key=="height")"Revisa la estatura" else "Revisa el peso"}
+  }
+ }
  fun saveProfile(p:JSONObject,appearance:JSONObject?=null,avatar:String?=null){
-  val q=p.copyJson();for((k,range)in mapOf("age" to 13.0..100.0,"height" to 100.0..250.0,"weight" to 30.0..350.0)){val n=q.n(k,Double.NaN);require(n in range){"Revisa "+mapOf("age" to "la edad","height" to "la estatura","weight" to "el peso")[k]};q.put(k,n)};require(q.s("name").isNotBlank()){ "Escribe tu nombre de cazador" }
-  q.put("name",q.s("name").take(60));q.put("finalGoal",q.s("finalGoal").take(300));q.put("minutes",q.i("minutes",20));q.put("dailyMissions",q.i("dailyMissions",3).coerceIn(1,7));q.put("frequency",q.i("frequency",2));q.put("experience",if(level(q)==0)"beginner" else "regular");q.put("load",q.n("load").coerceIn(0.0,200.0));q.put("trainingScale",q.n("trainingScale",1.0).coerceIn(.4,1.0))
+  val q=p.copyJson()
+  validateProfileMeasures(q)
+  require(q.s("name").isNotBlank()){"Escribe tu nombre de cazador"}
+  q.put("name",q.s("name").take(40));q.put("finalGoal",q.s("finalGoal",q.s("custom_goal")));q.put("minutes",q.i("minutes",20));q.put("dailyMissions",q.i("dailyMissions",3).coerceIn(1,7));q.put("frequency",q.i("frequency",2));q.put("experience",if(level(q)==0)"beginner" else "regular");q.put("load",q.n("load").coerceIn(0.0,200.0));q.put("trainingScale",q.n("trainingScale",1.0).coerceIn(.4,1.0))
   if(q.a("weekPlan").length()!=7)q.put("weekPlan",arr(listOf("rest","train","rest","train","rest","rest","rest")));if(q.a("weekFocus").length()!=7)q.put("weekFocus",arr(List(7){"upper"}))
-  val goalText=q.s("finalGoal",q.s("custom_goal")).take(300)
+  val goalText=q.s("finalGoal",q.s("custom_goal"))
   val interpreted=q.put("finalGoal",goalText).put("custom_goal",goalText)
   val calendarChanged=profile==null||
    profile!!.a("weekPlan").toString()!=interpreted.a("weekPlan").toString()||

@@ -27,10 +27,19 @@ internal object HunterAppearanceV43 {
   Outline("emerald","Esmeralda","#087E68","#58D9AC"),
   Outline("amber","Ámbar Solar","#A46A0B","#FFD074")
  )
+ val profileOutlines=listOf(
+  Outline("ocean","Azul","#258FE6","#258FE6"),
+  Outline("purple","Morado","#9A68F2","#9A68F2"),
+  Outline("pink","Rosa","#ED72B8","#ED72B8"),
+  Outline("green","Verde","#34BC91","#34BC91"),
+  Outline("red","Rojo","#E65260","#E65260"),
+  Outline("white","Blanco","#F2F5FF","#F2F5FF")
+ )
  fun mode(raw:String?):String=if(raw=="light")"light" else "dark"
  fun outline(raw:String?):String=when(raw?.lowercase()){
   "eclipse","cyan","blue","ice","hielo","constellation"->"eclipse"
-  "nebula","aurora","pink","coral","lavanda"->"nebula"
+  "ocean","purple","pink","green","red","white"->raw.orEmpty().lowercase()
+  "nebula","aurora","coral","lavanda"->"nebula"
   "astral","umbral","violet"->"astral"
   "emerald","runa","teal","mint","abismo"->"emerald"
   "amber","amanecer","gold"->"amber"
@@ -38,7 +47,7 @@ internal object HunterAppearanceV43 {
  }
  fun originalOutline(theme:String?):String=outline(theme)
  fun borderHex(mode:String,outline:String):String{
-  val swatch=outlines.firstOrNull{it.id==outline}?:outlines.first()
+  val swatch=(outlines+profileOutlines).firstOrNull{it.id==outline}?:outlines.first()
   return if(mode=="light")swatch.light else swatch.dark
  }
  // Segunda tonalidad derivada del mismo color, sin acentos ajenos al perfil.

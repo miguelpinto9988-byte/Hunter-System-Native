@@ -2,306 +2,482 @@ package com.huntersystem.app
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.unit.*
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.*
+import androidx.activity.compose.BackHandler
+import androidx.compose.ui.unit.dp
 import org.json.JSONObject
+import java.time.LocalDate
 
-private val fieldLabels=mapOf("name" to "Nombre de cazador","age" to "Edad","height" to "Altura cm","weight" to "Peso kg","gender" to "Género","theme" to "Tema","difficulty" to "Nivel de entrenamiento","goalGroup" to "Objetivo final","finalGoal" to "Mi meta personal","goal" to "Objetivo principal","frequency" to "Sesiones principales por semana","equipment" to "Equipo","load" to "Peso disponible de una mancuerna · kg","restSeconds" to "Descanso entre series","blockMode22" to "Orden de los bloques","dailyMissions" to "Misiones diarias · 1 a 7","pain" to "¿Tienes dolor actualmente?","recommendations" to "Recomendaciones de tu profesional · opcional","collection33" to "Colección visual","scene33" to "Escenario")
-private val healthFields=setOf("pain","acute","special","recommendations","approved","translated","redFlags")
-@Composable fun ProfileScreen(ui:NativeUi){val s=ui.store;val old=s.profile;val form=s.catalog.profileForm.objects();val fields=form.flatMap{it.a("fields").objects()}
- val values=remember(old==null){mutableStateMapOf<String,String>().apply{
-  val defaults=mapOf("gender" to "unspecified","theme" to "dark","outlineColor" to "eclipse","difficulty" to "basic","goalGroup" to "habit","goal" to "general","frequency" to "2","equipment" to "body","restSeconds" to "30","intensityPreference" to "baja","dailyMissions" to "3","blockMode22" to "exercise","collection33" to "hunter","scene33" to "auto","trainingMode" to "challenges","companionCharacter" to "knight","trainingScale" to "1","pain" to "none")
-  putAll(defaults)
-  // Only visible fields belong to profile-form.json. Load historical settings
-  // explicitly so removing obsolete form controls cannot discard saved preferences.
-  for(f in fields){
-   val name=f.s("name");val value=f.s("value");val type=f.s("type")
-   val raw:Any?=when{
-    old==null->null
-    name.startsWith("r_")->old.o("restrictions").opt(name.removePrefix("r_"))
-    name in healthFields->old.o("health").opt(name)
-    else->old.opt(name)
-   }
-   if(type=="radio"){
-    if(raw!=null&&raw!=JSONObject.NULL)put(name,raw.toString())
-    else if(f.b("checked"))put(name,value)
-   }else if(raw!=null&&raw!=JSONObject.NULL)put(name,raw.toString())
-   else if(type=="checkbox")put(name,f.b("checked").toString())
-   else if(!containsKey(name))put(name,value.ifBlank{f.a("options").objects().firstOrNull()?.s("value")?:""})
-  }
-  if(old!=null){
-   put("theme",HunterAppearanceV43.mode(old.s("theme")))
-    put("outlineColor",HunterAppearanceV43.outline(old.s("outlineColor",
-      HunterAppearanceV43.originalOutline(old.s("theme")))))
-   for(name in listOf("restSeconds","intensityPreference","dailyMissions","load","trainingScale","frequency","goal","blockMode22")){
-    old.opt(name)?.takeUnless{it==JSONObject.NULL}?.let{put(name,it.toString())}
-   }
-   put("bench",old.b("bench").toString())
-   put("step",old.b("step").toString())
-   val equipment=old.a("gymEquipment23").strings().toSet()
-   for(name in listOf("barbell","cable","machine","smith","cardio","bench"))
-    put("gym_$name",(name in equipment).toString())
-   for(name in listOf("materials46","capabilities46"))
-    for(value in old.a(name).strings())put("$name|$value","true")
-  }
-  put("collection33",s.state.o("appearance33").s("collection","hunter"))
-  put("scene33",s.state.o("appearance33").s("scene","auto"))
- }}
- val initialValues=remember(old==null){mutableStateMapOf<String,String>().apply{putAll(values)}}
- val injuries=remember(old==null){mutableStateListOf<JSONObject>().apply{addAll(old?.a("injuries")?.objects()?.map{it.copyJson()}?:emptyList())}}
- val week=remember(old==null){mutableStateListOf<String>().apply{addAll(old?.a("weekPlan")?.strings()?.takeIf{it.size==7}?:listOf("rest","train","rest","train","rest","rest","rest"))}}
- val focus=remember(old==null){mutableStateListOf<String>().apply{addAll(old?.a("weekFocus")?.strings()?.takeIf{it.size==7}?:List(7){"upper"})}}
- var injuryZone by remember{mutableStateOf("knee")};var injuryType by remember{mutableStateOf("joint")};var injuryStage by remember{mutableStateOf("current")}
- var manualGoalGroup by remember(old==null){mutableStateOf(old?.b("manualGoalGroupNative")?:false)}
- val expanded=remember{mutableStateMapOf<String,Boolean>()}
- fun saveProfile(){ui.attempt{
-  // Appearance-only changes must leave the training profile and its plan intact.
-  val visualOnly=old!=null&&
-   values.all{(k,v)->k in listOf("theme","outlineColor","collection33","scene33")||v==initialValues[k]}&&
-   week.toList()==old.a("weekPlan").strings()&&focus.toList()==old.a("weekFocus").strings()&&
-   arr(injuries).toString()==old.a("injuries").toString()&&
-   manualGoalGroup==old.b("manualGoalGroupNative")
-  if(visualOnly){
-   s.updateAppearanceOnly(values["theme"]?:"dark",
-    obj("collection" to values["collection33"],"scene" to values["scene33"]),
-    ui.pendingAvatar,outlineColor=values["outlineColor"]?:"eclipse")
-   initialValues.clear();initialValues.putAll(values);ui.pendingAvatar=null
-   ui.profileSaved()
-   ui.message("Apariencia guardada. Regresaste al Panel.")
-   return@attempt
-  }
-  val p=old?.copyJson()?:JSONObject();val health=old?.o("health")?.copyJson()?:JSONObject();val restrictions=old?.o("restrictions")?.copyJson()?:JSONObject()
-  // Preserve existing values and array order when only appearance is edited.
-  // Defaults shown for a legacy profile are not implicit training changes.
-  for((name,value)in values){if('|' in name||name.startsWith("gym_")||name.endsWith("33")||(old!=null&&value==initialValues[name]))continue;when{ name.startsWith("r_")->restrictions.put(name.removePrefix("r_"),value=="true");name in healthFields->health.put(name,if(name in listOf("pain","recommendations"))value else value=="true");name in listOf("age","height","weight","load","frequency","restSeconds","dailyMissions","trainingScale")->p.put(name,value.replace(',','.').toDoubleOrNull()?.takeIf{it.isFinite()}?:error("Completa "+(fieldLabels[name]?:"los datos del perfil")));else->p.put(name,value)}}
-  p.put("manualGoalGroupNative",manualGoalGroup);p.put("injuries",arr(injuries));p.put("health",health);p.put("restrictions",restrictions);p.put("weekPlan",arr(week));p.put("weekFocus",arr(focus))
-  // Save only the equipment actually relevant to the selected training environment.
-  // In particular, old checked gym machines cannot remain active in bodyweight mode.
-  val selectedEquipment=values["equipment"]?:"body"
-  p.put("gymEquipment23",arr(selectedProfileGym(selectedEquipment,values)))
-  p.put("materials46",arr(selectedProfileMaterials(selectedEquipment,values)))
-  p.put("capabilities46",arr(selectedProfileCapabilities(selectedEquipment,values)))
-  p.put("bench",selectedEquipment=="db"&&values["bench"]=="true")
-  p.put("step",values["step"]=="true")
-  if(selectedEquipment=="body")p.put("load",0.0)
-  if(old==null||arr(injuries).toString()!=old.a("injuries").toString())p.put("limits",injuries.any{it.s("stage")!="past"})
-  val appearance=obj("collection" to values["collection33"],"scene" to values["scene33"])
-  s.saveProfile(p,appearance,ui.pendingAvatar);initialValues.clear();initialValues.putAll(values);ui.pendingAvatar=null;HunterAlarms.sync(s);CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true));ui.profileSaved();ui.message("Perfil guardado. Tu planificación ya está aplicada en el Panel.")
- }}
- var profileStage by rememberSaveable{mutableIntStateOf(0)}
- // Los campos y el guardado son comunes a las tres etapas; navegar entre ellas
- // nunca genera un perfil nuevo ni descarta ediciones todavía sin guardar.
- key(profileStage){
- SceneColumn(ui,showHeader=false){
-  if(old!=null)HButton("← VOLVER AL PANEL"){ui.closeProfile()}
-  HunterProfileBanner(isNew=old==null,stage=profileStage)
-  HunterProfileStageTabs(profileStage){profileStage=it}
+private val stages = listOf("Identidad del cazador", "Entrenamiento", "Personalización", "Activación del sistema")
+private val stageArt = listOf("identity", "training", "appearance", "activation")
+private val genders = listOf("male" to "Masculino", "female" to "Femenino", "unspecified" to "No especificado")
+private val levels = listOf("basic" to "Básico", "intermediate" to "Intermedio", "advanced" to "Avanzado")
+private val objectives = listOf("general" to "Mejorar mi bienestar general", "strength" to "Desarrollar fuerza funcional",
+ "endurance" to "Mejorar mi resistencia", "mobility" to "Mejorar mi movilidad", "habit" to "Crear un hábito de actividad física")
+private val durations = listOf(10,15,20,30,45,60).map { it.toString() to "$it minutos" }
+private val rests = listOf(30,60,90).map { it.toString() to "$it segundos" }
+private val formats = listOf("rounds" to "Por rondas", "exercise" to "Por series")
+private val themes = listOf("light" to "Blanco", "dark" to "Negro")
+private val edges = listOf("ocean" to "Azul", "purple" to "Morado", "pink" to "Rosa",
+ "green" to "Verde", "red" to "Rojo", "white" to "Blanco")
+private val silhouettes = listOf("hunter-male", "hunter-female", "reader", "regressor", "reader-female")
+private val scenes = listOf("templo-del-ocaso" to "Ruinas arcanas", "biblioteca-lunar" to "Niebla violeta",
+ "trono-volcanico" to "Obsidiana", "reino-de-las-nubes" to "Aurora dorada", "jardin-sagrado" to "Bosque ancestral")
+private val materials = listOf("mat" to "Colchoneta o superficie acolchada estable",
+ "wall" to "Pared o apoyo vertical firme", "chair" to "Silla estable")
+private val gymOptions = listOf("cable" to "Poleas", "machine" to "Máquinas guiadas", "bench" to "Banco",
+ "barbell" to "Barras", "bike" to "Bicicleta estática", "rower" to "Máquina de remo", "elliptical" to "Elíptica")
+private val dayNames = listOf("Lunes","Martes","Miércoles","Jueves","Viernes","Sábado","Domingo")
+private val categoryLabels = listOf("Tren superior","Tren central","Tren inferior","Movilidad","Cardio","Descanso")
+private val categoryIcons = listOf("↑","◆","↓","≈","♥","☾")
+private val categoryColors = listOf(0xFF258FE6,0xFF9A68F2,0xFF34BC91,0xFF168887,0xFFD8732D,0xFF62738B)
 
-  if(profileStage==0){
-   HunterProfileSection(1,"Identidad del cazador",
-    "Cada historia comienza con un nombre."){
-    Row(verticalAlignment=Alignment.CenterVertically,
-     horizontalArrangement=Arrangement.spacedBy(12.dp)){
-     Avatar(ui.pendingAvatar?:s.state.s("avatar"),values["name"]?:"C",Modifier.size(72.dp))
-     Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(6.dp)){
-      Eyebrow("AVATAR DEL PERFIL")
-      HText("Personaliza tu fotografía. Se guarda solo en este dispositivo.",
-       size=13,color=LocalHunter.current.muted)
-      HButton("Cambiar fotografía ↗"){ui.chooseAvatar()}
-     }
-    }
-    HunterProfileFields(form[0],setOf("name","age","height","weight"),
-     values,expanded,s){manualGoalGroup=true}
-   }
-   HunterProfileSection(2,"Escoge tu cazador",
-    "El protagonista de tu propia evolución. Desliza para escoger."){
-    HunterPicker(values["collection33"]?:"hunter",values["gender"]?:"unspecified"){choice->
-     values["collection33"]=choice
-     if(choice=="hunter-male")values["gender"]="male"
-     if(choice=="hunter-female")values["gender"]="female"
-    }
-    HunterProfileFields(form[1],setOf("gender"),values,expanded,s){manualGoalGroup=true}
-   }
-   HunterProfileSection(3,"Personalización del entorno",
-    "Lugares mágicos para la tarjeta Monarca, sin ajustes adicionales."){
-    BackgroundPicker(values["scene33"]?:"auto",
-     values["collection33"]?:"hunter",values["gender"]?:"unspecified"){
-       values["scene33"]=it
-     }
-   }
-   HunterProfileSection(4,"Vista previa",
-    "Así se mostrará la tarjeta de tu cazador en Sistema Monarca."){
-    HunterProfileCardPreview(
-     collection=values["collection33"]?:"hunter",
-     gender=values["gender"]?:"unspecified",
-     scene=values["scene33"]?:"auto",
-     name=values["name"]?:"Cazador",
-     level=s.stats().i("level",1),xp=s.stats().i("xp"))
-   }
-   HButton("CONTINUAR AL PLAN  →",Modifier.fillMaxWidth(),primary=true){
-    profileStage=1
-   }
-  } else if(profileStage==1){
-   HunterProfileSection(5,"Objetivo de tu historia",
-    "Tus metas determinan tu ruta de entrenamiento."){
-    HunterProfileFields(form[2],setOf("goalGroup","finalGoal"),
-     values,expanded,s){manualGoalGroup=true}
-    val intention=com.huntersystem.app.planning.PersonalGoalInterpreter.interpret(values["finalGoal"]?:"")
-    HText(if(intention.recognized)"Afinidades reconocidas: "+intention.tags.joinToString(", ")
-        else "Objetivo conservado; no se reconocieron afinidades específicas.",
-        size=13,color=LocalHunter.current.muted)
-   }
-   HunterProfileSection(6,"Nivel y modalidad",
-    "Escoge un punto de partida adecuado para ti."){
-    Eyebrow("NIVEL DE ENTRENAMIENTO")
-    HunterProfileFields(form[2],setOf("difficulty"),
-     values,expanded,s){manualGoalGroup=true}
-    Eyebrow("MODALIDAD")
-    HunterProfileFields(form[3],setOf("trainingMode"),
-     values,expanded,s){manualGoalGroup=true}
-    // El descanso pertenece al nivel y la modalidad, no al calendario.
-    HSelect("Descanso entre series",values["restSeconds"]?:"30",
-     listOf("30" to "30 segundos","60" to "60 segundos","90" to "90 segundos")){
-      values["restSeconds"]=it
-     }
-    HSelect("Intensidad orientativa",values["intensityPreference"]?:"baja",
-     listOf("baja" to "Baja","moderada" to "Moderada")){
-      values["intensityPreference"]=it
-    }
-   }
-   HunterProfileSection(7,"Tu calendario",
-    "Selecciona tus días principales; el descanso también cuenta."){
-    V39WeekPicker(week,focus,onChanged={})
-    if(values["trainingMode"]=="challenges"){
-     HSelect("Número de misiones diarias",values["dailyMissions"]?:"3",
-      (1..7).map{it.toString() to (if(it==1)"1 misión" else it.toString()+" misiones")}){
-        values["dailyMissions"]=it
-       }
-    }
-   }
-   HunterProfileSection(8,"Equipo disponible",
-    "Solo se propondrán ejercicios compatibles con lo que tengas."){
-    HunterProfileFields(form[2],setOf("equipment"),
-     values,expanded,s){manualGoalGroup=true}
-   }
-   HunterProfileSection(9,"Salud y limitaciones",
-    "Apartado privado y desplegable, sin sobrecargar el perfil."){
-    Row(Modifier.fillMaxWidth().clickable{
-      expanded["health"]=expanded["health"]!=true
-     },horizontalArrangement=Arrangement.SpaceBetween,
-     verticalAlignment=Alignment.CenterVertically){
-     HText("Indicaciones y restricciones",size=17,bold=true)
-     HText(if(expanded["health"]==true)"−" else "＋",size=24,
-      color=LocalHunter.current.accent)
-    }
-    HText(if(injuries.isEmpty())"Sin zonas registradas · tocar para editar"
-      else injuries.size.toString()+" zonas registradas · tocar para editar",
-      size=13,color=LocalHunter.current.muted)
-    if(expanded["health"]==true){
-     HunterProfileFields(form.last(),
-      form.last().a("fields").objects().map{it.s("name")}.toSet(),
-      values,expanded,s){manualGoalGroup=true}
-     Heading("Zonas e historial",size=23)
-     for((i,injury)in injuries.withIndex()){
-      Row(verticalAlignment=Alignment.CenterVertically){
-       HText((zoneLabels[injury.s("zone")]?:injury.s("zone"))+" · "+
-        (typeLabels[injury.s("type")]?:injury.s("type"))+" · "+
-        (if(injury.s("stage")=="past")"Anterior" else "Actual"),
-        Modifier.weight(1f),size=15)
-       HButton("×"){injuries.removeAt(i)}
-      }
-     }
-     HSelect("Zona",injuryZone,zoneLabels.toList()){injuryZone=it}
-     HSelect("Tipo",injuryType,typeLabels.toList()){injuryType=it}
-     Chips(listOf("current" to "Actual","past" to "Anterior"),injuryStage){
-       injuryStage=it
-     }
-     HButton("+ Añadir zona"){
-      injuries+=obj("zone" to injuryZone,"type" to injuryType,"stage" to injuryStage)
-     }
-     HText("El filtro por zonas no constituye un diagnóstico ni un programa de rehabilitación.",
-      size=13,color=LocalHunter.current.muted)
-    }
-   }
-   HButton("CONTINUAR AL SISTEMA  →",Modifier.fillMaxWidth(),primary=true){
-    profileStage=2
-   }
-   HButton("← MI CAZADOR",Modifier.fillMaxWidth()){profileStage=0}
-  } else {
-   HunterProfileSection(10,"Tu compañero",
-    "Desliza horizontalmente y selecciona tu acompañante."){
-    // Se reutiliza el carrusel horizontal EXISTENTE, sin crear uno diferente.
-    MonarchCompanionPicker(values["companionCharacter"]?:"knight"){
-      values["companionCharacter"]=it
-    }
-   }
-   HunterProfileSection(11,"Alarmas del cazador",
-    "Organiza tus avisos sin saturar la edición del perfil."){
-    HText("Personaliza las alarmas y sus días desde la pantalla dedicada.",
-      size=15,color=LocalHunter.current.muted)
-    HButton("Abrir mis alarmas  ↗",Modifier.fillMaxWidth()){
-      ui.open("reminders")
-    }
-   }
-   HunterProfileSection(12,"Rendimiento visual",
-    "Personaliza la apariencia del sistema y su rendimiento."){
-    // Vista previa inmediata sin sobrescribir el perfil hasta guardar.
-    androidx.compose.runtime.CompositionLocalProvider(
-     LocalHunter provides HunterColors(HunterAppearanceV43.tokens(
-      values["theme"]?:"dark",values["outlineColor"]?:"eclipse"))){
-     HunterModePicker(values["theme"]?:"dark"){values["theme"]=it}
-     HunterOutlinePicker(values["outlineColor"]?:"eclipse",values["theme"]?:"dark"){
-      values["outlineColor"]=it
-     }
-     HunterAppearancePreview(values["theme"]?:"dark",values["outlineColor"]?:"eclipse")
-    }
-    for((id,label)in listOf(
-      "max" to "Máxima calidad",
-      "balanced" to "Equilibrado",
-      "saver" to "Ahorro de energía")){
-     HButton(label,Modifier.fillMaxWidth(),primary=visualTier(s).id==id){
-      s.state.put("visualQuality",id);s.save()
-     }
-    }
-    when(visualTier(s)){
-     VisualTier.MAX->HText("Imágenes detalladas y animaciones según las preferencias del dispositivo.",
-      size=14,color=LocalHunter.current.muted)
-     VisualTier.BALANCED->HText("Calidad y rendimiento equilibrados.",
-      size=14,color=LocalHunter.current.muted)
-     VisualTier.SAVER->HText("Efectos reducidos para mejorar fluidez y ahorrar energía.",
-      size=14,color=LocalHunter.current.muted)
-    }
-   }
-   HunterProfileSection(13,"Copia y privacidad",
-    "Tu progreso se conserva en tu dispositivo."){
-    HText("Guarda tu perfil, calendario y registros en un archivo local.",
-     size=15,color=LocalHunter.current.muted)
-    HButton("Exportar copia de seguridad",Modifier.fillMaxWidth()){ui.export()}
-    HButton("Restaurar copia",Modifier.fillMaxWidth()){ui.import()}
-    HText("ENTRENADORES Y CONTENIDO",size=14,bold=true,
-     color=LocalHunter.current.accent)
-    HCheck("Actualizar entrenadores automáticamente",s.state.b("creatorAuto",true)){
-     s.state.put("creatorAuto",!s.state.b("creatorAuto",true))
-     s.save()
-     CreatorFeedNative.schedule(s.context,s.state.b("creatorAuto",true))
-    }
-    HButton("Actualizar publicaciones",Modifier.fillMaxWidth()){ui.open("creator-refresh")}
-    HButton("Fuentes y publicaciones",Modifier.fillMaxWidth()){ui.open("sources")}
-   }
-   HButton(if(old==null)"CREAR MI PERFIL  →" else "GUARDAR MI PERFIL  →",
-    Modifier.fillMaxWidth(),primary=true){saveProfile()}
-   HButton("← MI PLAN",Modifier.fillMaxWidth()){profileStage=1}
-   HText("Al guardar regresarás al Panel principal, tanto si creas tu perfil como si lo editas.",
-    size=13,color=LocalHunter.current.muted)
+@Composable
+fun ProfileScreen(ui:NativeUi) {
+ val store=ui.store
+ val original=remember { store.profile?.copyJson() }
+ val originalAppearance=remember { store.state.o("appearance33").copyJson() }
+ val draft=remember {
+  mutableStateMapOf(
+   "name" to original?.s("name").orEmpty(),"age" to original?.i("age")?.toString().orEmpty(),
+   "height" to original?.s("height").orEmpty(),"weight" to original?.s("weight").orEmpty(),
+   "gender" to (original?.s("gender","unspecified")?:"unspecified"),
+   "difficulty" to (original?.s("difficulty","basic")?:"basic"),
+   "objective" to (original?.s("profileObjective",original.s("goal","general"))?:"general"),
+   "finalGoal" to original?.s("custom_goal",original.s("finalGoal")).orEmpty(),
+   "trainingMode" to (original?.s("trainingMode","challenges")?:"challenges"),
+   "dailyMissions" to (original?.i("dailyMissions",3)?:3).toString(),
+   "minutes" to (original?.i("minutes",30)?:30).toString(),
+   "restSeconds" to (original?.i("restSeconds",60)?:60).toString(),
+   "blockMode22" to (original?.s("blockMode22","rounds")?:"rounds"),
+   "dumbbellWeights" to (original?.a("dumbbellWeightsKg")?.strings()?.joinToString(", ")
+    ?.takeIf { it.isNotBlank() } ?: original?.n("load")?.takeIf { it>0 }?.toString().orEmpty()),
+   "theme" to (original?.let { HunterAppearanceV43.mode(it.s("theme")) } ?: "light"),
+   "outlineColor" to (original?.let { HunterAppearanceV43.outline(it.s("outlineColor",it.s("theme"))) } ?: "ocean"),
+   "companionCharacter" to (original?.s("companionCharacter","knight")?:"knight"),
+   "collection" to originalAppearance.s("collection","hunter-male"),
+   "scene" to originalAppearance.s("scene","templo-del-ocaso")
+  )
+ }
+ val initial=remember { draft.toMap() }
+ val healthValues=remember {
+  mutableStateMapOf<String,String>().apply {
+   original?.o("health")?.entries()?.forEach { (key,value)->put(key,value.toString()) }
+   original?.o("restrictions")?.entries()?.forEach { (key,value)->put("r_$key",value.toString()) }
   }
  }
+ val initialHealth=remember { healthValues.toMap() }
+ val healthExpanded=remember { mutableStateMapOf<String,Boolean>() }
+ val injuries=remember { mutableStateListOf<JSONObject>().apply { addAll(original?.a("injuries")?.objects().orEmpty()) } }
+ var injuryZone by remember { mutableStateOf("knee") }
+ var injuryType by remember { mutableStateOf("joint") }
+ var injuryStage by remember { mutableStateOf("current") }
+ val week=remember { mutableStateListOf<Int>().apply {
+  addAll(original?.let { MonarchProfileAdapter.from(it,LocalDate.now())?.weekly }?:List(7){5})
+ } }
+ val gear=remember { mutableStateMapOf<String,Boolean>().apply {
+  put("body",original?.b("bodyAvailable",true)?:true)
+  put("db",original?.b("dumbbellsAvailable",original.s("equipment") in listOf("db","gym"))?:false)
+  put("gym",original?.s("equipment")=="gym")
+  materials.forEach { (id,_) -> put(id,id in original?.a("materials46")?.strings().orEmpty()) }
+  gymOptions.forEach { (id,_) -> put("gym_$id",id in original?.a("gymEquipment23")?.strings().orEmpty()) }
+ } }
+ val initialGear=remember { gear.toMap() }
+ val initialWeek=remember { week.toList() }
+ var stage by remember { mutableIntStateOf(0) }
+ var confirmed by remember { mutableStateOf(false) }
+ var summary by remember { mutableIntStateOf(-1) }
+ var openSelector by remember { mutableStateOf("") }
+ fun value(key:String)=draft.getValue(key)
+ fun move(target:Int){stage=target;openSelector="";summary=-1;confirmed=false}
+ fun validateIdentity(){
+  require(value("name").isNotBlank()){"Escribe tu nombre de cazador"}
+  require(value("age").toIntOrNull()?.let { it>=0 }==true){"Escribe una edad válida en años"}
+  for (key in listOf("height","weight")) if(value(key).isNotBlank()){
+   require(value(key).replace(',','.').toDoubleOrNull()?.let { it.isFinite()&&it>0 }==true){
+    if(key=="height")"Revisa la estatura" else "Revisa el peso"
+   }
+  }
+ }
+ fun weights()=if(gear["db"]==true)parseDumbbellWeights(value("dumbbellWeights")) else emptyList()
+ fun save(){
+  validateIdentity()
+  val appearance=originalAppearance.copyJson().put("collection",value("collection")).put("scene",value("scene"))
+  val artworkKeys=setOf("theme","outlineColor","collection","scene","companionCharacter")
+  val appearanceOnly=original!=null&&initialWeek==week&&initialGear==gear&&initialHealth==healthValues&&
+   arr(injuries).toString()==original.a("injuries").toString()&&draft.all { (key,v)->key in artworkKeys||initial[key]==v }
+  if(appearanceOnly){
+   store.updateAppearanceOnly(value("theme"),appearance,ui.pendingAvatar,value("outlineColor"),value("companionCharacter"))
+   ui.profileSaved()
+   return
+  }
+  val p=original?.copyJson()?:JSONObject()
+  val health=p.o("health").copyJson()
+  val restrictions=p.o("restrictions").copyJson()
+  for((key,v) in healthValues)if(key.startsWith("r_"))restrictions.put(key.removePrefix("r_"),v=="true")
+   else if(key in setOf("pain","recommendations"))health.put(key,v) else health.put(key,v=="true")
+  p.put("health",health).put("restrictions",restrictions).put("injuries",arr(injuries))
+  if(arr(injuries).toString()!=original?.a("injuries")?.toString())p.put("limits",injuries.any {it.s("stage")!="past"})
+
+  val equipment=if(gear["gym"]==true)"gym" else if(gear["db"]==true)"db" else "body"
+  val selectedWeights=weights()
+  for(key in listOf("name","gender","difficulty","finalGoal","trainingMode","blockMode22","theme","outlineColor","companionCharacter")){
+   p.put(key,value(key).let { if(key=="name")it.trim() else it })
+  }
+  p.put("age",value("age").toInt())
+  for(key in listOf("height","weight")){
+   val n=value(key).replace(',','.').toDoubleOrNull()
+   if(n==null)p.remove(key) else p.put(key,n)
+  }
+  val objective=value("objective")
+  val priorObjective=original?.s("profileObjective",original.s("goal","general"))
+  if(original==null||priorObjective!=objective){
+   val target=if(objective=="habit")"general" else objective
+   p.put("goal",target).put("finalTarget",target)
+   p.put("goalGroup",when(objective){"strength"->"build";"endurance"->"fitness";"mobility"->"movement";else->"habit"})
+  }
+  p.put("profileObjective",objective).put("manualGoalGroupNative",true)
+  for(key in listOf("minutes","restSeconds","dailyMissions"))p.put(key,value(key).toInt())
+  p.put("intensityPreference",original?.s("intensityPreference","baja")?:"baja")
+  p.put("frequency",week.count { it!=5 }).put("weeklyCategories",arr(week))
+  val legacyWeek=(0..6).map { index -> week[(index+6)%7] }
+  p.put("weekPlan",arr(legacyWeek.map { when(it){3->"mobility";4->"cardio";5->"rest";else->"train"} }))
+  p.put("weekFocus",arr(legacyWeek.map { listOf("upper","core","lower","mobility","cardio","general")[it] }))
+  val selectedMaterials=original?.a("materials46")?.strings().orEmpty().toMutableSet()
+  for((key,_) in materials)if(gear[key]==true)selectedMaterials.add(key) else selectedMaterials.remove(key)
+  val selectedGym=original?.a("gymEquipment23")?.strings().orEmpty().toMutableSet()
+  for((key,_) in gymOptions)if(gear["gym_$key"]==true)selectedGym.add(key) else selectedGym.remove(key)
+  if(equipment!="gym")selectedGym.clear()
+  p.put("materials46",arr(selectedMaterials.filter { it in profileAllowedMaterials(equipment) }))
+  p.put("gymEquipment23",arr(selectedGym))
+  p.put("bench","bench" in selectedGym || equipment=="db"&&original?.b("bench")==true)
+  p.put("equipment",equipment).put("bodyAvailable",gear["body"]==true).put("dumbbellsAvailable",gear["db"]==true)
+  p.put("dumbbellWeightsKg",arr(selectedWeights)).put("load",selectedWeights.firstOrNull()?:0)
+  store.saveProfile(p,appearance,ui.pendingAvatar)
+  ui.pendingAvatar=null
+  HunterAlarms.sync(store)
+  if(original==null)move(4) else { ui.profileSaved();ui.message("Cambios guardados.") }
+ }
+ @Composable fun field(key:String,label:String,icon:String,tint:Color,number:Boolean=false){
+  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp),verticalAlignment=Alignment.CenterVertically){
+   ProfileBadge(icon,tint)
+   HInput(value(key),{ draft[key]=if(key=="name")it.take(40) else it },label,Modifier.weight(1f),number)
+  }
+ }
+ @Composable fun select(key:String,label:String,options:List<Pair<String,String>>){
+  val selected=options.firstOrNull { it.first==value(key) }?.second?:value(key)
+  HButton("$label · $selected ▾",Modifier.fillMaxWidth(),primary=openSelector==key){openSelector=if(openSelector==key)"" else key}
+  if(openSelector==key)for((id,text) in options){
+   HButton(text,Modifier.fillMaxWidth(),primary=value(key)==id){draft[key]=id;openSelector=""}
+  }
+ }
+ BackHandler(enabled=ui.stack.isEmpty()&&(stage>0||original!=null)){
+  if(stage==4)ui.profileSaved() else if(stage>0)move(stage-1) else ui.closeProfile()
+ }
+ val palette=remember(value("theme"),value("outlineColor")) {
+  HunterColors(HunterAppearanceV43.tokens(value("theme"),value("outlineColor")))
+ }
+ CompositionLocalProvider(LocalHunter provides palette){
+  ProfileWindow(stage,stageArt[stage.coerceAtMost(3)],footer={
+   if(stage==4){
+    ProfileAction("ENTRAR AL SISTEMA",Modifier.fillMaxWidth(),primary=true){ui.profileSaved()}
+   }else Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
+    if(stage>0)ProfileAction("‹ ATRÁS",Modifier.weight(.8f)){move(stage-1)}
+    val label=if(stage<3)"SIGUIENTE ›" else if(original==null)"ACTIVAR PERFIL" else "GUARDAR CAMBIOS"
+    ProfileAction(label,Modifier.weight(1.2f),primary=true,enabled=stage<3||confirmed){
+     ui.attempt{when(stage){0->{validateIdentity();move(1)};1->{weights();move(2)};2->move(3);else->save()}}
+    }
+   }
+  }){
+   when(stage){
+    0->{
+     field("name","Nombre del cazador *","▤",Color(0xFF338CD1))
+     field("age","Edad en años *","▦",Color(0xFF9869D3),true)
+     field("height","Estatura (cm) · Opcional","↕",Color(0xFF329878),true)
+     field("weight","Peso (kg) · Opcional","◇",Color(0xFFC36769),true)
+     ProfileModule("⚥","Género",Color(0xFF9869D3)){
+      ProfileChoices(genders,value("gender")){draft["gender"]=it}
+     }
+     ProfileModule("▣","Fotografía opcional",Color(0xFFC19958)){
+      Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(8.dp)){
+       val avatar=ui.pendingAvatar?:store.state.s("avatar")
+       if(avatar.isBlank())AssetImage("profile-monarca/avatar.webp",Modifier.size(52.dp).clip(CircleShape),ContentScale.Crop)
+       else Avatar(avatar,value("name"),Modifier.size(52.dp))
+       HButton("Elegir fotografía",Modifier.weight(1f)){ui.chooseAvatar()}
+      }
+     }
+     HText("La edad no limita el acceso a los ejercicios.",size=12,color=palette.muted)
+     if(original!=null)HButton("Volver al inicio"){ui.closeProfile()}
+    }
+    1->{
+     ProfileModule("▥","Nivel",Color(0xFF338CD1)){ProfileChoices(levels,value("difficulty")){draft["difficulty"]=it}}
+     ProfileModule("♥","Objetivo principal",Color(0xFF9869D3)){select("objective","Objetivo",objectives)}
+     ProfileModule("✎","Objetivo personalizado",Color(0xFF329878)){
+      HInput(value("finalGoal"),{draft["finalGoal"]=it},"Describe tu objetivo con tus propias palabras",multiline=true)
+     }
+     ProfileModule("⚑","Modalidad del sistema",Color(0xFFC19958)){
+      ProfileChoices(listOf("challenges" to "Misiones diarias","routines" to "Rutinas"),value("trainingMode")){
+       draft["trainingMode"]=it;openSelector=""
+      }
+      if(value("trainingMode")=="routines"){
+       select("restSeconds","Descanso",rests);select("blockMode22","Organización",formats)
+       select("minutes","Tiempo disponible",durations)
+      }else{
+       select("dailyMissions","Cantidad",(1..7).map { it.toString() to if(it==1)"1 misión" else "$it misiones" })
+       HText("Las misiones pueden incluir actividades ligeras, aprendizaje y descansos.",size=12)
+      }
+     }
+     ProfileModule("▦","Planificación semanal",Color(0xFF9869D3)){
+      Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(4.dp)){
+       for(i in week.indices){
+        val cat=week[i];val color=Color(categoryColors[cat]);val shape=RoundedCornerShape(6.dp)
+        Column(Modifier.width(42.dp).height(49.dp).clip(shape).background(color.copy(alpha=.22f))
+         .border(1.dp,color,shape).semantics { contentDescription=dayNames[i]+": "+categoryLabels[cat] }
+         .clickable(role=Role.Button){week[i]=(cat+1)%6},horizontalAlignment=Alignment.CenterHorizontally,
+         verticalArrangement=Arrangement.Center){
+         HText("LMXJVSD"[i].toString(),size=13,bold=true);HText(categoryIcons[cat],size=14)
+        }
+       }
+      }
+      for(i in categoryLabels.indices)HText(categoryIcons[i]+"  "+categoryLabels[i],size=12,bold=true,
+       modifier=Modifier.border(1.dp,Color(categoryColors[i]),RoundedCornerShape(4.dp)).padding(horizontal=5.dp))
+     }
+     ProfileModule("◇","Equipamiento disponible",Color(0xFFC36769)){
+      val choices=listOf("body" to "Peso corporal / sin equipo")+materials+listOf("db" to "Mancuernas","gym" to "Gimnasio")
+      for((key,label) in choices)HCheck(label,gear[key]==true){gear[key]=gear[key]!=true}
+      if(gear["db"]==true)HInput(value("dumbbellWeights"),{draft["dumbbellWeights"]=it},"Pesos disponibles (kg), separados por comas · 2, 4, 6")
+      if(gear["gym"]==true)for((id,label) in gymOptions)HCheck(label,gear["gym_$id"]==true){gear["gym_$id"]=gear["gym_$id"]!=true}
+      HButton("Indicaciones y restricciones ▾",Modifier.fillMaxWidth()){
+       healthExpanded["health"]=healthExpanded["health"]!=true
+      }
+      if(healthExpanded["health"]==true){
+       val section=store.catalog.profileForm.objects().last()
+       HunterProfileFields(section,section.a("fields").objects().map { it.s("name") }.toSet(),
+        healthValues,healthExpanded,store){}
+       for((i,injury) in injuries.withIndex())HButton(
+        (zoneLabels[injury.s("zone")]?:injury.s("zone"))+" · Quitar",
+        Modifier.fillMaxWidth()){injuries.removeAt(i)}
+       HSelect("Zona",injuryZone,zoneLabels.toList()){injuryZone=it}
+       HSelect("Tipo",injuryType,typeLabels.toList()){injuryType=it}
+       ProfileChoices(listOf("current" to "Actual","past" to "Anterior"),injuryStage){injuryStage=it}
+       HButton("Añadir zona"){injuries+=obj("zone" to injuryZone,"type" to injuryType,"stage" to injuryStage)}
+      }
+     }
+    }
+    2->{
+     ProfileModule("♟","Acompañante del sistema",Color(0xFF338CD1)){
+      val allies=MonarchCompanions.profileChoices
+      Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+       for(item in allies)ProfilePicture("ui33/companion-${item.asset}.webp",item.title,
+        value("companionCharacter")==item.id,Modifier.size(75.dp)){draft["companionCharacter"]=item.id}
+      }
+     }
+     ProfileModule("◇","Apariencia",Color(0xFF9869D3)){
+      Row(horizontalArrangement=Arrangement.spacedBy(5.dp)){
+       HButton("Tema · "+(themes.firstOrNull { it.first==value("theme") }?.second.orEmpty()),Modifier.weight(1f)){
+        openSelector=if(openSelector=="theme")"" else "theme"
+       }
+       HButton("Borde",Modifier.weight(1f)){openSelector=if(openSelector=="outlineColor")"" else "outlineColor"}
+      }
+      Row(horizontalArrangement=Arrangement.spacedBy(5.dp)){
+       HButton("Silueta",Modifier.weight(1f)){openSelector=if(openSelector=="collection")"" else "collection"}
+       HButton("Fondo",Modifier.weight(1f)){openSelector=if(openSelector=="scene")"" else "scene"}
+      }
+      when(openSelector){
+       "theme"->ProfileChoices(themes,value("theme")){draft["theme"]=it;openSelector=""}
+       "outlineColor"->for(pair in edges.chunked(2)){
+        Row(horizontalArrangement=Arrangement.spacedBy(5.dp)){
+         for((id,label) in pair){
+          val shade=parseColor(HunterAppearanceV43.borderHex(value("theme"),id))
+          val shape=RoundedCornerShape(7.dp)
+          Row(Modifier.weight(1f).clip(shape).background(palette.input)
+           .border(if(value("outlineColor")==id)2.dp else 1.dp,shade,shape)
+           .clickable(role=Role.RadioButton){draft["outlineColor"]=id;openSelector=""}
+           .padding(7.dp),verticalAlignment=Alignment.CenterVertically,
+           horizontalArrangement=Arrangement.spacedBy(5.dp)){
+           Box(Modifier.size(15.dp).background(shade,CircleShape).border(1.dp,palette.line,CircleShape))
+           HText(label,size=13)
+          }
+         }
+        }
+       }
+       "collection"->for(pair in silhouettes.withIndex().chunked(2)){
+        Row(horizontalArrangement=Arrangement.spacedBy(5.dp)){
+         for((i,id) in pair)ProfilePicture(chosenHunterArtwork(id,value("gender")),"Silueta ${i+1}",
+          value("collection")==id,Modifier.weight(1f).height(92.dp)){draft["collection"]=id;openSelector=""}
+         if(pair.size==1)Spacer(Modifier.weight(1f))
+        }
+       }
+       "scene"->for(pair in scenes.chunked(2)){
+        Row(horizontalArrangement=Arrangement.spacedBy(5.dp)){
+         for((id,label) in pair)Column(Modifier.weight(1f)){
+          ProfilePicture(chosenSceneArtwork(id),label,value("scene")==id,Modifier.fillMaxWidth().height(73.dp),ContentScale.Crop){
+           draft["scene"]=id;openSelector=""
+          }
+          HText(label,size=12)
+         }
+         if(pair.size==1)Spacer(Modifier.weight(1f))
+        }
+       }
+      }
+     }
+     ProfileModule("▣","Vista previa del cazador",Color(0xFFC19958)){
+      HunterProfileCardPreview(value("collection"),value("gender"),value("scene"),value("name"),
+       store.stats().i("level",1),store.stats().i("xp"),value("companionCharacter"))
+     }
+     if(original!=null){
+      HButton("Ajustes de la aplicación ▾",Modifier.fillMaxWidth()){
+       openSelector=if(openSelector=="app")"" else "app"
+      }
+      if(openSelector=="app"){
+       HButton("Alarmas del cazador",Modifier.fillMaxWidth()){ui.open("reminders")}
+       HSelect("Rendimiento visual",visualTier(store).id,
+        listOf("max" to "Máxima calidad","balanced" to "Equilibrado","saver" to "Ahorro de energía")){
+        store.state.put("visualQuality",it);store.save()
+       }
+       HButton("Exportar copia de seguridad",Modifier.fillMaxWidth()){ui.export()}
+       HButton("Restaurar copia",Modifier.fillMaxWidth()){ui.import()}
+       HCheck("Actualizar entrenadores automáticamente",store.state.b("creatorAuto",true)){
+        val enabled=!store.state.b("creatorAuto",true)
+        store.state.put("creatorAuto",enabled);store.save()
+        CreatorFeedNative.schedule(store.context,enabled)
+       }
+       HButton("Fuentes y publicaciones",Modifier.fillMaxWidth()){ui.open("sources")}
+      }
+     }
+    }
+    3->{
+     val labels=listOf("Identidad del cazador","Entrenamiento","Personalización")
+     for((i,title) in labels.withIndex()){
+      HButton(title+(if(summary==i)"  ⌃" else "  ▾"),Modifier.fillMaxWidth()){
+       summary=if(summary==i)-1 else i
+      }
+      if(summary==i)HText(when(i){
+       0->listOf(value("name"),value("age")+" años","Estatura: "+value("height").ifBlank{"Sin indicar"},
+        "Peso: "+value("weight").ifBlank{"Sin indicar"},genders.firstOrNull { it.first==value("gender") }?.second.orEmpty()).joinToString("\n")
+       1->listOf(levels.firstOrNull { it.first==value("difficulty") }?.second.orEmpty(),
+        objectives.firstOrNull { it.first==value("objective") }?.second?:value("objective"),
+        value("finalGoal").ifBlank{"Objetivo personal sin indicar"},
+        if(value("trainingMode")=="routines")"Rutinas · ${value("minutes")} min · ${value("restSeconds")} s de descanso · "+(formats.firstOrNull { it.first==value("blockMode22") }?.second?:"Por series") else "${value("dailyMissions")} misiones diarias",
+        dayNames.indices.joinToString("\n"){dayNames[it]+": "+categoryLabels[week[it]]},
+        (listOf("body" to "Peso corporal")+materials+listOf("db" to "Mancuernas","gym" to "Gimnasio")+
+         gymOptions.map { "gym_${it.first}" to it.second }).filter { gear[it.first]==true }.joinToString { it.second }.ifBlank{"Equipo sin indicar"}
+       ).joinToString("\n")
+       else->listOf(themes.first { it.first==value("theme") }.second,
+        edges.firstOrNull { it.first==value("outlineColor") }?.second?:value("outlineColor"),
+        scenes.firstOrNull { it.first==value("scene") }?.second?:"Fondo guardado","Silueta y acompañante seleccionados").joinToString("\n")
+      },size=15)
+     }
+     HCheck("He revisado mi información y deseo activar mi perfil de cazador.",confirmed){confirmed=!confirmed}
+    }
+    4->{Heading("Sistema activado",size=27);HText("Registro completado.")}
+   }
+  }
  }
 }
 
+internal fun parseDumbbellWeights(text:String):List<Double> =
+ text.split(',').map(String::trim).filter(String::isNotBlank).map {
+  val value=it.toDoubleOrNull()
+  require(value!=null&&value.isFinite()&&value>0){"Indica pesos positivos separados por comas"}
+  value
+ }.distinct().sorted()
+
+@Composable private fun ProfileWindow(stage:Int,art:String,footer:@Composable ()->Unit,content:@Composable ColumnScope.()->Unit){
+ val c=LocalHunter.current
+ val shape=CutCornerShape(16.dp)
+ val gold=if(c.isLight)Color(0xFF9A7040) else Color(0xFFE9BE79)
+ Box(Modifier.fillMaxSize()){
+  AssetImage("profile-monarca/$art.webp",Modifier.matchParentSize(),ContentScale.Crop,alignment=Alignment.CenterStart)
+  HText("✦ HUNTER SYSTEM · MONARCA ECLIPSE",Modifier.align(Alignment.TopEnd).fillMaxWidth(.76f)
+   .padding(top=11.dp,end=6.dp),size=15,color=Color(0xFFFFE8BA),bold=true)
+  Column(Modifier.align(Alignment.CenterEnd).fillMaxWidth(.73f).fillMaxHeight(.84f)
+   .padding(end=7.dp).clip(shape).background(c.bg).border(2.dp,gold,shape)
+   .padding(horizontal=7.dp,vertical=9.dp)){
+   Box(Modifier.weight(1f)){
+    key(stage){
+     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal=3.dp,vertical=6.dp),
+      verticalArrangement=Arrangement.spacedBy(9.dp)){
+      if(stage<4){
+       HText("◆  PASO ${stage+1} DE 4",size=13,bold=true,color=gold)
+       Heading(stages[stage],size=25)
+       Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
+        for(i in stages.indices)Box(Modifier.weight(1f).height(32.dp).border(1.dp,
+         if(i==stage)gold else c.line,CircleShape).semantics { selected=i==stage },contentAlignment=Alignment.Center){
+         HText((i+1).toString(),size=14,bold=i==stage,color=if(i==stage)gold else c.muted)
+        }
+       }
+      }
+      content()
+     }
+    }
+   }
+   Spacer(Modifier.height(5.dp));Box(Modifier.fillMaxWidth().background(c.line).height(1.dp))
+   Spacer(Modifier.height(5.dp));footer()
+  }
+ }
+}
+
+@Composable private fun ProfileAction(text:String,modifier:Modifier,primary:Boolean=false,enabled:Boolean=true,onClick:()->Unit){
+ val c=LocalHunter.current
+ val shape=CutCornerShape(10.dp)
+ val edge=if(primary&&enabled)Color(0xFFE1AF63) else c.line
+ val fill=if(primary&&enabled){
+  if(c.isLight)listOf(Color(0xFFFFECC2),Color(0xFFDAA861)) else listOf(Color(0xFF805429),Color(0xFF4D301A))
+ }else listOf(c.surface,c.input)
+ Box(modifier.heightIn(min=47.dp).clip(shape).background(Brush.verticalGradient(fill)).border(1.dp,edge,shape)
+  .clickable(enabled=enabled,role=Role.Button,onClick=onClick).padding(6.dp),contentAlignment=Alignment.Center){
+  HText(text,size=13,color=when{!enabled->c.muted;primary&&c.isLight->Color(0xFF42290E);primary->Color(0xFFFFEAC7);else->c.text},bold=true)
+ }
+}
+
+@Composable private fun ProfileBadge(icon:String,tint:Color){
+ val shape=CutCornerShape(4.dp)
+ Box(Modifier.size(32.dp).clip(shape).background(tint.copy(alpha=.24f)).border(1.dp,tint,shape),contentAlignment=Alignment.Center){
+  HText(icon,size=17,bold=true)
+ }
+}
+@Composable private fun ProfileModule(icon:String,title:String,tint:Color,content:@Composable ColumnScope.()->Unit){
+ HPanel(decor=false,padding=8){
+  Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(7.dp)){
+   ProfileBadge(icon,tint);HText(title,size=16,bold=true)
+  }
+  content()
+ }
+}
+@Composable private fun ProfileChoices(options:List<Pair<String,String>>,selected:String,onChoice:(String)->Unit){
+ val c=LocalHunter.current
+ val shape=RoundedCornerShape(7.dp)
+ Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(4.dp)){
+  for((id,label) in options){
+   val active=id==selected
+   Box(Modifier.weight(1f).heightIn(min=45.dp).clip(shape)
+    .background(if(active)c.selected else c.input)
+    .border(if(active)2.dp else 1.dp,if(active)c.accent else c.line,shape)
+    .semantics { this.selected=active }.clickable(role=Role.RadioButton){onChoice(id)}
+    .padding(4.dp),contentAlignment=Alignment.Center){
+    HText(label,size=13,bold=active)
+   }
+  }
+ }
+}
+@Composable private fun ProfilePicture(asset:String,label:String,active:Boolean,modifier:Modifier,scale:ContentScale=ContentScale.Fit,onClick:()->Unit){
+ val c=LocalHunter.current;val shape=CutCornerShape(7.dp)
+ Box(modifier.clip(shape).background(c.input).border(if(active)2.dp else 1.dp,if(active)c.accent else c.line,shape)
+  .semantics { contentDescription=label;selected=active }.clickable(role=Role.RadioButton,onClick=onClick)){
+  AssetImage(asset,Modifier.fillMaxSize().padding(3.dp),scale)
+  if(active)HText("✓",Modifier.align(Alignment.TopEnd).background(c.bg).padding(horizontal=4.dp),size=13,bold=true)
+ }
+}
 val zoneLabels=linkedMapOf("neck" to "Cuello","shoulder" to "Hombro","elbow" to "Codo","wrist" to "Muñeca o mano","back" to "Espalda","hip" to "Cadera","knee" to "Rodilla","ankle" to "Tobillo o pie","other" to "Otra zona / no sé")
 val typeLabels=linkedMapOf("muscle" to "Muscular","tendon" to "Tendón","joint" to "Articulación o ligamento","bone" to "Fractura / lesión ósea","surgery" to "Después de una cirugía","unknown" to "Sin diagnóstico / otra")
