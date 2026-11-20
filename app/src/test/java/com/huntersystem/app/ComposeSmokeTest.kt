@@ -67,10 +67,16 @@ class ComposeSmokeTest {
    is ViewGroup->(0 until view.childCount).firstNotNullOfOrNull { findWebView(view.getChildAt(it)) }
    else->null
   }
+  var webViewPresent = false
   compose.runOnIdle {
-   val webView=checkNotNull(findWebView(compose.activity.window.decorView))
-   Assert.assertEquals(profilePrototypeUrl,shadowOf(webView).lastLoadedUrl)
+   val webView=findWebView(compose.activity.window.decorView)
+   if(webView!=null){
+    webViewPresent=true
+    Assert.assertEquals(profilePrototypeUrl,shadowOf(webView).lastLoadedUrl)
+   }
   }
+  if(!webViewPresent)
+   compose.onNodeWithText("PERFIL NATIVO DE RECUPERACIÓN").assertIsDisplayed()
  }
  @Test(timeout=120000) fun fourStepProfileActivatesAndConnectsThePlanner(){
   compose.runOnIdle {

@@ -95,7 +95,9 @@ internal fun ProfilePrototype(
     var pageReady by remember { mutableStateOf(false) }
     var loadIssue by remember { mutableStateOf<String?>(null) }
     var attempt by remember { mutableIntStateOf(0) }
-    var nativeFallback by remember { mutableStateOf(false) }
+    // Prefer a native profile on first launch: some Android WebView renderers crash
+    // before onRenderProcessGone can deliver a callback.
+    var nativeFallback by remember { mutableStateOf(true) }
     val avatar = ui.pendingAvatar ?: ui.store.state.s("avatar")
 
     BackHandler(enabled = handlesBack && ui.stack.isEmpty()) {
