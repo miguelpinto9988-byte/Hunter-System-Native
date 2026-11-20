@@ -105,7 +105,7 @@ class ProfileOnDeviceTest {
                     assertTrue("Catalog did not load", device.wait(Until.hasObject(By.text("5000 fichas")), 20_000))
                     val search = checkNotNull(device.wait(Until.findObject(By.clazz("android.widget.EditText")), 10_000))
                     search.text = "Sentadilla a silla"
-                    val exercise = By.text("Sentadilla a silla")
+                    val exercise = By.desc("Abrir ejercicio: Sentadilla a silla").clickable(true)
                     repeat(5) {
                         if (!device.hasObject(exercise)) {
                             val x = device.displayWidth / 2
@@ -113,12 +113,7 @@ class ProfileOnDeviceTest {
                             device.waitForIdle()
                         }
                     }
-                    val card = checkNotNull(device.findObject(exercise)) { "Exercise not found in catalog" }
-                    var clickable = card
-                    while (!clickable.isClickable && clickable.parent != null) {
-                        clickable = checkNotNull(clickable.parent)
-                    }
-                    clickable.click()
+                    checkNotNull(device.findObject(exercise)) { "Exercise card not found in catalog" }.click()
                     assertTrue("The exercise detail did not open",
                         device.wait(Until.hasObject(By.text("DEMOSTRACIÓN")), 15_000))
                     val play = By.text("Reproducir demostración")
