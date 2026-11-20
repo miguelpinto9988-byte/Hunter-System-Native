@@ -144,7 +144,14 @@ class MonarchBossChallengeTest {
         assertEquals(examples.size,examples.values.map { it.lightInk }.distinct().size)
         val plancha=Exercise(obj("name" to "Plancha con toque de rodilla","planning49" to obj("group" to "core")))
         assertEquals(MonarchExerciseIcon.CORE,monarchExerciseIcon(plancha))
+        val pelvic=Exercise(obj("name" to
+            "Secuencia basculación pélvica en cuadrupedia + inclinación pélvica adelante",
+            "planning49" to obj("group" to "mobility","pattern" to "movilidad general")))
+        assertEquals(MonarchExerciseIcon.PELVIC,monarchExerciseIcon(pelvic))
         assertEquals(MonarchExerciseIcon.GENERAL,monarchExerciseIcon(null))
+        val paths=MonarchExerciseIcon.entries.map { it.path }
+        assertEquals(paths.size,paths.distinct().size)
+        assertTrue(paths.all { !androidx.compose.ui.graphics.vector.PathParser().parsePathString(it).toPath().isEmpty })
     }
 
     @Test(timeout=120000) fun eachNewBossDisplaysItsCoverInTheChallengeWindow() {

@@ -27,42 +27,63 @@ internal enum class MonarchExerciseIcon(
     val label: String, val lightInk: Color, val darkInk: Color, val path: String
 ) {
     SQUAT("Sentadilla", Color(0xFF17674D), Color(0xFF77E6A9),
-        "M11 4a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2 M10.5 9L7 14h6l-2 5h5 M9.5 10.5l4 1.5 4-2"),
+        "M14 3.2a1.85 1.85 0 1 0 0 3.7 1.85 1.85 0 0 0 0-3.7 " +
+            "M13 8l-3.5 5.8 6.5.2-2.2 5.2h3.4 M12.4 9.5l3 1.2 3.6-1.6 M5 21h15"),
     LUNGE("Zancada y escalón", Color(0xFF526719), Color(0xFFC7E482),
-        "M12 4a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2 M11.5 9v5l4-2.5 2 6h3 M11.5 14l-4 3-3 1 M10 10l-3 3"),
+        "M12 3.2a1.85 1.85 0 1 0 0 3.7 1.85 1.85 0 0 0 0-3.7 " +
+            "M12 8.4v5.1l6.1.1v5.5h2 M12 13.5l-4 4.9-4-1.7 M11.9 9.5l-2.6 2.7 M3 21h18"),
     HINGE("Cadera y bisagra", Color(0xFF3D6966), Color(0xFF8BDED4),
-        "M16.7 5a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2 M15.5 9l-6 4 3 2.5 1 4 M9.5 13l-3 6h-3 M13 11l3 4h3"),
+        "M19 6a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6 " +
+            "M16.1 9.3l-7.5 4.2 2.1 3.1-1.2 3.2h2.6 M14 10.6l1.4 3.7 2.2 2.1 M5 13h2m-2 0 1.3-1.3M5 13l1.3 1.3"),
     FOOT("Apoyo y trabajo de tobillo", Color(0xFF745515), Color(0xFFF6D784),
-        "M8 4v9l-1.5 3a2.5 2.5 0 0 0 2.3 3.5H18a2 2 0 0 0 .8-3.8L13 13V4 M4 12l2-2 M17 11l2-2 2 2"),
-    PUSH("Empuje", Color(0xFF155E96), Color(0xFF83CCFF),
-        "M18.5 7a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2 M4 16l11-4h2l-1 4 2 2 M14 18h7 M3 18h5"),
+        "M9 4v7l-1.7 3.4A3 3 0 0 0 10 19h8.6a1.7 1.7 0 0 0 .4-3.4L14 13V4 " +
+            "M3.5 13.8v-5m-1.6 1.6 1.6-1.6 1.6 1.6 M4 21h17"),
+    PUSH("Flexión y empuje horizontal", Color(0xFF155E96), Color(0xFF83CCFF),
+        "M19.7 6a2 2 0 1 0 0 4 2 2 0 0 0 0-4 " +
+            "M16.4 10.3l-5.5 1.8-5.7 3.4L4 18.1 M15.6 10.7l-2.5 3.4 3 3.8H19 M2.5 20.8h19"),
     PULL("Tracción", Color(0xFF593C96), Color(0xFFC4ABFF),
-        "M4 4h16 M12 9a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2 M7 5v6l5 4 5-4V5 M12 15v3l-3 3 M12 18l3 3"),
+        "M3 3.5h18 M12 6.6a1.8 1.8 0 1 0 0 3.6 1.8 1.8 0 0 0 0-3.6 " +
+            "M7 3.5V8l4.8 4.2L17 8V3.5 M11.8 12.2v4.5l-2.4 3.1 M11.8 16.7l2.5 3.1"),
     PRESS("Fuerza y levantamiento", Color(0xFF06677C), Color(0xFF7DDEFB),
-        "M3 8v8m3-10v12m12-12v12m3-10v8M6 12h12"),
+        "M2.5 12h19 M5.5 7.5v9m3-10v11m7-11v11m3-10v9"),
     CORE("Estabilidad del tronco", Color(0xFF663489), Color(0xFFDBA9FF),
-        "M12 3l7 3v6c0 4-2.8 6.5-7 9-4.2-2.5-7-5-7-9V6l7-3z M12 8v7m-3.5-3.5h7"),
+        "M8.2 4.5 4 7l2.3 4.1 2-1.1-.4 4.2-1 5.3h10.2l-1-5.3-.4-4.2 2 1.1L20 7l-4.2-2.5H14a2 2 0 0 1-4 0z " +
+            "M10 11.7h4m-4 2.7h4"),
+    PELVIC("Basculación pélvica", Color(0xFF655127), Color(0xFFFFD799),
+        "M4.5 13a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5 " +
+            "M7 17h5.8l3.5-5.2 3.7 4.7h1.8 M2.5 20.5h19 M9 11.5a3.5 3.5 0 0 1 4.2-2.3m-1-1.6 1 1.6-1.8 1"),
     ROTATION("Rotación", Color(0xFF8B3562), Color(0xFFF5A3CE),
-        "M7 8a7 7 0 0 1 12 3m.1-4v4h-4 M17 16A7 7 0 0 1 5 13m-.1 4v-4h4 M12 10v4"),
+        "M12 4a1.65 1.65 0 1 0 0 3.3 1.65 1.65 0 0 0 0-3.3 M7.4 9.2l4.6 1.4 4.5-1.4 M12 10.6v6.1 " +
+            "M7.2 12a4.1 4.1 0 0 0 .7 6.9c2.7 1.5 8.2.9 10-1.6m-3.3.1 3.4-.2v3.1"),
     MOBILITY("Movilidad y estiramiento", Color(0xFF116C61), Color(0xFF83E7D1),
-        "M12 4a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2 M4 9l8 2 7-3 M12 11l-2 4-4 4 M10 15l8 4 M19 5l1-1"),
+        "M13 6a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5 " +
+            "M6 4l4.3.5 5.1 6.7 4.9 1.8 M14 9.4l-2.3 5.1-3.2 4.7 M11.7 14.5l4.5 4.7 M5 21h14"),
     BALANCE("Equilibrio", Color(0xFF80500C), Color(0xFFFFCD82),
-        "M12 4a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2 M4 10h16 M12 9v6l-2 4 M12 14l4 2 1-3 M6 21h12"),
+        "M12 3a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5 M4 9h16 M12 8v6l-.8 5.6 " +
+            "M12 14l4-1.5-1-2.5 M7 21h9"),
     RUN("Cardio y desplazamiento", Color(0xFF9A4B0F), Color(0xFFFFB474),
-        "M15 4a1.6 1.6 0 1 0 0 3.2 1.6 1.6 0 0 0 0-3.2 M13 9l-4 1-3 3 M13 9l3 3h4 M13 9l-2 5 5 4 M11 14l-3 4H4"),
+        "M16.2 3.4a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5 M14.8 8.6l-5.1.8-2 3 " +
+            "M14.8 8.6l2.2 4h4 M14 9.7l-2.1 4.8 4.2 2.2v3.5 M11.9 14.5l-3 4.2H5 M2.8 8.5h4"),
     JUMP("Salto y aterrizaje", Color(0xFF934719), Color(0xFFFFB79C),
-        "M10 17v-7m-3 3l3-3 3 3m3 1V5m-3 3l3-3 3 3 M5 20h14"),
+        "M11.7 4.5a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5 M5.8 6.1l5.9 4.4 5-4.4 " +
+            "M11.7 10.5v3.3l-3.2 3.3 M11.7 13.8l3.5 3.3 M6 21h12 M21 16v-4m-1.6 1.6L21 12l1.6 1.6"),
     CYCLE("Pedaleo", Color(0xFF135E81), Color(0xFF80DBF2),
-        "M9 16a4 4 0 1 0-8 0 4 4 0 0 0 8 0 M23 16a4 4 0 1 0-8 0 4 4 0 0 0 8 0 M5 16l4-7 5 7H5 M9 9h7 M15 6h2l2 10"),
+        "M8.5 16a3.25 3.25 0 1 0-6.5 0 3.25 3.25 0 0 0 6.5 0 M22 16a3.25 3.25 0 1 0-6.5 0 3.25 3.25 0 0 0 6.5 0 " +
+            "M5.2 16 9 9.8l4.5 6.2H5.2 M9 9.8h6.8L13.5 16 M15.9 6.2h1L18.8 16 M7 7.9h3.1"),
     BALL("Control de balón", Color(0xFF2E6639), Color(0xFFA0E793),
-        "M21 12a9 9 0 1 0-18 0 9 9 0 0 0 18 0 M12 8l4 3-1.5 4h-5L8 11z M12 8V3m4 8 4.5-1.5m-6 5.5 2.8 4.2m-7.8-4.2-2.8 4.2M8 11l-4.5-1.5"),
+        "M21 12a9 9 0 1 0-18 0 9 9 0 0 0 18 0 M12 8l3.8 2.8-1.5 4.5H9.7l-1.5-4.5z " +
+            "M12 8V3m3.8 7.8 4.7-1.5m-6.2 6 3 4m-7.6-4-3 4m1.5-8.5-4.7-1.5"),
     BOXING("Boxeo y golpeo", Color(0xFF962F48), Color(0xFFFF9DAE),
-        "M8 17l-3-4V9a2 2 0 0 1 2-2h2V5a2 2 0 0 1 2-2h4a4 4 0 0 1 4 4v5l-2 5 M8 17h9v4H8z M9 7v4l-2 2"),
+        "M8.2 16.8l-2.7-3V9.3c0-1.4 1-2.4 2.3-2.4H9V6a2.3 2.3 0 0 1 2.3-2.3h4.3a3.4 3.4 0 0 1 3.4 3.4v4.5l-2.5 5.2 " +
+            "M8.2 16.8h8.3v3.5H8.2z M9 7.7v3.4l-1.1 1.3"),
     GENERAL("Ejercicio", Color(0xFF4C5C76), Color(0xFFB4C5DF),
-        "M4 17h4v3H4z M10 12h4v8h-4z M16 5h4v15h-4z")
+        "M10.8 3.9a1.75 1.75 0 1 0 0 3.5 1.75 1.75 0 0 0 0-3.5 M5.6 11l5.2-1.7 4.7 2.6H20 " +
+            "M10.8 9.3v5.1l-3 5.3m3-5.3 4.8 5.3 M17.6 7.6h3.2")
+
 }
 
 private val exerciseIconRules = listOf(
+    """basculacion(?: de la pelvis| pelvica)|(?:inclinacion|anteversion|retroversion|balanceo) (?:pelvic[ao]|de (?:la )?pelvis)|pelvic[_ -]tilt""" to MonarchExerciseIcon.PELVIC,
     """boxeo|(?:jab|cross|uppercut)|golpeo de puno""" to MonarchExerciseIcon.BOXING,
     """pedaleo|bicicleta|ciclismo|cadencia sentado""" to MonarchExerciseIcon.CYCLE,
     """drib[lb]|conduccion de balon|recepcion.*balon|pase.*balon|control.*balon|toques.*balon""" to MonarchExerciseIcon.BALL,
@@ -76,7 +97,7 @@ private val exerciseIconRules = listOf(
     """traccion|\bremo\b|dominadas?|upper_row|upper_bentrow""" to MonarchExerciseIcon.PULL,
     """pallof""" to MonarchExerciseIcon.CORE,
     """empuje_vertical|upper_press|press|levantamiento|flexion_codo|extension_codo|curl""" to MonarchExerciseIcon.PRESS,
-    """empuje_horizontal|\bflexiones\b|flexion (?:de suelo|de brazos|en pared)|push[- ]?up""" to MonarchExerciseIcon.PUSH,
+    """empuje_horizontal|upper_pushup|\bflexiones\b|flexion (?:de suelo|de brazos|en pared)|push[- ]?up""" to MonarchExerciseIcon.PUSH,
     """plancha|estabilizacion_tronco|abdominal|dead bug|bird dog|hollow""" to MonarchExerciseIcon.CORE,
     """^salto|aterrizaje|jumpjack|rebote""" to MonarchExerciseIcon.JUMP,
     """carrera|marcha|trote|paso lateral|locomocion|cardio_|shuffle""" to MonarchExerciseIcon.RUN
