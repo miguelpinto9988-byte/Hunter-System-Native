@@ -12,7 +12,7 @@ class Planner(val catalog:Catalog,val rules:Rules){
  // 2000 registros al dibujar siete días del mismo calendario.
  private var cachedPlanningKey:String?=null
  private var cachedPlanningSource:MonarchActivitySource?=null
- private fun planningSource(p:JSONObject):MonarchActivitySource {
+ @Synchronized internal fun planningSource(p:JSONObject):MonarchActivitySource {
   val key=profileKey(p)
   val previous=cachedPlanningSource
   if(key==cachedPlanningKey&&previous!=null)return previous
@@ -114,8 +114,10 @@ class Planner(val catalog:Catalog,val rules:Rules){
   val excluded=if(candidateFresh)source.all().filter{item->
     catalog.byId[item.id]?.let{e->e.family in usedBases}?:true
   }.map{it.id}.toSet() else emptySet()
-  val adaptation=com.huntersystem.app.planning.CategoryEffortPolicy.decide(
-   history,localDate,requested,interruptions)
+  val coordinated=TrainingSessionCoordinator.plan(localDate,profile,source,
+   TrainingHistory(history,participation,interruptions,phases),pinned,priority,excluded,seed)
+  val mission=coordinated.mission
+  val adaptation=coordinated.adaptation
   val stop=gate.reduced||rules.active(p)||
    adaptation==com.huntersystem.app.planning.Adaptation.RECOVER_ONE
   val limited=adaptation==com.huntersystem.app.planning.Adaptation.REDUCE_TWO
@@ -127,8 +129,6 @@ class Planner(val catalog:Catalog,val rules:Rules){
    com.huntersystem.app.planning.Category.CARDIO->"cardio"
   }
   val oldReview=GroupEvolution.evaluate(logs,date,group,p,catalog)
-  val mission=DailyMissionPlanner.plan(
-   localDate,profile,source,history,phases,pinned,priority,excluded,seed,participation,interruptions)
   val safeReview=oldReview.copy(steps=min(0,oldReview.steps))
   val groupFeedback=GroupEvolution.feedback(logs,date,group,p,catalog)
   val doseOptions=mission.ids.mapNotNull{id->
@@ -213,6 +213,58 @@ class Planner(val catalog:Catalog,val rules:Rules){
   if(phase!=null)out+=obj("kind" to "cooldown","id" to phase.id,"label" to "Cierre suave · ${phase.name}","seconds" to sec,"unit" to "sec","target" to sec);return out
  }
  fun minutes(r:JSONObject,p:JSONObject)=ceil(steps(r,p).sumOf{it.n("seconds")}/60).toInt()
+ fun generateRoutineOptions(mode: String, type: String, requestedLevel: Int,
+  duration: Int, variation: String, p: JSONObject, logs: JSONObject,
+  date: LocalDate = LocalDate.now(), avoidImpact: Boolean = false,
+  onlyBody: Boolean = false): List<JSONObject> {
+  val category = CategoryMapper.normalize(type) ?: return emptyList()
+  val profile = MonarchProfileAdapter.from(p, date) ?: return emptyList()
+  val routineLevel = RoutineLevel.values().getOrNull(requestedLevel) ?: return emptyList()
+  if (!rules.gate(p).ok) return emptyList()
+  val metadata = planningSource(p).verified().filter { row ->
+   val exercise = catalog.byId[row.id] ?: return@filter false
+   (if (mode == "gym") exercise.gym else !exercise.gym) &&
+    (!avoidImpact || !exercise.impact && !exercise.power) &&
+    (!onlyBody || row.equipment.isEmpty()) && rules.compatible(exercise, p)
+  }
+  val source = object : ActivityRepositoryInterface {
+   override val revision = "routine"
+   override fun all() = metadata
+   override fun verified() = metadata
+  }
+  val kind = when (category) {
+   com.huntersystem.app.planning.Category.CARDIO -> "cardio"
+   com.huntersystem.app.planning.Category.MOBILITY -> "recovery"
+   else -> "strength"
+  }
+  val offers = linkedMapOf<List<String>, JSONObject>()
+  val request = RoutineRequest(category, duration, routineLevel, date, "$mode|$variation")
+  return RoutineGenerator.generate(request, profile, source,
+   efforts = MonarchLegacyHistory.efforts(logs, catalog),
+   interruptions = MonarchLegacyHistory.interruptions(logs, catalog)) { proposal ->
+   val items = proposal.ids.map { id ->
+    val exercise = catalog.byId.getValue(id)
+    libraryDose(exercise, p, kind).put("sets", 1).put("unit", exercise.unit)
+     .put("unifiedPlanning", true).put("noAutoLoad", true)
+   }
+   val exercises = proposal.ids.map { catalog.byId.getValue(it) }
+   val result = obj("items" to arr(items), "unifiedPlanning" to true)
+   val estimated = minutes(result, p)
+   if (estimated !in 1..duration) return@generate false
+   val key = ProfileSignature.stable("$date|$mode|$type|$requestedLevel|$duration|$variation",
+    proposal.ids.joinToString("|"))
+   result.put("id", "monarca-routine-$key")
+   result.put("name", "${groupLabels[type]} · ${listOf("Básico", "Intermedio", "Avanzado")[requestedLevel]}")
+   result.put("category", kindLabel(kind)).put("focus3845", type).put("mode3845", mode)
+   result.put("level", requestedLevel).put("minutes", estimated).put("availableMinutes", duration)
+   result.put("gymOnly23", mode == "gym")
+   result.put("gymRequirements23", arr(exercises.flatMap { it.gymRequirements }.distinct()))
+   result.put("impact", if (exercises.any { it.impact }) "Con saltos" else "Sin saltos")
+   result.put("family", "dynamic").put("safe381", true).put("description", proposal.explanation)
+   offers[proposal.ids] = result
+   true
+  }.map { offers.getValue(it.ids) }
+ }
  fun generateRoutine(mode:String,type:String,n:Int,variant:Int,range:String,epoch:Int,p:JSONObject,logs:JSONObject=JSONObject(),date:String=today()):JSONObject?{
   val kind=if(type=="cardio")"cardio" else if(type=="mobility")"recovery" else "strength";val low=if(range=="medium")10 else 5;val high=if(range=="short")10 else if(range=="medium")20 else 30;val adjusted=p.copyJson().put("difficulty",listOf("basic","intermediate","advanced")[n]).put("minutes",high)
   // La biblioteca histórica y la misión usan exactamente el mismo filtro

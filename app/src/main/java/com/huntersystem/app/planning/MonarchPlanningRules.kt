@@ -469,7 +469,8 @@ object RoutineGenerator {
     fun generate(request: RoutineRequest, profile: TrainingProfile,
                  repository: ActivityRepositoryInterface, maxProposals: Int = 6,
                  efforts: List<EffortObservation> = emptyList(),
-                 interruptions: List<SessionInterruption> = emptyList()): List<RoutineProposal> {
+                 interruptions: List<SessionInterruption> = emptyList(),
+                 accept: (RoutineProposal) -> Boolean = { true }): List<RoutineProposal> {
         require(maxProposals in 0..6)
         val adaptation = CategoryEffortPolicy.decide(efforts, request.date, request.category, interruptions)
         val count = when {
@@ -489,42 +490,65 @@ object RoutineGenerator {
             adaptation != Adaptation.RECOVER_ONE || it.intensity == Intensity.LOW
         }
         val goal = PersonalGoalInterpreter.interpret(profile.customGoal).tags
-        val distinct = linkedMapOf<String, RoutineProposal>()
-        for (index in 0 until maxProposals) {
+        val seed = "${request.date}|${request.category.code}|${request.duration}|${request.level}|" +
+            "${request.variation}|${ProfileSignature.of(profile)}"
+        val distinct = linkedMapOf<List<String>, RoutineProposal>()
+        for (index in 0 until 36) {
+            if (distinct.size == maxProposals) break
             val picked = DeterministicSelection.select(pool, count,
-                request.date.toString() + request.variation + index + ProfileSignature.of(profile),
+                "$seed|$index",
                 goal, profile.experience, 0, baseLevel = technicalLimit)
             if (picked.isEmpty()) break
             val ids = picked.map { it.id }
-            distinct.putIfAbsent(ids.joinToString("|"),
-                RoutineProposal(ids, request.duration, "Propuesta opcional con filtros técnicos y materiales."))
+            val proposal = RoutineProposal(ids, request.duration, "Propuesta opcional con filtros técnicos y materiales.")
+            val combination = ids.sorted()
+            if (combination !in distinct && accept(proposal)) distinct[combination] = proposal
         }
         return distinct.values.toList()
     }
 }
 data class MonarchPlan(val start: LocalDate, val accepted: Boolean, val days: List<DailyMission>)
 object MonarchChallengePlanner {
+    const val MAX_TECHNICAL = 2
+    const val MAX_ACTIVITIES = 2
+
     fun propose(start: LocalDate, accepted: Boolean, profile: TrainingProfile,
                 repository: ActivityRepositoryInterface, efforts: List<EffortObservation>,
                 preferred: List<Category> = emptyList(),
                 previousUsed: Set<String> = emptySet(),
-                dailyMission: ((LocalDate) -> DailyMission)? = null): MonarchPlan {
+                interruptions: List<SessionInterruption> = emptyList()): MonarchPlan {
         if (!accepted || profile.weekly.all { it == 5 }) return MonarchPlan(start, accepted, emptyList())
+        val used = previousUsed.toMutableSet()
+        val profileHash = ProfileSignature.of(profile)
+        val sourceHash = repository.signature()
+        val goal = PersonalGoalInterpreter.interpret(profile.customGoal).tags
         val days = (0L..4L).map { start.plusDays(it) }.map { day ->
-            val normal = dailyMission?.invoke(day)
-                ?: DailyMissionPlanner.plan(day, profile, repository, efforts)
-            if (normal.category == null || normal.ids.isEmpty()) normal else {
-                // Un jefe solo puede ordenar categorías, jamás suprimir elegibilidad.
-                // El enfoque y el historial solo modifican orden y diversidad,
-                // jamás la categoría del día, el filtro técnico ni el equipamiento.
-                val ids = normal.ids.sortedWith(compareBy<String> {
-                    if (it in previousUsed) 1 else 0
-                }.thenBy { ProfileSignature.stable(
-                    if (normal.category in preferred) "monarca-enfoque|" + start
-                    else "monarca-estable|" + start, it
-                ) })
-                normal.copy(ids = ids, explanation = normal.explanation +
-                    if (normal.category in preferred) " Categoría de enfoque Monarca." else "")
+            val category = profile.category(day)
+            if (category == null) {
+                DailyMission(day, null, profileHash, sourceHash, emptyList(), "Descanso programado.")
+            } else {
+                val adaptation = CategoryEffortPolicy.decide(efforts, start, category, interruptions)
+                val recovery = adaptation == Adaptation.RECOVER_ONE
+                val level = if (recovery) 1 else MAX_TECHNICAL
+                val count = min(profile.dailyLimit, if (recovery) 1 else MAX_ACTIVITIES)
+                val pool = repository.compatible(profile, category, level).filter {
+                    !recovery || it.intensity == Intensity.LOW
+                }
+                val priorities = pool.associate { it.id to if (it.id in used) -120 else 0 }
+                val selected = DeterministicSelection.select(pool, count,
+                    "$start|$day|monarca", goal, profile.experience, 0, priorities,
+                    baseLevel = level).map { it.id }
+                used.addAll(selected)
+                val ids = if (category in preferred) selected.sortedBy {
+                    ProfileSignature.stable("$start|encuentro", it)
+                } else selected
+                val explanation = when {
+                    ids.isEmpty() -> "Sin alternativas compatibles para Monarca."
+                    recovery -> "Monarca voluntario. Se prioriza la recuperación."
+                    category in preferred -> "Monarca voluntario. Categoría de enfoque del encuentro."
+                    else -> "Monarca voluntario. Alternativas compatibles con el calendario y el equipo."
+                }
+                DailyMission(day, category, profileHash, sourceHash, ids, explanation)
             }
         }
         return MonarchPlan(start, true, days)

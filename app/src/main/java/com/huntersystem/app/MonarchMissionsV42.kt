@@ -312,7 +312,7 @@ private fun MonarchMissionExercise(
         ) {ui.attempt{s.toggleMission(date,index)}}
         if(skipped)HText("Actividad omitida voluntariamente; no cuenta como completada.",
             size=12,color=colors.muted)
-        if(date==today()&&checked&&!skipped)MonarchVolumeEditor(ui,date,e.id)
+        if(date==today()&&!skipped)MonarchVolumeEditor(ui,date,e.id)
         if(!readOnly&&!inactive){
             HButton(if(skipped)"VOLVER A PENDIENTE" else "OMITIR ACTIVIDAD"){
                 ui.attempt{s.setMissionStatus(date,index,

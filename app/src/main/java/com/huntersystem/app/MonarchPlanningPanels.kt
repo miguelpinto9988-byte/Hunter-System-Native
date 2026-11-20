@@ -18,6 +18,7 @@ fun MonarchCategoryReview(ui: NativeUi) {
     val records = remember(revision) { progress.plannedParticipation() }
     val efforts = remember(revision) { progress.efforts() }
     val interruptions = remember(revision) { progress.interruptions() }
+    val volume = remember(revision) { progress.volume() }
     val visible = records.filter {
         !it.date.isAfter(date) && (window == 0 || !it.date.isBefore(date.minusDays((window - 1).toLong())))
     }
@@ -75,6 +76,20 @@ fun MonarchCategoryReview(ui: NativeUi) {
             }
         } else HText("Sin actividades registradas para el período seleccionado.",
             size = 13, color = LocalHunter.current.muted)
+        val volumes = volume.filter {
+            it.date <= date && (window == 0 || it.date >= date.minusDays((window - 1).toLong()))
+        }.sortedByDescending { it.date }.take(12)
+        if (volumes.isNotEmpty()) {
+            Eyebrow("VOLUMEN DECLARADO")
+            volumes.forEach { entry ->
+                val name = store.catalog.byId[entry.variantId]?.name ?: entry.variantId
+                val unit = if (entry.unit == VolumeUnit.SECONDS) "segundos" else "repeticiones"
+                val effort = entry.rpe?.let { " · esfuerzo $it/10" }.orEmpty()
+                val interruption = if (entry.interrupted) " · interrumpida" else ""
+                HText("${entry.date} · $name · ${entry.sets} × ${entry.quantityPerSet} $unit$effort$interruption",
+                    size = 12, color = LocalHunter.current.muted)
+            }
+        }
     }
 }
 
@@ -82,9 +97,9 @@ fun MonarchCategoryReview(ui: NativeUi) {
 fun MonarchFiveDayChallenge(ui: NativeUi) {
     val store = ui.store
     val revision = store.revision.intValue
-    val start = LocalDate.now().minusDays((LocalDate.now().dayOfWeek.value - 1).toLong())
-    val cycle = start.toString()
     val repository = remember(store) { MonarchProgressRepository(store) }
+    val start = remember(revision) { repository.currentMonarchStart(LocalDate.now()) }
+    val cycle = start.toString()
     val accepted = remember(revision, cycle) { repository.monarchConsented(cycle) }
     val profile = MonarchProfileAdapter.from(store)
     var preferred by remember(cycle) { mutableStateOf("none") }
@@ -96,14 +111,19 @@ fun MonarchFiveDayChallenge(ui: NativeUi) {
     HPanel(padding = 16) {
         Eyebrow("MONARCA · DESAFÍO VOLUNTARIO DE CINCO DÍAS")
         Heading("Ciclo voluntario", size = 22)
-        HText("Las preferencias del jefe nunca modifican la elegibilidad, el equipo ni la complejidad.",
+        HText("El enfoque del encuentro solo cambia el orden. Se aplican los límites de calendario, equipo y técnica.",
             size = 13, color = LocalHunter.current.muted)
+        if (canOffer) HText("Del $start al ${start.plusDays(4)}", size = 13)
         if (!accepted && canOffer) {
-            HSelect("Prioridad de categoría opcional", preferred,
+            HSelect("Enfoque opcional del encuentro", preferred,
                 listOf("none" to "Sin prioridad") +
+                    MonarchEncounter.values().map { it.name to it.label } +
                     Category.values().map { it.code to it.code.replace('_', ' ') }) {
                 preferred = it
             }
+        }
+        if (accepted) repository.monarchEncounter(cycle)?.let {
+            HText(it.label, size = 14, bold = true)
         }
         if (!accepted && !canOffer)
             HNotice("Tu calendario contiene únicamente descanso o falta configurar el perfil.")
@@ -112,7 +132,8 @@ fun MonarchFiveDayChallenge(ui: NativeUi) {
             enabled = accepted || canOffer) {
             ui.attempt {
                 repository.setMonarchConsent(cycle, !accepted,
-                    CategoryMapper.normalize(preferred))
+                    CategoryMapper.normalize(preferred),
+                    MonarchEncounter.values().firstOrNull { it.name == preferred })
             }
         }
         if (accepted) {
@@ -127,6 +148,7 @@ fun MonarchFiveDayChallenge(ui: NativeUi) {
                         HText("Sin actividades asignadas.", size = 12,
                             color = LocalHunter.current.muted)
                     }
+                    HText(day.explanation, size = 12, color = LocalHunter.current.muted)
                     day.ids.forEach { id ->
                         val finished = day.date.toString() + "|" + id in done
                         HText((store.catalog.byId[id]?.name ?: id) +
@@ -160,11 +182,12 @@ private fun MonarchVolumeEntry(
         "reps" -> VolumeUnit.REPETITIONS
         else -> return
     }
-    val metadata = remember(ui.store, id) { MonarchActivitySource(ui.store).byId(id) }
+    val metadata = remember(ui.store, id) { ui.store.planner.planningSource(ui.store.adjusted()).byId(id) }
         ?: return
     if (metadata.technicalLevel !in 1..3 || metadata.category != category) return
     var sets by remember(day, id) { mutableStateOf("") }
     var amount by remember(day, id) { mutableStateOf("") }
+    var effort by remember(day, id) { mutableStateOf("") }
     val saved = progress.volume().firstOrNull {
         it.date == day && it.variantId == id
     }
@@ -176,17 +199,16 @@ private fun MonarchVolumeEntry(
         HInput(sets, { sets = it }, "Series realizadas", Modifier.weight(1f), number = true)
         HInput(amount, { amount = it }, "Cantidad por serie", Modifier.weight(1f), number = true)
     }
+    HInput(effort, { effort = it }, "Esfuerzo de esta actividad (opcional, 1–10)", Modifier.fillMaxWidth(), number = true)
     HButton("REGISTRAR CANTIDAD REAL", Modifier.fillMaxWidth()) {
         ui.attempt {
             val numberSets = sets.toIntOrNull() ?: error("Indica las series reales")
             val perSet = amount.toIntOrNull() ?: error("Indica una cantidad real")
             require(numberSets in 1..30 && perSet in 1..3600) { "Cantidad fuera de rango" }
             val p = MonarchProfileAdapter.from(ui.store) ?: error("Perfil no disponible")
-            val block = progress.blocks()[id] ?: VolumeResetPolicy.block(
-                category, id, p.experience, p.experienceStart)
-            val dayRpe = progress.efforts().firstOrNull {
-                it.date == day && it.category == category
-            }?.rpe
+            val block = progress.currentVolumeBlock(metadata, p)
+            val dayRpe = effort.toIntOrNull()
+            require(effort.isBlank() || (dayRpe ?: 0) in 1..10) { "Indica un esfuerzo entre 1 y 10" }
             progress.recordVolume(VolumeObservation(
                 "asterion|" + day + "|" + id,
                 day, category, id, metadata.typeId, metadata.technicalLevel,
@@ -211,32 +233,59 @@ fun MonarchVolumeEditor(ui: NativeUi, date: String, variantId: String) {
     val day = LocalDate.parse(date)
     val repository = remember(store) { MonarchProgressRepository(store) }
     val metadata = remember(store, revision, variantId) {
-        MonarchActivitySource(store).byId(variantId)
+        store.planner.planningSource(store.adjusted()).byId(variantId)
     } ?: return
     val status = remember(revision, date, variantId) {
         repository.participation().firstOrNull {
             it.date == day && it.variantId == variantId
         }
     }
-    if (status?.status != ParticipationStatus.COMPLETED) return
-    MonarchVolumeEntry(ui, repository, day, variantId, metadata.category)
-    val profile = MonarchProfileAdapter.from(store) ?: return
-    val block = repository.blocks()[variantId]
-        ?: VolumeResetPolicy.block(metadata.category, variantId,
-            profile.experience, profile.experienceStart)
+    if (status?.status == ParticipationStatus.COMPLETED)
+        MonarchVolumeEntry(ui, repository, day, variantId, metadata.category)
     val recommendation = remember(revision, date, variantId) {
-        VolumeProgressionEngine.review(day, metadata, repository.find(variantId),
-            repository.volume(), block, repository.efforts())
-    }
+        runCatching { repository.volumeRecommendation(day, variantId) }.getOrNull()
+    } ?: return
+    val bounds = remember(revision, variantId) { repository.find(variantId) }
+    if (bounds == null && status?.status != ParticipationStatus.COMPLETED) return
     HText(recommendation.explanation, size = 12, color = LocalHunter.current.muted)
-    if (recommendation.optional && recommendation.reference != null &&
-        recommendation.decision in setOf(VolumeDecision.OPTIONAL_INCREASE,
-            VolumeDecision.REVIEW_EXTRA_SET, VolumeDecision.OPTIONAL_MINIMUM_ADJUSTMENT)) {
-        HButton("ACEPTAR REFERENCIA ORIENTATIVA (SIN APLICARLA)",
-            Modifier.fillMaxWidth()) {
+    val accepted = remember(revision, variantId) { repository.acceptedReference(variantId) }
+    val unit = bounds?.unit ?: return
+    val label = if (unit == VolumeUnit.SECONDS) "segundos" else "repeticiones"
+    if (recommendation.reference != null && recommendation.sets != null)
+        HText("Referencia orientativa · ${recommendation.sets} series de ${recommendation.reference} $label", size = 12)
+    if (accepted != null)
+        HText("Referencia guardada · ${accepted.sets} series de ${accepted.value} $label", size = 12)
+    if (recommendation.optional && recommendation.reference != null && recommendation.sets != null) {
+        HButton("ACEPTAR REFERENCIA OPCIONAL", Modifier.fillMaxWidth()) {
             ui.attempt { repository.acceptVolumeReference(day, variantId) }
         }
     }
+    if (accepted != null || recommendation.reference != null) {
+        var editing by remember(day, variantId) { mutableStateOf(false) }
+        HButton(if (editing) "CERRAR EDICIÓN" else "EDITAR REFERENCIA", Modifier.fillMaxWidth()) {
+            editing = !editing
+        }
+        if (editing) {
+            var sets by remember(accepted) { mutableStateOf((accepted?.sets ?: recommendation.sets)?.toString().orEmpty()) }
+            var amount by remember(accepted) { mutableStateOf((accepted?.value ?: recommendation.reference)?.toString().orEmpty()) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                HInput(sets, { sets = it }, "Series (1–3)", Modifier.weight(1f), number = true)
+                HInput(amount, { amount = it }, label, Modifier.weight(1f), number = true)
+            }
+            HButton("GUARDAR MI REFERENCIA", Modifier.fillMaxWidth()) {
+                ui.attempt {
+                    val value = amount.toIntOrNull() ?: error("Indica una cantidad")
+                    val setCount = sets.toIntOrNull() ?: error("Indica la cantidad de series")
+                    require(value in bounds.minimum..bounds.maximum && setCount in 1..3) {
+                        "Usa ${bounds.minimum}–${bounds.maximum} $label y 1–3 series"
+                    }
+                    repository.saveVolumeReference(day, variantId, VolumeReference(value, setCount, unit))
+                    editing = false
+                }
+            }
+        }
+    }
+
 }
 
 @Composable
@@ -270,21 +319,21 @@ fun MonarchTechnicalSection(ui: NativeUi, date: String) {
     }
 }
 
-/** No hay segundo generador. Solo acredita una rutina histórica ya terminada. */
+/** Reconoce la participación declarada en una rutina. */
 @Composable
 fun MonarchRoutineParticipation(ui: NativeUi) {
     val s = ui.store
     val revision = s.revision.intValue
     val repo = remember(s) { MonarchProgressRepository(s) }
-    val day = s.day(today())
-    val log = s.logs.optJSONObject(today())
     val points = remember(revision) { repo.routinePoints() }
     HPanel(padding = 14) {
         Eyebrow("PARTICIPACIÓN DE RUTINAS")
         HText("Puntos registrados: " + points +
             " · máximo 10 por fecha tras completar una rutina.", size = 13)
+        val dates = remember(revision) { repo.routineDates() }
+        if (dates.isNotEmpty()) HText("Fechas recientes · " + dates.take(5).joinToString(), size = 12)
         HButton("REGISTRAR RUTINA TERMINADA", Modifier.fillMaxWidth(),
-            enabled = day.has("routineId") && log?.b("complete") == true) {
+            enabled = repo.canDeclareRoutine(LocalDate.now())) {
             ui.attempt {
                 val added = repo.awardRoutine(LocalDate.now(), true)
                 ui.message(if (added > 0) "Participación registrada."

@@ -141,15 +141,25 @@ import kotlin.math.*
  HButton("Confirmar serie realizada",Modifier.fillMaxWidth(),primary=true){ui.attempt{s.confirmSet(date,itemIndex,setIndex,amount.replace(',','.').toDouble(),load.replace(',','.').toDouble());ui.back()}}
  if(a.b("done"))HButton("Desmarcar esta serie",Modifier.fillMaxWidth()){ui.attempt{s.confirmSet(date,itemIndex,setIndex,amount.replace(',','.').toDouble(),load.replace(',','.').toDouble(),false);ui.back()}}
 }
-@Composable fun RoutineDetail(ui:NativeUi,id:String){val s=ui.store;val r=ui.routine(id)?:return;Eyebrow(r.s("category"));Heading(r.s("name"),size=35);HText(r.s("description"),size=17,color=LocalHunter.current.muted);HText("≈ ${s.planner.minutes(r,s.adjusted())} min · ${r.a("items").length()} ejercicios",size=16);val phase=s.planner.phase(r.a("items").objects(),s.adjusted());if(phase!=null)HPanel(onClick={ui.open("exercise",obj("id" to phase.id))},padding=15){HText("Calentamiento progresivo · ${phase.name}",bold=true);HText("${s.planner.phaseSeconds(s.adjusted())} s",size=15)}
+@Composable fun RoutineDetail(ui:NativeUi,id:String){val s=ui.store;val r=ui.routine(id)?:return;Eyebrow(r.s("category"));Heading(r.s("name"),size=35);HText(r.s("description"),size=17,color=LocalHunter.current.muted);HText("≈ ${s.planner.minutes(r,s.adjusted())} min · ${r.a("items").length()} ejercicios",size=16);val phase=if(r.b("unifiedPlanning")) null else s.planner.phase(r.a("items").objects(),s.adjusted());if(phase!=null)HPanel(onClick={ui.open("exercise",obj("id" to phase.id))},padding=15){HText("Calentamiento progresivo · ${phase.name}",bold=true);HText("${s.planner.phaseSeconds(s.adjusted())} s",size=15)}
  for(x in r.a("items").objects()){val e=s.catalog.byId[x.s("id")]?:continue;HPanel(onClick={ui.open("exercise",obj("id" to e.id))},padding=16){Heading(e.name,size=26);HText("${x.i("sets")} × ${x.i("target")} ${if(e.unit=="sec")"segundos" else "repeticiones"}${if(e.sides)" por lado" else ""} · ${x.i("rest",s.planner.rest(s.adjusted()))} s descanso  ↗",size=16,color=LocalHunter.current.muted)}}
  if(phase!=null)HNotice("Cierre suave · ${phase.name} · ${s.planner.phaseSeconds(s.adjusted())} s")
  val reasons=r.a("items").objects().flatMap{x->s.catalog.byId[x.s("id")]?.let{s.rules.reasons(it,s.adjusted())}?:listOf("Ejercicio desconocido")}.distinct();if(reasons.isNotEmpty())HNotice("Revisa compatibilidad y equipo en Perfil:\n"+reasons.joinToString("\n"){"· $it"})
- HButton("Ver sesión paso a paso",Modifier.fillMaxWidth()){ui.open("session",obj("routineId" to id))};HButton("Usar esta rutina",Modifier.fillMaxWidth(),primary=true,enabled=reasons.isEmpty()){ui.open("assign",obj("id" to id))}
+ HButton("Ver sesión paso a paso",Modifier.fillMaxWidth()){ui.open("session",obj("routineId" to id))}
+ if(!id.startsWith("monarca-routine-"))HButton("Usar esta rutina",Modifier.fillMaxWidth(),primary=true,enabled=reasons.isEmpty()){ui.open("assign",obj("id" to id))}
 }
 @Composable fun AssignRoutine(ui:NativeUi,id:String){val r=ui.routine(id)?:return;var date by remember{mutableStateOf(today())};Heading("Usar esta rutina",size=35);HText(r.s("name"),bold=true);HText("Los ejercicios y cantidades mostrados se copiarán a la fecha elegida.",size=17,color=LocalHunter.current.muted);HSelect("Fecha",date,(0L..20L).map{val d=plus(today(),it);d to "$d${if(it==0L)" · Hoy" else ""}"}){date=it};for(x in r.a("items").objects())HText("${ui.store.catalog.byId[x.s("id")]?.name} · ${x.i("sets")} × ${x.i("target")}",size=16);HButton("Confirmar asignación",Modifier.fillMaxWidth(),primary=true){ui.attempt{ui.store.assign(r,date);ui.stack.clear();ui.go("plan");ui.message("Rutina asignada a $date")}}}
 @Composable fun SessionPlayer(ui:NativeUi,data:JSONObject){val s=ui.store;val date=data.s("date",today());val preview=data.has("routineId");val day=if(preview)ui.routine(data.s("routineId"))?:return else s.day(date);val p=s.adjusted();val reasons=day.a("items").objects().flatMap{item->s.catalog.byId[item.s("id")]?.let{s.rules.missionReasons(it,p,item)}?:listOf("Ejercicio desconocido")};if(reasons.isNotEmpty()){Heading("Revisa tu perfil");HNotice(reasons.distinct().joinToString("\n"));return};val steps=remember(day.toString(),p.toString()){s.planner.steps(day,p)};if(steps.isEmpty()){Heading("No hay ejercicios para esta sesión");return};val signature=hash(arr(steps).toString()).toString(16);val saved=if(preview)JSONObject() else s.state.o("guidedSessions").o(date).takeIf{it.s("nativeSignature")==signature}?:JSONObject();var index by remember(signature){mutableIntStateOf(saved.i("index").coerceIn(0,steps.size))};var remaining by remember(signature){mutableIntStateOf(saved.i("remaining",steps.getOrNull(index)?.i("seconds")?:0).coerceAtLeast(0))};var running by remember{mutableStateOf(false)};var pending by remember(index){mutableStateOf(false)};var mirror by remember{mutableStateOf(false)};var restartDemo by remember(index){mutableIntStateOf(0)};val scope=rememberCoroutineScope();val latestIndex by rememberUpdatedState(index);val latestRemaining by rememberUpdatedState(remaining)
  fun persist(){if(!preview){val all=s.state.o("guidedSessions");all.put(date,obj("nativeSignature" to signature,"index" to latestIndex,"remaining" to latestRemaining,"mode22" to p.s("blockMode22","exercise")));s.state.put("guidedSessions",all);s.save()}}
+ if(preview && day.s("id").startsWith("monarca-routine-")){
+     val repository=remember(s){MonarchProgressRepository(s)}
+     val revision=s.revision.intValue
+     val localDate=java.time.LocalDate.now()
+     if(!remember(revision,localDate,day){repository.canRunOptionalRoutine(localDate,day)}){
+         HNotice("La guía requiere una fecha de actividad y un perfil compatible.")
+         return
+     }
+ }
  val lifecycle=LocalLifecycleOwner.current.lifecycle;DisposableEffect(lifecycle,signature){val observer=LifecycleEventObserver{_,event->if(event==Lifecycle.Event.ON_STOP){running=false;persist()}};lifecycle.addObserver(observer);onDispose{lifecycle.removeObserver(observer);persist()}}
  LaunchedEffect(running,index){while(running&&remaining>0){delay(1000);remaining--;if(remaining==0){running=false;TimerSound.play(s.context)}}}
 
@@ -160,6 +170,19 @@ import kotlin.math.*
          DialogueMoment.COMPLETED,group=GroupEvolution.sessionGroup(day,s.profile,s.catalog)?:"")),
          size=15,color=LocalHunter.current.muted)
      HNotice("El registro se completa únicamente con las series o misiones que confirmes.")
+     if (preview && day.s("id").startsWith("monarca-routine-")) {
+         val repository = remember(s) { MonarchProgressRepository(s) }
+         val localDay = java.time.LocalDate.now()
+         if (repository.canRunOptionalRoutine(localDay, day)) {
+             HButton("DECLARAR RUTINA COMPLETADA", Modifier.fillMaxWidth(), primary = true) {
+                 ui.attempt {
+                     val points = repository.declareOptionalRoutine(localDay, day, true)
+                     ui.message(if (points > 0) "Participación registrada · +10 puntos" else
+                         "La participación de hoy ya está registrada.")
+                 }
+             }
+         } else HNotice("La rutina queda disponible para consulta. Revisa el calendario y la compatibilidad del perfil.")
+     }
      if(!preview&&date==today())HButton("Revisar y completar sesión",
          Modifier.fillMaxWidth(),primary=true){ui.open("record",obj("date" to date))}
      return

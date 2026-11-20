@@ -72,22 +72,68 @@ class MonarchSinglePlannerIntegrationTest {
         })
     }
 
-    @Test fun fiveDayChallengeCannotInventDifferentNativeActivities() {
+    @Test fun fiveDayChallengeKeepsDailyMissionsAndEnforcesSeparateLimits() {
         val store=store()
         val monday=LocalDate.now().minusDays((LocalDate.now().dayOfWeek.value-1).toLong())
         val repository=MonarchProgressRepository(store)
-        repository.setMonarchConsent(monday.toString(),true,Category.UPPER)
+        val native = (0L..4L).associate { offset ->
+            val date = monday.plusDays(offset)
+            date to store.day(date.toString()).a("items").objects().map { it.s("id") }
+        }
+        repository.setMonarchConsent(monday.toString(),true,Category.UPPER,MonarchEncounter.FORTALEZA)
         val plan=repository.monarchPlan(monday)
         assertTrue(plan.accepted)
+        assertEquals(MonarchEncounter.FORTALEZA, repository.monarchEncounter(monday.toString()))
         assertTrue(plan.days.any { it.ids.isNotEmpty() })
-        for(day in plan.days){
-            val nativeIds=store.day(day.date.toString()).a("items")
-                .objects().map { it.s("id") }.toSet()
-            assertEquals("Mismo plan "+day.date, nativeIds,day.ids.toSet())
+        val source = MonarchActivitySource(store)
+        val profile = MonarchProfileAdapter.from(store)!!
+        for (day in plan.days) {
+            assertEquals(native.getValue(day.date), store.day(day.date.toString()).a("items")
+                .objects().map { it.s("id") })
+            assertEquals(profile.category(day.date), day.category)
+            assertTrue(day.ids.size <= MonarchChallengePlanner.MAX_ACTIVITIES)
+            if (day.category == null) assertTrue(day.ids.isEmpty())
+            assertTrue(day.ids.all { id ->
+                source.byId(id)?.let { it.category == day.category &&
+                    EligibilityPolicy.compatible(it, profile, MonarchChallengePlanner.MAX_TECHNICAL)
+                } == true
+            })
         }
         val reloaded=MonarchProgressRepository(NativeStore(context)).monarchPlan(monday)
         assertEquals(plan.days.map { it.ids },reloaded.days.map { it.ids })
     }
+    @Test fun exactRoutineWindowsUseReproducibleDistinctProposalsWithoutChangingMissions() {
+        val store = store()
+        val before = store.day(today()).toString()
+        val day = LocalDate.parse(today())
+        val p = store.adjusted()
+        val proposals = listOf(10 to 3, 15 to 3, 20 to 4, 30 to 5, 45 to 6, 60 to 6)
+            .flatMap { (minutes, steps) ->
+                fun generate() = store.planner.generateRoutineOptions("offline", "upper", 2,
+                    minutes, "synthetic-test-request", p, store.logs, day)
+                val offers = generate()
+                assertEquals(offers.map { it.toString() }, generate().map { it.toString() })
+                assertTrue(offers.size <= 6)
+                val sets = offers.map { it.a("items").objects().map { row -> row.s("id") }.toSet() }
+                assertEquals(sets.size, sets.distinct().size)
+                assertTrue(offers.all {
+                    it.i("availableMinutes") == minutes && it.i("minutes") in 1..minutes &&
+                        it.a("items").length() in 1..steps
+                })
+                offers
+            }
+        assertTrue(proposals.isNotEmpty())
+        val repository = MonarchProgressRepository(store)
+        val chosen = proposals.first()
+        assertTrue(repository.canRunOptionalRoutine(day, chosen))
+        assertEquals(0, repository.declareOptionalRoutine(day, chosen, false))
+        assertEquals(10, repository.declareOptionalRoutine(day, chosen, true))
+        assertEquals(0, repository.declareOptionalRoutine(day, chosen, true))
+        assertEquals(before, store.day(today()).toString())
+        assertFalse(store.logs.has(today()))
+
+    }
+
     @Test fun explicitlySavedEffortUsesTodayCategoryNotAnotherDay() {
         val store=store()
         val day=store.day(today())

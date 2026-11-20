@@ -5,6 +5,12 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.time.LocalDate
 
+enum class MonarchEncounter(val label: String, val priorities: List<Category>) {
+    GUARDIA("Guardia del Umbral", listOf(Category.CARDIO, Category.MOBILITY)),
+    FORTALEZA("Asalto a la Fortaleza", listOf(Category.UPPER, Category.LOWER)),
+    TRONO("Juicio del Trono Monarca", listOf(Category.CENTRAL, Category.UPPER))
+}
+
 /** Puente de solo lectura al catálogo ACTUAL: no incorpora fichas ni inventarios nuevos. */
 class MonarchActivitySource(
     private val catalog: Catalog, private val rules: Rules, private val adjusted: JSONObject
@@ -159,13 +165,23 @@ object MonarchProfileAdapter {
  * Los datos nuevos se guardan en monarcaPlanningV2 dentro del AtomicFile. Los
  * datos previos de asterionV1 se leen como respaldo, sin perder el historial.
  */
-class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileInterface {
+class MonarchProgressRepository(
+    private val store: NativeStore,
+    private val activityLookup: ((String) -> ActivityMetadata?)? = null
+) : VolumeProfileInterface {
+    private fun activitySource() = store.planner.planningSource(store.adjusted())
+    private fun activity(id: String): ActivityMetadata? =
+        if (activityLookup != null) activityLookup.invoke(id) else activitySource().byId(id)
+
+    fun history() = TrainingHistory(efforts(), participation(), interruptions(), phases())
+
     /** Solo lee referencias ya validadas y entregadas por una integración externa. */
     override fun find(variantId: String): VolumeProfile? {
-        val exercise = store.catalog.byId[variantId] ?: return null
+        val workUnit = activity(variantId)?.workUnit ?: return null
+        val exercise = store.catalog.byId[variantId]
         // Fuente primaria: metadatos de la misma variante en el catálogo externo.
         // Fuente importada: exige identidad y revisión del proveedor verificables.
-        val catalogProfile = exercise.raw.optJSONObject("volumeProfile")
+        val catalogProfile = exercise?.raw?.optJSONObject("volumeProfile")
         val record = if (catalogProfile?.b("validated") == true) catalogProfile
             else root().o("validatedVolumeProfiles").optJSONObject(variantId) ?: return null
         return runCatching {
@@ -176,8 +192,7 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
             require(record.has("minimum") && record.has("maximum") &&
                 record.has("permittedIncrement"))
             val unit = VolumeUnit.valueOf(record.s("unit"))
-            require(unit == (if (exercise.unit == "sec") VolumeUnit.SECONDS
-                             else VolumeUnit.REPETITIONS))
+            require(unit == workUnit)
             VolumeProfile(variantId, unit,
                 record.i("initialSets").takeIf { record.has("initialSets") },
                 record.i("initialValue").takeIf { record.has("initialValue") },
@@ -321,6 +336,9 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
         entries.put(category.code, obj("phase" to checkpoint.phase.phase,
             "lastChange" to (checkpoint.phase.lastChange?.toString() ?: "")))
         r.put("phases", entries)
+        val accepted = r.o("acceptedTechnicalChanges")
+        accepted.put(category.code, today.toString())
+        r.put("acceptedTechnicalChanges", accepted)
         write(r)
         store.refreshWeek()
     }
@@ -333,6 +351,9 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
         phases.put(category.code, obj("phase" to current.phase - 1,
             "lastChange" to LocalDate.now().toString()))
         r.put("phases", phases)
+        val accepted = r.o("acceptedTechnicalChanges")
+        accepted.remove(category.code)
+        r.put("acceptedTechnicalChanges", accepted)
         write(r)
         store.refreshWeek()
         return true
@@ -347,59 +368,136 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
                 row.b("interrupted"), row.s("blockId"))
         }.getOrNull()
     }
-    fun recordVolume(observation: VolumeObservation) {
+    fun recordVolume(observation: VolumeObservation) = synchronized(store) {
         require(!observation.date.isAfter(LocalDate.now()))
         require(observation.completed) { "Volumen reservado a actividad completada explícitamente" }
-        require(participation().any {
-            it.date == observation.date && it.variantId == observation.variantId &&
-                it.category == observation.category &&
-                it.status == ParticipationStatus.COMPLETED && !it.interrupted
-        }) { "La actividad debe estar confirmada antes de registrar volumen" }
-        store.catalog.byId[observation.variantId]?.let { actual ->
-            require((if (actual.unit == "sec") VolumeUnit.SECONDS else VolumeUnit.REPETITIONS)
-                == observation.unit) { "Unidad no coincidente con el catálogo" }
+        val metadata = activity(observation.variantId) ?: error("Variante de volumen desconocida")
+        require(metadata.category == observation.category && metadata.typeId == observation.typeId &&
+            metadata.technicalLevel == observation.technicalLevel && metadata.workUnit == observation.unit) {
+            "Los metadatos del registro no coinciden con la variante"
         }
+        val declared = participation().firstOrNull {
+            it.date == observation.date && it.variantId == observation.variantId &&
+                it.category == observation.category && it.status == ParticipationStatus.COMPLETED
+        } ?: error("La actividad debe estar confirmada antes de registrar volumen")
+        val profile = MonarchProfileAdapter.from(store)
+        val expectedBlock = profile?.let { currentVolumeBlock(metadata, it) } ?: blocks()[metadata.id]
+        require(expectedBlock == observation.blockId) { "La referencia pertenece a otro bloque" }
+        val actual = observation.copy(interrupted = declared.interrupted || observation.interrupted)
         val r = root()
-        val all = volume().filterNot { it.id == observation.id } + observation
-        r.put("volume", arr(all.map {
+        val rows = r.a("volume").objects().filterNot {
+            it.s("id") == actual.id || (it.s("date") == actual.date.toString() &&
+                it.s("variantId") == actual.variantId && it.s("blockId") == actual.blockId &&
+                it.s("unit") == actual.unit.name)
+        }
+        val record = actual.let {
             obj("id" to it.id, "date" to it.date.toString(),
                 "category" to it.category.code, "variantId" to it.variantId,
                 "typeId" to it.typeId, "technicalLevel" to it.technicalLevel,
                 "unit" to it.unit.name, "sets" to it.sets, "quantity" to it.quantityPerSet,
                 "rpe" to it.rpe, "completed" to it.completed, "interrupted" to it.interrupted,
                 "blockId" to it.blockId)
-        }))
+        }
+        r.put("volume", arr(rows + record))
         write(r)
     }
     /**
      * Guarda únicamente consentimiento de una referencia futura. No modifica
      * misiones, series realizadas, pesos ni el plan del día.
      */
+    fun currentVolumeBlock(activity: ActivityMetadata, profile: TrainingProfile): String =
+        blocks()[activity.id] ?: VolumeResetPolicy.block(activity.category, activity.id,
+            profile.experience, profile.experienceStart)
+
+    fun volumeRecommendation(day: LocalDate, variantId: String): VolumeRecommendation {
+        val profile = MonarchProfileAdapter.from(store) ?: error("Perfil no configurado")
+        val metadata = activity(variantId) ?: error("Variante desconocida")
+        return TrainingSessionCoordinator.reviewVolume(day, metadata, this, volume(),
+            currentVolumeBlock(metadata, profile), history())
+    }
+
+    fun acceptedReference(variantId: String): VolumeReference? {
+        val profile = MonarchProfileAdapter.from(store) ?: return null
+        val activity = activity(variantId) ?: return null
+        val bounds = find(variantId) ?: return null
+        val block = currentVolumeBlock(activity, profile)
+        val row = root().o("acceptedVolumeReferences").optJSONObject("$variantId|$block") ?: return null
+        return runCatching {
+            val unit = VolumeUnit.valueOf(row.s("unit"))
+            require(unit == bounds.unit && row.i("value") in bounds.minimum..bounds.maximum)
+            VolumeReference(row.i("value"), row.i("sets"), unit)
+        }.getOrNull()
+    }
+
     fun acceptVolumeReference(day: LocalDate, variantId: String): Boolean {
         require(day == LocalDate.now()) { "La referencia solo puede aceptarse hoy" }
-        val profile = MonarchProfileAdapter.from(store) ?: error("Perfil no configurado")
-        val activity = MonarchActivitySource(store).byId(variantId)
-            ?: error("Variante desconocida")
-        val block = blocks()[variantId] ?: VolumeResetPolicy.block(
-            activity.category, variantId, profile.experience, profile.experienceStart)
-        val suggestion = VolumeProgressionEngine.review(
-            day, activity, find(variantId), volume(), block, efforts())
+        val suggestion = volumeRecommendation(day, variantId)
         require(suggestion.optional && suggestion.reference != null && suggestion.sets != null &&
-            suggestion.decision in setOf(VolumeDecision.OPTIONAL_INCREASE,
-                VolumeDecision.REVIEW_EXTRA_SET, VolumeDecision.OPTIONAL_MINIMUM_ADJUSTMENT)) {
-            "No existe un aumento opcional verificable para aceptar"
-        }
-        val key = variantId + "|" + block
+            suggestion.unit != null) { "No existe un ajuste opcional verificable para aceptar" }
+        return saveVolumeReference(day, variantId,
+            VolumeReference(suggestion.reference, suggestion.sets, suggestion.unit))
+    }
+
+    fun saveVolumeReference(day: LocalDate, variantId: String, reference: VolumeReference): Boolean {
+        require(day == LocalDate.now()) { "La referencia solo puede editarse hoy" }
+        val profile = MonarchProfileAdapter.from(store) ?: error("Perfil no configurado")
+        val metadata = activity(variantId) ?: error("Variante desconocida")
+        val bounds = find(variantId) ?: error("Sin referencia validada")
+        require(reference.unit == bounds.unit && reference.value in bounds.minimum..bounds.maximum)
+        val block = currentVolumeBlock(metadata, profile)
+        val key = "$variantId|$block"
         val r = root()
         val accepted = r.o("acceptedVolumeReferences")
         val next = obj("variantId" to variantId, "blockId" to block,
-            "unit" to suggestion.unit!!.name, "value" to suggestion.reference,
-            "sets" to suggestion.sets, "acceptedOn" to day.toString())
+            "unit" to reference.unit.name, "value" to reference.value,
+            "sets" to reference.sets, "acceptedOn" to day.toString())
         if (accepted.optJSONObject(key)?.toString() == next.toString()) return false
         accepted.put(key, next)
         r.put("acceptedVolumeReferences", accepted)
         write(r)
         return true
+    }
+
+    /** Only the actual current day can close a milestone and open independent blocks. */
+    fun syncVolumeBlocks(day: LocalDate, planned: JSONObject) {
+        if (day != LocalDate.now()) return
+        val profile = MonarchProfileAdapter.from(store) ?: return
+        val category = profile.category(day) ?: return
+        if (!planned.b("unifiedPlanning") || planned.s("progressCategory") != category.code ||
+            planned.b("customized")) return
+        val r = root()
+        val phase = phases()[category] ?: TechnicalPhase()
+        val window = TechnicalCheckpointPolicy.review(profile, category, day, efforts(),
+            phase, interruptions())
+        val acceptedDay = date(r.o("acceptedTechnicalChanges").s(category.code))
+            ?.takeIf { !it.isBefore(profile.experienceStart) && it.isBefore(day) && !it.isBefore(day.minusDays(7)) }
+        // A phase acceptance can affect the next scheduled session while today's pinned
+        // mission stays unchanged. A ceiling review can only reset an actual equivalent rotation.
+        val milestone = acceptedDay ?: profile.experienceStart.plusDays((window.day / 7 * 7).toLong()).takeIf {
+            window.decision == TechnicalDecision.ROTATE_EQUIVALENT &&
+                planned.o("progressEquivalentFrom").length() > 0
+        } ?: return
+        val previous = store.allDays().asSequence().filter {
+            it.s("date") < day.toString() && it.s("progressCategory") == category.code
+        }.maxByOrNull { it.s("date") } ?: return
+        val previousIds = previous.a("items").objects().map { it.s("id") }.toSet()
+        val currentIds = planned.a("items").objects().map { it.s("id") }.toSet()
+        if (previousIds.isEmpty() || currentIds.isEmpty()) return
+        val marker = category.code + "|" + profile.experienceStart + "|" + milestone
+        val handled = r.o("volumeMilestones")
+        if (handled.b(marker)) return
+        val added = VolumeResetPolicy.changedVariants(previousIds, currentIds)
+        val reset = if (acceptedDay != null) added else
+            added.filter { planned.o("progressEquivalentFrom").has(it) }
+        if (reset.isEmpty()) return
+        val blocks = r.o("blocks")
+        for (id in reset) {
+            blocks.put(id, VolumeResetPolicy.block(category, id, profile.experience, day))
+        }
+        handled.put(marker, true)
+        r.put("blocks", blocks)
+        r.put("volumeMilestones", handled)
+        store.state.put("monarcaPlanningV2", r)
     }
     fun blocks(): Map<String, String> = root().o("blocks").entries().mapNotNull {
         (id, value) -> (value as? String)?.let { id to it }
@@ -412,20 +510,67 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
         r.put("blocks", blocks)
         write(r) // historial de bloques anteriores intacto
     }
+    fun canDeclareRoutine(day: LocalDate): Boolean {
+        val date = day.toString()
+        val log = store.logs.optJSONObject(date) ?: return false
+        return store.day(date).s("routineId").isNotBlank() && log.b("complete") &&
+            log.a("items").objects().any { !it.b("archived") && MonarchLegacyHistory.completed(it) }
+    }
+
     fun awardRoutine(day: LocalDate, explicitCompletion: Boolean): Int {
+        if (!explicitCompletion || !canDeclareRoutine(day)) return 0
+        return saveRoutineParticipation(day, store.day(day.toString()).s("routineId"))
+    }
+
+    fun canRunOptionalRoutine(day: LocalDate, routine: JSONObject): Boolean {
+        if (day != LocalDate.now() || !routine.s("id").startsWith("monarca-routine-")) return false
+        val profile = MonarchProfileAdapter.from(store) ?: return false
+        if (profile.category(day) == null) return false
+        val category = CategoryMapper.normalize(routine.s("focus3845")) ?: return false
+        val adaptation = CategoryEffortPolicy.decide(efforts(), day, category, interruptions())
+        val selectedLevel = RoutineLevel.values().getOrNull(routine.i("level", -1)) ?: return false
+        val limit = minOf(selectedLevel.maxTechnical,
+            if (profile.experience == Experience.BEGINNER) 2 else 3,
+            if (adaptation == Adaptation.RECOVER_ONE) 1 else if (adaptation == Adaptation.REDUCE_TWO) 2 else 3)
+        val items = routine.a("items").objects()
+        val adjusted = store.adjusted()
+        if (!store.rules.gate(adjusted).ok || items.isEmpty()) return false
+        if (adaptation == Adaptation.RECOVER_ONE && items.size > 1 ||
+            adaptation == Adaptation.REDUCE_TWO && items.size > 2) return false
+        return items.all { item ->
+            val id = item.s("id")
+            val metadata = activity(id)
+            val exercise = store.catalog.byId[id]
+            metadata != null && exercise != null && metadata.category == category &&
+                EligibilityPolicy.compatible(metadata, profile, limit) &&
+                (adaptation != Adaptation.RECOVER_ONE || metadata.intensity == Intensity.LOW) &&
+                store.rules.compatibleWithMission(exercise, adjusted, item)
+        }
+    }
+
+    fun declareOptionalRoutine(day: LocalDate, routine: JSONObject, explicitlyCompleted: Boolean): Int {
+        if (!explicitlyCompleted) return 0
+        require(canRunOptionalRoutine(day, routine)) { "La rutina ya no es compatible o la fecha es de descanso" }
+        return saveRoutineParticipation(day, routine.s("id"))
+    }
+
+    private fun saveRoutineParticipation(day: LocalDate, routineId: String): Int = synchronized(store) {
         require(!day.isAfter(LocalDate.now()))
         val r = root()
         val existing = r.a("routineDays").strings().mapNotNull(::date).toSet()
-        val (days, points) = RoutineParticipation.award(existing, day, explicitCompletion)
+        val (days, points) = RoutineParticipation.award(existing, day, true)
         if (points > 0) {
             r.put("routineDays", arr(days.map { it.toString() }.sorted()))
+            r.put("routineCompletions", r.o("routineCompletions").put(day.toString(), routineId))
             write(r)
         }
-        return points
+        points
     }
-    fun routinePoints(): Int = root().a("routineDays").length() * 10
+    fun routineDates(): List<LocalDate> =
+        root().a("routineDays").strings().mapNotNull(::date).distinct().sortedDescending()
+    fun routinePoints(): Int = routineDates().size * 10
     fun setMonarchConsent(cycleId: String, accepted: Boolean,
-                          preferred: Category? = null) {
+                          preferred: Category? = null, encounter: MonarchEncounter? = null) {
         // Los identificadores históricos de ciclos permanecen legibles;
         // solo una fecha ISO puede generar un nuevo desafío de cinco días.
         val start = runCatching { LocalDate.parse(cycleId) }.getOrNull()
@@ -438,22 +583,9 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
                     (raw as? org.json.JSONArray)?.objects()?.flatMap { it.a("ids").strings() }
                         ?: emptyList()
                 }.toSet()
-            // El desafío copia la misión real que ya existe en el calendario.
-            // No vuelve a seleccionar una lista paralela de ejercicios.
             val offer = MonarchChallengePlanner.propose(start, true, profile, source,
-                efforts(), preferred?.let { listOf(it) } ?: emptyList(), previousIds,
-                dailyMission = { day ->
-                    val native = store.day(day.toString())
-                    val category = profile.category(day)
-                    val ids = native.a("items").objects().map { it.s("id") }.distinct()
-                        .filter { id -> source.byId(id)?.let {
-                            it.category == category &&
-                                EligibilityPolicy.compatible(it, profile,
-                                    if (profile.experience == Experience.BEGINNER) 2 else 3)
-                        } == true }
-                    DailyMission(day, category, native.s("progressSettingsHash"),
-                        native.s("progressCatalogHash"), ids, native.s("planningNote"))
-                })
+                efforts(), (listOfNotNull(preferred) + encounter?.priorities.orEmpty()).distinct(), previousIds,
+                interruptions())
             require(offer.days.any { it.ids.isNotEmpty() }) {
                 "El calendario no contiene alternativas compatibles para Monarca"
             }
@@ -466,6 +598,8 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
                     "explanation" to day.explanation)
             }))
             r.put("monarchPlans", plans)
+            if (encounter != null)
+                r.put("monarchEncounters", r.o("monarchEncounters").put(cycleId, encounter.name))
         }
         val current = r.o("monarchConsent")
         current.put(cycleId, accepted)
@@ -473,40 +607,56 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
         write(r)
     }
     fun monarchConsented(cycleId: String): Boolean = root().o("monarchConsent").b(cycleId)
+    fun monarchEncounter(cycleId: String): MonarchEncounter? =
+        MonarchEncounter.values().firstOrNull {
+            it.name == root().o("monarchEncounters").s(cycleId)
+        }
+
+    fun currentMonarchStart(day: LocalDate): LocalDate {
+        val existing = root().o("monarchPlans").entries().mapNotNull { date(it.first) }
+            .filter { day in it..it.plusDays(4) || (it > day && monarchConsented(it.toString())) }
+            .maxOrNull()
+        if (existing != null) return existing
+        val profile = MonarchProfileAdapter.from(store) ?: return day
+        return (0L..6L).map(day::plusDays).firstOrNull { profile.category(it) != null } ?: day
+    }
+
     fun monarchPlan(start: LocalDate): MonarchPlan {
         val cycleId = start.toString()
         val accepted = monarchConsented(cycleId)
         if (!accepted) return MonarchPlan(start, false, emptyList())
         val profile = MonarchProfileAdapter.from(store) ?: return MonarchPlan(start, true, emptyList())
         val source = MonarchActivitySource(store)
+        val effort = efforts()
+        val recentStops = interruptions()
         val days = root().o("monarchPlans").optJSONArray(cycleId)?.objects()?.mapNotNull { row ->
             val date = date(row.s("date")) ?: return@mapNotNull null
             if (date < start || !date.isBefore(start.plusDays(5))) return@mapNotNull null
             val category = CategoryMapper.normalize(row.s("category"))
             val scheduled = profile.category(date)
+            val adaptation = scheduled?.let { CategoryEffortPolicy.decide(effort,
+                minOf(date, LocalDate.now()), it, recentStops) }
+            val recovery = adaptation == Adaptation.RECOVER_ONE
+            val level = if (recovery) 1 else MonarchChallengePlanner.MAX_TECHNICAL
+            val maximum = if (recovery) 1 else MonarchChallengePlanner.MAX_ACTIVITIES
             val ids = if (category == null || category != scheduled) emptyList()
                 else row.a("ids").strings().distinct().filter { id ->
                     source.byId(id)?.let { item ->
-                        item.category == category && EligibilityPolicy.compatible(item, profile)
+                        item.category == category && EligibilityPolicy.compatible(item, profile, level) &&
+                            (!recovery || item.intensity == Intensity.LOW)
                     } == true
-                }
+                }.take(minOf(profile.dailyLimit, maximum))
             DailyMission(date, scheduled, row.s("profileHash"),
                 row.s("catalogHash"), ids,
                 row.s("explanation") + if (ids.size < row.a("ids").length())
-                    " Algunas opciones quedaron incompatibles tras cambiar el perfil." else "")
+                    " Se excluyeron alternativas por compatibilidad o recuperación." else "")
         } ?: emptyList()
         return MonarchPlan(start, accepted, days)
-    }
-    /** El día aceptado se reutiliza en el MISMO Planner; nunca crea otra sesión. */
-    fun monarchPinned(day: LocalDate): DailyMission? {
-        val monday = day.minusDays((day.dayOfWeek.value - 1).toLong())
-        if (!monarchConsented(monday.toString())) return null
-        return monarchPlan(monday).days.firstOrNull { it.date == day && it.ids.isNotEmpty() }
     }
     fun monarchCompleted(cycleId: String): List<String> =
         root().a("monarchCompletion").objects().filter { it.s("cycle") == cycleId }
             .map { it.s("date") + "|" + it.s("id") }
-    fun markMonarchCompletion(cycleId: String, day: LocalDate, variantId: String): Boolean {
+    fun markMonarchCompletion(cycleId: String, day: LocalDate, variantId: String): Boolean = synchronized(store) {
         require(day == LocalDate.now()) { "Solo puedes declarar la fecha local actual" }
         require(monarchConsented(cycleId)) { "Monarca requiere consentimiento explícito" }
         val start = LocalDate.parse(cycleId)
@@ -515,12 +665,12 @@ class MonarchProgressRepository(private val store: NativeStore) : VolumeProfileI
             "La actividad no pertenece a un desafío vigente y compatible"
         }
         val key = day.toString() + "|" + variantId
-        if (key in monarchCompleted(cycleId)) return false
+        if (key in monarchCompleted(cycleId)) return@synchronized false
         val r = root()
         r.put("monarchCompletion", arr(r.a("monarchCompletion").objects() +
             obj("cycle" to cycleId, "date" to day.toString(), "id" to variantId)))
         write(r)
-        return true
+        true
     }
 }
 

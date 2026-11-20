@@ -190,7 +190,17 @@ private fun MonarchRoutineModeCard(title:String,subtitle:String,tag:String,count
             HText("Rutinas consultables sin internet. El motor comprueba tu perfil antes de asignarlas.",
                 size=15,color=c.muted)
         }
-        item{MonarchRoutineGenerator(ui,mode){selected->n=selected}}
+        item {
+            MonarchRoutineGenerator(ui, mode) { selected ->
+                n = selected
+                category = ""
+                duration = ""
+                equipment = "all"
+                impact = "all"
+                query = ""
+                safeOnly = false
+            }
+        }
         item{
             HPanel(padding=16){
                 Eyebrow("FILTROS DE RUTINAS")
@@ -240,30 +250,30 @@ fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->Unit){
     val s=ui.store
     val scope=rememberCoroutineScope()
     val c=LocalHunter.current
-    val selected=remember(mode){mutableStateListOf<String>()}
-    var range by rememberSaveable(mode){mutableStateOf("medium")}
-    var levels by rememberSaveable(mode){mutableStateOf("all")}
+    var selected by rememberSaveable(mode){mutableStateOf("")}
+    var duration by rememberSaveable(mode){mutableStateOf("20")}
+    var level by rememberSaveable(mode){mutableStateOf("0")}
     var noImpact by rememberSaveable(mode){mutableStateOf(false)}
     var noGear by rememberSaveable(mode){mutableStateOf(false)}
     var busy by remember{mutableStateOf(false)}
     var info by remember(mode){mutableStateOf("")}
     HPanel(padding=17){
         Eyebrow("GENERADOR MONARCA  /  100 % LOCAL")
-        Heading("Diseña tu desafío",size=29)
-        HText("Selección múltiple de grupos, duración y niveles. Se generan secuencias sin guardar combinaciones precargadas.",
+        Heading("Genera una rutina",size=29)
+        HText("Elige una categoría, el tiempo disponible y el nivel técnico.",
             size=15,color=c.muted)
         Eyebrow("01  ·  GRUPOS DE TRABAJO")
         groupLabels.entries.toList().chunked(2).forEach { pair->
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
                 pair.forEach {entry->
                     val tint=routineGroupColors[entry.key]?:c.accent
-                    val active=entry.key in selected
+                    val active=entry.key == selected
                     val shape=RoundedCornerShape(12.dp)
                     Box(Modifier.weight(1f).defaultMinSize(minHeight=58.dp)
                         .clip(shape)
                         .background(if(active)tint.copy(alpha=.19f) else c.input)
-                        .monarchPressable(shape,active=active,role=Role.Checkbox){
-                            if(!selected.remove(entry.key))selected.add(entry.key)
+                        .monarchPressable(shape,active=active,role=Role.RadioButton){
+                            selected=entry.key
                         }
                         .semantics{contentDescription="${entry.value}, ${if(active)"seleccionado" else "sin seleccionar"}"}
                         .padding(horizontal=9.dp,vertical=9.dp),
@@ -276,10 +286,9 @@ fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->Unit){
             }
         }
         Eyebrow("02  ·  TIEMPO OBJETIVO")
-        Chips(listOf("short" to "5–10 min","medium" to "10–20 min",
-            "long" to "Hasta 30 min"),range){range=it}
-        Eyebrow("03  ·  INTENSIDAD / NIVEL")
-        Chips(listOf("all" to "Tres niveles")+routineLevels,levels){levels=it}
+        Chips(listOf(10,15,20,30,45,60).map { it.toString() to "$it min" },duration){duration=it}
+        Eyebrow("03  ·  NIVEL TÉCNICO")
+        Chips(routineLevels,level){level=it}
         Eyebrow("04  ·  CONTROL DEL EQUIPAMIENTO E IMPACTO")
         HCheck("Limitar a ejercicios sin saltos ni potencia",noImpact){noImpact=!noImpact}
         if(mode=="offline"){
@@ -288,11 +297,11 @@ fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->Unit){
             HText("Modo gimnasio: solo usa el material declarado en Perfil.",
                 size=14,color=c.muted)
         }
-        HButton(if(busy)"GENERANDO…" else "✦  GENERAR NUEVAS RUTINAS",
+        HButton(if(busy)"GENERANDO…" else "✦  GENERAR RUTINAS COMPATIBLES",
             Modifier.fillMaxWidth(),primary=true,enabled=!busy) {
             val gate=s.rules.gate(s.adjusted())
             when {
-                selected.isEmpty()->info="Selecciona al menos un grupo muscular."
+                selected.isEmpty()->info="Selecciona una categoría."
                 !gate.ok->info=gate.reason
                 mode=="gym"&&s.profile?.s("equipment")!="gym" ->
                     info="Configura el equipamiento de gimnasio en Perfil para continuar."
@@ -310,36 +319,20 @@ fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->Unit){
                         p.put("gymEquipment23",arr(emptyList<String>()))
                         p.put("materials46",arr(emptyList<String>()))
                     }
-                    val groups=selected.toList()
-                    val chosenLevels=if(levels=="all")(0..2).toList()
-                        else listOf(levels.toInt())
+                    val category=selected
+                    val requestedLevel=level.toInt()
+                    val requestedMinutes=duration.toInt()
                     val requestedRevision=s.revision.intValue
                     val logs=s.logs.copyJson()
                     val avoidImpact=noImpact
                     val onlyBody=noGear
-                    val epoch=++ui.serial
-                    val selectedDuration=range
                     busy=true
                     info="Construyendo sesiones compatibles con tu perfil…"
                     scope.launch {
                         try {
                             val result=withContext(Dispatchers.Default){
-                                chosenLevels.flatMap{n->
-                                    groups.flatMap{type->
-                                        (0..1).mapNotNull{variant->
-                                            s.planner.generateRoutine(mode,type,n,variant,
-                                                selectedDuration,epoch,p,logs)
-                                        }
-                                    }
-                                }.filter{r->
-                                    r.a("items").objects().all{x->
-                                        s.catalog.byId[x.s("id")]?.let{e->
-                                            s.rules.compatible(e,p)&&
-                                            (!avoidImpact||!e.impact&&!e.power)&&
-                                            (!onlyBody||mode!="offline"||e.equipment=="body"&&!e.gym)
-                                        }==true
-                                    }
-                                }
+                                s.planner.generateRoutineOptions(mode,category,requestedLevel,
+                                    requestedMinutes,"default",p,logs,avoidImpact=avoidImpact,onlyBody=onlyBody)
                             }
                             if(s.revision.intValue!=requestedRevision){
                                 info="El perfil cambió mientras se generaban las rutinas. Vuelve a generar para usar la configuración actual."
@@ -347,7 +340,7 @@ fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->Unit){
                                 info="No hay combinaciones compatibles para el nivel, material y duración solicitados. Prueba otros filtros o revisa Perfil."
                             }else{
                                 ui.generated[mode]=result
-                                onGenerated(chosenLevels.first())
+                                onGenerated(requestedLevel)
                                 info="${result.size} rutinas generadas. Encontrarás las tarjetas debajo de los filtros."
                             }
                         }catch(e:Exception){
@@ -392,10 +385,12 @@ fun MonarchRoutineCard(ui:NativeUi,r:JSONObject,p:JSONObject){
         }
         Heading(r.s("name","Secuencia de entrenamiento"),size=25)
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)){
-            HText("◷ $minutes min",size=15,color=c.muted)
+            HText("≈ $minutes min",size=15,color=c.muted)
             HText("◈ ${rows.size} ejercicios",size=15,color=c.muted)
             HText("${rows.sumOf{it.i("sets")}} series",size=15,color=c.muted)
         }
+        if (r.has("availableMinutes"))
+            HText("Tiempo disponible · ${r.i("availableMinutes")} min", size=13, color=c.muted)
         rows.take(4).forEachIndexed{index,row->
             val e=s.catalog.byId[row.s("id")]
             HText("${index+1}. ${e?.name?:row.s("id")}",size=15,maxLines=2)

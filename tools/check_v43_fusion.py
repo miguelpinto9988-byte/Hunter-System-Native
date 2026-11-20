@@ -53,16 +53,17 @@ checks={
     and not any((R/("app/src/main/assets/monarch-boss/"+boss+".svg")).exists()
       for boss in ("guardia","fortaleza","trono")),
  "reubicación Monarca":read(src+"Screens.kt").index("MonarchSpecialMissionsPanel(ui)") < read(src+"Screens.kt").index("MonarchHero(ui,stats)") and read(src+"Screens.kt").count("MonarchSpecialMissionsPanel(ui)")==1,
- "misiones Monarca voluntarias y solo equipo":'fun offerFor(store:NativeStore' in read(src+"MonarchSpecialMissionState.kt")
-    and 'fun equipmentReady(store:NativeStore' in read(src+"MonarchSpecialMissionState.kt")
-    and 'MonarchMissionCatalog.offerFor(store,sunday,zone)' in read(src+"MonarchSpecialMissionUI.kt")
-    and 'enabled=reason==null&&consent' in read(src+"MonarchSpecialMissionUI.kt"),
- "objetivos desplegables y arte integrado en tarjeta":'detailsExpanded' in read(src+"MonarchSpecialMissionUI.kt")
-    and 'recordMonarchProgress' in read(src+"MonarchSpecialMissionUI.kt")
-    and 'MonarchBossMissionCard(mission.id)' in read(src+"MonarchSpecialMissionUI.kt")
+ "Monarca voluntario con calendario y elegibilidad":
+    'ACEPTAR CICLO DE CINCO DÍAS' in read(src+"MonarchPlanningPanels.kt")
+    and 'if (!accepted || profile.weekly.all { it == 5 })' in read(src+"planning/MonarchPlanningRules.kt")
+    and 'repository.compatible(profile, category, level)' in read(src+"planning/MonarchPlanningRules.kt"),
+ "resultados heredados consultables y arte integrado en tarjeta":
+    'detailsExpanded' in read(src+"MonarchSpecialMissionUI.kt")
+    and 'legacy.o("counts")' in read(src+"MonarchSpecialMissionUI.kt")
+    and 'MonarchBossMissionCard(id)' in read(src+"MonarchSpecialMissionUI.kt")
     and 'MonarchBossMissionHeading(' in read(src+"MonarchSpecialMissionUI.kt")
     and 'MonarchBossMissionArtwork(' not in read(src+"MonarchSpecialMissionUI.kt"),
- "fondo de los tres jefes hasta borde inferior":'MonarchBossMissionCard(mission.id)' in read(src+"MonarchSpecialMissionUI.kt")
+ "fondo de los tres jefes hasta borde inferior":'MonarchBossMissionCard(id)' in read(src+"MonarchSpecialMissionUI.kt")
     and 'AssetImage(' in read(src+"MonarchSpecialMissionUI.kt")
     and '"monarch-boss-original/"+id+".jpg"' in read(src+"MonarchSpecialMissionUI.kt")
     and 'Modifier.matchParentSize()' in read(src+"MonarchSpecialMissionUI.kt").split('private fun MonarchBossMissionCard(',1)[1].split('private fun MonarchBossMissionHeading(',1)[0]

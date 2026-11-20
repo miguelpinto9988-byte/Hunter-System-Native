@@ -338,7 +338,7 @@ class MonarchPlanningRulesTest {
         assertEquals(VolumeDecision.REVIEW_EXTRA_SET, rec.decision)
         assertEquals(3, rec.sets)
         assertEquals(10, rec.reference)
-        assertEquals(VolumeDecision.OPTIONAL_INCREASE, VolumeProgressionEngine.review(
+        assertEquals(VolumeDecision.OPTIONAL_MINIMUM_ADJUSTMENT, VolumeProgressionEngine.review(
             date, meta, reference, history.take(2), "one").decision)
     }
     @Test fun volumeRespectsBoundsAndManualReview() {
@@ -369,15 +369,15 @@ class MonarchPlanningRulesTest {
         val p = profile()
         val rows = listOf(activity("a"), activity("b"), activity("c"), activity("d"))
         val repo = FakeRepo(rows)
-        val base = MonarchChallengePlanner.propose(date, true, p, repo, emptyList())
+        val base = MonarchChallengePlanner.propose(date, true, p, repo, emptyList(),
+            previousUsed = setOf("a"))
         val focused = MonarchChallengePlanner.propose(
             date, true, p, repo, emptyList(), listOf(Category.UPPER),
             previousUsed = setOf("a"))
         assertEquals(base.days.map { it.category }, focused.days.map { it.category })
         assertEquals(base.days.map { it.ids.toSet() }, focused.days.map { it.ids.toSet() })
-        assertTrue(focused.days.all {
-            "a" !in it.ids || it.ids.last() == "a"
-        })
+        assertFalse("a" in focused.days.first().ids)
+        assertTrue(focused.days.all { it.ids.size <= 2 })
         assertEquals(focused, MonarchChallengePlanner.propose(
             date, true, p, repo, emptyList(), listOf(Category.UPPER),
             previousUsed = setOf("a")))
