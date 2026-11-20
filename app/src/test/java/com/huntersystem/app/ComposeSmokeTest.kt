@@ -76,7 +76,7 @@ class ComposeSmokeTest {
    }
   }
   if(!webViewPresent)
-   compose.onNodeWithText("PERFIL NATIVO DE RECUPERACIÓN").assertIsDisplayed()
+   compose.onNodeWithText("PERFIL DEL CAZADOR").assertIsDisplayed()
  }
  @Test(timeout=120000) fun fourStepProfileActivatesAndConnectsThePlanner(){
   compose.runOnIdle {
