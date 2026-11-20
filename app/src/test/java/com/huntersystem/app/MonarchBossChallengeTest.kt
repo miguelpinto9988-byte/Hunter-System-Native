@@ -132,8 +132,8 @@ class MonarchBossChallengeTest {
         val examples=mapOf(
             "squat" to MonarchExerciseIcon.SQUAT,
             "pushup" to MonarchExerciseIcon.PUSH,
-            "row" to MonarchExerciseIcon.PULL,
-            "plank" to MonarchExerciseIcon.CORE,
+            "row" to MonarchExerciseIcon.ROW,
+            "plank" to MonarchExerciseIcon.PLANK,
             "reverselunge" to MonarchExerciseIcon.LUNGE,
             "sport-cycling-spinups" to MonarchExerciseIcon.CYCLE
         )
@@ -143,7 +143,7 @@ class MonarchBossChallengeTest {
         assertEquals(examples.size,examples.values.map { it.darkInk }.distinct().size)
         assertEquals(examples.size,examples.values.map { it.lightInk }.distinct().size)
         val plancha=Exercise(obj("name" to "Plancha con toque de rodilla","planning49" to obj("group" to "core")))
-        assertEquals(MonarchExerciseIcon.CORE,monarchExerciseIcon(plancha))
+        assertEquals(MonarchExerciseIcon.PLANK,monarchExerciseIcon(plancha))
         val pelvic=Exercise(obj("name" to
             "Secuencia basculación pélvica en cuadrupedia + inclinación pélvica adelante",
             "planning49" to obj("group" to "mobility","pattern" to "movilidad general")))
@@ -152,6 +152,60 @@ class MonarchBossChallengeTest {
         val paths=MonarchExerciseIcon.entries.map { it.path }
         assertEquals(paths.size,paths.distinct().size)
         assertTrue(paths.all { !androidx.compose.ui.graphics.vector.PathParser().parsePathString(it).toPath().isEmpty })
+    }
+
+    @Test fun everyActiveExerciseHasAMovementBadgeIncludingSportsSequences() {
+        val catalog = store.catalog
+        val activeIcons = catalog.exercises.associateBy({ it.id }, ::monarchExerciseIcon)
+        assertEquals(5_000, activeIcons.size)
+        assertEquals(MonarchExerciseIcon.entries.toSet() - MonarchExerciseIcon.GENERAL,
+            activeIcons.values.toSet())
+        for ((id, canonical) in catalog.byId) {
+            val expected = activeIcons.getValue(canonical.id)
+            assertEquals(id, expected, monarchExerciseIcon(canonical))
+        }
+
+        val examples = mapOf(
+            "march" to MonarchExerciseIcon.WALK,
+            "stepup" to MonarchExerciseIcon.STEP,
+            "stepjack" to MonarchExerciseIcon.STEP,
+            "bridge" to MonarchExerciseIcon.BRIDGE,
+            "legextend" to MonarchExerciseIcon.KNEE,
+            "rope" to MonarchExerciseIcon.ROPE,
+            "farmerwalk" to MonarchExerciseIcon.CARRY,
+            "sport-futbol-sole" to MonarchExerciseIcon.BALL,
+            "sport-tennis-shadow-forehand" to MonarchExerciseIcon.RACKET,
+            "sport-seq-calistenia-wall-kneelingplank" to MonarchExerciseIcon.PUSH,
+            "sport-seq-fuerza-singlebridge-new46-spanishsquat" to MonarchExerciseIcon.BRIDGE,
+            "sport-seq-movilidad-neck-skaterreach" to MonarchExerciseIcon.MOBILITY
+        )
+        for ((id, expected) in examples) assertEquals(id, expected, activeIcons.getValue(id))
+    }
+
+    @Test(timeout=120000) fun movementBadgeAppearsOnlyInMonarchViews() {
+        val ui = NativeUi(store)
+        compose.setContent { HunterTheme(store) { HunterRoot(ui) } }
+
+        compose.runOnIdle { ui.open("exercise", obj("id" to "pushup")) }
+        compose.onAllNodesWithText(store.catalog.byId.getValue("pushup").name).onFirst().assertIsDisplayed()
+        compose.onNodeWithContentDescription(MonarchExerciseIcon.PUSH.label, useUnmergedTree = true)
+            .assertDoesNotExist()
+
+        val goals = MonarchBossChallenges(store).offer(LocalDate.now(), MonarchBoss.IGRIS)!!.goals
+        val first = goals.first()
+        val expected = monarchExerciseIcon(store.catalog.byId.getValue(first.id))
+        val badge = hasContentDescription(expected.label)
+        compose.runOnIdle {
+            ui.stack.clear()
+            ui.open("monarch-boss", obj("selectedBoss" to MonarchBoss.IGRIS.name))
+        }
+        compose.onAllNodes(badge, useUnmergedTree = true).assertCountEquals(
+            goals.count {
+                monarchExerciseIcon(store.catalog.byId.getValue(it.id)) == expected
+            }
+        )
+        compose.onNodeWithText(store.catalog.byId.getValue(first.id).name).performScrollTo().performClick()
+        compose.onNode(badge, useUnmergedTree = true).assertIsDisplayed()
     }
 
     @Test(timeout=120000) fun eachNewBossDisplaysItsCoverInTheChallengeWindow() {
