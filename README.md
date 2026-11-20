@@ -1,8 +1,8 @@
-# Hunter System V43.12 — Monarca con mejoras Eclipse, catálogo de 2000 ejercicios sin SVG animados
+# Hunter System V43.12.1 — Monarca con mejoras Eclipse, catálogo de 2000 ejercicios sin SVG animados
 
 Rama principal: `main`. El código integra Monarca V43.11 y las mejoras recientes de Eclipse. Las dos historias se conservan en el commit de fusión.
 
-Monarca 42.9 + Eclipse 41.0, realizados en Kotlin y Jetpack Compose. La compilación de pruebas usa `versionCode=130` y `versionName=43.12-monarca-eclipse` (`applicationId=com.huntersystem.app`).
+Monarca 42.9 + Eclipse 41.0, realizados en Kotlin y Jetpack Compose. La compilación de pruebas usa `versionCode=131` y `versionName=43.12.1-monarca-eclipse` (`applicationId=com.huntersystem.app`).
 
 ## Un solo planificador: Monarca Eclipse
 

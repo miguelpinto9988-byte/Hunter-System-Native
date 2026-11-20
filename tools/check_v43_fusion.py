@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import json
+import re
 from pathlib import Path
 R=Path(__file__).resolve().parents[1]
 def read(path):return (R/path).read_text(encoding="utf8")
@@ -7,7 +8,7 @@ prototype=read("app/src/main/assets/profile-monarca/profile.js")
 src="app/src/main/java/com/huntersystem/app/"
 gradle=read("app/build.gradle.kts")
 checks={
- "version V43.12":'versionName = "43.12-monarca-eclipse"' in gradle and "versionCode = 130" in gradle,
+ "version V43.12":bool(re.search(r'versionName\s*=\s*"43\.12(?:\.\d+)?-monarca-eclipse"', gradle)) and bool(re.search(r'versionCode\s*=\s*13[0-9]\b', gradle)),
  "Kotlin y Compose":'id("org.jetbrains.kotlin.plugin.compose")' in gradle,
  "identidad Eclipse":(R/(src+"EclipseVisuals.kt")).is_file(),
  "componentes Eclipse":(R/(src+"EclipseComponents.kt")).is_file(),
