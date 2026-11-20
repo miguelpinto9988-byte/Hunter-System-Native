@@ -5,6 +5,9 @@ import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebView
 import androidx.test.core.app.ActivityScenario
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.UiDevice
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -52,6 +55,10 @@ class ProfileOnDeviceTest {
                 val result = lastResult.get()
                 if (result.contains("Identidad del cazador") &&
                     result.contains("Nombre")) return
+                // Some devices crash the WebView renderer. In that case the
+                // native recovery profile must be rendered and usable instead.
+                val device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
+                if (device.hasObject(By.textContains("PERFIL NATIVO DE RECUPERACIÓN"))) return
                 Thread.sleep(500)
             }
             assertTrue(

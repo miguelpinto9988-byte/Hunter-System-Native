@@ -95,6 +95,7 @@ internal fun ProfilePrototype(
     var pageReady by remember { mutableStateOf(false) }
     var loadIssue by remember { mutableStateOf<String?>(null) }
     var attempt by remember { mutableIntStateOf(0) }
+    var nativeFallback by remember { mutableStateOf(false) }
     val avatar = ui.pendingAvatar ?: ui.store.state.s("avatar")
 
     BackHandler(enabled = handlesBack && ui.stack.isEmpty()) {
@@ -109,7 +110,7 @@ internal fun ProfilePrototype(
     }
 
     Box(Modifier.fillMaxSize()) {
-        if (loadIssue == null) key(attempt) {
+        if (loadIssue == null && !nativeFallback) key(attempt) {
             AndroidView(
                 factory = { context ->
                     WebView(context).also { view ->
@@ -165,9 +166,11 @@ internal fun ProfilePrototype(
                             override fun onRenderProcessGone(
                                 view: WebView, detail: RenderProcessGoneDetail
                             ): Boolean {
-                                view.post {
-                                    if (currentAttempt == attempt)
-                                        loadIssue = "Android WebView se cerró inesperadamente. Pulsa Reintentar."
+                                // Renderer crashes can leave an empty WebView surface.
+                                // The Compose form does not need the WebView process.
+                                if (currentAttempt == attempt) {
+                                    nativeFallback = true
+                                    loadIssue = null
                                 }
                                 return true
                             }
@@ -229,7 +232,14 @@ internal fun ProfilePrototype(
             )
         }
 
-        if (!pageReady || loadIssue != null) {
+        if (nativeFallback) {
+            ProfileNativeFallback(ui, registration, onRetry = {
+                nativeFallback = false
+                pageReady = false
+                loadIssue = null
+                attempt++
+            })
+        } else if (!pageReady || loadIssue != null) {
             Column(
                 Modifier.fillMaxSize()
                     .background(ComposeColor(0xFF040A14))
@@ -259,7 +269,7 @@ internal fun ProfilePrototype(
     }
     // Separate Android dialog window: visible even if a WebView uses a hardware layer
     // above the Compose content on a particular device.
-    if (loadIssue != null) {
+    if (loadIssue != null && !nativeFallback) {
         AlertDialog(
             onDismissRequest = {},
             title = { Text("Error al iniciar el perfil") },
@@ -270,6 +280,12 @@ internal fun ProfilePrototype(
                     loadIssue = null
                     attempt++
                 }) { Text("Reintentar") }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    nativeFallback = true
+                    loadIssue = null
+                }) { Text("Abrir perfil nativo") }
             }
         )
     }
