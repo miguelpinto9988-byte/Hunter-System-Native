@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background>
+        <color android:color="#040B19" />
+    </background>
+    <foreground>
+        <!-- Android's mask covers the central 72dp of each 108dp layer. -->
+        <inset android:inset="16.6667%">
+            <bitmap android:src="@drawable/launcher_sello_ascenso" android:gravity="fill" />
+        </inset>
+    </foreground>
+</adaptive-icon>
