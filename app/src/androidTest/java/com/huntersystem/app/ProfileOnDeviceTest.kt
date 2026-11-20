@@ -113,12 +113,19 @@ class ProfileOnDeviceTest {
                             device.waitForIdle()
                         }
                     }
-                    checkNotNull(device.findObject(exercise)) { "Exercise not found in catalog" }.click()
+                    val card = checkNotNull(device.findObject(exercise)) { "Exercise not found in catalog" }
+                    var clickable = card
+                    while (!clickable.isClickable && clickable.parent != null) {
+                        clickable = checkNotNull(clickable.parent)
+                    }
+                    clickable.click()
+                    assertTrue("The exercise detail did not open",
+                        device.wait(Until.hasObject(By.text("DEMOSTRACIÓN")), 15_000))
                     val play = By.text("Reproducir demostración")
-                    repeat(4) {
-                        if (!device.hasObject(play)) {
+                    repeat(6) {
+                        if (!device.wait(Until.hasObject(play), 750)) {
                             val x = device.displayWidth / 2
-                            device.swipe(x, device.displayHeight * 3 / 4, x, device.displayHeight / 4, 24)
+                            device.swipe(x, device.displayHeight * 7 / 10, x, device.displayHeight * 5 / 10, 30)
                             device.waitForIdle()
                         }
                     }
