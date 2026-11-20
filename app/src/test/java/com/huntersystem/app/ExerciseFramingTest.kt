@@ -21,6 +21,10 @@ class ExerciseFramingTest {
             assertTrue(scale > 0f)
             assertTrue(frame.bounds.width * scale <= stage.width)
             assertTrue(frame.bounds.height * scale <= stage.height)
+            val closeScale = frame.scaleFor(stage, closeFraming = true)
+            assertTrue(closeScale >= scale)
+            assertTrue(frame.bounds.width * closeScale <= stage.width)
+            assertTrue(frame.bounds.height * closeScale <= stage.height)
         }
         assertTrue(frame.bounds.left < last[4].x)
         assertTrue(frame.bounds.right > equipment.bounds.right)
@@ -32,6 +36,8 @@ class ExerciseFramingTest {
         val motion = ExerciseMotion(listOf(pose, pose), 4f, listOf(0f, .5f), "original", "right")
         val frame = ExerciseFraming.from(motion)
         assertEquals(90f, frame.scaleFor(Size(300f, 300f)) * 165f * frame.unit, .001f)
+        assertEquals(126f, frame.scaleFor(Size(300f, 300f), closeFraming = true) *
+            165f * frame.unit, .001f)
         assertEquals(0f, frame.scaleFor(Size.Zero), .001f)
     }
 }

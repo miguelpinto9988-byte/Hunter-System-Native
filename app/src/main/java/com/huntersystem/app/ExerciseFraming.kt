@@ -10,10 +10,11 @@ internal data class ExerciseFraming(
     val unit: Float,
     val floor: Float
 ) {
-    fun scaleFor(stage: Size): Float {
+    fun scaleFor(stage: Size, closeFraming: Boolean = false): Float {
         val fit = minOf(stage.width / bounds.width, stage.height / bounds.height) * .92f
         // Compact or foreshortened poses leave room around the athlete instead of zooming in.
-        val torsoLimit = stage.minDimension * .30f / (165f * unit)
+        val torsoShare = if (closeFraming) .42f else .30f
+        val torsoLimit = stage.minDimension * torsoShare / (165f * unit)
         return minOf(fit, torsoLimit)
     }
 

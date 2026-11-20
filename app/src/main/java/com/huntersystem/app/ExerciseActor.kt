@@ -23,6 +23,8 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.caverock.androidsvg.SVG
 import kotlinx.coroutines.isActive
 import kotlin.math.abs
@@ -59,6 +61,7 @@ internal fun rememberExercisePhase(key: Any, duration: Float, play: Boolean, res
 @Composable
 internal fun ExerciseActor(motion: ExerciseMotion, modifier: Modifier, play: Boolean,
                            mirror: Boolean, reset: Int, sequenceFraming: List<ExerciseFraming> = emptyList(),
+                           themedStage: Boolean = false, controlsWidth: Dp = 0.dp,
                            phaseOverride: (() -> Float)? = null) {
     val context = LocalContext.current
     val headAsset = when (motion.view) {
@@ -86,19 +89,32 @@ internal fun ExerciseActor(motion: ExerciseMotion, modifier: Modifier, play: Boo
             if (separation < 0) -1f else 1f
         }
     }
+    val lightStage=themedStage&&LocalHunter.current.isLight
+    val stageBase=when{
+        lightStage->Color(0xFFE4EDF9)
+        themedStage->Color(0xFF0C1B32)
+        else->Color(0xFF101F2A)
+    }
+    val stageGlow=when{
+        lightStage->listOf(Color.White,Color(0xFFEDF4FF),stageBase)
+        themedStage->listOf(Color(0xFF1C3C62),Color(0xFF142948),stageBase)
+        else->listOf(Color(0xFF22464D),Color(0xFF142C3A),stageBase)
+    }
     Canvas(modifier) {
         if (size.minDimension <= 0f) return@Canvas
-        drawRoundRect(Color(0xFF101F2A),cornerRadius=CornerRadius(18f))
-        drawCircle(Brush.radialGradient(listOf(Color(0xFF22464D),Color(0xFF142C3A),Color(0xFF101F2A)),
-            center=Offset(size.width*.48f,size.height*.47f),radius=max(size.width,size.height)*.51f),
-            radius=min(size.width,size.height)*.47f,center=Offset(size.width*.5f,size.height*.47f))
-        val commonScale = sequenceFraming.minOfOrNull { it.scaleFor(size) * it.unit }
-        val fit = commonScale?.div(framing.unit) ?: framing.scaleFor(size)
+        val stage = Size((size.width - controlsWidth.toPx()).coerceAtLeast(0f), size.height)
+        val lightCenter = Offset(stage.width * .5f, stage.height * .47f)
+        drawRoundRect(stageBase,cornerRadius=CornerRadius(18f))
+        drawCircle(Brush.radialGradient(stageGlow,center=lightCenter,
+            radius=max(stage.width,stage.height)*.51f),
+            radius=stage.minDimension*.47f,center=lightCenter)
+        val commonScale = sequenceFraming.minOfOrNull { it.scaleFor(stage, themedStage) * it.unit }
+        val fit = commonScale?.div(framing.unit) ?: framing.scaleFor(stage, themedStage)
         if (fit <= 0f) return@Canvas
         val origin = framing.bounds.center
         val p = motion.at(phaseOverride?.invoke() ?: playback.floatValue)
         withTransform({
-            translate(size.width/2,size.height/2)
+            translate(stage.width/2,stage.height/2)
             scale(if(mirror) -fit else fit,fit,pivot=Offset.Zero)
             translate(-origin.x,-origin.y)
         }) {
