@@ -56,10 +56,10 @@ internal enum class AuthoredFloorMovement(val posture: ExercisePosture) {
     private fun reverseClam(lift: Float): List<Offset> {
         val shoulder = Offset(238f,624f)
         val hip = Offset(401f,626f)
-        val bottomKnee = Offset(497f,664f)
+        val bottomKnee = Offset(478f,675f)
         val upperKnee = bottomKnee + Offset(-5f,-13f)
-        val bottomAnkle = bottomKnee + Offset(106f,0f)
-        val upperAnkle = upperKnee + vector(-35f*lift) * 106f
+        val bottomAnkle = bottomKnee + Offset(-104f,11f)
+        val upperAnkle = upperKnee + vector(174f+lift*43f) * 104f
         return listOf(Offset(179f,624f),shoulder,hip,Offset(221f,662f),Offset(171f,648f),
             Offset(311f,595f),Offset(383f,612f),bottomKnee,bottomAnkle,upperKnee,upperAnkle)
     }

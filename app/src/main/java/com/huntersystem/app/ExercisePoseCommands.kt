@@ -85,6 +85,7 @@ internal object ExercisePoseCommands {
         val toe = when {
             motion.view == ExerciseView.OVERHEAD -> torso + shin * (torso.getDistance() * .22f)
             motion.authoredFloor == AuthoredFloorMovement.V_UP -> shin
+            motion.authoredFloor == AuthoredFloorMovement.REVERSE_CLAM -> Offset(-.85f,.35f)
             motion.authoredFloor == AuthoredFloorMovement.KICKBACK -> Offset(shin.x,.60f)
             motion.posture == ExercisePosture.SUPINE -> Offset(awayFromShoulders, 0f)
             motion.prone && motion.handSupport -> Offset(-awayFromShoulders * .30f, .95f)

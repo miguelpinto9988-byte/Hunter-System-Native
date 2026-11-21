@@ -84,6 +84,7 @@ class ExercisePerspectiveTest {
         assertEquals(ExercisePosture.SIDE_LYING,clam.posture)
         val rest=clam.at(0f)
         val rotated=clam.at(.46f)
+        assertTrue(rest[8].x<rest[7].x && rest[10].x<rest[9].x)
         for(index in listOf(2,7,8,9))assertEquals(rest[index],rotated[index])
         assertTrue(rotated[10].y < rest[10].y-25f)
 
