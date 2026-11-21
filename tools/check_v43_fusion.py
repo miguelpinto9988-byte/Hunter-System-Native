@@ -54,7 +54,8 @@ checks={
     (R/"app/src/main/assets"/asset).is_file()
     for asset in ("profile-monarca/training.webp","monarch-boss/baruka.webp","monarch-boss/kargalgan.webp",
                   "monarch-boss/baran.webp","monarch-boss/beru.webp"))
-    and 'MonarchExerciseStage(exercise,mirror' in read(src+"MonarchBossScreen.kt"),
+    and bool(re.search(r"\bMonarchExerciseStage\(\s*exercise\s*,\s*store\.catalog\s*,\s*mirror\b",
+                       read(src+"MonarchBossScreen.kt"))),
  "reubicación Monarca":read(src+"Screens.kt").index("MonarchSpecialMissionsPanel(ui)") < read(src+"Screens.kt").index("MonarchHero(ui,stats)") and read(src+"Screens.kt").count("MonarchSpecialMissionsPanel(ui)")==1,
  "Monarca voluntario, acumulativo y separado del calendario":
     'Aceptar desafío' in read(src+"MonarchBossScreen.kt")

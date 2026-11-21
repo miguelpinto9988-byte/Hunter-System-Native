@@ -22,11 +22,13 @@ verify("fun MonarchExerciseStage(" in stage,"Falta escenario nuevo")
 verify('Eyebrow("DEMOSTRACIÓN")' in stage,"La ficha debe identificar la demostración")
 verify("ExerciseActor(" in stage and "OriginalSvg(exercise.demo" not in stage,"La demostración debe usar el personaje vectorial aprobado")
 verify("HunterRiveExercise" not in stage and "app.rive:rive-android" not in build,"El motor Rive debe estar retirado")
-verify("MonarchExerciseStage(e,mirror,height=360,play=play)" in overlays,"Ficha no usa reproductor")
+verify(re.search(r"\bMonarchExerciseStage\(\s*e\s*,\s*s\.catalog\s*,\s*mirror\b", overlays),
+       "Ficha no usa el reproductor con su catálogo")
 # V43.12 puede encapsular la misma demostración en un componente de sesión adaptable.
 guided_layout=(K/"GuidedSessionLayoutV43.kt")
 guided_code=guided_layout.read_text() if guided_layout.exists() else ""
-session_uses_demo = "GuidedSessionDemo(e,mirror" in overlays and "MonarchExerciseStage(" in guided_code
+session_uses_demo = (re.search(r"\bGuidedSessionDemo\(\s*e\s*,\s*s\.catalog\s*,\s*mirror\b", overlays)
+                    and re.search(r"\bMonarchExerciseStage\(\s*exercise\s*,\s*catalog\s*,\s*mirror\b", guided_code))
 verify(session_uses_demo,"Sesión guiada no usa el personaje aprobado")
 verify('HButton(if(mirror)"⇄ ESPEJO' in overlays and
        all(x in guided_code for x in ("onToggle", "onRestart")),

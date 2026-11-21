@@ -2,6 +2,7 @@
 """Auditoría estática de la redistribución de sesiones guiadas V43.12."""
 from pathlib import Path
 import json
+import re
 
 root=Path(__file__).resolve().parents[1]
 src=root/"app/src/main/java/com/huntersystem/app"
@@ -12,7 +13,10 @@ player=overlays.split("fun ColumnScope.SessionPlayer(",1)[-1]
 checks={
  "sesión con cabecera específica":'if(overlay.type=="session")' in overlays and 'Sesión paso a paso' in layout,
  "pasos y progreso visibles":'GuidedSessionHeader(preview' in player and 'HProgress(index.toFloat()' in layout,
- "demo adaptativa y sin recorte de ventana":'GuidedSessionDemo(e,mirror' in player and 'BoxWithConstraints' in layout and 'MonarchExerciseStage(' in layout,
+ "demo adaptativa y sin recorte de ventana":bool(re.search(
+     r"\bGuidedSessionDemo\(\s*e\s*,\s*s\.catalog\s*,\s*mirror\b", player))
+     and 'BoxWithConstraints' in layout and bool(re.search(
+         r"\bMonarchExerciseStage\(\s*exercise\s*,\s*catalog\s*,\s*mirror\b", layout)),
  "temporizador integrado con progreso":'GuidedSessionTimer(remaining' in player and 'guidedSessionProgress(totalSeconds,remaining)' in layout and 'GuidedClockDial(progress' in layout,
  "botones principales y opciones":all(x in layout for x in ('Iniciar reloj','Reiniciar reloj','onToggle','onRestart')) and 'Espejo' in player,
  "serie y navegación intactas":all(x in player for x in ('ui.open("series"','"Anterior"','"Siguiente"','pending=true','persist()')),
