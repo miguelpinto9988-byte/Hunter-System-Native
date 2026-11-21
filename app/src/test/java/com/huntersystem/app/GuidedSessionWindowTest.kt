@@ -42,9 +42,8 @@ class GuidedSessionWindowTest {
         val ui=NativeUi(store)
 
         compose.setContent { HunterTheme(store) { HunterRoot(ui) } }
-        compose.mainClock.autoAdvance=false
         compose.runOnIdle { ui.open("session",obj("date" to date)) }
-        compose.mainClock.advanceTimeBy(450)
+        compose.waitForIdle()
         compose.onNodeWithText("Paso 1 de 3").assertIsDisplayed()
         compose.onNodeWithText(exercise.name).assertIsDisplayed()
         compose.onNodeWithText("DEMOSTRACIÓN").assertDoesNotExist()
@@ -52,6 +51,12 @@ class GuidedSessionWindowTest {
         compose.onNodeWithText("Completar y registrar").assertIsDisplayed()
         compose.onNodeWithText("Detener por molestias").assertIsDisplayed()
         compose.onNodeWithContentDescription("Pausar demostración").assertIsDisplayed()
+        // The test clock cancels infinite animation while auto-advancing. Restart
+        // the animation with the manual clock to capture successive rendered poses.
+        compose.mainClock.autoAdvance=false
+        compose.onNodeWithContentDescription("Pausar demostración").performClick()
+        compose.mainClock.advanceTimeByFrame()
+        compose.onNodeWithContentDescription("Reanudar demostración").performClick()
         val frames=(0..7).map { frame ->
             compose.mainClock.advanceTimeBy(160)
             capture("movimiento-$frame")
