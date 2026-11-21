@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlin.math.sqrt
 
 /** Floor movements with explicit joint placement and support contacts. */
 internal enum class AuthoredFloorMovement(val posture: ExercisePosture) {
@@ -13,14 +14,19 @@ internal enum class AuthoredFloorMovement(val posture: ExercisePosture) {
     COPENHAGEN_HOLD(ExercisePosture.SIDE_LYING),
     COPENHAGEN_LIFT(ExercisePosture.SIDE_LYING),
     SIDE_ADDUCTION(ExercisePosture.SIDE_LYING),
-    PRONE_HIP_ROTATION(ExercisePosture.PRONE);
+    PRONE_HIP_ROTATION(ExercisePosture.PRONE),
+    HAMSTRING_SLIDE(ExercisePosture.SUPINE),
+    HAMSTRING_SLIDE_SINGLE(ExercisePosture.SUPINE),
+    TOE_TOWEL(ExercisePosture.UPRIGHT);
+
+    val isHamstringSlide: Boolean get() = this == HAMSTRING_SLIDE || this == HAMSTRING_SLIDE_SINGLE
 
     fun render(id: String, frameCount: Int): ExerciseMotion {
         val tempo = id.endsWith("-tempo23") || id.endsWith("_slow")
         val pause = id.endsWith("-pause23") || id.endsWith("_pause")
-        val up = if (tempo) 1.2f else 1.6f
+        val up = if (tempo) { if (isHamstringSlide) 3f else 1.2f } else 1.6f
         val hold = if (pause) 2f else .25f
-        val down = if (tempo) 3f else 1.6f
+        val down = if (tempo) { if (isHamstringSlide) 1.2f else 3f } else 1.6f
         val duration = up + hold + down + .35f
         val times = List(frameCount) { it.toFloat() / frameCount }
         val frames = times.map { phase ->
@@ -39,12 +45,17 @@ internal enum class AuthoredFloorMovement(val posture: ExercisePosture) {
                 COPENHAGEN_LIFT -> copenhagen(lift)
                 SIDE_ADDUCTION -> sideAdduction(lift)
                 PRONE_HIP_ROTATION -> proneHipRotation(lift)
+                HAMSTRING_SLIDE, HAMSTRING_SLIDE_SINGLE -> hamstringSlide(lift, this == HAMSTRING_SLIDE_SINGLE)
+                TOE_TOWEL -> toeTowel()
             }
         }
-        val bench = if (this == COPENHAGEN_HOLD || this == COPENHAGEN_LIFT)
-            listOf(ExerciseProp("bench",Rect(554f,574f,657f,659f))) else emptyList()
+        val supports = when (this) {
+            COPENHAGEN_HOLD, COPENHAGEN_LIFT -> listOf(ExerciseProp("bench",Rect(554f,574f,657f,659f)))
+            TOE_TOWEL -> listOf(ExerciseProp("chair",Rect(205f,509f,378f,669f)))
+            else -> emptyList()
+        }
         return ExerciseMotion(frames,duration,times,"original",if(this==KICKBACK) "left" else "right",
-            staticHold=this==COPENHAGEN_HOLD,props=bench,
+            staticHold=this==COPENHAGEN_HOLD,props=supports,
             view=if(this==PRONE_HIP_ROTATION) ExerciseView.OVERHEAD else ExerciseView.SIDE,
             prone=posture==ExercisePosture.PRONE,handSupport=this==KICKBACK,posture=posture,
             authoredFloor=this)
@@ -113,6 +124,30 @@ internal enum class AuthoredFloorMovement(val posture: ExercisePosture) {
             first,first + Offset(-lateral,-depth),second,second + Offset(lateral,-depth))
     }
 
+    private fun hamstringSlide(extension: Float, single: Boolean): List<Offset> {
+        val shoulder = Offset(218f,652f)
+        val hip = shoulder + vector(-21f + 9f * extension) * 163f
+        val heel = Offset(496f + 116f * extension,668f)
+        val axis = (heel - hip) / (heel - hip).getDistance()
+        val perpendicular = Offset(axis.y,-axis.x)
+        val thigh = 134f
+        val shin = 125f
+        val reach = (heel - hip).getDistance()
+        val along = (thigh * thigh - shin * shin + reach * reach) / (2f * reach)
+        val knee = hip + axis * along + perpendicular * sqrt((thigh * thigh - along * along).coerceAtLeast(0f))
+        val depth = Offset(-8f,-10f)
+        val farKnee = if (single) hip + vector(-68f) * thigh + depth else knee + depth
+        val farHeel = if (single) farKnee + vector(14f) * shin else heel + Offset(-12f,0f)
+        return listOf(Offset(160f,652f),shoulder,hip,Offset(294f,662f),Offset(377f,666f),
+            Offset(282f,650f),Offset(365f,654f),knee,heel,farKnee,farHeel)
+    }
+
+    private fun toeTowel(): List<Offset> = listOf(
+        Offset(270f,285f),Offset(276f,343f),Offset(286f,487f),
+        Offset(303f,423f),Offset(375f,477f),Offset(290f,413f),Offset(361f,467f),
+        Offset(425f,495f),Offset(418f,654f),Offset(411f,483f),Offset(405f,642f)
+    )
+
     private fun vector(degrees: Float): Offset {
         val radians = Math.toRadians(degrees.toDouble())
         return Offset(cos(radians).toFloat(),sin(radians).toFloat())
@@ -127,6 +162,9 @@ internal enum class AuthoredFloorMovement(val posture: ExercisePosture) {
             id=="new46-copenhagendyn" -> COPENHAGEN_LIFT
             id=="new46-sideadduct" -> SIDE_ADDUCTION
             id=="new46-pronehipir" -> PRONE_HIP_ROTATION
+            id=="home-ham-slide23" || id.startsWith("home-ham-slide23-") -> HAMSTRING_SLIDE
+            id=="home-ham-slide-one23" || id.startsWith("home-ham-slide-one23-") -> HAMSTRING_SLIDE_SINGLE
+            id=="new46-toetowel" -> TOE_TOWEL
             else -> null
         }
     }

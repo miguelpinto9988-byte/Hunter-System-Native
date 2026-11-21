@@ -28,6 +28,9 @@ internal enum class TechniqueDiagram(val title: String, val cue: String) {
     LATERAL("Desplazamiento lateral", "Separa los pies para el paso lateral. Desplaza la pelvis hacia la pierna que se flexiona, con su rodilla en la dirección de la punta del pie."),
     NECK("Giro suave del cuello", "Gira la cara hacia un lado y vuelve al centro. Alterna hacia el otro lado con los hombros quietos."),
     TOE_LIFT("Puntas arriba, talones apoyados", "Eleva las puntas hacia las espinillas. Mantén los talones apoyados y las rodillas quietas durante la subida y la bajada."),
+    TOE_TOWEL("Recoge la toalla con los dedos", "Mantén el talón apoyado. Flexiona los dedos para acercar la tela y suéltala despacio. La rodilla queda quieta."),
+    HAMSTRING_SLIDE("Talones sobre la toalla", "Mantén la espalda alta apoyada y la pelvis elevada mientras alejas y acercas los talones."),
+    HAMSTRING_SLIDE_SINGLE("Solo un talón desliza", "Apoya el talón de trabajo sobre la toalla y eleva la otra pierna. Conserva la pelvis alta mientras deslizas."),
     ANKLE("Movimiento del tobillo", "Mueve la punta del pie en el sentido indicado en la ficha. El movimiento es pequeño y se concentra en el tobillo."),
     WRIST("Movimiento de la muñeca", "Mantén el antebrazo estable y mueve la mano desde la muñeca en el sentido indicado en la ficha."),
     FINGERS("Abre y cierra los dedos", "Apoya los antebrazos. Abre la mano, recoge los dedos suavemente y vuelve a abrirla sin apretar."),
@@ -53,6 +56,9 @@ internal fun techniqueDiagram(exercise: Exercise, motion: ExerciseMotion?, subje
         motion?.authoredFloor == AuthoredFloorMovement.COPENHAGEN_LIFT -> TechniqueDiagram.COPENHAGEN_LIFT
         motion?.authoredFloor == AuthoredFloorMovement.SIDE_ADDUCTION -> TechniqueDiagram.SIDE_ADDUCTION
         motion?.authoredFloor == AuthoredFloorMovement.PRONE_HIP_ROTATION -> TechniqueDiagram.PRONE_HIP_ROTATION
+        motion?.authoredFloor == AuthoredFloorMovement.TOE_TOWEL -> TechniqueDiagram.TOE_TOWEL
+        motion?.authoredFloor == AuthoredFloorMovement.HAMSTRING_SLIDE -> TechniqueDiagram.HAMSTRING_SLIDE
+        motion?.authoredFloor == AuthoredFloorMovement.HAMSTRING_SLIDE_SINGLE -> TechniqueDiagram.HAMSTRING_SLIDE_SINGLE
         motion?.toeLift != null -> TechniqueDiagram.TOE_LIFT
         motion?.handGesture == HandGesture.FINGER_CLOSE -> TechniqueDiagram.FINGERS
         subject == "contralateral" -> TechniqueDiagram.OPPOSITE
@@ -195,6 +201,14 @@ private fun DrawScope.drawTechnique(diagram: TechniqueDiagram, ink: Color, accen
             drawCircle(accent,4f,heel)
             arrow(Offset(185f,65f),Offset(178f,38f))
         }
+        TechniqueDiagram.TOE_TOWEL -> {
+            val heel=Offset(101f,70f)
+            line(Offset(67f,79f),Offset(210f,79f),ink.copy(alpha=.38f))
+            chain(listOf(Offset(106f,26f),Offset(110f,58f),heel,Offset(161f,71f)),w=8f)
+            line(Offset(134f,76f),Offset(188f,76f),accent,4f)
+            drawCircle(accent,4f,heel)
+            arrow(Offset(186f,54f),Offset(151f,54f))
+        }
         TechniqueDiagram.ANKLE, TechniqueDiagram.WRIST -> {
             val joint=Offset(119f,60f)
             line(Offset(112f,18f),joint,w=10f)
@@ -236,17 +250,21 @@ private fun DrawScope.drawTechnique(diagram: TechniqueDiagram, ink: Color, accen
         TechniqueDiagram.V_UP, TechniqueDiagram.REVERSE_CLAM, TechniqueDiagram.KICKBACK,
         TechniqueDiagram.COPENHAGEN_HOLD, TechniqueDiagram.COPENHAGEN_LIFT,
         TechniqueDiagram.SIDE_ADDUCTION, TechniqueDiagram.PRONE_HIP_ROTATION,
+        TechniqueDiagram.HAMSTRING_SLIDE, TechniqueDiagram.HAMSTRING_SLIDE_SINGLE,
         TechniqueDiagram.REFERENCE -> {
             val pose=motion?.frames?.firstOrNull() ?: return
+            val slider=diagram==TechniqueDiagram.HAMSTRING_SLIDE || diagram==TechniqueDiagram.HAMSTRING_SLIDE_SINGLE
             val movingIndex=when(diagram){
                 TechniqueDiagram.V_UP->1
                 TechniqueDiagram.REVERSE_CLAM->10
                 TechniqueDiagram.KICKBACK->7
                 TechniqueDiagram.COPENHAGEN_LIFT, TechniqueDiagram.SIDE_ADDUCTION, TechniqueDiagram.PRONE_HIP_ROTATION ->8
+                TechniqueDiagram.HAMSTRING_SLIDE, TechniqueDiagram.HAMSTRING_SLIDE_SINGLE ->8
                 else->null
             }
             val peak=when {
                 diagram==TechniqueDiagram.PRONE_HIP_ROTATION -> motion.frames.minBy { it[8].x }
+                slider -> motion.frames.maxBy { it[8].x }
                 movingIndex!=null -> motion.frames.minBy { it[movingIndex].y }
                 else -> pose
             }
@@ -282,6 +300,10 @@ private fun DrawScope.drawTechnique(diagram: TechniqueDiagram, ink: Color, accen
                     else->listOf(movingIndex)
                 }
                 for(joint in indices)arrow(project(pose[joint]),project(peak[joint]))
+                if(slider){
+                    val heel=project(peak[8])
+                    line(heel+Offset(-12f,6f),heel+Offset(8f,6f),accent,4f)
+                }
                 if(diagram==TechniqueDiagram.REVERSE_CLAM)drawCircle(accent,4f,project(pose[9]))
             }
         }

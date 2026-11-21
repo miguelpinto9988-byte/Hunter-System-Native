@@ -270,16 +270,19 @@ private fun DrawScope.drawActor(
             val curl = if ((if (near) 4 else 6) in grippedWrists) .74f else gesture?.curl(phase) ?: 0f
             drawHand(end, gesture?.direction(fingers,phase,near) ?: fingers, u, tone, near,
                 planted && !overhead, curl, gesture?.projectedLength(phase) ?: 1f)
+        } else if (motion.authoredFloor == AuthoredFloorMovement.TOE_TOWEL) {
+            drawToeGather(end,u,tone,if (near) ExercisePoseCommands.toeGather(phase) else 0f)
         } else if (broad && !overhead) {
             drawFrontShoe(end, u, if (near) motion.firstFootOnLeft else !motion.firstFootOnLeft)
         } else {
             val foot = ExercisePoseCommands.foot(motion, p, joint, end, near, phase)
             val lower=normal(foot)*(if(foot.x<0) -1f else 1f)
-            val heelAxis=if(motion.toeLift!=null) Offset(if(foot.x<0) -1f else 1f,0f) else foot
+            val fixedHeel=motion.toeLift!=null || motion.authoredFloor?.isHamstringSlide==true
+            val heelAxis=if(fixedHeel) Offset(if(foot.x<0) -1f else 1f,0f) else foot
             val heel=end-heelAxis*(10*u)
             val toe=heel+foot*(39*u)
             val toeBottom=toe+lower*(9*u)
-            val heelBottom=heel+(if(motion.toeLift!=null) Offset(0f,1f) else lower)*(9*u)
+            val heelBottom=heel+(if(fixedHeel) Offset(0f,1f) else lower)*(9*u)
             val topHeel=heel-lower*(9*u)
             val topToe=toe-lower*(4*u)
             val upper=Path().apply{
@@ -348,6 +351,21 @@ private fun DrawScope.drawActor(
             c.restore()
         }
     }
+}
+
+private fun DrawScope.drawToeGather(ankle: Offset, unit: Float, tone: Color, curl: Float) {
+    fun point(x: Float,y: Float) = ankle + Offset(x,y) * unit
+    val toe = point(36f-9f*curl,9f)
+    val foot = Path().apply {
+        val heel = point(-10f,10f)
+        moveTo(heel.x,heel.y)
+        quadraticTo(point(-16f,2f).x,point(-16f,2f).y,point(-9f,-8f).x,point(-9f,-8f).y)
+        quadraticTo(point(6f,-9f).x,point(6f,-9f).y,point(17f,-1f).x,point(17f,-1f).y)
+        quadraticTo(point(32f-5f*curl,-4f-4f*curl).x,point(32f-5f*curl,-4f-4f*curl).y,toe.x,toe.y)
+        close()
+    }
+    drawPath(foot,tone)
+    drawLine(tone.copy(alpha=.65f),point(18f,5f),point(25f-4f*curl,3f),1.8f*unit,StrokeCap.Round)
 }
 
 private fun DrawScope.drawFrontShorts(

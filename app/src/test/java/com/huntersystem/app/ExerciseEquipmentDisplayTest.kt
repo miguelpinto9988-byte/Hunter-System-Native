@@ -49,6 +49,10 @@ class ExerciseEquipmentDisplayTest {
         // The cloth has a distinct base fill that appears in neither the athlete nor the gym SVG.
         assertTrue(pixels.count { it and 0xFFFFFF == 0xEEA86C } > 70)
         save("remo-toalla",towel)
+
+        compose.runOnIdle { id.value = "home-ham-slide-one23" }
+        compose.onNodeWithContentDescription("Equipo: Toalla").assertIsDisplayed()
+        save("curl-femoral-una-pierna",captureScene("Equipo: Toalla"))
     }
 
     private fun captureScene(description: String): Bitmap {

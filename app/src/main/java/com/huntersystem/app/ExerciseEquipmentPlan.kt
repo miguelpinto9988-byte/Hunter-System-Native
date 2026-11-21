@@ -27,7 +27,9 @@ internal enum class DemoGear(val asset: String, val label: String) {
     HURDLE("hurdle", "Valla"), SLED("sled", "Trineo"), HARNESS("harness", "Arnés");
 }
 
-internal enum class GearMount { BOTH, NEAR, FAR, SHARED, ANKLE, ANKLE_LOOP, KNEE, HIP, FLOOR, FOOT_TETHER }
+internal enum class GearMount { BOTH, NEAR, FAR, SHARED, ANKLE, ANKLE_LOOP, KNEE, HIP, FLOOR, FOOT_TETHER, FOREHEAD }
+internal enum class LegRollerContact { FRONT_SHIN, BACK_SHIN }
+internal enum class ArmLeverContact { HAND, HIGH_HAND, CHEST_SUPPORT, ELBOW_PAD, OVERHEAD_ELBOW }
 
 internal data class DemoApparatus(
     val gear: DemoGear,
@@ -35,7 +37,9 @@ internal data class DemoApparatus(
     val label: String = gear.label,
     val pulleyHeight: Float = .52f,
     val bilateralTether: Boolean = false,
-    val ropeGrip: Boolean = false
+    val ropeGrip: Boolean = false,
+    val legRollerContact: LegRollerContact = LegRollerContact.FRONT_SHIN,
+    val armLeverContact: ArmLeverContact = ArmLeverContact.HAND
 )
 
 internal object ExerciseEquipmentPlan {
@@ -85,7 +89,7 @@ internal object ExerciseEquipmentPlan {
             kinds += DemoGear.DUMBBELL
         if (DemoGear.KETTLEBELL in kinds || DemoGear.CABLE in kinds && "mancuerna" !in name)
             kinds -= DemoGear.DUMBBELL
-        if ("toalla" in name) kinds += DemoGear.TOWEL
+        if ("toalla" in name || motion.authoredFloor?.isHamstringSlide == true) kinds += DemoGear.TOWEL
         if (DemoGear.SOCCER in kinds) kinds -= DemoGear.BALL
         if (DemoGear.SMITH in kinds || DemoGear.LANDMINE in kinds) kinds -= DemoGear.BARBELL
         if (DemoGear.BAND in kinds || DemoGear.STRAP in kinds || DemoGear.BATTLE_ROPE in kinds)
@@ -111,13 +115,18 @@ internal object ExerciseEquipmentPlan {
         return kinds.sortedBy(DemoGear::ordinal).map { gear ->
             val mount = when (gear) {
                 DemoGear.DUMBBELL, DemoGear.KETTLEBELL -> when {
+                    family == "home-renegade23" || family == "home-renegade-knee23" -> GearMount.BOTH
                     family in setOf("dbbridge","hipthrust") -> GearMount.HIP
                     single == GearMount.NEAR -> single
                     motion.equipment=="goblet-weight" || name.contains("con mancuerna ") ||
                         family in setOf("goblet","goblethold","dbsumo","sumodead","pullover") -> GearMount.SHARED
                     else -> GearMount.BOTH
                 }
-                DemoGear.TOWEL -> if ("remo" in name) GearMount.BOTH else GearMount.FLOOR
+                DemoGear.TOWEL -> when {
+                    family in setOf("prone","reverse") -> GearMount.FOREHEAD
+                    "remo" in name -> GearMount.BOTH
+                    else -> GearMount.FLOOR
+                }
                 DemoGear.BAND -> when {
                     "plantar" in name || "inversion de tobillo" in name || "eversion de tobillo" in name -> GearMount.FOOT_TETHER
                     "minibanda" in name && ("tobillo" in name || "pies" in name) -> GearMount.ANKLE_LOOP
@@ -130,7 +139,11 @@ internal object ExerciseEquipmentPlan {
                 DemoGear.CABLE -> if (pulleyHeight == .14f &&
                     ("cadera" in name || "tobillo" in name || "tobillera" in name || "femoral" in name)) GearMount.ANKLE
                     else single
-                DemoGear.SLIDER -> if ("apertura de manos" in name) GearMount.BOTH else GearMount.FLOOR
+                DemoGear.SLIDER -> when {
+                    "apertura de manos" in name -> GearMount.BOTH
+                    family == "new46-slidereverse" -> GearMount.NEAR
+                    else -> GearMount.FLOOR
+                }
                 DemoGear.BALL, DemoGear.MED_BALL -> if ("rodillas" in name) GearMount.KNEE else GearMount.SHARED
                 DemoGear.RACKET -> GearMount.NEAR
                 DemoGear.ARM_LEVER -> if (single == GearMount.NEAR) single else GearMount.BOTH
@@ -143,7 +156,16 @@ internal object ExerciseEquipmentPlan {
                 else if (gear in leverMachines) exercise.name else gear.label
             DemoApparatus(gear,mount,label,pulleyHeight,
                 bilateralTether=gear==DemoGear.CABLE && ("desde poleas" in name || "en poleas" in name),
-                ropeGrip=gear==DemoGear.CABLE && "con cuerda" in name)
+                ropeGrip=gear==DemoGear.CABLE && "con cuerda" in name,
+                legRollerContact=if (gear==DemoGear.LEG_LEVER && "femoral" in name) LegRollerContact.BACK_SHIN
+                    else LegRollerContact.FRONT_SHIN,
+                armLeverContact=when (family) {
+                    "gym-highrow30" -> ArmLeverContact.HIGH_HAND
+                    "gym-supportrow30" -> ArmLeverContact.CHEST_SUPPORT
+                    "gym-lateralm30" -> ArmLeverContact.ELBOW_PAD
+                    "gym-pulloverm30" -> ArmLeverContact.OVERHEAD_ELBOW
+                    else -> ArmLeverContact.HAND
+                })
         }
     }
 

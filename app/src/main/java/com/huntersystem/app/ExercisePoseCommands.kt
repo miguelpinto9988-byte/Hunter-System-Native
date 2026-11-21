@@ -73,6 +73,10 @@ internal object ExercisePoseCommands {
 
     /** Exercise-specific placement commands supplement the recorded landmarks. */
     fun apply(id: String, frames: List<List<Offset>>): List<List<Offset>> {
+        if (id.startsWith("gym-pulloverm30")) return animateMachinePullover(frames)
+        if (id.startsWith("gym-highrow30")) return animateMachineHighRow(frames)
+        if (id in setOf("reverse","reverse_slow","reverse_pause") &&
+            frames.all { it==frames.first() }) return sweepProneArms(id,frames)
         if (id.startsWith("home-diamond23")) {
             val initial = frames.first()
             val torso = initial[2] - initial[1]
@@ -99,6 +103,63 @@ internal object ExercisePoseCommands {
                 this[2] += Offset(.089f, -.041f) * span * phase
                 this[7] += Offset(.022f, 0f) * span * phase
                 this[9] += Offset(.022f, 0f) * span * phase
+            }
+        }
+    }
+
+    private fun sweepProneArms(id: String, frames: List<List<Offset>>): List<List<Offset>> {
+        val outward = if(id=="reverse_slow") .29f else .43f
+        val returnStart = if(id=="reverse_pause") .67f else outward
+        val rest=frames.first()
+        return frames.indices.map { index ->
+            val phase=index.toFloat()/frames.size
+            val progress=minOf(phase/outward,1f,(1f-phase)/(1f-returnStart))
+            val radians = progress*progress*(3f-2f*progress)*.39f
+            rest.toMutableList().apply {
+                for (joint in 3..6) {
+                    val arm=rest[joint]-rest[1]
+                    val turn=if(joint<=4) -radians else radians
+                    this[joint]=rest[1]+Offset(arm.x*cos(turn)-arm.y*sin(turn),
+                        arm.x*sin(turn)+arm.y*cos(turn))
+                }
+            }
+        }
+    }
+
+    private fun animateMachinePullover(frames: List<List<Offset>>): List<List<Offset>> {
+        val reach=frames.maxOf { it[4].x }
+        val close=frames.minOf { it[4].x }
+        return frames.map { frame ->
+            val progress=((reach-frame[4].x)/(reach-close).coerceAtLeast(1f)).coerceIn(0f,1f)
+            val upper=-1.54f+2.78f*progress
+            val forearm=upper-1.47f
+            val elbow=frame[1]+Offset(cos(upper),sin(upper))*98f
+            val grip=elbow+Offset(cos(forearm),sin(forearm))*77f
+            frame.toMutableList().apply {
+                this[3]=elbow
+                this[4]=grip
+                this[5]=elbow+Offset(-12f,-10f)
+                this[6]=grip+Offset(-12f,-10f)
+            }
+        }
+    }
+
+    private fun animateMachineHighRow(frames: List<List<Offset>>): List<List<Offset>> {
+        val open = frames.maxOf { it[4].x }
+        val closed = frames.minOf { it[4].x }
+        return frames.map { frame ->
+            val progress=((open-frame[4].x)/(open-closed).coerceAtLeast(1f)).coerceIn(0f,1f)
+            val reach=Offset(171f-106f*progress,-109f+158f*progress)
+            val distance=reach.getDistance()
+            val axis=reach/distance
+            val bend=sqrt((112f*112f-distance*distance/4f).coerceAtLeast(0f))
+            val elbow=frame[1]+reach*.5f+Offset(-axis.y,axis.x)*bend
+            val hand=frame[1]+reach
+            frame.toMutableList().apply {
+                this[3]=elbow
+                this[4]=hand
+                this[5]=elbow+Offset(-12f,-10f)
+                this[6]=hand+Offset(-12f,-10f)
             }
         }
     }
@@ -168,6 +229,7 @@ internal object ExercisePoseCommands {
         val toe = when {
             motion.toeLift != null -> Offset(forward, -.60f * motion.toeLift.elevation(phase))
             motion.view == ExerciseView.OVERHEAD -> torso + shin * (torso.getDistance() * .22f)
+            motion.authoredFloor?.isHamstringSlide == true -> Offset(awayFromShoulders,-.36f)
             motion.authoredFloor == AuthoredFloorMovement.V_UP -> shin
             motion.authoredFloor == AuthoredFloorMovement.REVERSE_CLAM -> Offset(-.85f,.35f)
             motion.authoredFloor == AuthoredFloorMovement.KICKBACK -> Offset(shin.x,.60f)
@@ -178,6 +240,11 @@ internal object ExercisePoseCommands {
             else -> Offset(forward, (shin.x * forward * .25f).coerceIn(-.20f,.20f))
         }
         return unit(toe)
+    }
+
+    fun toeGather(phase: Float): Float {
+        val bend = sin(Math.PI.toFloat() * phase)
+        return bend * bend
     }
 
     /** Interpolate elbow and knee bends without shortening them when the pivot changes direction. */

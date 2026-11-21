@@ -176,8 +176,15 @@ internal class ExerciseEquipmentScene(
                     mark(asset,handCenter(item.mount)+Offset(0f,13f*unit),64f,46f,phase*360f)
                     mark("bar",hands,63f,23f)
                 }
-                DemoGear.SLIDER -> for (index in if (item.mount==GearMount.BOTH) wrists else listOf(8,10))
-                    mark(asset,p[index]+Offset(0f,10f*unit),54f,23f)
+                DemoGear.SLIDER -> {
+                    val contacts = when (item.mount) {
+                        GearMount.BOTH -> wrists
+                        GearMount.NEAR -> listOf(8)
+                        else -> listOf(8,10)
+                    }
+                    for (index in contacts)
+                        mark(asset,p[index]+Offset(0f,15f*unit),54f,19f)
+                }
                 DemoGear.FOAM_ROLLER -> mark(asset,rest[1]+(rest[2]-rest[1])*.27f+
                     Offset(0f,20f*unit),135f,32f,if (overhead) angle(rest[2]-rest[1]) else 0f)
                 DemoGear.BENCH,DemoGear.CHAIR,DemoGear.TABLE,DemoGear.INCLINED_SUPPORT ->
@@ -244,8 +251,21 @@ internal class ExerciseEquipmentScene(
         }
 
         private fun towel(item: DemoApparatus) {
+            if (item.mount==GearMount.FOREHEAD) {
+                mark("towel",rest[0]+Offset(0f,7f*unit),91f,40f)
+                return
+            }
             if(item.mount==GearMount.FLOOR) {
-                mark("towel",p[8]+Offset(9f*facing*unit,11f*unit),68f,24f)
+                when (motion.authoredFloor) {
+                    AuthoredFloorMovement.HAMSTRING_SLIDE, AuthoredFloorMovement.HAMSTRING_SLIDE_SINGLE ->
+                        mark("towel",p[8]+Offset(-8f*facing*unit,14f*unit),57f,14f)
+                    AuthoredFloorMovement.TOE_TOWEL -> {
+                        val curl = ExercisePoseCommands.toeGather(phase)
+                        mark("towel",p[8]+Offset((43f-11f*curl)*unit,14f*unit),
+                            78f-29f*curl,13f+4f*curl)
+                    }
+                    else -> mark("towel",p[8]+Offset(9f*facing*unit,11f*unit),68f,24f)
+                }
                 return
             }
             val farWrap = p[10] + Offset(26f*facing*unit,7f*unit)
@@ -359,9 +379,12 @@ internal class ExerciseEquipmentScene(
                     line(slidingPad,slidingPad+Offset(reverse,24f*unit))
                 }
                 DemoGear.LEG_LEVER -> {
-                    val hinge = rest[7]+Offset(-18f*facing*unit,1f*unit)
+                    val hinge = rest[7]
+                    val shin = unitVector(p[8]-p[7])
+                    val shinFront = Offset(shin.y,-shin.x)*facing
+                    val side = if (item.legRollerContact==LegRollerContact.BACK_SHIN) -1f else 1f
                     val pad = if (item.mount==GearMount.KNEE) p[7]-Offset(0f,16f*unit)
-                        else p[8]+Offset(-2f*facing*unit,-15f*unit)
+                        else p[8] - shin*(17f*unit) + shinFront*(side*15f*unit)
                     stand(rear,rest[2].y-43f*unit,width=65f)
                     line(hinge,Offset(hinge.x,ground))
                     line(hinge,pad)
@@ -378,11 +401,24 @@ internal class ExerciseEquipmentScene(
                     }
                 }
                 DemoGear.ARM_LEVER -> {
-                    stand(rear,body.top-25f*unit)
-                    val hinge = Offset(rear,rest[1].y-48f*unit)
+                    val contact = item.armLeverContact
+                    val inFront = contact == ArmLeverContact.HIGH_HAND || contact == ArmLeverContact.CHEST_SUPPORT
+                    val base = if(inFront) front else rear
+                    val height = if(contact==ArmLeverContact.HIGH_HAND || contact==ArmLeverContact.OVERHEAD_ELBOW)
+                        84f else 48f
+                    stand(base,body.top-25f*unit)
+                    val hinge = Offset(base,rest[1].y-height*unit)
+                    if(inFront) {
+                        val chest = rest[1]+Offset(30f*facing*unit,42f*unit)
+                        line(Offset(base,chest.y),chest)
+                        mark("roller",chest,77f,38f,angle=90f)
+                    }
                     for (index in wrists(item.mount)) {
                         gripped += index
-                        line(hinge,grip(index))
+                        val elbowPad=contact==ArmLeverContact.ELBOW_PAD || contact==ArmLeverContact.OVERHEAD_ELBOW
+                        val end = if(elbowPad) p[index-1]+Offset(0f,9f*unit) else grip(index)
+                        line(hinge,end)
+                        if(elbowPad) mark("roller",end,47f,25f,foreground=true)
                         mark("handle",grip(index),41f,27f)
                     }
                     mark("pulley",hinge,30f,24f)

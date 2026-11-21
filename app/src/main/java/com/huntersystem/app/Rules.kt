@@ -39,7 +39,7 @@ class Rules(val catalog:Catalog){
   val hasCardio="cardio" in gym || e.cardioEquipment?.let { it in gym }==true
   if(p.has("bodyAvailable")&&"cardio" in e.gymRequirements&&!hasCardio)out+="Falta la máquina de cardio correspondiente"
   if(!p.b("bodyAvailable",true)&&e.equipment=="body"&&req?.strings().orEmpty().all { it=="body" })out+="Peso corporal desactivado en Perfil"
-  if(req==null)out+="Requisitos de material no disponibles" else for(k in req.strings())if(when(k){"db"->!p.b("dumbbellsAvailable",gear in listOf("db","gym"));"gym"->gear!="gym";"cardio"->!hasCardio;"bench"->!p.b("bench")&&k !in gym;"step"->!p.b("step");else->if(e.hunter2000||e.sport.isNotBlank())k !in mats&&k !in gym else gear!="gym"||k !in gym})out+="Falta material: "+(if(e.sport.isBlank()&&!e.hunter2000)k else catalog.materials.s(k,k))
+  if(req==null)out+="Requisitos de material no disponibles" else for(k in req.strings())if(when(k){"db"->!p.b("dumbbellsAvailable",gear in listOf("db","gym"));"gym"->gear!="gym";"cardio"->!hasCardio;"bench"->!p.b("bench")&&k !in gym;"step"->!p.b("step");"towel"->k !in mats;else->if(e.hunter2000||e.sport.isNotBlank())k !in mats&&k !in gym else gear!="gym"||k !in gym})out+="Falta material: "+(if(k!="towel"&&e.sport.isBlank()&&!e.hunter2000)k else catalog.materials.s(k,k))
   if(e.gym&&gear!="gym"||e.equipment=="gym"&&gear!="gym"||e.equipment=="db"&&!p.b("dumbbellsAvailable",gear in listOf("db","gym")))out+="Equipo no configurado"
   if(raw.i("progressionTierNative")>maxPlanningLevel&&!mode(p).reduced&&!catalog.editorial.o("goalPlans").o(p.s("finalTarget")).b("gentle"))out+="Nivel superior al seleccionado"
   if(e.planningLevel>maxPlanningLevel)out+="Nivel de planificación superior al seleccionado"
