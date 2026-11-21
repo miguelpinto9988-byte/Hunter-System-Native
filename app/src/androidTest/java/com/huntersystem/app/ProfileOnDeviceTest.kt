@@ -58,7 +58,11 @@ class ProfileOnDeviceTest {
             awaitText("SIGUIENTE ›").click()
             awaitText("PASO 4 DE 4")
             capture("4-oscuro")
-            assertTrue("Consent must be explicit", !awaitText("ACTIVAR PERFIL").isEnabled)
+            // The visible Text can expose its own Android accessibility node.
+            // Check the effect of a physical tap on the disabled activation control.
+            awaitText("ACTIVAR PERFIL").click()
+            device.waitForIdle()
+            assertTrue("Activation must not proceed without consent", device.hasObject(By.text("PASO 4 DE 4")))
             awaitText("He revisado mi información y deseo activar mi perfil de cazador.").click()
             awaitText("ACTIVAR PERFIL").click()
             awaitText("SISTEMA ACTIVADO")
