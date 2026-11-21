@@ -26,13 +26,8 @@ class ExerciseCatalogAuditTest {
         val cards = catalog.historicalExercises
         val samples = listOf(0f,.12f,.25f,.38f,.5f,.62f,.75f,.88f)
         val report = System.getenv("HUNTER_EXERCISE_AUDIT")?.let(::File)
-        fun inspect(id: String): JSONObject = sources.getOrPut(id) {
-            val exercise = catalog.byId.getValue(id)
-            val motion = if (id == exercise.id) ExerciseMotions.load(context,exercise)
-                else ExerciseMotions.load(context,id)?.let {
-                    it.copy(apparatus=ExerciseEquipmentPlan.forExercise(exercise,it))
-                }
-            checkNotNull(motion) { id }
+        fun inspect(id: String, exercise: Exercise, motion: ExerciseMotion, generatedPhase: Boolean = false) =
+            sources.getOrPut(id) {
             val framing = ExerciseFraming.from(motion)
             assertTrue(id,framing.scaleFor(Size(288f,176f),true) > 0f)
             val poses = samples.map(motion::at)
@@ -57,13 +52,14 @@ class ExerciseCatalogAuditTest {
             }
             val gear = (motion.apparatus.map { it.gear } +
                 framing.equipment.authoredSupports.mapNotNull { ExerciseEquipmentPlan.forProp(it.kind) }).distinct()
-            obj("canonica" to exercise.id,"vista" to motion.view.name,
+            obj("canonica" to exercise.id,"vista" to motion.view.name,"gesto_independiente" to generatedPhase,
+                "origen" to motion.source,
                 "isometrico" to motion.staticHold,"huella" to motion.frames.hashCode().toString(),
                 "puntos_moviles" to arr(movingLandmarks),"segmento_corto" to shortSegment,
                 "rango_codo" to maxOf(angularRange(1,3,4),angularRange(1,5,6)),
                 "rango_rodilla" to maxOf(angularRange(2,7,8),angularRange(2,9,10)),
                 "equipo_movimiento" to (frames.distinct().size > 1),
-                "gesto_de_detalle" to (motion.toeLift!=null || motion.handGesture!=null ||
+                "gesto_de_detalle" to (motion.toeLift!=null || motion.handGesture!=null || motion.footGesture!=null ||
                     motion.authoredFloor==AuthoredFloorMovement.TOE_TOWEL),
                 "equipo" to arr(gear.map { it.name }),"etiquetas" to arr(equipmentLabels(motion)),
                 "svg" to arr(frames.flatMap { it.sprites.map(EquipmentSprite::asset) }
@@ -72,14 +68,38 @@ class ExerciseCatalogAuditTest {
         }
         val visible = catalog.exercises.mapTo(hashSetOf()) { it.id }
         val items = JSONArray()
+        var inconsistent = 0
         for (exercise in cards) {
-            val ids = exercise.raw.a("sequenceParts").strings().ifEmpty { listOf(exercise.id) }
+            if (CoreExerciseClips.hasInconsistentInstructions(exercise)) {
+                inconsistent++
+                assertEquals(exercise.id,null,ExerciseMotions.load(context,exercise))
+                if (report!=null) items.put(obj("id" to exercise.id,"visible" to (exercise.id in visible),
+                    "fuentes" to arr(emptyList<String>()),"ficha_inconsistente" to true))
+                continue
+            }
+            val clips = ExerciseMotions.loadClips(context,exercise,catalog)
+            val expected = LegacyExerciseClips.labels(exercise)
+            if (expected.isNotEmpty()) {
+                val phases = checkNotNull(clips) { "${exercise.id} no resuelve las fases ${expected.joinToString()}" }
+                assertEquals(exercise.id,expected,phases.map(ExerciseClip::label))
+                if (exercise.id.startsWith("hx_cardio_"))
+                    assertTrue(exercise.id,phases[0].motion.frames != phases[1].motion.frames)
+            }
+            val ids = if (clips == null) {
+                val motion = checkNotNull(ExerciseMotions.load(context,exercise)) { exercise.id }
+                inspect(exercise.id,exercise,motion)
+                listOf(exercise.id)
+            } else clips.map { clip ->
+                val original = catalog.byId[clip.sourceId]
+                inspect(clip.sourceId,original ?: exercise,clip.motion,original == null)
+                clip.sourceId
+            }
             assertTrue(exercise.id,ids.size in 1..2 && ids.distinct().size==ids.size)
-            for (id in ids) inspect(id)
             if (report!=null) items.put(obj("id" to exercise.id,"visible" to (exercise.id in visible),
-                "fuentes" to arr(ids)))
+                "fuentes" to arr(ids),"movimiento_unico" to exercise.id.startsWith("hx_core_")))
         }
         assertEquals(5000,cards.size)
+        assertEquals(6,inconsistent)
         if (report!=null) {
             report.parentFile?.mkdirs()
             val byId = JSONObject()

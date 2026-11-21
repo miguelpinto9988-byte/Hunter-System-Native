@@ -34,6 +34,11 @@ internal enum class TechniqueDiagram(val title: String, val cue: String) {
     ANKLE("Movimiento del tobillo", "Mueve la punta del pie en el sentido indicado en la ficha. El movimiento es pequeño y se concentra en el tobillo."),
     WRIST("Movimiento de la muñeca", "Mantén el antebrazo estable y mueve la mano desde la muñeca en el sentido indicado en la ficha."),
     FINGERS("Abre y cierra los dedos", "Apoya los antebrazos. Abre la mano, recoge los dedos suavemente y vuelve a abrirla sin apretar."),
+    TENDONS("Posiciones de los dedos", "Alterna mano recta, gancho, mesa y puño. Mantén la muñeca neutra y vuelve a extender los dedos."),
+    THUMB("Pulgar a cada dedo", "Acerca el pulgar al índice, medio, anular y meñique en orden. Mantén estable la muñeca."),
+    ARCH("Activa el arco del pie", "Acerca ligeramente el antepié al talón. Mantén los dedos extendidos y la planta apoyada."),
+    TOE_CONTROL("Mueve el dedo gordo por separado", "Levanta solo el dedo gordo. Después apóyalo y eleva los otros cuatro dedos."),
+    GREAT_TOE("Apoyo del dedo gordo", "Mantén apoyado el dedo gordo del pie de atrás y desplaza el peso lentamente con el talón elevado."),
     OPPOSITE("Brazo y pierna contrarios", "Boca abajo, eleva un brazo y la pierna contraria ligeramente. Baja y alterna al otro lado con el tronco estable."),
     SCAPULA("Brazos en W", "Boca abajo, dobla los codos formando una W. Eleva suavemente las manos y los codos al acercar los omóplatos. Baja con control."),
     V_UP("Eleva torso y piernas juntos", "Desde el suelo, eleva el torso y las piernas a la vez. Lleva las manos hacia las espinillas y vuelve con control."),
@@ -47,7 +52,7 @@ internal enum class TechniqueDiagram(val title: String, val cue: String) {
 }
 
 internal fun techniqueDiagram(exercise: Exercise, motion: ExerciseMotion?, subject: String = exercise.id): TechniqueDiagram? {
-    val base = if(subject==exercise.id) "${exercise.id} ${exercise.oldFamily} ${normalize(exercise.name)}" else subject
+    val base = if(subject==exercise.id) "${exercise.id} ${exercise.oldFamily} ${normalize(exercise.name)}" else subject.removePrefix("gesture-").replace('-', ' ')
     return when {
         motion?.authoredFloor == AuthoredFloorMovement.V_UP -> TechniqueDiagram.V_UP
         motion?.authoredFloor == AuthoredFloorMovement.REVERSE_CLAM -> TechniqueDiagram.REVERSE_CLAM
@@ -61,6 +66,14 @@ internal fun techniqueDiagram(exercise: Exercise, motion: ExerciseMotion?, subje
         motion?.authoredFloor == AuthoredFloorMovement.HAMSTRING_SLIDE_SINGLE -> TechniqueDiagram.HAMSTRING_SLIDE_SINGLE
         motion?.toeLift != null -> TechniqueDiagram.TOE_LIFT
         motion?.handGesture == HandGesture.FINGER_CLOSE -> TechniqueDiagram.FINGERS
+        motion?.handGesture == HandGesture.TENDON_GLIDE -> TechniqueDiagram.TENDONS
+        motion?.handGesture == HandGesture.THUMB_OPPOSITION -> TechniqueDiagram.THUMB
+        motion?.handGesture != null -> TechniqueDiagram.WRIST
+        motion?.footGesture == FootGesture.SHORT_ARCH -> TechniqueDiagram.ARCH
+        motion?.footGesture == FootGesture.TOE_DISASSOCIATION -> TechniqueDiagram.TOE_CONTROL
+        motion?.footGesture == FootGesture.BIG_TOE_STRETCH -> TechniqueDiagram.GREAT_TOE
+        motion?.footGesture == FootGesture.TOE_ALTERNATE -> TechniqueDiagram.TOE_LIFT
+        motion?.footGesture != null -> TechniqueDiagram.ANKLE
         subject == "contralateral" -> TechniqueDiagram.OPPOSITE
         subject in setOf("prone","prone_slow","prone_pause") -> TechniqueDiagram.SCAPULA
         "diamond" in base || "diamante" in base -> TechniqueDiagram.DIAMOND
@@ -71,7 +84,8 @@ internal fun techniqueDiagram(exercise: Exercise, motion: ExerciseMotion?, subje
         "lateralunge" in base || "zancada lateral" in base -> TechniqueDiagram.LATERAL
         "bulgarian" in base || "bulgara" in base || "sentadilla dividida" in base ||
             "zancada" in base -> TechniqueDiagram.SPLIT
-        subject in setOf("neck","neck_easy","neck_short") -> TechniqueDiagram.NECK
+        (subject in setOf("neck","neck_easy","neck_short") || "giro suave de cabeza" in base ||
+            "rotacion suave de cabeza" in base) -> TechniqueDiagram.NECK
         "chair" == subject || "sentadilla libre" in base || "sentadilla a silla" in base -> TechniqueDiagram.STANCE
         "ankle" in base || "movilidad de tobillos" in base || "dorsiflexion" in base -> TechniqueDiagram.ANKLE
         "wrist" in base || "movilidad de munecas" in base -> TechniqueDiagram.WRIST
@@ -84,7 +98,11 @@ internal fun techniqueDiagram(exercise: Exercise, motion: ExerciseMotion?, subje
 internal fun ExerciseTechniquePanel(exercise: Exercise, providedMotion: ExerciseMotion? = null,
                                     subject: String = exercise.id) {
     val context=LocalContext.current
-    val motion=remember(context,subject,providedMotion) { providedMotion ?: ExerciseMotions.load(context,subject) }
+    val motion=remember(context,exercise.id,subject,providedMotion) {
+        providedMotion ?: if (subject==exercise.id) ExerciseMotions.load(context,exercise)
+            else ExerciseMotions.load(context,subject)
+    }
+    if (CoreExerciseClips.hasInconsistentInstructions(exercise)) return
     val diagram=remember(exercise.id,motion,subject) { techniqueDiagram(exercise,motion,subject) } ?: return
     val colors=LocalHunter.current
     val detail=when(diagram) {
@@ -229,6 +247,58 @@ private fun DrawScope.drawTechnique(diagram: TechniqueDiagram, ink: Color, accen
                 line(Offset(x-8f,69f),Offset(x-if(closed) 16f else 24f,56f),w=7f)
             }
             arrow(Offset(113f,52f),Offset(146f,52f))
+        }
+        TechniqueDiagram.TENDONS -> {
+            for ((form,x) in listOf(40f,100f,160f,220f).withIndex()) {
+                line(Offset(x,77f),Offset(x,52f),w=21f)
+                for (i in 0..3) {
+                    val f=x+(i-1.5f)*5.5f
+                    val pivot=Offset(f,if(form==2) 48f else 33f+2f*i)
+                    val tip=when(form) {
+                        0 -> Offset(f,15f+3f*i)
+                        1 -> Offset(f+3f,43f+2f*i)
+                        2 -> Offset(f+13f,47f-2f*i)
+                        else -> Offset(f,53f)
+                    }
+                    chain(listOf(Offset(f,51f),pivot,tip),w=4f)
+                }
+                line(Offset(x-7f,62f),Offset(x-15f,52f),w=5f)
+            }
+        }
+        TechniqueDiagram.THUMB -> {
+            line(Offset(130f,83f),Offset(130f,54f),w=29f)
+            for (i in 0..3) {
+                val x = 113f+i*11f
+                val tip = Offset(x,if(i==1||i==2) 18f else 24f)
+                line(Offset(x,53f),tip,w=7f)
+                line(Offset(108f,68f),tip,accent.copy(alpha=.32f),w=2f)
+                drawCircle(accent,3f,tip)
+            }
+            line(Offset(116f,62f),Offset(99f,43f),w=8f)
+        }
+        TechniqueDiagram.ARCH, TechniqueDiagram.TOE_CONTROL, TechniqueDiagram.GREAT_TOE -> {
+            val heel=Offset(82f,69f)
+            val front=Offset(153f,69f)
+            line(Offset(53f,78f),Offset(209f,78f),ink.copy(alpha=.38f))
+            when(diagram) {
+                TechniqueDiagram.ARCH -> {
+                    line(heel,Offset(120f,48f),w=9f)
+                    line(Offset(120f,48f),front,w=9f)
+                    line(heel,front,ink.copy(alpha=.28f),w=5f)
+                    arrow(Offset(161f,32f),Offset(118f,32f))
+                }
+                TechniqueDiagram.TOE_CONTROL -> {
+                    line(heel,front,w=10f)
+                    line(front,Offset(182f,70f),w=8f)
+                    line(front,Offset(178f,51f),accent,w=7f)
+                    arrow(Offset(193f,64f),Offset(193f,34f))
+                }
+                else -> {
+                    chain(listOf(Offset(70f,25f),Offset(113f,44f),front,Offset(185f,72f)),w=9f)
+                    drawCircle(accent,5f,front)
+                    arrow(Offset(168f,37f),Offset(198f,37f))
+                }
+            }
         }
         TechniqueDiagram.OPPOSITE, TechniqueDiagram.SCAPULA -> {
             val upper=Offset(130f,31f)

@@ -26,7 +26,9 @@ internal data class ExerciseMotion(
     val authoredFloor: AuthoredFloorMovement? = null,
     val toeLift: ToeLiftMotion? = null,
     val handGesture: HandGesture? = null,
-    val apparatus: List<DemoApparatus> = emptyList()
+    val footGesture: FootGesture? = null,
+    val apparatus: List<DemoApparatus> = emptyList(),
+    val floorTransition: Boolean = false
 ) {
     val firstFootOnLeft: Boolean by lazy { frames.sumOf { (it[8].x-it[10].x).toDouble() } <= 0.0 }
     private val ankleFloor: List<Float> by lazy { listOf(8,10).map { index -> frames.maxOf { it[index].y } } }
@@ -69,26 +71,37 @@ internal object ExerciseMotions {
             when {
                 exerciseId.startsWith("hx_") -> {
                     val records = legacy ?: read(context,"hunter2000-poses.json").also { legacy = it }
-                    parse(records.getJSONObject(exerciseId),"historical")
+                    parse(records.getJSONObject(exerciseId),"historical",exerciseId)
                 }
                 exerciseId.startsWith("sport-") -> {
                     val records = sports ?: read(context,"exercise-actor/sports-poses.json").also { sports = it }
-                    parse(records.getJSONObject(exerciseId),"sport")
+                    parse(records.getJSONObject(exerciseId),"sport",exerciseId)
                 }
                 else -> parse(read(context,"demos30/$exerciseId.json"),"original",exerciseId)
             }
         }.getOrNull()
     }
 
-    fun load(context: Context, exercise: Exercise): ExerciseMotion? =
-        load(context, exercise.id)?.withApparatus(exercise)
+    fun load(context: Context, exercise: Exercise): ExerciseMotion? {
+        if (CoreExerciseClips.hasInconsistentInstructions(exercise)) return null
+        val motion = CoreExerciseClips.load(exercise) ?: LegacySingleExerciseMotions.load(exercise.id) { load(context,it) }
+            ?: load(context,exercise.id)
+        return motion?.withApparatus(exercise)
+    }
 
-    fun loadSequence(context: Context, exercise: Exercise, catalog: Catalog? = null): List<ExerciseMotion>? {
+    fun loadSequence(context: Context, exercise: Exercise, catalog: Catalog? = null): List<ExerciseMotion>? =
+        loadClips(context, exercise, catalog)?.map(ExerciseClip::motion)
+
+    fun loadClips(context: Context, exercise: Exercise, catalog: Catalog? = null): List<ExerciseClip>? {
         val ids = exercise.raw.a("sequenceParts").strings()
-        if (ids.size != 2 || ids[0] == ids[1]) return null
-        return ids.map { id ->
+        if (ids.isEmpty()) return LegacyExerciseClips.load(exercise) { load(context, it) }
+        if (ids.size != 2 || ids.distinct().size != ids.size) return null
+        val labels = exercise.raw.a("sequenceLabels").strings()
+        return ids.mapIndexed { index, id ->
             val motion = load(context, id) ?: return null
-            catalog?.byId?.get(id)?.let { motion.withApparatus(it) } ?: motion
+            val component = catalog?.byId?.get(id)
+            ExerciseClip(labels.getOrNull(index) ?: component?.name ?: "Gesto ${index + 1}", id,
+                component?.let { motion.withApparatus(it) } ?: motion)
         }
     }
 
@@ -170,8 +183,14 @@ internal object ExerciseMotions {
         }
         return ExerciseMotion(
             frames, toeLift?.duration ?: duration, times, source, json.optString("facing23", "right"),
-            json.optBoolean("hold"), drawnEquipment, props, view, prone, handSupport, posture,
-            toeLift = toeLift, handGesture = HandGesture.forId(exerciseId)
+            json.optBoolean("hold") || StaticExercisePoses.contains(exerciseId), drawnEquipment, props, view, prone, handSupport, posture,
+            toeLift = toeLift, handGesture = HandGesture.forId(exerciseId), footGesture = FootGesture.forId(exerciseId)
         )
     }
+}
+
+private object StaticExercisePoses {
+    private val ids = setOf("hs379-palms", "hs379-isobiceps", "new46-lsit", "new46-tucklever",
+        "new46-tricepsstretch", "new46-ringturnout")
+    fun contains(id: String) = id in ids
 }

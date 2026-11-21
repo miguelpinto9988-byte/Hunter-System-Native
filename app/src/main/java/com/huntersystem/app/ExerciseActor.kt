@@ -259,7 +259,8 @@ private fun DrawScope.drawActor(
             drawPath(cuff, shading)
         }
         if (!leg) {
-            val planted = motion.handSupport && (overhead || abs(end.y - max(p[4].y, p[6].y)) < 21f * u)
+            val floorContact = motion.floorTransition && end.y >= max(p[8].y,p[10].y) - 15f*u
+            val planted = floorContact || motion.handSupport && (overhead || abs(end.y - max(p[4].y, p[6].y)) < 21f*u)
             val forearm = direction(joint, end)
             val fingers = when {
                 planted && overhead -> down * -1f
@@ -269,15 +270,20 @@ private fun DrawScope.drawActor(
             val gesture = motion.handGesture
             val curl = if ((if (near) 4 else 6) in grippedWrists) .74f else gesture?.curl(phase) ?: 0f
             drawHand(end, gesture?.direction(fingers,phase,near) ?: fingers, u, tone, near,
-                planted && !overhead, curl, gesture?.projectedLength(phase) ?: 1f)
+                planted && !overhead, curl, gesture?.projectedLength(phase) ?: 1f,
+                gesture?.projectedWidth(phase) ?: 1f, gesture?.thumbTarget(phase))
         } else if (motion.authoredFloor == AuthoredFloorMovement.TOE_TOWEL) {
             drawToeGather(end,u,tone,if (near) ExercisePoseCommands.toeGather(phase) else 0f)
-        } else if (broad && !overhead) {
+        } else if (motion.footGesture?.bareDetail == true && near) {
+            drawBareFootDetail(end,u,tone,motion.footGesture,phase)
+        } else if (broad && !overhead && motion.footGesture == null) {
             drawFrontShoe(end, u, if (near) motion.firstFootOnLeft else !motion.firstFootOnLeft)
         } else {
             val foot = ExercisePoseCommands.foot(motion, p, joint, end, near, phase)
             val lower=normal(foot)*(if(foot.x<0) -1f else 1f)
-            val fixedHeel=motion.toeLift!=null || motion.authoredFloor?.isHamstringSlide==true
+            val fixedHeel=motion.toeLift!=null || motion.authoredFloor?.isHamstringSlide==true ||
+                motion.footGesture in setOf(FootGesture.TOE_ALTERNATE, FootGesture.TOE_TO_HEEL, FootGesture.CIRCLE,
+                    FootGesture.INWARD, FootGesture.OUTWARD, FootGesture.PLANTAR, FootGesture.FLEX)
             val heelAxis=if(fixedHeel) Offset(if(foot.x<0) -1f else 1f,0f) else foot
             val heel=end-heelAxis*(10*u)
             val toe=heel+foot*(39*u)
@@ -368,6 +374,26 @@ private fun DrawScope.drawToeGather(ankle: Offset, unit: Float, tone: Color, cur
     drawLine(tone.copy(alpha=.65f),point(18f,5f),point(25f-4f*curl,3f),1.8f*unit,StrokeCap.Round)
 }
 
+private fun DrawScope.drawBareFootDetail(ankle: Offset, unit: Float, tone: Color,
+                                        gesture: FootGesture, phase: Float) {
+    fun point(x:Float,y:Float) = ankle+Offset(x,y)*unit
+    val wave = LegacyExerciseClips.cycleSin(phase)
+    val progress = LegacyExerciseClips.pulse(phase)
+    val short = if(gesture==FootGesture.SHORT_ARCH) 6f*progress else 0f
+    val raised = if(gesture==FootGesture.BIG_TOE_STRETCH) 13f*progress else 0f
+    drawPath(smoothBody(listOf(point(-8f,4f-raised),point(11f,-2f-raised*.55f),point(28f-short,3f)),
+        listOf(8f,7f+short*.3f,6f).map { it*unit }),tone)
+    for (index in 0..4) {
+        val lift = when(gesture) {
+            FootGesture.TOE_DISASSOCIATION -> if(index==0) maxOf(0f,wave)*12f else maxOf(0f,-wave)*8f
+            FootGesture.BIG_TOE_STRETCH -> if(index==0) 0f else raised*.3f
+            else -> 0f
+        }
+        drawLine(tone,point(24f-short,1f+index*1.8f),
+            point(41f-short-index*2f,1f+index*2f-lift),unit*(if(index==0) 5f else 3f),StrokeCap.Round)
+    }
+}
+
 private fun DrawScope.drawFrontShorts(
     waist: Offset, hip: Offset, down: Offset, side: Offset,
     firstKnee: Offset, secondKnee: Offset, unit: Float
@@ -446,11 +472,11 @@ private fun DrawScope.drawFrontShoe(ankle: Offset, unit: Float, left: Boolean) {
 
 private fun DrawScope.drawHand(
     wrist: Offset, forward: Offset, unit: Float, tone: Color, near: Boolean, sideSupport: Boolean,
-    curl: Float, projectedLength: Float
+    curl: Float, projectedLength: Float, projectedWidth: Float = 1f, thumbTarget: Int? = null
 ) {
     val across = normal(forward) * if (near) 1f else -1f
     fun point(length: Float, width: Float) = wrist + (forward * (length * projectedLength) + across * width) * unit
-    val palmWidth = if (sideSupport) .53f else 1f
+    val palmWidth = projectedWidth * if (sideSupport) .53f else 1f
     val palm = smoothBody(
         listOf(point(-4f, 0f), point(4f, 0f), point(11f, 0f), point(14f, 0f)),
         listOf(5.5f, 7f, 8f, 6.3f).map { it * unit * palmWidth }
@@ -464,5 +490,8 @@ private fun DrawScope.drawHand(
             (if (sideSupport) 3f else 3.7f) * unit, StrokeCap.Round)
     }
     val thumb = if (sideSupport) 5.5f else 10.5f
-    drawLine(tone, point(3f, 4f * palmWidth), point(12f, thumb - 5f * curl), 5f * unit, StrokeCap.Round)
+    val thumbTip = thumbTarget?.let { index ->
+        point(fingerLengths[index] - 3f, (index-1.5f)*4.4f*palmWidth)
+    } ?: point(12f, thumb - 5f * curl)
+    drawLine(tone, point(3f, 4f * palmWidth), thumbTip, 5f * unit, StrokeCap.Round)
 }

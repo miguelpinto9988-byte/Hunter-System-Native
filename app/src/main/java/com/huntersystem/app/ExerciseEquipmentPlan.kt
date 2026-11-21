@@ -83,7 +83,8 @@ internal object ExerciseEquipmentPlan {
             exercise.raw.a("materials46").strings() + exercise.gymRequirements).toSet()
         val kinds = material.mapNotNull(materialGear::get).toMutableSet()
         if ("cardio" in material) cardio(family,name)?.let(kinds::add)
-        if ("machine" in material || "gym" in material && "maquina" in name) kinds += machine(name)
+        if ("machine" in material || "maquina" in name && ("gym" in material || name.startsWith("prensa de piernas")))
+            kinds += machine(name)
         motionGear[motion.equipment]?.let(kinds::add)
         if (exercise.equipment=="db" && kinds.none { it in setOf(DemoGear.DUMBBELL,DemoGear.KETTLEBELL,DemoGear.CABLE) })
             kinds += DemoGear.DUMBBELL
@@ -116,7 +117,7 @@ internal object ExerciseEquipmentPlan {
             val mount = when (gear) {
                 DemoGear.DUMBBELL, DemoGear.KETTLEBELL -> when {
                     family == "home-renegade23" || family == "home-renegade-knee23" -> GearMount.BOTH
-                    family in setOf("dbbridge","hipthrust") -> GearMount.HIP
+                    family in setOf("dbbridge","hipthrust") || "mancuerna sobre cadera" in name -> GearMount.HIP
                     single == GearMount.NEAR -> single
                     motion.equipment=="goblet-weight" || name.contains("con mancuerna ") ||
                         family in setOf("goblet","goblethold","dbsumo","sumodead","pullover") -> GearMount.SHARED
@@ -145,6 +146,7 @@ internal object ExerciseEquipmentPlan {
                     else -> GearMount.FLOOR
                 }
                 DemoGear.BALL, DemoGear.MED_BALL -> if ("rodillas" in name) GearMount.KNEE else GearMount.SHARED
+                DemoGear.SWISS_BALL -> if("pies en balon" in name || "femoral" in name) GearMount.ANKLE else GearMount.SHARED
                 DemoGear.RACKET -> GearMount.NEAR
                 DemoGear.ARM_LEVER -> if (single == GearMount.NEAR) single else GearMount.BOTH
                 DemoGear.LEG_LEVER -> if ("talones" in name) GearMount.KNEE else GearMount.ANKLE

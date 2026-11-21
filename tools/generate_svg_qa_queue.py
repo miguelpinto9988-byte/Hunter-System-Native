@@ -37,6 +37,14 @@ def build_queue():
         source = sources[identity]
         paths = list(dict.fromkeys(map(motion_path, item.get('sequenceParts') or [identity])))
         fingerprints = [asset_digest(path) for path in paths]
+        legacy_sequence = identity.startswith(('hx_cardio_', 'hx_mob_'))
+        authored_core = identity.startswith('hx_core_')
+        if legacy_sequence:
+            note = 'Dos gestos resueltos en el reproductor según la ficha'
+        elif authored_core:
+            note = 'Posición y movimiento resueltos en el reproductor'
+        else:
+            note = 'Demostración de dos gestos' if item.get('sequenceParts') else 'Demostración individual'
         rows.append(dict(exercise_id=identity,source=source,
             motion_asset='; '.join(paths),
             sha256='; '.join(digest for digest, _ in fingerprints),
@@ -45,7 +53,7 @@ def build_queue():
             android_playback_review='PENDIENTE',biomechanics_review='PENDIENTE',
             autoplan='REGLAS_DEL_PERFIL',
             device='',android_version='',reviewer='',review_date='',
-            notes='Demostración de dos gestos' if item.get('sequenceParts') else 'Demostración individual'))
+            notes=note))
     return rows
 def main():
     parser=argparse.ArgumentParser()

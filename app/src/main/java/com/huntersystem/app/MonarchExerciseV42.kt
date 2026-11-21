@@ -18,9 +18,10 @@ fun MonarchExerciseStage(exercise:Exercise,catalog:Catalog,mirror:Boolean,height
                          play:Boolean=true, reset:Int=0, showExerciseName:Boolean=true,
                          onTogglePlayback:(()->Unit)?=null,thumbnail:Boolean=false){
     val context=LocalContext.current
-    val parts = remember(context, catalog, exercise.id) {
-        ExerciseMotions.loadSequence(context, exercise, catalog)
+    val clips = remember(context, catalog, exercise.id) {
+        ExerciseMotions.loadClips(context, exercise, catalog)
     }
+    val parts = remember(clips) { clips?.map(ExerciseClip::motion) }
     val motion = remember(context, exercise.id, parts) {
         if (parts == null) ExerciseMotions.load(context, exercise) else null
     }
@@ -45,7 +46,12 @@ fun MonarchExerciseStage(exercise:Exercise,catalog:Catalog,mirror:Boolean,height
         verticalArrangement=Arrangement.spacedBy(if(guided)4.dp else 9.dp)){
         if(!guided)Eyebrow("DEMOSTRACIÓN")
         if(motion==null && parts==null){
-            if(!thumbnail)HText("Este ejercicio aún no tiene demostración.",size=15,color=c.muted)
+            if(!thumbnail) {
+                val message = if (CoreExerciseClips.hasInconsistentInstructions(exercise))
+                    "Demostración en revisión. La ficha combina indicaciones de movimientos distintos."
+                else "Este ejercicio aún no tiene demostración."
+                HText(message,size=15,color=c.muted)
+            }
         }else{
             Box(Modifier.fillMaxWidth().height(height.dp)
                 .clip(if(guided)GuidedSessionFrame else RoundedCornerShape(17.dp)).background(c.input),
@@ -59,15 +65,15 @@ fun MonarchExerciseStage(exercise:Exercise,catalog:Catalog,mirror:Boolean,height
                     }
                 } else if(motion!=null) ExerciseActor(motion,Modifier.fillMaxSize(),play,mirror,reset,
                     themedStage=guided,controlsWidth=controlsWidth)
-                if(hasPlaybackControl&&onTogglePlayback!=null)
+                if(hasPlaybackControl)
                     GuidedSessionButton(if(play)"Pausar demostración" else "Reanudar demostración",
                         if(play)GuidedSessionGlyph.PAUSE else GuidedSessionGlyph.PLAY,
                         Modifier.align(Alignment.TopEnd).padding(5.dp),
                         iconOnly=true,onClick=onTogglePlayback)
             }
             if (!thumbnail && parts != null && playlist != null && boundary != null) {
-                val labels = exercise.raw.a("sequenceLabels").strings()
-                HText("${current + 1} de ${parts.size} · ${labels.getOrNull(current).orEmpty()}",
+                val label = clips?.getOrNull(current)?.label.orEmpty()
+                HText("${current + 1} de ${parts.size} · $label",
                     size=12,color=c.muted)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     HButton("Gesto 1", Modifier.weight(1f)) { playlist.floatValue = 0f }
@@ -78,7 +84,7 @@ fun MonarchExerciseStage(exercise:Exercise,catalog:Catalog,mirror:Boolean,height
                 HText("Animación ilustrativa. Consulta la guía del ejercicio.",size=12,color=c.muted)
         }
         if(!guided)ExerciseTechniquePanel(exercise, parts?.getOrNull(current) ?: motion,
-            exercise.raw.a("sequenceParts").strings().getOrNull(current) ?: exercise.id)
+            clips?.getOrNull(current)?.sourceId ?: exercise.id)
         if(!guided) {
             val visible = parts?.getOrNull(current) ?: motion
             val labels = visible?.let(::equipmentLabels).orEmpty()

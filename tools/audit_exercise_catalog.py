@@ -105,9 +105,10 @@ def hints(row):
 
 def source_review(rows, labels, signature_families, view):
     exercise = rows[view["canonica"]]
-    declared = materials(exercise)
-    mentioned = hints(exercise)
     gear = set(view["equipo"])
+    phase = view.get("gesto_independiente", False)
+    declared = {key for key in materials(exercise) if gear.intersection(GEAR.get(key, "").split())} if phase else materials(exercise)
+    mentioned = set() if phase else hints(exercise)
     if view["vista"] == "OVERHEAD":
         gear.add("MAT")
     candidates = {label for label in declared | mentioned if label in GEAR
@@ -117,10 +118,8 @@ def source_review(rows, labels, signature_families, view):
         warnings.add("segmento corto o escorzado")
     if not view["isometrico"] and not view["puntos_moviles"] and not view["gesto_de_detalle"]:
         warnings.add("sin recorrido corporal detectado")
-    if len(signature_families[view["huella"]]) > 1:
+    if not phase and len(signature_families[view["huella"]]) > 1:
         warnings.add("poses compartidas por fichas de distinta base")
-    if exercise.get("compositeSequence") and not exercise.get("sequenceParts"):
-        warnings.add("secuencia compuesta sin clips separados por gesto")
     title = normalized(exercise["name"])
     if not view["isometrico"] and not re.search(r"\b(isometr\w+|sosten|sujecion)\b",title):
         if re.search(r"\b(curl femoral|extension de rodillas?|sentadilla)\b",title) and view.get("rango_rodilla",float("inf")) < 10:
@@ -132,6 +131,10 @@ def source_review(rows, labels, signature_families, view):
         focus, source = "Material de la variante", PALLOF_SOURCE
         if "pase de balon" in title or "sin carga" in title:
             warnings.add("verificar la variante frente al gesto de antirrotación")
+    if view.get("origen") == "authored-phase" and not focus:
+        focus = "Gesto separado con apoyos propios" if phase else "Posición y gesto corregidos en una sola animación"
+    elif view.get("origen") == "authored-variant" and not focus:
+        focus = "Recorrido y apoyo de la variante corregidos"
     return {
         "declared": {labels.get(k,k) for k in declared},
         "rendered": set(view["etiquetas"]), "review": {labels.get(k,k) for k in candidates},
@@ -152,7 +155,8 @@ def main():
     signature_families = defaultdict(set)
     for view in runtime["fuentes"].values():
         exercise = rows[view["canonica"]]
-        signature_families[view["huella"]].add(exercise.get("baseId", exercise["id"]))
+        if not view.get("gesto_independiente", False):
+            signature_families[view["huella"]].add(exercise.get("baseId", exercise["id"]))
     source_rows = {id: source_review(rows,labels,signature_families,view)
                    for id,view in runtime["fuentes"].items()}
     output = []
@@ -161,6 +165,13 @@ def main():
         exercise = rows[item["id"]]
         parts = [source_rows[id] for id in item["fuentes"]]
         separator = " | "
+        if exercise.get("compositeSequence") and len(parts)==1 and not item.get("movimiento_unico", False):
+            parts = [{**parts[0], "warnings": parts[0]["warnings"] | {"secuencia compuesta sin clips separados por gesto"}}]
+        if item.get("ficha_inconsistente", False):
+            parts = [{"declared": {labels.get(k,k) for k in materials(exercise)},
+                      "rendered": set(), "review": set(), "vectors": [], "moving_gear": False,
+                      "warnings": {"instrucciones incompatibles, demostración en revisión"},
+                      "focus": "", "source": PALLOF_SOURCE}]
         for key in ("review","warnings","focus"):
             totals[key] += any(part[key] for part in parts)
             totals[key+"_visibles"] += item["visible"] and any(part[key] for part in parts)

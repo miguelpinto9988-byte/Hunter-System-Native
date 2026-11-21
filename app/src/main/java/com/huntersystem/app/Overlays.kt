@@ -8,6 +8,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.unit.*
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
@@ -223,9 +224,10 @@ import kotlin.math.*
                      Modifier.weight(1.4f)){showGuide=!showGuide}
              }
              if(isExercise){
-                 val parts=e.raw.a("sequenceParts").strings()
-                 if(parts.isEmpty()) ExerciseTechniquePanel(e)
-                 else parts.forEach { ExerciseTechniquePanel(e,subject=it) }
+                 val context = LocalContext.current
+                 val clips = remember(context, e.id, s.catalog) { ExerciseMotions.loadClips(context, e, s.catalog) }
+                 if (clips == null) ExerciseTechniquePanel(e)
+                 else clips.forEach { ExerciseTechniquePanel(e,it.motion,it.sourceId) }
              }
              if(isExercise&&showGuide)HNotice(CompanionDialogue.message(s.profile,LocalVisualTier.current,
                  DialogueContext(DialogueMoment.EXERCISE,group=e.type,exercise=e.name,

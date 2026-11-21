@@ -10,6 +10,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import java.io.File
 import org.junit.Assert.assertTrue
@@ -53,6 +54,25 @@ class ExerciseEquipmentDisplayTest {
         compose.runOnIdle { id.value = "home-ham-slide-one23" }
         compose.onNodeWithContentDescription("Equipo: Toalla").assertIsDisplayed()
         save("curl-femoral-una-pierna",captureScene("Equipo: Toalla"))
+    }
+
+    @Test(timeout=120000) fun catalogIntervalCanJumpToTheNamedSecondMovementAndItsEquipment() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val store = NativeStore(context)
+        val catalog = store.catalog
+        val exercise = catalog.byId.getValue("hx_cardio_0006")
+        compose.setContent {
+            HunterTheme(store) {
+                MonarchExerciseStage(exercise,catalog,mirror=false,play=false,height=300)
+            }
+        }
+
+        compose.onNodeWithText("1 de 2 · burpee sin flexión").assertIsDisplayed()
+        compose.onNodeWithText("Gesto 2").performClick()
+        compose.onNodeWithText("2 de 2 · saltos de cuerda alternando pies").assertIsDisplayed()
+        save("intervalo-cuerda",captureScene("Equipo: Cuerda de saltar"))
+        compose.onNodeWithText("Gesto 1").performClick()
+        compose.onNodeWithText("1 de 2 · burpee sin flexión").assertIsDisplayed()
     }
 
     private fun captureScene(description: String): Bitmap {

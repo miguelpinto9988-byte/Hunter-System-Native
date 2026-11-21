@@ -99,7 +99,12 @@ internal class ExerciseEquipmentScene(
         private val wrists = listOf(4,6)
         private val hands get() = middle(grip(4),grip(6))
 
-        private fun grip(index: Int): Offset = p[index] + unitVector(p[index] - p[index-1]) * (8f * unit)
+        private fun gripDirection(index: Int): Offset {
+            val forearm = unitVector(p[index]-p[index-1])
+            return motion.handGesture?.direction(forearm,phase,index==4) ?: forearm
+        }
+
+        private fun grip(index: Int): Offset = p[index] + gripDirection(index) * (8f*unit)
         private fun wrists(mount: GearMount) = when (mount) {
             GearMount.NEAR -> listOf(4)
             GearMount.FAR -> listOf(6)
@@ -152,7 +157,13 @@ internal class ExerciseEquipmentScene(
                 DemoGear.ELLIPTICAL, DemoGear.STEP_MILL -> cardio(item.gear)
                 DemoGear.BALL, DemoGear.MED_BALL -> mark(asset,
                     if(item.mount==GearMount.KNEE) middle(p[7],p[9]) else handCenter(item.mount),62f,48f)
-                DemoGear.SWISS_BALL -> mark(asset,rest[2]+Offset(0f,68f*unit),183f,135f)
+                DemoGear.SWISS_BALL -> {
+                    val center = if(item.mount==GearMount.ANKLE) Offset(p[8].x,ground-41f*unit)
+                        else rest[2]+Offset(0f,68f*unit)
+                    if(item.mount==GearMount.ANKLE) mark(asset,center,89f,89f,
+                        (rest[8].x-p[8].x)/unit)
+                    else mark(asset,center,183f,135f)
+                }
                 DemoGear.SOCCER -> {
                     val ankle = if (rest[8].x*facing >= rest[10].x*facing) rest[8] else rest[10]
                     val toe = ankle + Offset(33f*facing*unit,0f)
@@ -171,7 +182,7 @@ internal class ExerciseEquipmentScene(
                     line(Offset(rest[wrist].x,body.top-48f*unit),ring,EquipmentStroke.ROPE)
                     mark(asset,ring,38f,32f)
                 }
-                DemoGear.PULL_BAR,DemoGear.LOW_BAR,DemoGear.PARALLETTES,DemoGear.STICK -> simpleBar(item.gear)
+                DemoGear.PULL_BAR,DemoGear.LOW_BAR,DemoGear.PARALLETTES,DemoGear.STICK -> simpleBar(item)
                 DemoGear.AB_WHEEL -> {
                     mark(asset,handCenter(item.mount)+Offset(0f,13f*unit),64f,46f,phase*360f)
                     mark("bar",hands,63f,23f)
@@ -224,8 +235,7 @@ internal class ExerciseEquipmentScene(
                 GearMount.HIP -> mark(item.gear.asset,hips-Offset(0f,17f*unit),size,36f,foreground=true)
                 else -> for (index in wrists(item.mount).asReversed()) {
                     gripped += index
-                    val forearm = p[index]-p[index-1]
-                    val angle = if (item.gear==DemoGear.KETTLEBELL) 0f else angle(forearm)+90f
+                    val angle = if (item.gear==DemoGear.KETTLEBELL) 0f else angle(gripDirection(index))+90f
                     val center = grip(index)+Offset(0f,if(item.gear==DemoGear.KETTLEBELL) 10f*unit else 0f)
                     mark(item.gear.asset,center,size,36f,angle)
                 }
@@ -508,9 +518,15 @@ internal class ExerciseEquipmentScene(
             }
         }
 
-        private fun simpleBar(gear: DemoGear) {
+        private fun simpleBar(item: DemoApparatus) {
+            val gear = item.gear
             if(gear==DemoGear.STICK) {
-                mark("bar",handCenter(GearMount.SHARED),143f,27f,angle(p[6]-p[4]))
+                if(motion.handGesture != null) {
+                    val axis = if(motion.handGesture==HandGesture.FOREARM_ROTATION)
+                        Offset(kotlin.math.sin(phase*2f*PI.toFloat()),.42f) else gripDirection(6)
+                    mark("bar",grip(6),84f,23f,angle(axis))
+                    gripped += 6
+                } else mark("bar",handCenter(item.mount),143f,27f,angle(p[6]-p[4]))
                 return
             }
             if(gear==DemoGear.PARALLETTES) {
@@ -535,7 +551,8 @@ internal class ExerciseEquipmentScene(
         private fun jumpRope() {
             val first=grip(4)
             val second=grip(6)
-            val angle=phase*2f*PI.toFloat()
+            val turns = if (motion.source=="authored-phase") 2 else 1
+            val angle=phase*turns*2f*PI.toFloat()
             val y=(rest[1].y+rest[2].y)/2+kotlin.math.cos(angle)*(ground-body.top)*.55f
             val center=Offset(body.center.x+kotlin.math.sin(angle)*71f*unit,y)
             line(first,second,EquipmentStroke.ROPE,center*2f-middle(first,second))
