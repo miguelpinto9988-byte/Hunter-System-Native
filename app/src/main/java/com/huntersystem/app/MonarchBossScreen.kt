@@ -75,26 +75,29 @@ internal fun MonarchBossScreen(ui:NativeUi,windowState:JSONObject) {
     } else if(preview==null) "Sin propuesta compatible" else "Desafío disponible",compact=showRun)
 
     if(showRun){
-        val done=run.offer.goals.sumOf { it.count }
-        val total=run.offer.goals.sumOf { it.target }
+        val byUnit=run.offer.goals.groupBy { it.unit }
         HPanel(decor=false,padding=12){
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
                 Eyebrow("PROGRESO ACUMULADO")
                 if(status==BossStatus.ACTIVE) HText("Día ${run.day(now)} de 5",size=14,bold=true)
             }
-            HText("$done / $total repeticiones",size=26,bold=true)
-            HProgress(done.toFloat()/total)
+            for(goals in byUnit.values) {
+                val done=goals.sumOf { it.count }
+                val total=goals.sumOf { it.target }
+                HText("$done / $total ${goals.first().unitLabel}",size=24,bold=true)
+                HProgress(done.toFloat()/total)
+            }
             if(status==BossStatus.ACTIVE) HText(remainingTime(run.deadline-now),size=14)
         }
     }else{
         HSelect("Elige un jefe",selectedBoss.name,MonarchBoss.entries.map {
-            it.name to "${it.title} · ${it.difficulty} · ${it.rangeLabel} reps"
+            it.name to "${it.title} · ${it.difficulty} · ${it.rangeLabel} por objetivo"
         }) {
             windowState.put("selectedBoss",it)
             selectedBoss=MonarchBoss.valueOf(it)
         }
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(5.dp)){
-            listOf("5 días" to "Desde que aceptas","5 ejercicios" to "Según tu perfil",boss.rangeLabel to "Reps por ejercicio").forEach { (title,description) ->
+            listOf("5 días" to "Desde que aceptas","5 ejercicios" to "Según tu perfil",boss.rangeLabel to "Reps o segundos").forEach { (title,description) ->
                 HPanel(Modifier.weight(1f),decor=false,padding=7){
                     HText(title,size=17,bold=true)
                     HText(description,size=12,color=LocalHunter.current.muted)
@@ -104,7 +107,7 @@ internal fun MonarchBossScreen(ui:NativeUi,windowState:JSONObject) {
     }
 
     if(offer==null){
-        HNotice("No hay cinco ejercicios distintos por repeticiones y con demostración compatibles con tu perfil.")
+        HNotice("No hay cinco ejercicios distintos con demostración compatibles con tu perfil.")
     }else{
         Column(verticalArrangement=Arrangement.spacedBy(6.dp)){
             Heading("Objetivos del desafío",size=26)
@@ -112,7 +115,7 @@ internal fun MonarchBossScreen(ui:NativeUi,windowState:JSONObject) {
                 else "Las metas son acumuladas durante los cinco días.",size=14,color=LocalHunter.current.muted)
             for(goal in offer.goals) {
                 val exercise=store.catalog.byId[goal.id]
-                HPanel(onClick={ui.open("monarch-boss-exercise",obj("id" to goal.id,"target" to goal.target,
+                HPanel(onClick={ui.open("monarch-boss-exercise",obj("id" to goal.id,"target" to goal.target,"unit" to goal.unit.name,
                     "start" to (run?.startedAt?.takeIf { showRun }?:0L)))},decor=false,padding=9){
                     Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
                         horizontalArrangement=Arrangement.spacedBy(8.dp)){
@@ -120,13 +123,13 @@ internal fun MonarchBossScreen(ui:NativeUi,windowState:JSONObject) {
                         Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(3.dp)){
                             HText(exercise?.name?:goal.id,bold=true,size=16)
                             exercise?.let { e ->
-                                val category=CategoryMapper.normalize(e.type)?.code?.replace('_',' ')
-                                HText(category?.replaceFirstChar { it.uppercase() }?:e.group,
+                                val category=store.catalog.classification(e.id)?.category ?: CategoryMapper.normalize(e.type)
+                                HText(trainingCategoryLabels[category]?:e.group,
                                     size=12,color=LocalHunter.current.muted)
                             }
                             if(showRun)HProgress(goal.count.toFloat()/goal.target)
                         }
-                        HText(if(showRun) "${goal.count} / ${goal.target} reps" else "${goal.target} reps",
+                        HText(if(showRun) "${goal.count} / ${goal.target} ${goal.shortUnit}" else "${goal.target} ${goal.shortUnit}",
                             size=14,bold=true)
                         HText(if(showRun&&status==BossStatus.ACTIVE) "+" else "›",size=19,color=LocalHunter.current.accent)
                     }
@@ -220,7 +223,11 @@ internal fun MonarchBossExercise(ui:NativeUi,data:JSONObject) {
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
     }
-    val reps=amount.toIntOrNull()?:0
+    val units=amount.toIntOrNull()?:0
+    val target=goal ?: BossExerciseGoal(exercise.id,data.i("target"),unit=
+        if(data.s("unit")=="SECONDS") com.huntersystem.app.planning.VolumeUnit.SECONDS
+        else com.huntersystem.app.planning.VolumeUnit.REPETITIONS)
+    val unitLabel=target.unitLabel
 
     Eyebrow("MISIÓN MONARCA · ${run?.offer?.boss?.title ?: "VISTA PREVIA"}")
     Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)) {
@@ -233,23 +240,23 @@ internal fun MonarchBossExercise(ui:NativeUi,data:JSONObject) {
         HButton(if(mirror) "Espejo ✓" else "Espejo"){mirror=!mirror}
     }
     HPanel(decor=false,padding=13){
-        Heading("Registrar repeticiones",size=25)
-        HText(if(goal==null) "Meta del desafío: ${data.i("target")} repeticiones"
-            else "${goal.count} / ${goal.target} repeticiones acumuladas",size=17,bold=true)
+        Heading("Registrar $unitLabel",size=25)
+        HText(if(goal==null) "Meta del desafío: ${target.target} $unitLabel"
+            else "${goal.count} / ${goal.target} $unitLabel acumulad${if(target.shortUnit=="s") "os" else "as"}",size=17,bold=true)
         if(exercise.sides)HText("Registra el total realizado entre ambos lados.",size=13)
         when {
             canRecord && goal!=null -> {
                 Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
                     horizontalArrangement=Arrangement.spacedBy(8.dp)){
-                    HButton("−",enabled=reps>0){amount=(reps-1).toString()}
-                    HInput(amount,{amount=it.filter(Char::isDigit).take(3)},"Repeticiones realizadas",
+                    HButton("−",enabled=units>0){amount=(units-1).toString()}
+                    HInput(amount,{amount=it.filter(Char::isDigit).take(3)},"Cantidad en $unitLabel",
                         Modifier.weight(1f),number=true)
-                    HButton("+",enabled=reps<remaining){amount=(reps+1).toString()}
+                    HButton("+",enabled=units<remaining){amount=(units+1).toString()}
                 }
-                if(reps<=remaining)HText("Total al guardar: ${goal.count+reps} / ${goal.target} reps",size=14)
-                else HNotice("Quedan $remaining repeticiones para esta meta.")
-                HButton("Guardar repeticiones",Modifier.fillMaxWidth(),primary=true,enabled=reps in 1..remaining){
-                    ui.attempt { repository.record(start,exercise.id,reps,goal.count) }
+                if(units<=remaining)HText("Total al guardar: ${goal.count+units} / ${goal.target} ${goal.shortUnit}",size=14)
+                else HNotice("Quedan $remaining $unitLabel para esta meta.")
+                HButton("Guardar $unitLabel",Modifier.fillMaxWidth(),primary=true,enabled=units in 1..remaining){
+                    ui.attempt { repository.record(start,exercise.id,units,goal.count) }
                 }
             }
             start==0L -> HText("El registro se habilita al aceptar el desafío.",size=14)

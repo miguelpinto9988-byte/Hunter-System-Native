@@ -40,24 +40,26 @@ class MonarchBossChallengeTest {
         store.saveProfile(profile)
     }
 
-    @Test fun drawAcrossCategoriesOnlyUsesCompatibleRepetitionActivities() {
+    @Test fun drawCoversFourCategoriesAndSupportsTimedCardioWithoutMobility() {
         val profile=TrainingProfile(Experience.INTERMEDIATE,date,List(7){5})
         val compatible=Category.values().mapIndexed { index,category ->
             ActivityMetadata("id-$index",category,"family-$index","type-$index",2,Intensity.LOW,
                 emptySet(),"body",false,true,displayName="Actividad $index",workUnit=VolumeUnit.REPETITIONS)
         }
-        val candidates=compatible+listOf(
+        val candidates=compatible.dropLast(1)+listOf(
             compatible[0].copy(id="duplicate"),
-            compatible[0].copy(id="timed",displayName="Tiempo",workUnit=VolumeUnit.SECONDS),
+            compatible[0].copy(id="another",displayName="Otra actividad"),
+            compatible.last().copy(id="timed",displayName="Tiempo",workUnit=VolumeUnit.SECONDS),
             compatible[0].copy(id="equipment",displayName="Equipo",equipment=setOf("db")),
             compatible[0].copy(id="advanced",displayName="Nivel",technicalLevel=4),
             compatible[0].copy(id="no-demo",displayName="Sin demo")
         )
         val offer=planMonarchBoss(MonarchBoss.IGRIS,profile,candidates,7){it!="no-demo"}!!
         assertEquals(5,offer.goals.size)
-        assertEquals(compatible.map { it.displayName }.toSet(),
+        assertEquals(compatible.filter { it.category!=Category.MOBILITY && it.category!=Category.CARDIO }.map { it.displayName }.toSet()+setOf("Tiempo","Otra actividad"),
             offer.goals.map { goal -> candidates.single { it.id==goal.id }.displayName }.toSet())
         assertTrue(offer.goals.all { it.target in 80..100 })
+        assertEquals(VolumeUnit.SECONDS,offer.goals.single { it.id=="timed" }.unit)
         assertEquals(offer,planMonarchBoss(MonarchBoss.IGRIS,profile,candidates.reversed(),7){it!="no-demo"})
         assertNull(planMonarchBoss(MonarchBoss.IGRIS,profile,compatible.dropLast(1),7))
     }
@@ -237,8 +239,8 @@ class MonarchBossChallengeTest {
         val ui=NativeUi(store)
         compose.setContent{HunterTheme(store){HunterRoot(ui)}}
         compose.onNodeWithText("Ver Misiones Monarca").performClick()
-        compose.onNodeWithText("Igris · Inicial · 75–110 reps",substring=true).performScrollTo().performClick()
-        compose.onNodeWithText("Beru · Monarca · 135–170 reps").performClick()
+        compose.onNodeWithText("Igris · Inicial · 75–110 por objetivo",substring=true).performScrollTo().performClick()
+        compose.onNodeWithText("Beru · Monarca · 135–170 por objetivo").performClick()
         compose.onNodeWithText("135–170").assertExists()
         val repository=MonarchBossChallenges(store)
         val offer=repository.offer(LocalDate.now(),MonarchBoss.BERU)!!
@@ -251,12 +253,12 @@ class MonarchBossChallengeTest {
         compose.onNodeWithText("Aceptar desafío").performScrollTo().performClick()
         compose.onNodeWithText(name).performScrollTo().performClick()
         compose.onNodeWithText("DEMOSTRACIÓN").assertExists()
-        compose.onNodeWithText("Registrar repeticiones").assertExists()
+        compose.onNodeWithText("Registrar ${goal.unitLabel}").assertExists()
         compose.onNodeWithText("Reproducir demostración").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("+").performScrollTo().performClick()
         compose.runOnIdle { assertEquals(0,repository.current()!!.offer.goals.first().count) }
-        compose.onNodeWithText("Guardar repeticiones").performScrollTo().performClick()
-        compose.onNodeWithText("1 / ${goal.target} repeticiones acumuladas").assertExists()
+        compose.onNodeWithText("Guardar ${goal.unitLabel}").performScrollTo().performClick()
+        compose.onNodeWithText("1 / ${goal.target} ${goal.unitLabel} acumulad${if(goal.unit==VolumeUnit.SECONDS) "os" else "as"}").assertExists()
         compose.runOnIdle {
             assertEquals(MonarchBoss.BERU,repository.current()!!.offer.boss)
             assertEquals(1,repository.current()!!.offer.goals.first().count)
