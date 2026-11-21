@@ -83,16 +83,8 @@ internal fun ExerciseActor(motion: ExerciseMotion, modifier: Modifier, play: Boo
     val playback = rememberExercisePhase(motion, motion.duration,
         play && !motion.staticHold && phaseOverride == null, reset)
     val framing = remember(motion) { ExerciseFraming.from(motion) }
-    val firstArmSide = remember(motion) {
-        if (motion.view == ExerciseView.SIDE) 1f else {
-            val separation = motion.frames.sumOf { pose ->
-                val across = normal(direction(pose[1], pose[2]))
-                val elbows = pose[3] - pose[5]
-                (elbows.x * across.x + elbows.y * across.y).toDouble()
-            }
-            if (separation < 0) -1f else 1f
-        }
-    }
+    val firstArmSide = remember(motion) { projectedSide(motion,3,5) }
+    val firstLegSide = remember(motion) { projectedSide(motion,7,9) }
     val lightStage = LocalHunter.current.isLight
     val backdrop = ExerciseGymBackdrop.forView(motion.view)
     val gymPicture = remember(context, backdrop, lightStage) { backdrop.load(context, lightStage) }
@@ -119,7 +111,7 @@ internal fun ExerciseActor(motion: ExerciseMotion, modifier: Modifier, play: Boo
                 drawStage(motion, p, origin, framing.bounds.width, framing.bounds.height, framing.unit, framing.floor)
                 motion.props.forEach { drawProp(it, framing.unit) }
                 drawEquipment(motion.equipment, p, framing.unit, framing.floor)
-                drawActor(p, framing.unit, motion, face, firstArmSide)
+                drawActor(p, framing.unit, motion, face, firstArmSide, firstLegSide)
             }
         }
     }
@@ -148,6 +140,16 @@ private fun DrawScope.drawStage(
         drawLine(ink, Offset(center.x - width * .43f, floor),
             Offset(center.x + width * .43f, floor), strokeWidth = 1.6f * unit)
     }
+}
+
+private fun projectedSide(motion:ExerciseMotion, first:Int, second:Int):Float {
+    if (motion.view == ExerciseView.SIDE) return 1f
+    val separation = motion.frames.sumOf { pose ->
+        val across = normal(direction(pose[1], pose[2]))
+        val pair = pose[first] - pose[second]
+        (pair.x * across.x + pair.y * across.y).toDouble()
+    }
+    return if (separation < 0) -1f else 1f
 }
 
 private fun direction(from:Offset,to:Offset):Offset {
@@ -180,7 +182,7 @@ private fun smoothBody(points: List<Offset>, widths: List<Float>, symmetric: Boo
 }
 
 private fun DrawScope.drawActor(
-    p: List<Offset>, u: Float, motion: ExerciseMotion, face: Picture?, firstArmSide: Float
+    p: List<Offset>, u: Float, motion: ExerciseMotion, face: Picture?, firstArmSide: Float, firstLegSide: Float
 ) {
     val head=p[0];val shoulder=p[1];val hip=p[2]
     val down=direction(shoulder,hip)
@@ -201,12 +203,9 @@ private fun DrawScope.drawActor(
         val joint=if(leg) p[if(near) 7 else 9] else p[if(near) 3 else 5]
         val end=if(leg) p[if(near) 8 else 10] else p[if(near) 4 else 6]
         val center = if (leg) hip else shoulder
-        val lateral = if (broad && !leg) {
-            firstArmSide * if (near) 29f else -29f
-        } else if (broad) {
-            val projected = ((joint.x - center.x) * side.x + (joint.y - center.y) * side.y)
-            val sign = if (abs(projected) > 4f * u) Math.signum(projected) else if (near) 1f else -1f
-            sign * 20f
+        val lateral = if (broad) {
+            val width = if (leg) firstLegSide * 20f else firstArmSide * 29f
+            if (near) width else -width
         } else if (near) -8f else 10f
         val start = center + side * (lateral * u)
         val tip = end - direction(joint, end) * (if (leg) 5f * u else 0f)
