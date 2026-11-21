@@ -154,14 +154,14 @@ class MonarchBossChallengeTest {
         assertTrue(paths.all { !androidx.compose.ui.graphics.vector.PathParser().parsePathString(it).toPath().isEmpty })
     }
 
-    @Test fun everyActiveExerciseHasAMovementBadgeIncludingSportsSequences() {
+    @Test fun everyCatalogRecordHasAMovementBadgeIncludingSportsSequences() {
         val catalog = store.catalog
-        val activeIcons = catalog.exercises.associateBy({ it.id }, ::monarchExerciseIcon)
-        assertEquals(5_000, activeIcons.size)
+        val catalogIcons = catalog.historicalExercises.associateBy({ it.id }, ::monarchExerciseIcon)
+        assertEquals(5_000, catalogIcons.size)
         assertEquals(MonarchExerciseIcon.entries.toSet() - MonarchExerciseIcon.GENERAL,
-            activeIcons.values.toSet())
+            catalogIcons.values.toSet())
         for ((id, canonical) in catalog.byId) {
-            val expected = activeIcons.getValue(canonical.id)
+            val expected = catalogIcons.getValue(canonical.id)
             assertEquals(id, expected, monarchExerciseIcon(canonical))
         }
 
@@ -179,7 +179,7 @@ class MonarchBossChallengeTest {
             "sport-seq-fuerza-singlebridge-new46-spanishsquat" to MonarchExerciseIcon.BRIDGE,
             "sport-seq-movilidad-neck-skaterreach" to MonarchExerciseIcon.MOBILITY
         )
-        for ((id, expected) in examples) assertEquals(id, expected, activeIcons.getValue(id))
+        for ((id, expected) in examples) assertEquals(id, expected, catalogIcons.getValue(id))
     }
 
     @Test(timeout=120000) fun movementBadgeAppearsOnlyInMonarchViews() {
