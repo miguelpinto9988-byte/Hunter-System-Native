@@ -119,19 +119,22 @@ class ProfileOnDeviceTest {
                         device.dumpWindowHierarchy(dump)
                         error("Exercise card unavailable: ${dump.toString("UTF-8").takeLast(12000)}")
                     }
-                    checkNotNull(device.findObject(exercise)).click()
-                    assertTrue("The exercise detail did not open",
-                        device.wait(Until.hasObject(By.text("DEMOSTRACIÓN")), 15_000))
-                    val play = By.text("Reproducir demostración")
-                    repeat(6) {
-                        if (!device.wait(Until.hasObject(play), 750)) {
-                            val x = device.displayWidth / 2
-                            device.swipe(x, device.displayHeight * 7 / 10, x, device.displayHeight * 5 / 10, 30)
-                            device.waitForIdle()
-                        }
+                    val action = checkNotNull(device.findObject(exercise))
+                    val tapBounds = action.visibleBounds
+                    if (tapBounds.bottom > bounds.bottom - 32 || tapBounds.height() < 32) {
+                        device.swipe(bounds.centerX(), bounds.top + bounds.height() * 2 / 3,
+                            bounds.centerX(), bounds.top + bounds.height() / 2, 36)
+                        device.waitForIdle()
                     }
-                    checkNotNull(device.findObject(play)) { "Missing demonstration playback" }.click()
-                    assertTrue("Playback did not start", device.wait(Until.hasObject(By.text("Pausar demostración")), 10_000))
+                    checkNotNull(device.findObject(exercise)).click()
+                    val play = By.textContains("Reproducir demostración")
+                    val playback = device.wait(Until.findObject(play), 15_000) ?: run {
+                        val dump = ByteArrayOutputStream()
+                        device.dumpWindowHierarchy(dump)
+                        error("Demonstration playback unavailable after tapping: ${dump.toString("UTF-8").takeLast(16000)}")
+                    }
+                    playback.click()
+                    assertTrue("Playback did not start", device.wait(Until.hasObject(By.textContains("Pausar demostración")), 10_000))
                     assertScreenIsNotBlank()
                     return
                 }
