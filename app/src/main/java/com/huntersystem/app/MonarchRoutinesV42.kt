@@ -64,7 +64,7 @@ private fun routineReasons(s:NativeStore,r:JSONObject,p:JSONObject):List<String>
     val rs=mutableListOf<String>()
     for(row in r.a("items").objects()){
         val e=s.catalog.byId[row.s("id")]
-        if(e==null)rs+="Ejercicio no encontrado en catálogo"
+        if(e==null || s.catalog.classification(row.s("id"))==null)rs+="La rutina contiene ejercicios retirados del catálogo"
         else rs+=s.rules.reasons(e,p).take(2)
     }
     return rs.distinct()
@@ -166,7 +166,8 @@ private fun MonarchRoutineModeCard(title:String,subtitle:String,tag:String,count
     val generated=ui.generated[mode]
     val base=remember(generated,revision,mode){
         generated ?: (s.catalog.routines+s.state.a("customRoutines").objects())
-            .filter{it.b("gymOnly23")== (mode=="gym")}
+            .filter{it.b("gymOnly23")== (mode=="gym") &&
+                it.a("items").objects().all { item -> s.catalog.classification(item.s("id")) != null }}
     }
     val list=remember(base,revision,n,category,duration,equipment,impact,query,safeOnly){
         base.filter{r->

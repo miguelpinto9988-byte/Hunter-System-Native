@@ -92,6 +92,7 @@ object MonarchMissionCatalog {
   * Los requisitos secundarios de cada ejercicio deben estar seleccionados.
   */
  fun equipmentReady(store:NativeStore,exerciseId:String):Boolean {
+  if(store.catalog.classification(exerciseId)==null)return false
   val e=store.catalog.byId[exerciseId]?:return false
   if(e.raw.b("sourceExpansion2k")||e.raw.b("sourceOnly"))return false
   val p=store.profile?:JSONObject()

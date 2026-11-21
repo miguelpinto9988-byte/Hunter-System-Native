@@ -19,7 +19,8 @@ class MonarchActivitySource(
     override val revision: String = "native-" + catalog.exercises.size
     private val rows by lazy {
         catalog.exercises.mapNotNull { e ->
-            val category = CategoryMapper.normalize(e.type) ?: return@mapNotNull null
+            val classification = catalog.classification(e.id) ?: return@mapNotNull null
+            val category = classification.category
             val declaredLevel = when {
                 e.raw.has("technicalLevel") -> e.raw.i("technicalLevel")
                 e.raw.has("technicalLevel46") -> e.raw.i("technicalLevel46")
@@ -54,8 +55,8 @@ class MonarchActivitySource(
                     else -> Intensity.UNKNOWN
                 }
             }
-            val familyId = category.code + "/" + e.family
-            val typeId = familyId + "/" + e.pattern.ifBlank { e.oldFamily }
+            val familyId = category.code + "/" + classification.family
+            val typeId = familyId + "/" + classification.type
             val eligibility = (declaredMaterials != null || e.raw.optJSONArray("materials46") != null) &&
                 rules.compatible(e, adjusted, maxPlanningLevel = 2)
             ActivityMetadata(e.id, category, familyId, typeId, levelValue, intensity, allowedGear,

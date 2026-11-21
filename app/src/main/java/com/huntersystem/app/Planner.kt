@@ -288,7 +288,6 @@ class Planner(val catalog:Catalog,val rules:Rules){
   }.associateBy{it.id}
   val candidates=rules.pool(adjusted,kind).filter{it.id in safeMetadata &&
    (if(mode=="gym")it.gym||it.power else !it.gym) &&
-   rules.matches(it,type) &&
    (mode!="gym"||it.gymRequirements.all{
      key->key in adjusted.a("gymEquipment23").strings()})}
   if(candidates.isEmpty())return null

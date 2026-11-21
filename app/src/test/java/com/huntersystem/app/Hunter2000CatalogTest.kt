@@ -11,7 +11,7 @@ import org.junit.Test
 class Hunter2000CatalogTest {
     private fun exercise(id:String,extra:Boolean=false):JSONObject=JSONObject().apply {
         put("id",id);put("name","Prueba $id");put("group","Tren superior")
-        put("category","Fuerza");put("unit","reps")
+        put("category","Fuerza");put("unit","reps");put("planning49",obj("group" to "upper"))
         put("sourceExpansion2k",extra);put("pendingTechnicalReview",extra)
         put("approvedForAutoplan",false);put("autoProgressionApproved",false)
     }
@@ -77,16 +77,16 @@ class Hunter2000CatalogTest {
         assertFalse(rules.compatible(c.byId.getValue("hx_upper_0001"),profile))
         assertTrue(MonarchActivitySource(c,rules,profile).all().any{it.id==basic.id&&it.automaticEligible})
         val planner=Planner(c,rules)
-        val coreProfile=profile.copyJson().put("weekFocus",arr(List(7){"core"}))
-        val dayOfTest="2026-11-16"
-        assertTrue((0..15).any{ seed ->
-            planner.choose(coreProfile,"strength","hunter-$seed",date=dayOfTest)
-                .a("items").objects().any{c.byId[it.s("id")]?.hunter2000==true}
-        })
-        assertTrue((0..15).any{ variant ->
-            planner.generateRoutine("home","core",0,variant,"short",1,coreProfile,date=dayOfTest)
-                ?.a("items")?.objects()?.any{c.byId[it.s("id")]?.hunter2000==true}==true
-        })
+        val date=java.time.LocalDate.parse("2026-11-16")
+        val coreProfile=profile.copyJson().put("weeklyCategories",arr(List(7){1}))
+        val native=checkNotNull(MonarchProfileAdapter.from(coreProfile,date))
+        val source=MonarchActivitySource(c,rules,coreProfile)
+        val core=com.huntersystem.app.planning.Category.CENTRAL
+        val selected=com.huntersystem.app.planning.DailyMission(date,core,
+            com.huntersystem.app.planning.ProfileSignature.of(native),source.signature(),
+            listOf(basic.id),"Candidato de expansión admisible")
+        assertEquals(listOf(basic.id),planner.choose(coreProfile,"strength","hunter",
+            date=date.toString(),trainingProfile=native,pinned=selected).a("items").objects().map{it.s("id")})
         val day=obj("items" to arr(listOf(planner.libraryDose(basic,profile,"strength"))))
         assertTrue(planner.steps(day,profile).any{it.s("id")==basic.id})
         val legacy=c.byId.getValue("heelcontrolled")

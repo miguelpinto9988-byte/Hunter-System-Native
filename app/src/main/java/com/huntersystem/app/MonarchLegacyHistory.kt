@@ -15,6 +15,9 @@ object MonarchLegacyHistory {
     private fun categoryOf(id: String, catalog: Catalog): Category? =
         CategoryMapper.normalize(catalog.byId[id]?.type ?: "")
 
+    private fun categoryOf(item: JSONObject, catalog: Catalog): Category? =
+        CategoryMapper.normalize(item.s("typeId").substringBefore('/')) ?: categoryOf(item.s("id"), catalog)
+
     internal fun completed(item: JSONObject): Boolean =
         !item.b("archived") && item.s("progressStatus") != "SKIPPED" &&
             (item.s("progressStatus") == "COMPLETED" || item.b("missionState") ||
@@ -30,7 +33,7 @@ object MonarchLegacyHistory {
         CategoryMapper.normalize(log.s("categoryRpe"))
             ?.let { return it }
         if (catalog == null) return null
-        val categories = log.a("items").objects().map { categoryOf(it.s("id"), catalog) }
+        val categories = log.a("items").objects().map { categoryOf(it, catalog) }
         return categories.distinct().singleOrNull()
     }
 
@@ -41,7 +44,7 @@ object MonarchLegacyHistory {
             val category = if (interrupted(log)) interruptionCategory(log, catalog) else null
             val explicitItems = if (catalog == null) emptyList() else log.a("items").objects()
                 .filter { it.b("interrupted") }
-                .mapNotNull { categoryOf(it.s("id"), catalog) }
+                .mapNotNull { categoryOf(it, catalog) }
             (listOfNotNull(category) + explicitItems).distinct().map { SessionInterruption(date, it) }
         }
 
@@ -53,7 +56,7 @@ object MonarchLegacyHistory {
             val sessionCategory = if (interrupted(log)) interruptionCategory(log, catalog) else null
             for (item in log.a("items").objects()) {
                 val id = item.s("id")
-                val category = categoryOf(id, catalog) ?: continue
+                val category = categoryOf(item, catalog) ?: continue
                 val status = when {
                     item.s("progressStatus") == "SKIPPED" -> ParticipationStatus.SKIPPED
                     completed(item) -> ParticipationStatus.COMPLETED
@@ -77,7 +80,7 @@ object MonarchLegacyHistory {
             val rpe = log.i("rpe")
             if (category != null && rpe in 1..10) {
                 val participated = if (catalog == null) completedItems.isNotEmpty()
-                    else completedItems.any { categoryOf(it.s("id"), catalog) == category }
+                    else completedItems.any { categoryOf(it, catalog) == category }
                 result += EffortObservation(date, category, rpe, participated, interrupted(log))
             }
             val globalRpe = if (log.has("globalRpe")) log.i("globalRpe") else if (category == null) rpe else 0

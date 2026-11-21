@@ -180,7 +180,12 @@ fun ExercisesScreen(ui: NativeUi) {
     var variants by remember { mutableStateOf(true) }
     var restricted by remember { mutableStateOf(false) }
     val levels = listOf("Inicial", "Intermedio", "Avanzado")
-    val sports = store.catalog.sportExercises.map { it.sport }.distinct().sorted()
+    val sports = store.catalog.exercises.map { it.sport }.filter(String::isNotBlank).distinct().sorted()
+    val families = remember(category, store.catalog) {
+        store.catalog.exercises.mapNotNull { store.catalog.classification(it.id) }
+            .filter { category.isBlank() || it.category.code == category }
+            .map { it.family }.distinct().sorted()
+    }
     val all = "" to "Todos"
     var showFilters by rememberSaveable { mutableStateOf(false) }
     val list = remember(query, sport, category, group, difficulty, gear, variants,
@@ -188,10 +193,11 @@ fun ExercisesScreen(ui: NativeUi) {
         val term = normalize(query)
         val profile = if (restricted && store.profile != null) store.adjusted() else null
         store.catalog.exercises.filter { exercise ->
+            val classification = store.catalog.classification(exercise.id) ?: return@filter false
             (term.isBlank() || store.catalog.matchesExercise(exercise,term) || term in normalize(exercise.sport)) &&
                 (sport.isBlank() || exercise.sport == sport) &&
-                (category.isBlank() || exercise.category == category) &&
-                (group.isBlank() || exercise.group == group) &&
+                (category.isBlank() || classification.category.code == category) &&
+                (group.isBlank() || classification.family == group) &&
                 (difficulty.isBlank() || exercise.raw.i("level").toString() == difficulty) &&
                 (variants || exercise.isBaseVariant) &&
                 (!restricted || profile != null && store.rules.compatible(exercise, profile)) &&
@@ -219,8 +225,8 @@ fun ExercisesScreen(ui: NativeUi) {
         item {
             HInput(query, { query = it }, "Buscar ejercicio")
             Spacer(Modifier.height(12.dp))
-            Chips(listOf("" to "Todas", "Fuerza" to "Fuerza", "Cardio" to "Cardio",
-                "Movilidad" to "Movilidad"), category) { category = it }
+            Chips(listOf("" to "Todas") + trainingCategoryLabels.map { (key, name) -> key.code to name },
+                category) { category = it; group = "" }
         }
         item {
             HButton(if (showFilters) "Ocultar filtros" else "Mostrar filtros", Modifier.fillMaxWidth()) {
@@ -230,8 +236,7 @@ fun ExercisesScreen(ui: NativeUi) {
         }
         if (showFilters) item {
             Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                HSelect("Grupo muscular", group,
-                    listOf(all) + store.catalog.exercises.map { it.group }.distinct().map { it to it },
+                HSelect("Familia", group, listOf(all) + families.map { it to it },
                     Modifier.weight(1f)) { group = it }
                 HSelect("Nivel", difficulty, listOf(all) + levels.mapIndexed { index, label ->
                     index.toString() to label
@@ -249,7 +254,9 @@ fun ExercisesScreen(ui: NativeUi) {
         items(list, key = { it.id }) { exercise ->
             HPanel(padding = 18) {
                 val levelLabel = levels[exercise.raw.i("level").coerceIn(0, 2)]
-                Eyebrow(listOf(exercise.sport, exercise.group, levelLabel)
+                val classification = store.catalog.classification(exercise.id)
+                Eyebrow(listOf(exercise.sport, trainingCategoryLabels[classification?.category].orEmpty(),
+                    classification?.family.orEmpty(), levelLabel)
                     .filter { it.isNotBlank() }.joinToString(" · "))
                 Heading(exercise.name, size = 27)
                 HButton("Ver demostración", Modifier.fillMaxWidth().semantics {

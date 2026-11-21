@@ -36,7 +36,7 @@ class ExercisePerspectiveTest {
     }
     @Test fun sportsExpansionLoadsFromTheCatalogWithAllThreeDifficultyLevels() {
         val catalog = Catalog(context)
-        val expansion = catalog.exercises.filter { it.id.startsWith("sport-ampl-") }
+        val expansion = catalog.historicalExercises.filter { it.id.startsWith("sport-ampl-") }
         val disciplines = setOf("Calistenia", "Fútbol", "Atletismo", "Movilidad", "Fuerza")
         assertEquals(disciplines, expansion.map { it.sport }.toSet())
         for ((_, group) in expansion.groupBy { it.sport }) {
@@ -53,7 +53,7 @@ class ExercisePerspectiveTest {
 
     @Test fun everyStandaloneExerciseLoadsThroughTheApprovedRenderer() {
         val catalog = Catalog(context)
-        val standalone = catalog.exercises.filter { it.raw.a("sequenceParts").length() == 0 }
+        val standalone = catalog.historicalExercises.filter { it.raw.a("sequenceParts").length() == 0 }
         assertEquals(2_031, standalone.size)
         for (exercise in standalone) {
             val motion = checkNotNull(ExerciseMotions.load(context, exercise.id)) { exercise.id }
@@ -63,10 +63,10 @@ class ExercisePerspectiveTest {
 
     @Test fun everyNewSequenceLoadsWithItsOwnPerspectiveAndACommonScale() {
         val catalog = Catalog(context)
-        assertEquals(5_000, catalog.exercises.size)
+        assertEquals(5_000, catalog.historicalExercises.size)
         assertEquals("new46-tke", catalog.byId.getValue("hx_lower_0019").id)
-        assertTrue(catalog.exercises.none { it.id == "hx_lower_0019" })
-        val sequences = catalog.exercises.filter { it.id.startsWith("sport-seq-") }
+        assertTrue(catalog.historicalExercises.none { it.id == "hx_lower_0019" })
+        val sequences = catalog.historicalExercises.filter { it.id.startsWith("sport-seq-") }
         assertEquals(2_969, sequences.size)
         val pairs = mutableSetOf<List<String>>()
         val replacements = mapOf("Fuerza" to listOf(0), "Calistenia" to listOf(1, 2),

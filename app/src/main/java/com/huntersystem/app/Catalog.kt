@@ -36,9 +36,16 @@ class Catalog(val context:Context?=null,val loader:((String)->String)?=null){
  )
  fun matchesExercise(exercise:Exercise,normalizedQuery:String)=
   namesByExercise[exercise.id].orEmpty().any{normalizedQuery in it}
- val exercises=sourceExercises.filterNot{it.id in aliases}
+ internal val historicalExercises=sourceExercises.filterNot{it.id in aliases}
  val byId=sourceById+aliases.mapValues{(_,canonical)->sourceById.getValue(canonical)}
+ private val classifications=historicalExercises.mapNotNull{exercise->
+  ExerciseTaxonomy.classify(exercise,byId::get)?.let{exercise.id to it}
+ }.toMap()
+ val exercises=historicalExercises.filter{it.id in classifications}
+ internal fun classification(id:String)=byId[id]?.id?.let(classifications::get)
  val materials=JSONObject(text("materials.json"));val capabilities=JSONObject(text("capabilities.json"))
- val routines=JSONArray(text("routines.json")).objects();val editorial=JSONObject(text("editorial.json"));val design=JSONObject(text("design.json"));val defaultState=JSONObject(text("default-state.json"));val profileForm=JSONArray(text("profile-form.json"))
+ val routines=JSONArray(text("routines.json")).objects().filter{routine->
+  routine.a("items").objects().all{classification(it.s("id"))!=null}
+ };val editorial=JSONObject(text("editorial.json"));val design=JSONObject(text("design.json"));val defaultState=JSONObject(text("default-state.json"));val profileForm=JSONArray(text("profile-form.json"))
  init{require(originalExercises.size==1200&&originalExercises.map{it.id}.toSet().size==1200);require(expansionExercises.isEmpty()||expansionExercises.size==800);require(sourceById.size==sourceExercises.size);require(aliases.all{(id,target)->id in sourceById&&target in sourceById&&target !in aliases})}
 }

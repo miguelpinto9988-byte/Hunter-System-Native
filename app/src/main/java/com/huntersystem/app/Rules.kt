@@ -80,8 +80,14 @@ class Rules(val catalog:Catalog){
   return reasons(e,p,maxPlanningLevel=if(guidedProgression)minOf(2,plannedLevel) else level(p))
  }
  fun compatibleWithMission(e:Exercise,p:JSONObject,item:JSONObject)=missionReasons(e,p,item).isEmpty()
- fun matches(e:Exercise,type:String)=e.type==type||type=="cardio"&&e.meta.b("jumpPower")
- fun inKind(e:Exercise,kind:String)=when(kind){"strength"->e.type in listOf("upper","lower","core");"cardio"->matches(e,"cardio");"recovery"->e.type=="mobility";else->false}
+ fun inKind(e:Exercise,kind:String):Boolean {
+  val category=catalog.classification(e.id)?.category ?: return false
+  return when(category){
+   com.huntersystem.app.planning.Category.CARDIO->kind=="cardio"
+   com.huntersystem.app.planning.Category.MOBILITY->kind=="recovery"||kind=="mobility"
+   else->kind=="strength"
+  }
+ }
  fun pool(p:JSONObject,kind:String)=if(!gate(p).ok) emptyList() else catalog.exercises.filter{inKind(it,kind)&&compatible(it,p)}
  fun powerReady(p:JSONObject,logs:JSONObject,date:String,status:Gate=gate(p),strain:Boolean=false,planned:List<PlanRow> = emptyList()):Boolean{
   if(reduced(p,status)||strain||p.n("trainingScale",1.0)<1)return false
