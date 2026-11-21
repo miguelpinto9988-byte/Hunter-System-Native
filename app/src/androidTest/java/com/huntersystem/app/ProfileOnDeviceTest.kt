@@ -107,8 +107,10 @@ class ProfileOnDeviceTest {
                     assertTrue("Catalog did not load", device.wait(Until.hasObject(By.text("5000 fichas")), 20_000))
                     val exercise = By.descStartsWith("Abrir ejercicio: ")
                     val scroll = UiScrollable(UiSelector().resourceId("exerciseCatalog").scrollable(true)).setMaxSearchSwipes(12)
-                    assertTrue("Exercise cards were not reachable",
-                        scroll.scrollIntoView(UiSelector().descriptionStartsWith("Abrir ejercicio: ")))
+                    if (!device.hasObject(exercise)) {
+                        assertTrue("Exercise cards were not reachable",
+                            scroll.scrollIntoView(UiSelector().descriptionStartsWith("Abrir ejercicio: ")))
+                    }
                     checkNotNull(device.findObject(exercise)).click()
                     assertTrue("The exercise detail did not open",
                         device.wait(Until.hasObject(By.text("DEMOSTRACIÓN")), 15_000))

@@ -182,6 +182,7 @@ fun ExercisesScreen(ui: NativeUi) {
     val levels = listOf("Inicial", "Intermedio", "Avanzado")
     val sports = store.catalog.sportExercises.map { it.sport }.distinct().sorted()
     val all = "" to "Todos"
+    var showFilters by rememberSaveable { mutableStateOf(false) }
     val list = remember(query, sport, category, group, difficulty, gear, variants,
         restricted, store.revision.intValue) {
         val term = normalize(query)
@@ -222,6 +223,12 @@ fun ExercisesScreen(ui: NativeUi) {
                 "Movilidad" to "Movilidad"), category) { category = it }
         }
         item {
+            HButton(if (showFilters) "Ocultar filtros" else "Mostrar filtros", Modifier.fillMaxWidth()) {
+                showFilters = !showFilters
+            }
+            HText("${list.size} resultados", size = 15, color = LocalHunter.current.muted)
+        }
+        if (showFilters) item {
             Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
                 HSelect("Grupo muscular", group,
                     listOf(all) + store.catalog.exercises.map { it.group }.distinct().map { it to it },
@@ -238,7 +245,6 @@ fun ExercisesScreen(ui: NativeUi) {
             HSelect("Deporte", sport, listOf(all) + sports.map { it to it }) { sport = it }
             HCheck("Incluir variantes de técnica y ritmo", variants) { variants = !variants }
             HCheck("Aplicar mis restricciones", restricted) { restricted = !restricted }
-            HText("${list.size} resultados", size = 15, color = LocalHunter.current.muted)
         }
         items(list, key = { it.id }) { exercise ->
             HPanel(
