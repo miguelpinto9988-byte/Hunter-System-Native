@@ -136,8 +136,10 @@ internal object CoreExerciseClips {
             val p = pulse(t)
             val a = maxOf(w,0f)
             val b = maxOf(-w,0f)
+            val shoulderHeight = if (high && !overhead) -34f else 0f
+            val scapularTravel = if (move == "separacion escapular controlada") 24f*p else 0f
             val s = Offset(-74f+if(move == "desplazamiento corto adelante y atras") 32f*w else 0f,
-                if (high && !overhead) -34f else if(move=="separacion escapular controlada") 24f*p else 0f)
+                shoulderHeight+scapularTravel)
             val h = Offset(74f+if(move=="desplazamiento corto adelante y atras") 32f*w else 0f,
                 if(move=="desplazamiento de rodillas hacia un costado") 28f*w else 0f)
             if(overhead) {

@@ -21,6 +21,15 @@ class ExerciseCatalogAuditTest {
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val catalog = Catalog(context)
 
+    @Test fun raisedQuadrupedMovesTheShouldersAndKeepsBothHandsSupported() {
+        val motion = checkNotNull(ExerciseMotions.load(context,catalog.byId.getValue("hx_core_0193")))
+        val start = motion.at(0f)
+        val peak = motion.at(.5f)
+        assertTrue(peak[1].y - start[1].y > 14f)
+        assertEquals(start[4],peak[4])
+        assertEquals(start[6],peak[6])
+    }
+
     @Test fun everyCanonicalEntryResolvesItsOwnDemonstrationOrBothSequenceComponents() {
         val sources = linkedMapOf<String, JSONObject>()
         val cards = catalog.historicalExercises
