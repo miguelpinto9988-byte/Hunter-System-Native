@@ -10,7 +10,25 @@ class ParityTest {
  fun canonical(v:Any?):Any?=when(v){is JSONObject->v.entries().associate{it.first to canonical(it.second)}.toSortedMap();is JSONArray->(0 until v.length()).map{canonical(v.opt(it))};is Number->v.toDouble();JSONObject.NULL->null;else->v}
  // The fixtures compare historical definitions. Alias resolution has its own catalog test.
  @Test fun classificationAndDoses(){val historical=c.originalExercises.associateBy{it.id};val selected=listOf("chair","goblet","row").map{c.byId[it]!!};for(test in rows("groups").filter{it.o("p").i("age") in 18..64}){val p=test.o("p");for(row in test.a("rows").objects()){val e=historical[row.s("id")]?:c.byId.getValue(row.s("id"));val label=p.s("difficulty")+"/"+e.id;assertEquals(label,row.a("reasons").strings(),r.groupReasons(e,p));for((i,kind)in listOf("strength","cardio","recovery").withIndex()){assertEquals(label,row.a("scores").optDouble(i),r.score(e,p,kind,selected),.001);val x=obj("id" to row.s("id"),"sets" to 3,"target" to 40,"rest" to 10,"safetyNote" to "BASE");assertEquals(label,canonical(row.a("doses").getJSONObject(i)),canonical(r.groupDose(e,p,kind,x,JSONObject(),"2026-10-20")))}}}}
- @Test fun compatibilityPools(){for(test in rows("groups").filter{it.o("p").i("age") in 18..64}){val p=test.o("p");for(kind in listOf("strength","cardio","recovery")){val actual=r.pool(p,kind).filter{it.sport.isBlank()&&!it.hunter2000}.map{it.id};val expected=test.o("pools").a(kind).strings().filter{c.byId[it]?.id==it};assertEquals("${p.s("difficulty")} ${p.o("health")} $kind missing=${expected-actual.toSet()} extra=${actual-expected.toSet()}",expected,actual)}}}
+ @Test fun historicalCompatibilityPools(){
+  for(test in rows("groups").filter{it.o("p").i("age") in 18..64}){
+   val profile=test.o("p")
+   for(kind in listOf("strength","cardio","recovery")){
+    val actual=c.historicalExercises.asSequence()
+     .filter{it.sport.isBlank()&&!it.hunter2000}
+     .filter{exercise->
+      when(kind){
+       "strength"->exercise.type in setOf("upper","lower","core")
+       "cardio"->exercise.type=="cardio"||exercise.meta.b("jumpPower")
+       else->exercise.type=="mobility"
+      }
+     }
+     .filter{r.gate(profile).ok&&r.compatible(it,profile)}.map{it.id}.toList()
+    val expected=test.o("pools").a(kind).strings().filter{c.byId[it]?.id==it}
+    assertEquals("${profile.s("difficulty")} $kind",expected,actual)
+   }
+  }
+ }
  @Test fun ageDoesNotChangeAutomaticEligibility(){
   val adult=rows("groups").first().o("p")
   val reference=r.pool(adult,"strength").map { it.id }
