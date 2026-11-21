@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="64" viewBox="0 0 100 64">
+  <g id="trapbar" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M5 32H17L36 13H64L83 32H95M17 32L36 51H64L83 32M28 22v20m44-20v20" fill="none" stroke="#B5D3D7" stroke-width="5"/><path d="M9 18v28m82-28v28" stroke="#E9AC65" stroke-width="6"/>
+  </g>
+</svg>

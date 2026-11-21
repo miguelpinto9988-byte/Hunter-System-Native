@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="64" viewBox="0 0 100 64">
+  <g id="barbell" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 32H97" stroke="#B5D3D7" stroke-width="5"/><path d="M12 22H19V42H12ZM81 22H88V42H81Z" fill="#E9AC65"/><path d="M18 13H28V51H18ZM72 13H82V51H72Z" fill="#38576D" stroke="#B5D3D7" stroke-width="2.5"/><path d="M44 29v6m4-6v6m4-6v6m4-6v6" stroke="#7399AA" stroke-width="1.5"/>
+  </g>
+</svg>

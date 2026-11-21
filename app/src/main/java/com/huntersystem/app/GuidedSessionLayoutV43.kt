@@ -197,7 +197,7 @@ internal fun GuidedSessionStep(title:String,summary:String,kind:String){
 
 @Composable
 internal fun GuidedSessionDemo(
-    exercise:Exercise,mirror:Boolean,playing:Boolean,onToggle:()->Unit
+    exercise:Exercise,catalog:Catalog,mirror:Boolean,playing:Boolean,onToggle:()->Unit
 ){
     val screenHeight=LocalConfiguration.current.screenHeightDp
     BoxWithConstraints(Modifier.fillMaxWidth()){
@@ -207,19 +207,19 @@ internal fun GuidedSessionDemo(
             maxWidth<440.dp -> 232
             else -> 270
         }
-        MonarchExerciseStage(exercise,mirror,height=demoHeight,play=playing,
+        MonarchExerciseStage(exercise,catalog,mirror,height=demoHeight,play=playing,
             showExerciseName=false,onTogglePlayback=onToggle)
     }
 }
 
 @Composable
-internal fun GuidedSessionNext(title:String,series:String,exercise:Exercise?,mirror:Boolean){
+internal fun GuidedSessionNext(title:String,series:String,exercise:Exercise?,catalog:Catalog,mirror:Boolean){
     val c=LocalHunter.current
     Row(Modifier.fillMaxWidth().clip(GuidedSessionFrame).background(c.surface)
         .monarchOutline(GuidedSessionFrame).padding(8.dp),
         verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)){
         if(exercise!=null)Box(Modifier.width(92.dp)){
-            MonarchExerciseStage(exercise,mirror,height=78,play=false,showExerciseName=false,thumbnail=true)
+            MonarchExerciseStage(exercise,catalog,mirror,height=78,play=false,showExerciseName=false,thumbnail=true)
         }
         Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(4.dp)){
             Eyebrow("A CONTINUACIÓN")

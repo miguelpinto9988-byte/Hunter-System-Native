@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="64" viewBox="0 0 100 64">
+  <g id="stepmill" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3 54H97V9H71V23H47V37H24V46H3Z" fill="#38576D" stroke="#B5D3D7" stroke-width="3"/><path d="M4 46h20m0-9h23m0-14h24m0-14h25" stroke="#E9AC65" stroke-width="3"/>
+  </g>
+</svg>

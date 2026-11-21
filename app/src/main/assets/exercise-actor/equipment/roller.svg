@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="64" viewBox="0 0 100 64">
+  <g id="roller" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="5" y="17" width="90" height="30" rx="12" fill="#38576D" stroke="#B5D3D7" stroke-width="3"/><path d="M19 22v20m11-20v20m11-20v20m11-20v20m11-20v20m11-20v20m11-20v20" stroke="#7399AA" stroke-width="3"/>
+  </g>
+</svg>

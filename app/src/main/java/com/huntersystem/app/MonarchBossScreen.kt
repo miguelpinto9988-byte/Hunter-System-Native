@@ -236,7 +236,7 @@ internal fun MonarchBossExercise(ui:NativeUi,data:JSONObject) {
         if(goal!=null)HText("${goal.count} / ${goal.target} ${goal.unitLabel}",size=17,bold=true)
         return
     }
-    MonarchExerciseStage(exercise,mirror,height=265,play=play)
+    MonarchExerciseStage(exercise,store.catalog,mirror,height=265,play=play)
     Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){
         HButton(if(play) "Pausar demostración" else "Reanudar demostración"){play=!play}
         HButton(if(mirror) "Espejo ✓" else "Espejo"){mirror=!mirror}

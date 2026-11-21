@@ -8,7 +8,8 @@ import androidx.compose.ui.geometry.Size
 internal data class ExerciseFraming(
     val bounds: Rect,
     val unit: Float,
-    val floor: Float
+    val floor: Float,
+    val equipment: ExerciseEquipmentScene
 ) {
     fun scaleFor(stage: Size, closeFraming: Boolean = false): Float {
         val fit = minOf(stage.width / bounds.width, stage.height / bounds.height) * .92f
@@ -31,13 +32,16 @@ internal data class ExerciseFraming(
                 motion.props.maxOfOrNull { it.bounds.right } ?: Float.NEGATIVE_INFINITY)
             val bottom = maxOf(points.maxOf { it.y },
                 motion.props.maxOfOrNull { it.bounds.bottom } ?: Float.NEGATIVE_INFINITY)
+            val equipment = ExerciseEquipmentScene(motion, Rect(left,top,right,bottom), unit)
+            val scene = equipment.bounds()
             return ExerciseFraming(
                 Rect(
-                    Offset(left - 84f * unit, top - 70f * unit),
-                    Offset(right + 84f * unit, bottom + 70f * unit)
+                    Offset(scene.left - 84f * unit, scene.top - 70f * unit),
+                    Offset(scene.right + 84f * unit, scene.bottom + 70f * unit)
                 ),
                 unit,
-                bottom
+                bottom,
+                equipment
             )
         }
     }

@@ -115,7 +115,7 @@ import kotlin.math.*
   HButton(if(play)"Pausar demostración" else "Reanudar demostración"){play=!play}
   HButton(if(mirror)"⇄ ESPEJO ✓" else "⇄ ESPEJO"){mirror=!mirror}
  }
- MonarchExerciseStage(e,mirror,height=360,play=play)
+ MonarchExerciseStage(e,s.catalog,mirror,height=360,play=play)
  if(e.raw.a("instructions").length()==0&&e.raw.s("steps").isNotBlank())
   HPanel(decor=false,padding=16){Heading("Ejecución",size=25);HText(e.raw.s("steps"),size=17)}
  for((key,label)in listOf("setup" to "Preparación","instructions" to "Ejecución","commonErrors" to "Errores comunes","initialDose" to "Dosis inicial","control" to "Control","breath" to "Respiración","tempo" to "Ritmo","muscles" to "Músculos implicados","cue" to "Punto clave")){val text=if(key=="instructions")e.raw.a(key).strings().mapIndexed{i,t->"${i+1}. $t"}.joinToString("\n") else e.raw.s(key);if(text.isNotBlank())HPanel(decor=false,padding=16){Heading(label,size=25);HText(text,size=17)}}
@@ -209,7 +209,7 @@ import kotlin.math.*
  key(index){
      GuidedSessionContent {
          GuidedSessionStep(title,summary,kind)
-         if(e!=null)GuidedSessionDemo(e,mirror,demoPlaying){demoPlaying=!demoPlaying}
+         if(e!=null)GuidedSessionDemo(e,s.catalog,mirror,demoPlaying){demoPlaying=!demoPlaying}
          GuidedSessionTimer(remaining,step.i("seconds"),running,emphasized=kind=="rest",
              onToggle={running=!running},
              onRestart={running=false;remaining=step.i("seconds")})
@@ -234,7 +234,7 @@ import kotlin.math.*
          }else if(kind=="rest"){
              steps.getOrNull(index+1)?.takeIf { it.s("kind")=="exercise" }?.let { next ->
                  GuidedSessionNext(next.s("label"),"Serie ${next.i("setIndex")+1} de ${next.i("sets")}",
-                     s.catalog.byId[next.s("id")],mirror)
+                     s.catalog.byId[next.s("id")],s.catalog,mirror)
              }
          }
      }

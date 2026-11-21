@@ -25,7 +25,8 @@ internal data class ExerciseMotion(
     val posture: ExercisePosture = if (prone) ExercisePosture.PRONE else ExercisePosture.UPRIGHT,
     val authoredFloor: AuthoredFloorMovement? = null,
     val toeLift: ToeLiftMotion? = null,
-    val handGesture: HandGesture? = null
+    val handGesture: HandGesture? = null,
+    val apparatus: List<DemoApparatus> = emptyList()
 ) {
     val firstFootOnLeft: Boolean by lazy { frames.sumOf { (it[8].x-it[10].x).toDouble() } <= 0.0 }
     private val ankleFloor: List<Float> by lazy { listOf(8,10).map { index -> frames.maxOf { it[index].y } } }
@@ -79,11 +80,20 @@ internal object ExerciseMotions {
         }.getOrNull()
     }
 
-    fun loadSequence(context: Context, exercise: Exercise): List<ExerciseMotion>? {
+    fun load(context: Context, exercise: Exercise): ExerciseMotion? =
+        load(context, exercise.id)?.withApparatus(exercise)
+
+    fun loadSequence(context: Context, exercise: Exercise, catalog: Catalog? = null): List<ExerciseMotion>? {
         val ids = exercise.raw.a("sequenceParts").strings()
         if (ids.size != 2 || ids[0] == ids[1]) return null
-        return ids.map { load(context, it) ?: return null }
+        return ids.map { id ->
+            val motion = load(context, id) ?: return null
+            catalog?.byId?.get(id)?.let { motion.withApparatus(it) } ?: motion
+        }
     }
+
+    private fun ExerciseMotion.withApparatus(exercise: Exercise) =
+        copy(apparatus = ExerciseEquipmentPlan.forExercise(exercise, this))
 
     private fun read(context: Context, file: String) =
         context.assets.open(file).bufferedReader().use { JSONObject(it.readText()) }

@@ -14,15 +14,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun MonarchExerciseStage(exercise:Exercise,mirror:Boolean,height:Int=340,
+fun MonarchExerciseStage(exercise:Exercise,catalog:Catalog,mirror:Boolean,height:Int=340,
                          play:Boolean=true, reset:Int=0, showExerciseName:Boolean=true,
                          onTogglePlayback:(()->Unit)?=null,thumbnail:Boolean=false){
     val context=LocalContext.current
-    val parts = remember(context, exercise.id) {
-        ExerciseMotions.loadSequence(context, exercise)
+    val parts = remember(context, catalog, exercise.id) {
+        ExerciseMotions.loadSequence(context, exercise, catalog)
     }
     val motion = remember(context, exercise.id, parts) {
-        if (parts == null) ExerciseMotions.load(context, exercise.id) else null
+        if (parts == null) ExerciseMotions.load(context, exercise) else null
     }
     val playlist = parts?.let {
         rememberExercisePhase(it, it.sumOf { part -> part.duration.toDouble() }.toFloat(), play, reset)
@@ -79,6 +79,11 @@ fun MonarchExerciseStage(exercise:Exercise,mirror:Boolean,height:Int=340,
         }
         if(!guided)ExerciseTechniquePanel(exercise, parts?.getOrNull(current) ?: motion,
             exercise.raw.a("sequenceParts").strings().getOrNull(current) ?: exercise.id)
+        if(!guided) {
+            val visible = parts?.getOrNull(current) ?: motion
+            val labels = visible?.let(::equipmentLabels).orEmpty()
+            if(labels.isNotEmpty()) HText("Equipo · ${labels.joinToString(" · ")}",size=13,color=c.muted)
+        }
         if(showExerciseName)HText(exercise.name,size=14,color=c.text,maxLines=1)
     }
 }
