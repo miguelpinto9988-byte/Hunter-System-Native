@@ -247,15 +247,14 @@ fun ExercisesScreen(ui: NativeUi) {
             HCheck("Aplicar mis restricciones", restricted) { restricted = !restricted }
         }
         items(list, key = { it.id }) { exercise ->
-            HPanel(
-                modifier = Modifier.semantics { contentDescription = "Abrir ejercicio: ${exercise.name}" },
-                onClick = { ui.open("exercise", obj("id" to exercise.id)) },
-                padding = 18
-            ) {
+            HPanel(padding = 18) {
                 val levelLabel = levels[exercise.raw.i("level").coerceIn(0, 2)]
                 Eyebrow(listOf(exercise.sport, exercise.group, levelLabel)
                     .filter { it.isNotBlank() }.joinToString(" · "))
                 Heading(exercise.name, size = 27)
+                HButton("Ver demostración", Modifier.fillMaxWidth().semantics {
+                    contentDescription = "Abrir ejercicio: ${exercise.name}"
+                }) { ui.open("exercise", obj("id" to exercise.id)) }
                 if (exercise.validationBlocked)
                     HText("PENDIENTE DE VALIDACIÓN", size = 13, color = LocalHunter.current.accent, bold = true)
                 val equipment = when {
