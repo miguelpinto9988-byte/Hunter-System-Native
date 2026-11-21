@@ -37,6 +37,8 @@ class ExercisePerspectiveTest {
     @Test fun aSupineBridgeKeepsTheGazeUpAndShoesGrounded() {
         val motion = checkNotNull(ExerciseMotions.load(context,"bridge"))
         assertEquals(ExercisePosture.SUPINE,motion.posture)
+        assertEquals(motion.at(.5f),motion.at(2.5f))
+        assertFalse(motion.at(0f)[2]==motion.at(.5f)[2])
         for (step in 0..20) {
             val pose = motion.at(step/20f)
             val head = ExercisePoseCommands.head(motion,pose)
