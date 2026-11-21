@@ -26,8 +26,21 @@ internal object ExercisePoseCommands {
         }
     }
 
-    /** Adds a readable pelvic motion to the legacy standing pose while the feet stay fixed. */
-    fun animateMissingGesture(id: String, frames: List<List<Offset>>): List<List<Offset>> {
+    /** Exercise-specific placement commands supplement the recorded landmarks. */
+    fun apply(id: String, frames: List<List<Offset>>): List<List<Offset>> {
+        if (id.startsWith("home-diamond23")) {
+            val initial = frames.first()
+            val torso = initial[2] - initial[1]
+            val chest = initial[1] + torso * .20f
+            val across = unit(Offset(-torso.y, torso.x)) * (torso.getDistance() * .065f)
+            return frames.map { frame ->
+                frame.toMutableList().apply {
+                    this[4] = chest + across
+                    this[6] = chest - across
+                }
+            }
+        }
+        // Adds a readable pelvic motion to the legacy standing pose with fixed feet.
         if (id != "new46-pelvictilt" || frames.any { it != frames.first() }) return frames
         val rest = frames.first()
         val span = (rest[2] - rest[1]).getDistance()

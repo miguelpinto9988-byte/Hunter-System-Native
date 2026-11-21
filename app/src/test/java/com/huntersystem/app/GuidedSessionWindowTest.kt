@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.core.app.ApplicationProvider
@@ -54,9 +55,9 @@ class GuidedSessionWindowTest {
         // The test clock cancels infinite animation while auto-advancing. Restart
         // the animation with the manual clock to capture successive rendered poses.
         compose.mainClock.autoAdvance=false
-        compose.onNodeWithContentDescription("Pausar demostración").performClick()
-        compose.mainClock.advanceTimeByFrame()
-        compose.onNodeWithContentDescription("Reanudar demostración").performClick()
+        compose.onNodeWithContentDescription("Pausar demostración").performSemanticsAction(SemanticsActions.OnClick)
+        compose.mainClock.advanceTimeBy(100)
+        compose.onNodeWithContentDescription("Reanudar demostración").performSemanticsAction(SemanticsActions.OnClick)
         val frames=(0..7).map { frame ->
             compose.mainClock.advanceTimeBy(160)
             capture("movimiento-$frame")
@@ -65,8 +66,8 @@ class GuidedSessionWindowTest {
         compose.onNodeWithContentDescription("Pausar demostración").assertExists()
         compose.onNodeWithText("0:32").assertIsDisplayed()
         frames[5].copyTo(File("../qa/sesion-paso-a-paso-ejercicio-oscuro.png"),overwrite=true)
-        compose.onNodeWithContentDescription("Pausar demostración").performClick()
-        compose.mainClock.advanceTimeByFrame()
+        compose.onNodeWithContentDescription("Pausar demostración").performSemanticsAction(SemanticsActions.OnClick)
+        compose.mainClock.advanceTimeBy(100)
         compose.onNodeWithContentDescription("Reanudar demostración").assertExists()
         compose.mainClock.autoAdvance=true
 

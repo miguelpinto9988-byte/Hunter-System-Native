@@ -94,7 +94,7 @@ internal object ExerciseMotions {
                 }
             }
         }
-        val frames = ExercisePoseCommands.animateMissingGesture(exerciseId, decoded)
+        val frames = ExercisePoseCommands.apply(exerciseId, decoded)
         val keyTimes = json.optJSONArray("times")
         val times = if (keyTimes == null) frames.indices.map { it.toFloat() / frames.size }
         else List(keyTimes.length()) { keyTimes.getDouble(it).toFloat() }
