@@ -9,11 +9,11 @@ import androidx.compose.ui.window.Dialog
 import org.json.JSONObject
 import java.time.LocalDate
 
-private val objectives = mapOf("general" to "Mejorar mi bienestar general", "strength" to "Desarrollar fuerza funcional",
+internal val objectives = mapOf("general" to "Mejorar mi bienestar general", "strength" to "Desarrollar fuerza funcional",
  "endurance" to "Mejorar mi resistencia", "mobility" to "Mejorar mi movilidad", "habit" to "Crear un hábito de actividad física")
-private val materials = listOf("mat" to "Colchoneta o superficie acolchada estable",
+internal val materials = listOf("mat" to "Colchoneta o superficie acolchada estable",
  "wall" to "Pared o apoyo vertical firme", "chair" to "Silla estable")
-private val gymOptions = listOf("cable" to "Poleas", "machine" to "Máquinas guiadas", "bench" to "Banco",
+internal val gymOptions = listOf("cable" to "Poleas", "machine" to "Máquinas guiadas", "bench" to "Banco",
  "barbell" to "Barras", "bike" to "Bicicleta estática", "rower" to "Máquina de remo", "elliptical" to "Elíptica")
 
 private val profileChoiceIds=mapOf(
@@ -31,6 +31,18 @@ private val profileChoiceIds=mapOf(
  "collection" to setOf("hunter-male","hunter-female","reader","regressor","reader-female"),
  "scene" to setOf("templo-del-ocaso","biblioteca-lunar","trono-volcanico","reino-de-las-nubes","jardin-sagrado")
 )
+
+internal fun profileIdentityIssue(fields: JSONObject): String? {
+ val name=fields.s("name")
+ if(name.isBlank() || name.length>40)return "Escribe tu nombre de cazador"
+ if(fields.s("age").toIntOrNull()?.let { it>=0 }!=true)return "Escribe una edad válida en años"
+ for((key,label) in listOf("height" to "estatura","weight" to "peso")){
+  val raw=fields.s(key)
+  if(raw.isNotBlank() && raw.replace(',','.').toDoubleOrNull()?.let { it.isFinite() && it>0 }!=true)
+   return "Revisa ${if(key=="height") "la" else "el"} $label"
+ }
+ return null
+}
 
 internal class ProfileRegistration(private val ui:NativeUi) {
  val store=ui.store
@@ -94,15 +106,6 @@ internal class ProfileRegistration(private val ui:NativeUi) {
  )
 
  private fun value(key:String)=draft.getValue(key)
- private fun validateIdentity(){
-  require(value("name").isNotBlank()&&value("name").length<=40){"Escribe tu nombre de cazador"}
-  require(value("age").toIntOrNull()?.let { it>=0 }==true){"Escribe una edad válida en años"}
-  for (key in listOf("height","weight")) if(value(key).isNotBlank()){
-   require(value(key).replace(',','.').toDoubleOrNull()?.let { it.isFinite()&&it>0 }==true){
-    if(key=="height")"Revisa la estatura" else "Revisa el peso"
-   }
-  }
- }
  fun submit(input:JSONObject){
   require(input.b("confirmed")){"Confirma que revisaste tu información."}
   val incoming=input.o("fields")
@@ -118,7 +121,7 @@ internal class ProfileRegistration(private val ui:NativeUi) {
    require(allowed==null||value in allowed||value==initial[key]){"Revisa las opciones de tu perfil."}
    draft[key]=value
   }
-  validateIdentity()
+  profileIdentityIssue(JSONObject(draft))?.let { throw IllegalArgumentException(it) }
   val appearance=originalAppearance.copyJson().put("collection",value("collection")).put("scene",value("scene"))
   val artworkKeys=setOf("theme","outlineColor","collection","scene","companionCharacter")
   val appearanceOnly=original!=null&&initialWeek==week&&initialGear==gear&&initialHealth==healthValues&&
@@ -179,7 +182,7 @@ internal class ProfileRegistration(private val ui:NativeUi) {
 fun ProfileScreen(ui:NativeUi) {
  val session=remember(ui) { ProfileRegistration(ui) }
  var supplementary by remember { mutableStateOf<String?>(null) }
- ProfilePrototype(ui,session,supplementary==null){ supplementary=it }
+ ComposeHunterProfile(ui,session,supplementary!=null){ supplementary=it }
  supplementary?.let { mode -> ProfileSupplement(ui,session,mode){supplementary=null} }
 }
 

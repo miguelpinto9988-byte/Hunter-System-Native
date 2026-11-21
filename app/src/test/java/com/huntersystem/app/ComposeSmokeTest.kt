@@ -12,10 +12,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.*
 import android.content.Context
 import android.graphics.Bitmap
-import android.view.View
-import android.view.ViewGroup
-import android.webkit.WebView
-import org.robolectric.Shadows.shadowOf
 import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
@@ -73,21 +69,43 @@ class ComposeSmokeTest {
   compose.onNodeWithText("Bienvenido, Cazador").assertExists()
  }
  private fun assertProfileLoaded() {
-  fun findWebView(view:View):WebView?=when(view){
-   is WebView->view
-   is ViewGroup->(0 until view.childCount).firstNotNullOfOrNull { findWebView(view.getChildAt(it)) }
-   else->null
-  }
-  var webViewPresent = false
+  compose.onNodeWithText("IDENTIDAD DEL CAZADOR").assertIsDisplayed()
+  compose.onNodeWithText("PASO 1 DE 4").assertIsDisplayed()
+ }
+ @Test(timeout=120000) fun composeProfileNavigatesAndRequiresConsent() {
+  compose.runOnIdle { store.state.put("profile", JSONObject.NULL); store.save(); ui.openProfile() }
+  capture("profile-01-identidad-claro")
+  compose.onNodeWithText("SIGUIENTE ›").performClick()
+  compose.onNodeWithText("Escribe tu nombre de cazador").assertExists()
+  compose.onAllNodes(hasSetTextAction())[0].performTextReplacement("Auditoría Compose")
+  compose.onAllNodes(hasSetTextAction())[1].performTextReplacement("14")
+  compose.onNodeWithText("SIGUIENTE ›").performClick()
+  capture("profile-02-entrenamiento-claro")
+  compose.onNodeWithContentDescription("Lunes: Descanso").performScrollTo().performClick()
+  compose.onNodeWithContentDescription("Lunes: Tren superior").assertExists()
+  compose.onNodeWithText("Rutinas").performScrollTo().performClick()
+  compose.onNodeWithText("Tiempo disponible", substring = true).assertExists()
+  compose.onNodeWithText("Cantidad de misiones", substring = true).assertDoesNotExist()
+  compose.onNodeWithText("SIGUIENTE ›").performClick()
+  compose.onNodeWithText("PERSONALIZACIÓN").assertIsDisplayed()
+  capture("profile-03-personalizacion-claro")
+  compose.onNodeWithText("Tema del sistema", substring = true).performScrollTo().performClick()
+  compose.onNodeWithText("Negro").performClick()
+  compose.onNodeWithText("Tema del sistema", substring = true).assertTextContains("Negro", substring = true)
+  capture("profile-03-personalizacion-oscuro")
+  compose.onNodeWithText("SIGUIENTE ›").performClick()
+  capture("profile-04-activacion-oscuro")
+  compose.onNodeWithText("ACTIVAR PERFIL").assertIsNotEnabled()
+  compose.onNodeWithText("He revisado mi información y deseo activar mi perfil de cazador.").performScrollTo().performClick()
+  compose.onNodeWithText("ACTIVAR PERFIL").performClick()
+  compose.onNodeWithText("SISTEMA ACTIVADO").assertIsDisplayed()
+  compose.onNodeWithText("ENTRAR AL SISTEMA").performClick()
   compose.runOnIdle {
-   val webView=findWebView(compose.activity.window.decorView)
-   if(webView!=null){
-    webViewPresent=true
-    Assert.assertEquals(profilePrototypeUrl,shadowOf(webView).lastLoadedUrl)
-   }
+   Assert.assertEquals("Auditoría Compose", store.profile!!.s("name"))
+   Assert.assertEquals("dark", store.profile!!.s("theme"))
+   Assert.assertEquals("routines", store.profile!!.s("trainingMode"))
+   Assert.assertEquals(0, store.profile!!.a("weeklyCategories").getInt(0))
   }
-  if(!webViewPresent)
-   compose.onNodeWithText("PERFIL DEL CAZADOR").assertIsDisplayed()
  }
  @Test(timeout=120000) fun fourStepProfileActivatesAndConnectsThePlanner(){
   compose.runOnIdle {

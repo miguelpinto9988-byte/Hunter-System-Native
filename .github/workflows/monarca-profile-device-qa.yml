@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "app/src/main/java/com/huntersystem/app/ProfilePrototype.kt"
+      - "app/src/main/java/com/huntersystem/app/ComposeProfile.kt"
       - "app/src/main/java/com/huntersystem/app/Profile.kt"
       - "app/src/androidTest/**"
       - "app/build.gradle.kts"
@@ -26,7 +26,7 @@ jobs:
       - name: Permitir aceleracion de emulador
         run: |
           sudo chmod 666 /dev/kvm || true
-      - name: Ejecutar perfil real en WebView de Android
+      - name: Ejecutar perfil Compose en Android
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35

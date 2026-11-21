@@ -26,7 +26,6 @@ dependencies {
  implementation("androidx.compose.ui:ui")
  implementation("androidx.compose.foundation:foundation")
  implementation("androidx.compose.material3:material3")
- implementation("androidx.webkit:webkit:1.18.0")
  implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
  implementation("com.caverock:androidsvg-aar:1.4")
  androidTestImplementation("androidx.test:core:1.6.1")

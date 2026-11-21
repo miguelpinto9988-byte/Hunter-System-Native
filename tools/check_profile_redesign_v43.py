@@ -8,10 +8,8 @@ source=root/"app/src/main/java/com/huntersystem/app"
 def read(name):
     return (source/name).read_text(encoding="utf-8")
 profile=read("Profile.kt")
-host=read("ProfilePrototype.kt")
+host=read("ComposeProfile.kt")
 assets=root/"app/src/main/assets/profile-monarca"
-prototype=(assets/"profile.js").read_text(encoding="utf-8")
-css=(assets/"profile.css").read_text(encoding="utf-8")
 fields=read("HunterProfileFieldsV43.kt")
 pickers=read("EclipseComponents.kt")
 companions=read("MonarchCompanionsV42.kt")
@@ -19,26 +17,18 @@ screens=read("Screens.kt")
 main=read("MainActivity.kt")
 dashboard=read("MonarchDashboardV42.kt")
 checks={
- "perfil independiente":'profileStandalone -> ProfileScreen(ui)' in main and
-     'ProfilePrototype(ui,session,' in profile and 'view.loadUrl(profilePrototypeUrl)' in host,
- "cuatro etapas navegables":all(x in prototype for x in
-     ('Identidad del cazador','Entrenamiento','Personalización','Activación del sistema',
-      'changeStep(step+1)','ACTIVAR PERFIL')),
- "calendario por toques":'week[i]=(week[i]+1)%categories.length' in prototype and
-     '"weeklyCategories",arr(week)' in profile and 'repeat(7,minmax(0,1fr))' in css,
- "controles por modalidad":all(x in prototype for x in
-     ("tile('rest')","tile('missions')","tile('time')","tile('format')")),
+ "perfil independiente":'profileStandalone -> ProfileScreen(ui)' in main and 'ComposeHunterProfile(ui,session,' in profile,
+ "cuatro etapas navegables":all(x in host for x in
+     ('Identidad del cazador','Entrenamiento','Personalización','Activación del sistema','ACTIVAR PERFIL')),
+ "calendario por toques":'(days.getInt(day) + 1) % categories.size' in host and '"weeklyCategories",arr(week)' in profile,
+ "controles por modalidad":all(x in host for x in ('"dailyMissions"','"minutes"','"blockMode22"','"restSeconds"')),
  "carrusel horizontal con Tusk":'MonarchCompanions.profileChoices' in profile and
-     'scroll-snap-type:x mandatory' in css and 'companion-tusk.webp' in prototype and
+     'horizontalScroll' in host and 'companion-tusk.webp' in host and
      (root/"app/src/main/assets/ui33/companion-tusk.webp").is_file(),
  "arte de los cuatro pasos":all((assets/name).is_file()
      for name in ("identity.webp","training.webp","appearance.webp","activation.webp")),
- "vista previa seleccionada":all(x in prototype for x in
-     ('images.scenes[selections.scene]','images.figures[selections.figure]','companion-mark')) and
-     'data-dark=false' in css,
- "perfil offline":'shouldInterceptRequest' in host and 'WebViewAssetLoader' in host and
-     'allowFileAccess = false' in host and
-     "default-src 'none'" in (assets/"index.html").read_text(encoding="utf-8"),
+ "vista previa seleccionada":all(x in host for x in ('sceneArt','figureArt','companionCharacter','ProfilePalette')),
+ "perfil offline":'context.assets.open(path)' in host and 'WebView' not in host,
  "ilustraciones originales HD sin recorte":all(
      (root/"app/src/main/assets/ui34"/name).is_file()
      for name in ("reader-d.webp","regressor-e.webp","hunter-male-e.webp","hunter-female-e.webp"))
