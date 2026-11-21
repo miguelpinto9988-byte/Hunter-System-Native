@@ -23,7 +23,7 @@ forbidden = [
 errors = [f"Recurso de miniaturas presente: {p.relative_to(ROOT)}" for p in forbidden if p.exists()]
 screens = (SRC / "Screens.kt").read_text(encoding="utf-8")
 catalog = re.search(
-    r"@Composable\s+fun\s+ExercisesScreen\(.*?(?=@Composable\s+fun\s+ProgressScreen\()",
+    r"fun\s+ExercisesScreen\(.*?(?=@Composable\s+fun\s+ProgressScreen\()",
     screens,
     re.DOTALL,
 )
