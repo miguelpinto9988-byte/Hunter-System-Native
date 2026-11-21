@@ -69,6 +69,35 @@ class ExercisePerspectiveTest {
         assertEquals(TechniqueDiagram.NECK,techniqueDiagram(neck,ExerciseMotions.load(context,neck.id)))
     }
 
+    @Test fun rebuiltFloorExercisesHonorTheirMovementAndContacts() {
+        val vUp=checkNotNull(ExerciseMotions.load(context,"home-vup23-tempo23"))
+        assertEquals(AuthoredFloorMovement.V_UP,vUp.authoredFloor)
+        assertEquals(4.8f,vUp.duration,.001f)
+        val initial=vUp.at(0f)
+        val peak=vUp.at(1.35f/vUp.duration)
+        assertEquals(initial[2],peak[2])
+        assertTrue(peak[1].y < initial[1].y-100f)
+        assertTrue(peak[8].y < initial[8].y-100f)
+
+        val clam=checkNotNull(ExerciseMotions.load(context,"new46-reverseclam"))
+        assertEquals(ExerciseView.SIDE,clam.view)
+        assertEquals(ExercisePosture.SIDE_LYING,clam.posture)
+        val rest=clam.at(0f)
+        val rotated=clam.at(.46f)
+        for(index in listOf(2,7,8,9))assertEquals(rest[index],rotated[index])
+        assertTrue(rotated[10].y < rest[10].y-25f)
+
+        val kickback=checkNotNull(ExerciseMotions.load(context,"kickback"))
+        val lower=kickback.at(0f)
+        val raised=kickback.at(.46f)
+        for(index in listOf(4,6,9,10))assertEquals(lower[index],raised[index])
+        assertTrue(raised[7].x > lower[7].x+100f)
+        val catalog=Catalog(context)
+        val sequence=catalog.exercises.first { it.raw.a("sequenceParts").strings()==listOf("kickback","new46-reverseclam") }
+        assertEquals(listOf(AuthoredFloorMovement.KICKBACK,AuthoredFloorMovement.REVERSE_CLAM),
+            ExerciseMotions.loadSequence(context,sequence)?.map { it.authoredFloor })
+    }
+
     @Test fun sportsExpansionLoadsFromTheCatalogWithAllThreeDifficultyLevels() {
         val catalog = Catalog(context)
         val expansion = catalog.historicalExercises.filter { it.id.startsWith("sport-ampl-") }

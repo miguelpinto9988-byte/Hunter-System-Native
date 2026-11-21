@@ -31,12 +31,18 @@ internal enum class TechniqueDiagram(val title: String, val cue: String) {
     WRIST("Movimiento de la muñeca", "Mantén el antebrazo estable y mueve la mano desde la muñeca en el sentido indicado en la ficha."),
     OPPOSITE("Brazo y pierna contrarios", "Boca abajo, eleva un brazo y la pierna contraria ligeramente. Baja y alterna al otro lado con el tronco estable."),
     SCAPULA("Brazos en W", "Boca abajo, dobla los codos formando una W. Eleva suavemente las manos y los codos al acercar los omóplatos. Baja con control."),
+    V_UP("Eleva torso y piernas juntos", "Desde el suelo, eleva el torso y las piernas a la vez. Lleva las manos hacia las espinillas y vuelve con control."),
+    REVERSE_CLAM("Rodillas juntas, pie superior arriba", "Túmbate de lado con las rodillas flexionadas. Mantén la pelvis estable y las rodillas juntas mientras sube y baja el pie superior."),
+    KICKBACK("Extensión desde la cadera", "Apoya manos y una rodilla. Eleva el otro muslo hacia atrás con la rodilla flexionada, sin arquear la espalda ni girar la pelvis."),
     REFERENCE("Detalle de la posición", "La figura muestra la posición de referencia. Sigue la indicación de la ficha para el gesto pequeño o la posición sostenida.")
 }
 
 internal fun techniqueDiagram(exercise: Exercise, motion: ExerciseMotion?, subject: String = exercise.id): TechniqueDiagram? {
     val base = if(subject==exercise.id) "${exercise.id} ${exercise.oldFamily} ${normalize(exercise.name)}" else subject
     return when {
+        motion?.authoredFloor == AuthoredFloorMovement.V_UP -> TechniqueDiagram.V_UP
+        motion?.authoredFloor == AuthoredFloorMovement.REVERSE_CLAM -> TechniqueDiagram.REVERSE_CLAM
+        motion?.authoredFloor == AuthoredFloorMovement.KICKBACK -> TechniqueDiagram.KICKBACK
         "contralateral" in base && motion?.prone == true && motion.needsPlacementGuide -> TechniqueDiagram.OPPOSITE
         subject in setOf("prone","prone_slow","prone_pause") -> TechniqueDiagram.SCAPULA
         "diamond" in base || "diamante" in base -> TechniqueDiagram.DIAMOND
@@ -190,18 +196,39 @@ private fun DrawScope.drawTechnique(diagram: TechniqueDiagram, ink: Color, accen
                 drawCircle(ink,2f,joint)
             }
         }
+        TechniqueDiagram.V_UP, TechniqueDiagram.REVERSE_CLAM, TechniqueDiagram.KICKBACK,
         TechniqueDiagram.REFERENCE -> {
             val pose=motion?.frames?.firstOrNull() ?: return
-            val left=pose.minOf { it.x }
-            val top=pose.minOf { it.y }
-            val fit=min(180f/(pose.maxOf { it.x }-left).coerceAtLeast(1f),
-                68f/(pose.maxOf { it.y }-top).coerceAtLeast(1f))
-            val sketch=pose.map { Offset(130f+(it.x-(left+pose.maxOf { p -> p.x })/2f)*fit,13f+(it.y-top)*fit) }
-            for(indices in listOf(listOf(0,1,2),listOf(1,3,4),listOf(1,5,6),listOf(2,7,8),listOf(2,9,10))) {
-                chain(indices.map(sketch::get))
+            val movingIndex=when(diagram){
+                TechniqueDiagram.V_UP->1
+                TechniqueDiagram.REVERSE_CLAM->10
+                TechniqueDiagram.KICKBACK->7
+                else->null
             }
-            drawCircle(ink,6f,sketch[0])
-            for(joint in listOf(4,6,8,10))drawCircle(accent,3f,sketch[joint])
+            val peak=movingIndex?.let { joint -> motion.frames.minBy { it[joint].y } } ?: pose
+            val points=pose+peak
+            val left=points.minOf { it.x }
+            val right=points.maxOf { it.x }
+            val top=points.minOf { it.y }
+            val fit=min(200f/(right-left).coerceAtLeast(1f),
+                69f/(points.maxOf { it.y }-top).coerceAtLeast(1f))
+            fun project(p:Offset)=Offset(130f+(p.x-(left+right)/2f)*fit,12f+(p.y-top)*fit)
+            fun figure(frame:List<Offset>,color:Color) {
+                val sketch=frame.map(::project)
+                for(indices in listOf(listOf(0,1,2),listOf(1,3,4),listOf(1,5,6),
+                    listOf(2,7,8),listOf(2,9,10)))chain(indices.map(sketch::get),color)
+                drawCircle(color,5f,sketch[0])
+            }
+            if(movingIndex==null){
+                figure(pose,ink)
+                for(joint in listOf(4,6,8,10))drawCircle(accent,3f,project(pose[joint]))
+            }else{
+                figure(pose,ink.copy(alpha=.35f))
+                figure(peak,ink)
+                val indices=if(diagram==TechniqueDiagram.V_UP)listOf(1,8) else listOf(movingIndex)
+                for(joint in indices)arrow(project(pose[joint]),project(peak[joint]))
+                if(diagram==TechniqueDiagram.REVERSE_CLAM)drawCircle(accent,4f,project(pose[9]))
+            }
         }
     }
 }

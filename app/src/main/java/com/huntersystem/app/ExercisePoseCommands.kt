@@ -66,6 +66,7 @@ internal object ExercisePoseCommands {
         }
         val tilt = when {
             motion.view == ExerciseView.OVERHEAD -> rotation
+            motion.authoredFloor == AuthoredFloorMovement.V_UP -> rotation
             side && motion.posture == ExercisePosture.SUPINE -> if (left) -90f else 90f
             side && motion.prone -> rotation.coerceIn(-95f, 95f)
             side && motion.posture == ExercisePosture.SIDE_LYING -> rotation.coerceIn(-82f, 82f)
@@ -83,6 +84,8 @@ internal object ExercisePoseCommands {
         val shin = unit(ankle - knee)
         val toe = when {
             motion.view == ExerciseView.OVERHEAD -> torso + shin * (torso.getDistance() * .22f)
+            motion.authoredFloor == AuthoredFloorMovement.V_UP -> shin
+            motion.authoredFloor == AuthoredFloorMovement.KICKBACK -> Offset(shin.x,.60f)
             motion.posture == ExercisePosture.SUPINE -> Offset(awayFromShoulders, 0f)
             motion.prone && motion.handSupport -> Offset(-awayFromShoulders * .30f, .95f)
             motion.prone || motion.posture == ExercisePosture.SIDE_LYING -> Offset(awayFromShoulders, .12f)

@@ -22,7 +22,8 @@ internal data class ExerciseMotion(
     val view: ExerciseView = ExerciseView.SIDE,
     val prone: Boolean = false,
     val handSupport: Boolean = false,
-    val posture: ExercisePosture = if (prone) ExercisePosture.PRONE else ExercisePosture.UPRIGHT
+    val posture: ExercisePosture = if (prone) ExercisePosture.PRONE else ExercisePosture.UPRIGHT,
+    val authoredFloor: AuthoredFloorMovement? = null
 ) {
     val firstFootOnLeft: Boolean by lazy { frames.sumOf { (it[8].x-it[10].x).toDouble() } <= 0.0 }
     private val ankleFloor: List<Float> by lazy { listOf(8,10).map { index -> frames.maxOf { it[index].y } } }
@@ -33,8 +34,13 @@ internal data class ExerciseMotion(
     val needsPlacementGuide: Boolean by lazy {
         val first = frames.first()
         val torso = (first[2] - first[1]).getDistance().coerceAtLeast(1f)
-        !staticHold && frames.all { pose ->
+        val nearlyStill = !staticHold && frames.all { pose ->
             pose.indices.all { (pose[it] - first[it]).getDistance() < torso * .10f }
+        }
+        nearlyStill || frames.any { pose ->
+            listOf(3 to 4,5 to 6,7 to 8,9 to 10).any { (joint,end) ->
+                (pose[joint]-pose[end]).getDistance() < torso * .035f
+            }
         }
     }
 
@@ -94,6 +100,7 @@ internal object ExerciseMotions {
                 }
             }
         }
+        AuthoredFloorMovement.forId(exerciseId)?.let { return it.render(exerciseId,decoded.size) }
         val frames = ExercisePoseCommands.apply(exerciseId, decoded)
         val keyTimes = json.optJSONArray("times")
         val times = if (keyTimes == null) frames.indices.map { it.toFloat() / frames.size }
@@ -112,13 +119,26 @@ internal object ExerciseMotions {
         }
         require(duration in .5f..30f)
         val camera = json.optJSONObject("view21")
-        val view = when (camera?.optString("primary")) {
+        val declaredView = when (camera?.optString("primary")) {
             "front" -> ExerciseView.FRONT
             "top", "topoblique" -> ExerciseView.OVERHEAD
             "rear" -> ExerciseView.REAR
             else -> ExerciseView.SIDE
         }
-        val posture = ExercisePoseCommands.posture(json.optString("posture23"), view, frames)
+        val horizontal = frames.all {
+            val torso = it[2]-it[1]
+            kotlin.math.abs(torso.y) < kotlin.math.abs(torso.x)*.4f
+        }
+        // These legacy "front" tracks are stored on their sides, already projected in the floor plane.
+        val view = if (horizontal && declaredView==ExerciseView.FRONT) ExerciseView.SIDE else declaredView
+        val floorPosture = when(exerciseId) {
+            "new46-pelvicclock","new46-foampec" -> "supine"
+            "new46-copenhagen","new46-copenhagendyn","new46-sideadduct","new46-sidecrow",
+            "new46-sleeper","new46-sidepallof" -> "side-lying"
+            "new46-sitthrough","new46-adductorrock","new46-sliderfly" -> "prone"
+            else -> json.optString("posture23")
+        }
+        val posture = ExercisePoseCommands.posture(floorPosture, view, frames)
         val prone = posture == ExercisePosture.PRONE
         val floorWithoutPalms = camera?.optString("family") in setOf("prone","reverse","contralateral","w-t19","y-t-w19") ||
             exerciseId in setOf("w-t19","y-t-w19")

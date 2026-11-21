@@ -45,8 +45,10 @@ class ComposeSmokeTest {
   compose.onNodeWithText("DEMOSTRACIÓN").assertExists()
   compose.onNodeWithText("Pausar demostración").assertExists()
  }
- @Test(timeout=60000) fun bridgeAndDiamondGuidesRenderWithAutoplay() {
-  val cases=mapOf("bridge" to TechniqueDiagram.BRIDGE,"home-diamond23" to TechniqueDiagram.DIAMOND)
+ @Test(timeout=60000) fun techniqueGuidesRenderWithAutoplay() {
+  val cases=mapOf("bridge" to TechniqueDiagram.BRIDGE,"home-diamond23" to TechniqueDiagram.DIAMOND,
+      "home-vup23-tempo23" to TechniqueDiagram.V_UP,"new46-reverseclam" to TechniqueDiagram.REVERSE_CLAM,
+      "kickback" to TechniqueDiagram.KICKBACK)
   for((id,diagram) in cases){
    compose.runOnIdle { ui.open("exercise",obj("id" to id)) }
    compose.onNodeWithText("Pausar demostración").assertExists()
