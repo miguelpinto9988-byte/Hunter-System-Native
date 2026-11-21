@@ -10,6 +10,7 @@ import org.junit.*
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.*
+import org.robolectric.shadows.ShadowDialog
 import android.content.Context
 import android.graphics.Bitmap
 import java.io.File
@@ -51,8 +52,13 @@ class ComposeSmokeTest {
    compose.onNodeWithText("Pausar demostración").assertExists()
    val illustration=compose.onNodeWithContentDescription(diagram.title+". "+diagram.cue)
    illustration.performScrollTo().assertIsDisplayed()
-   val picture=illustration.captureToImage().asAndroidBitmap()
-   File("../qa/tecnica-$id.png").outputStream().use { picture.compress(Bitmap.CompressFormat.PNG,100,it) }
+   compose.runOnIdle {
+    val view=checkNotNull(ShadowDialog.getLatestDialog()?.window?.decorView)
+    val picture=Bitmap.createBitmap(view.width,view.height,Bitmap.Config.ARGB_8888)
+    view.draw(android.graphics.Canvas(picture))
+    val folder=File("../qa").apply { mkdirs() }
+    File(folder,"tecnica-$id.png").outputStream().use { picture.compress(Bitmap.CompressFormat.PNG,100,it) }
+   }
    compose.runOnIdle { ui.back() }
   }
  }
