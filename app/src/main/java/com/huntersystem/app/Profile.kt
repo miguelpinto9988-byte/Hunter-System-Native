@@ -65,8 +65,8 @@ internal class ProfileRegistration(private val ui:NativeUi) {
    "theme" to (original?.let { HunterAppearanceV43.mode(it.s("theme")) } ?: "light"),
    "outlineColor" to (original?.let { HunterAppearanceV43.outline(it.s("outlineColor",it.s("theme"))) } ?: "ocean"),
    "companionCharacter" to (original?.s("companionCharacter","knight")?:"knight"),
-   "collection" to originalAppearance.s("collection","hunter-male"),
-   "scene" to originalAppearance.s("scene","templo-del-ocaso")
+   "collection" to (original?.let { originalAppearance.s("collection","hunter-male") } ?: "hunter-male"),
+   "scene" to (original?.let { originalAppearance.s("scene","templo-del-ocaso") } ?: "templo-del-ocaso")
   )
  private val initial=draft.toMap()
  val healthValues=mutableStateMapOf<String,String>().apply {

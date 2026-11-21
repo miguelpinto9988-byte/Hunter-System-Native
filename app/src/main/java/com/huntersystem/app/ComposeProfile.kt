@@ -26,6 +26,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -93,13 +94,14 @@ internal fun ComposeHunterProfile(ui: NativeUi, registration: ProfileRegistratio
         draftJson = JSONObject(draftJson).apply { getJSONObject("gear").put(id, enabled) }.toString()
     }
     var step by rememberSaveable { mutableIntStateOf(0) }
+    val editing = rememberSaveable { registration.editing }
     var confirmed by rememberSaveable { mutableStateOf(false) }
     var issue by rememberSaveable { mutableStateOf("") }
     fun navigate(target: Int) { step = target; confirmed = false; issue = "" }
     fun back() = when {
         step == 4 -> ui.profileSaved()
         step > 0 -> navigate(step - 1)
-        registration.editing -> ui.closeProfile()
+        editing -> ui.closeProfile()
         else -> Unit
     }
     BackHandler(enabled = !overlayOpen) { back() }
@@ -137,10 +139,10 @@ internal fun ComposeHunterProfile(ui: NativeUi, registration: ProfileRegistratio
                                     days.put(day, (days.getInt(day) + 1) % categories.size)
                                 }.toString() }, { onSupplement("health") })
                             2 -> ProfileAppearance(fields, initial.o("legacyArtwork"), ::field,
-                                if (registration.editing) ({ onSupplement("settings") }) else null)
+                                if (editing) ({ onSupplement("settings") }) else null)
                             3 -> ProfileReview(fields, gear, List(7) { week.getInt(it) }, confirmed) { confirmed = it }
                             4 -> Box(Modifier.fillMaxWidth().padding(vertical = 40.dp), contentAlignment = Alignment.Center) {
-                                ProfileTitle(if (registration.editing) "Cambios guardados" else "Registro completado", 18)
+                                ProfileTitle(if (editing) "Cambios guardados" else "Registro completado", 18)
                             }
                         }
                         if (issue.isNotBlank()) Text(issue, color = if (palette.dark) Color(0xFFFFB7C0) else Color(0xFF972143))
@@ -148,12 +150,12 @@ internal fun ComposeHunterProfile(ui: NativeUi, registration: ProfileRegistratio
                 }
                 HorizontalDivider(color = palette.line)
                 Row(Modifier.fillMaxWidth().padding(7.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    if (step in 1..3 || step == 0 && registration.editing)
+                    if (step in 1..3 || step == 0 && editing)
                         FrameAction("‹ ATRÁS", Modifier.weight(.8f), false, onClick = ::back)
                     val label = when {
                         step < 3 -> "SIGUIENTE ›"
                         step == 4 -> "ENTRAR AL SISTEMA"
-                        registration.editing -> "GUARDAR CAMBIOS"
+                        editing -> "GUARDAR CAMBIOS"
                         else -> "ACTIVAR PERFIL"
                     }
                     FrameAction(label, Modifier.weight(1.2f), true, step != 3 || confirmed) {
@@ -278,12 +280,23 @@ private fun ProfileChoices(options: List<Pair<String, String>>, value: String, i
 @Composable
 private fun ProfilePicker(title: String, options: List<Pair<String, String>>, value: String, icon: String,
     modifier: Modifier = Modifier, artwork: ((String) -> String)? = null, hideNames: Boolean = false,
-    optionIcons: List<String> = emptyList(), swatches: List<Color> = emptyList(), select: (String) -> Unit) {
+    optionIcons: List<String> = emptyList(), swatches: List<Color> = emptyList(), compact: Boolean = false,
+    select: (String) -> Unit) {
     var open by remember { mutableStateOf(false) }
     val p = LocalProfilePalette.current
     Box(modifier) {
-        ProfileChoice("$title\n${if (hideNames) "Elegir retrato" else options.toMap()[value] ?: "Opción guardada"}  ⌄",
-            Modifier.fillMaxWidth(), icon = icon) { open = true }
+        val current = if (hideNames) "Elegir retrato" else options.toMap()[value] ?: "Opción guardada"
+        if (compact) {
+            val shape = RoundedCornerShape(7.dp)
+            Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).clip(shape).background(p.top)
+                .border(1.dp, p.line, shape).clickable(role = Role.Button) { open = true }
+                .padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(current, Modifier.weight(1f), color = p.ink, fontSize = 12.sp)
+                Text("⌄", color = p.muted)
+            }
+        } else {
+            ProfileChoice("$title\n$current  ⌄", Modifier.fillMaxWidth(), icon = icon) { open = true }
+        }
         DropdownMenu(expanded = open, onDismissRequest = { open = false },
             modifier = Modifier.widthIn(max = 270.dp).background(p.card)) {
             options.forEachIndexed { index, (id, label) ->
@@ -392,7 +405,7 @@ private fun ProfileTraining(fields: JSONObject, gear: JSONObject, week: List<Int
     }
     ProfileModule("Objetivo principal", "heart") {
         ProfilePicker("Objetivo principal", objectives.toList(), fields.s("objective"), "heart",
-            optionIcons = listOf("heart", "dumbbell", "pulse", "move", "calendar")) { set("objective", it) }
+            optionIcons = listOf("heart", "dumbbell", "pulse", "move", "calendar"), compact = true) { set("objective", it) }
     }
     ProfileModule("Objetivo personalizado", "pen") {
         ProfileInput("Objetivo personalizado", "Describe tu objetivo con tus propias palabras",
@@ -565,8 +578,21 @@ private fun ProfileReview(fields: JSONObject, gear: JSONObject, week: List<Int>,
 @Composable
 private fun ProfileSummary(title: String, icon: String, lines: List<String>) {
     var expanded by rememberSaveable { mutableStateOf(false) }
-    ProfileModule("", icon) {
-        ProfileChoice("$title ${if (expanded) "⌃" else "⌄"}", Modifier.fillMaxWidth(), icon = icon) { expanded = !expanded }
-        if (expanded) lines.forEach { ProfileNote(it) }
+    val p = LocalProfilePalette.current
+    val shape = RoundedCornerShape(7.dp)
+    Column(Modifier.fillMaxWidth().clip(shape).background(p.card).border(1.dp, p.line, shape)) {
+        Row(Modifier.fillMaxWidth().heightIn(min = 48.dp)
+            .clickable(role = Role.Button) { expanded = !expanded }
+            .semantics { stateDescription = if (expanded) "Expandido" else "Contraído" }
+            .padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(if (expanded) "▾" else "▸", color = p.gold)
+            ProfileGlyph(icon)
+            Text(title, color = p.ink, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+        }
+        if (expanded) Column(Modifier.padding(start = 10.dp, end = 10.dp, bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            lines.forEach { ProfileNote(it) }
+        }
     }
 }
