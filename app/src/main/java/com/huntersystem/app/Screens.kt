@@ -12,6 +12,8 @@ import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
@@ -166,6 +168,7 @@ fun HomeScreen(ui:NativeUi) {
 @Composable fun RoutineGenerator(ui:NativeUi,mode:String){MonarchRoutineGenerator(ui,mode){}}
 @Composable fun RoutineTile(ui:NativeUi,r:JSONObject){MonarchRoutineCard(ui,r,ui.store.adjusted())}
 @Composable
+@OptIn(ExperimentalComposeUiApi::class)
 fun ExercisesScreen(ui: NativeUi) {
     val store = ui.store
     var query by remember { mutableStateOf("") }
@@ -201,7 +204,8 @@ fun ExercisesScreen(ui: NativeUi) {
                 }
         }
     }
-    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 18.dp),
+    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 18.dp)
+        .semantics { testTagsAsResourceId = true }.testTag("exerciseCatalog"),
         verticalArrangement = Arrangement.spacedBy(14.dp),
         contentPadding = PaddingValues(top = 20.dp, bottom = 30.dp)) {
         item { Header(ui) }
