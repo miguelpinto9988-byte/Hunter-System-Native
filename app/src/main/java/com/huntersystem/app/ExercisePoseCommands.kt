@@ -3,11 +3,56 @@ package com.huntersystem.app
 import androidx.compose.ui.geometry.Offset
 import kotlin.math.abs
 import kotlin.math.atan2
+import kotlin.math.cos
+import kotlin.math.floor
 import kotlin.math.sin
 import kotlin.math.sqrt
 
 internal enum class ExercisePosture { UPRIGHT, SUPINE, PRONE, SIDE_LYING }
 internal data class ExerciseHeadPlacement(val left: Boolean, val rotation: Float)
+internal enum class HandGesture {
+    WRIST_CIRCLE, FINGER_CLOSE;
+
+    fun direction(forward: Offset, phase: Float, first: Boolean): Offset {
+        if (this != WRIST_CIRCLE) return forward
+        val angle = sin(phase * 2f * Math.PI.toFloat()) * if (first) .55f else -.55f
+        return Offset(forward.x * cos(angle) - forward.y * sin(angle),
+            forward.x * sin(angle) + forward.y * cos(angle))
+    }
+
+    fun curl(phase: Float): Float = if (this == FINGER_CLOSE)
+        (1f - cos(phase * 2f * Math.PI.toFloat())) / 2f else 0f
+
+    fun projectedLength(phase: Float): Float = if (this == WRIST_CIRCLE)
+        .85f + .15f * cos(phase * 2f * Math.PI.toFloat()) else 1f
+
+    companion object {
+        fun forId(id: String): HandGesture? = when (id) {
+            "wrist" -> WRIST_CIRCLE
+            "fingers" -> FINGER_CLOSE
+            else -> null
+        }
+    }
+}
+
+internal data class ToeLiftMotion(val rise: Float, val pause: Float, val lower: Float) {
+    val duration = rise + pause + lower + .35f
+
+    fun elevation(phase: Float): Float {
+        val seconds = (phase - floor(phase)) * duration
+        val fraction = minOf(seconds / rise, 1f, (duration - .35f - seconds) / lower).coerceAtLeast(0f)
+        return fraction * fraction * (3f - 2f * fraction)
+    }
+
+    companion object {
+        fun forId(id: String): ToeLiftMotion? = when (id) {
+            "toelift", "gym-tibialis30" -> ToeLiftMotion(1.25f, .25f, 1.6f)
+            "toelift_slow", "gym-tibialis30-ecc30" -> ToeLiftMotion(1.25f, .25f, 3f)
+            "toelift_pause", "gym-tibialis30-hold30" -> ToeLiftMotion(1.25f, 2f, 1.6f)
+            else -> null
+        }
+    }
+}
 
 /** Placement is expressed in pose coordinates. Mirroring is applied later to the complete scene. */
 internal object ExercisePoseCommands {
@@ -40,6 +85,10 @@ internal object ExercisePoseCommands {
                 }
             }
         }
+        if (frames.all { it == frames.first() } &&
+            id in setOf("prone", "prone_slow", "prone_pause", "contralateral")) {
+            return animateProneLift(id, frames.first(), frames.size)
+        }
         // Adds a readable pelvic motion to the legacy standing pose with fixed feet.
         if (id != "new46-pelvictilt" || frames.any { it != frames.first() }) return frames
         val rest = frames.first()
@@ -51,6 +100,39 @@ internal object ExercisePoseCommands {
                 this[7] += Offset(.022f, 0f) * span * phase
                 this[9] += Offset(.022f, 0f) * span * phase
             }
+        }
+    }
+
+    private fun animateProneLift(id: String, rest: List<Offset>, count: Int): List<List<Offset>> {
+        val span = (rest[2] - rest[1]).getDistance()
+        return List(count) { index ->
+            val phase = index.toFloat() / count
+            val pose = rest.toMutableList()
+            fun raise(root: Int, joint: Int, end: Int, progress: Float) {
+                val lift = progress * progress * (3f - 2f * progress)
+                for (landmark in listOf(joint, end)) {
+                    // A small oblique projection reveals elevation while the torso stays on the mat.
+                    pose[landmark] = rest[root] + (rest[landmark] - rest[root]) * (1f - .09f * lift) -
+                        Offset(0f,span * .15f * lift)
+                }
+            }
+            if (id == "contralateral") {
+                val progress = abs(sin(2f * Math.PI.toFloat() * phase))
+                if (phase < .5f) {
+                    raise(1,3,4,progress)
+                    raise(2,9,10,progress)
+                } else {
+                    raise(1,5,6,progress)
+                    raise(2,7,8,progress)
+                }
+            } else {
+                val rise = if (id == "prone_slow") .30f else .40f
+                val startLowering = if (id == "prone_pause") .65f else rise
+                val progress = minOf(phase / rise, 1f, (1f - phase) / (1f - startLowering))
+                raise(1,3,4,progress)
+                raise(1,5,6,progress)
+            }
+            pose
         }
     }
 
@@ -77,12 +159,14 @@ internal object ExercisePoseCommands {
             ExerciseHeadPlacement(!left, tilt) else ExerciseHeadPlacement(left, tilt)
     }
 
-    fun foot(motion: ExerciseMotion, pose: List<Offset>, knee: Offset, ankle: Offset, first: Boolean = true): Offset {
+    fun foot(motion: ExerciseMotion, pose: List<Offset>, knee: Offset, ankle: Offset,
+             first: Boolean = true, phase: Float = 0f): Offset {
         val torso = pose[2] - pose[1]
         val forward = if (motion.facing == "left") -1f else 1f
         val awayFromShoulders = if (torso.x < 0f) -1f else 1f
         val shin = unit(ankle - knee)
         val toe = when {
+            motion.toeLift != null -> Offset(forward, -.60f * motion.toeLift.elevation(phase))
             motion.view == ExerciseView.OVERHEAD -> torso + shin * (torso.getDistance() * .22f)
             motion.authoredFloor == AuthoredFloorMovement.V_UP -> shin
             motion.authoredFloor == AuthoredFloorMovement.REVERSE_CLAM -> Offset(-.85f,.35f)
@@ -98,7 +182,7 @@ internal object ExercisePoseCommands {
 
     /** Interpolate elbow and knee bends without shortening them when the pivot changes direction. */
     fun interpolate(a: List<Offset>, b: List<Offset>, t: Float): List<Offset> {
-        if (t <= 0f) return a
+        if (t <= 0f || a == b) return a
         if (t >= 1f) return b
         val pose = a.zip(b) { start, end -> start + (end - start) * t }.toMutableList()
         straightenSegment(a,b,t,pose,0,1)
@@ -127,6 +211,7 @@ internal object ExercisePoseCommands {
     private val limbs = listOf(Triple(1,3,4),Triple(1,5,6),Triple(2,7,8),Triple(2,9,10))
 
     private fun straightenSegment(a: List<Offset>,b: List<Offset>,t: Float,pose: MutableList<Offset>,tip: Int,root: Int) {
+        if (a[tip] == b[tip] && a[root] == b[root]) return
         val vector = pose[tip] - pose[root]
         val target = length(a,b,tip,root,t)
         if (vector.getDistance() in .1f..target) pose[tip] = pose[root] + unit(vector) * target

@@ -1,6 +1,7 @@
 package com.huntersystem.app
 
 import android.content.Context
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
@@ -97,6 +98,101 @@ class ExercisePerspectiveTest {
         val sequence=catalog.exercises.first { it.raw.a("sequenceParts").strings()==listOf("kickback","new46-reverseclam") }
         assertEquals(listOf(AuthoredFloorMovement.KICKBACK,AuthoredFloorMovement.REVERSE_CLAM),
             ExerciseMotions.loadSequence(context,sequence)?.map { it.authoredFloor })
+    }
+
+    @Test fun seatedToeLiftsMoveTheToesWithStableLegsAndHonorTheVariantTiming() {
+        val catalog = Catalog(context)
+        val ids = listOf("toelift","toelift_slow","toelift_pause",
+            "gym-tibialis30","gym-tibialis30-ecc30","gym-tibialis30-hold30")
+        for (id in ids) {
+            val motion = checkNotNull(ExerciseMotions.load(context,id))
+            val action = checkNotNull(motion.toeLift)
+            val peakPhase = (action.rise + action.pause / 2f) / motion.duration
+            val rest = motion.at(0f)
+            assertEquals(ExerciseView.SIDE,motion.view)
+            assertEquals(TechniqueDiagram.TOE_LIFT,techniqueDiagram(catalog.byId.getValue(id),motion))
+            for ((knee,ankle) in listOf(7 to 8,9 to 10)) {
+                assertEquals(rest[knee],motion.at(peakPhase)[knee])
+                assertEquals(rest[ankle],motion.at(peakPhase)[ankle])
+                assertEquals(0f,ExercisePoseCommands.foot(motion,rest,rest[knee],rest[ankle]).y,.001f)
+                assertTrue(ExercisePoseCommands.foot(motion,rest,rest[knee],rest[ankle],phase=peakPhase).y < -.4f)
+                assertEquals(0f,ExercisePoseCommands.foot(motion,rest,rest[knee],rest[ankle],phase=1f).y,.001f)
+            }
+            if (id.endsWith("-ecc30")) assertEquals(3f,action.lower,.001f)
+            if (id.endsWith("-hold30")) assertEquals(2f,action.pause,.001f)
+        }
+    }
+
+    @Test fun frontLoadedSquatsUseDifferentImplementsEvenWhenTheirPosesMatch() {
+        val examples = mapOf("gym-front-bb23" to "barbell","doublefront" to "dumbbells","goblet" to "goblet-weight")
+        for ((id,equipment) in examples) assertEquals(equipment,ExerciseMotions.load(context,id)?.equipment)
+    }
+
+    @Test fun proneLiftsMoveOnlyTheIntendedLimbs() {
+        for (id in listOf("prone","prone_slow","prone_pause","contralateral")) {
+            val motion = checkNotNull(ExerciseMotions.load(context,id))
+            val initial = motion.at(0f)
+            val firstLift = motion.at(.25f)
+            val secondLift = motion.at(.75f)
+            assertFalse(motion.handSupport)
+            assertEquals(id,initial.take(3),firstLift.take(3))
+            assertEquals(id,initial.take(3),secondLift.take(3))
+            assertTrue(id,initial[4] != firstLift[4])
+            if (id == "contralateral") {
+                assertEquals(initial[6],firstLift[6])
+                assertEquals(initial[8],firstLift[8])
+                assertTrue(initial[10] != firstLift[10])
+                assertEquals(initial[4],secondLift[4])
+                assertEquals(initial[10],secondLift[10])
+                assertTrue(initial[6] != secondLift[6])
+                assertTrue(initial[8] != secondLift[8])
+            } else {
+                assertTrue(initial[6] != firstLift[6])
+                assertEquals(initial.drop(7),firstLift.drop(7))
+            }
+        }
+    }
+
+    @Test fun wristAndFingerGesturesMoveWhileKeepingTheirForearmsAnchored() {
+        val catalog = Catalog(context)
+        val wrist = checkNotNull(ExerciseMotions.load(context,"wrist"))
+        val fingers = checkNotNull(ExerciseMotions.load(context,"fingers"))
+        for (motion in listOf(wrist,fingers)) assertEquals(motion.at(0f),motion.at(.5f))
+        val wristGesture = checkNotNull(wrist.handGesture)
+        val forward = Offset(0f,1f)
+        assertTrue(wristGesture.direction(forward,.25f,true).x < 0f)
+        assertTrue(wristGesture.direction(forward,.75f,true).x > 0f)
+        assertTrue(wristGesture.projectedLength(.5f) < wristGesture.projectedLength(0f))
+        val fingerGesture = checkNotNull(fingers.handGesture)
+        assertEquals(0f,fingerGesture.curl(0f),.001f)
+        assertEquals(1f,fingerGesture.curl(.5f),.001f)
+        assertEquals(TechniqueDiagram.FINGERS,techniqueDiagram(catalog.byId.getValue("fingers"),fingers))
+    }
+
+    @Test fun adductionAndHipRotationKeepTheirDifferentSupportContacts() {
+        val catalog = Catalog(context)
+        val hold = checkNotNull(ExerciseMotions.load(context,"new46-copenhagen"))
+        assertTrue(hold.staticHold)
+        assertEquals(hold.at(0f),hold.at(.5f))
+        assertEquals(TechniqueDiagram.COPENHAGEN_HOLD,techniqueDiagram(catalog.byId.getValue("new46-copenhagen"),hold))
+        for (id in listOf("new46-copenhagendyn","new46-sideadduct")) {
+            val motion = checkNotNull(ExerciseMotions.load(context,id))
+            assertFalse(motion.staticHold)
+            assertEquals(ExerciseView.SIDE,motion.view)
+            val rest = motion.at(0f)
+            val peak = motion.at(.46f)
+            for (index in listOf(0,1,2,3,4,9,10)) assertEquals(id,rest[index],peak[index])
+            assertTrue(id,peak[8].y < rest[8].y - 40f)
+            assertEquals(id == "new46-copenhagendyn",motion.props.any { it.kind=="bench" })
+        }
+        val rotation = checkNotNull(ExerciseMotions.load(context,"new46-pronehipir"))
+        val rest = rotation.at(0f)
+        val peak = rotation.at(.46f)
+        assertEquals(ExerciseView.OVERHEAD,rotation.view)
+        for (index in listOf(2,7,9)) assertEquals(rest[index],peak[index])
+        assertTrue((rest[8] - rest[7]).getDistance() > 50f)
+        assertTrue((rest[10] - rest[9]).getDistance() > 50f)
+        assertTrue(peak[10].x - peak[8].x > rest[10].x - rest[8].x + 80f)
     }
 
     @Test fun sportsExpansionLoadsFromTheCatalogWithAllThreeDifficultyLevels() {

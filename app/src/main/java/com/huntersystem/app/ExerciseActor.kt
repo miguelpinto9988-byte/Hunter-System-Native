@@ -102,7 +102,8 @@ internal fun ExerciseActor(motion: ExerciseMotion, modifier: Modifier, play: Boo
             val fit = commonScale?.div(framing.unit) ?: framing.scaleFor(stage, themedStage)
             if (fit <= 0f) return@Canvas
             val origin = framing.bounds.center
-            val p = motion.at(phaseOverride?.invoke() ?: playback.floatValue)
+            val phase = phaseOverride?.invoke() ?: playback.floatValue
+            val p = motion.at(phase)
             withTransform({
                 translate(stage.width/2,stage.height/2)
                 scale(if(mirror) -fit else fit,fit,pivot=Offset.Zero)
@@ -111,7 +112,7 @@ internal fun ExerciseActor(motion: ExerciseMotion, modifier: Modifier, play: Boo
                 drawStage(motion, p, origin, framing.bounds.width, framing.bounds.height, framing.unit, framing.floor)
                 motion.props.forEach { drawProp(it, framing.unit) }
                 drawEquipment(motion.equipment, p, framing.unit, framing.floor)
-                drawActor(p, framing.unit, motion, face, firstArmSide, firstLegSide)
+                drawActor(p, framing.unit, motion, face, firstArmSide, firstLegSide, phase)
             }
         }
     }
@@ -182,7 +183,8 @@ private fun smoothBody(points: List<Offset>, widths: List<Float>, symmetric: Boo
 }
 
 private fun DrawScope.drawActor(
-    p: List<Offset>, u: Float, motion: ExerciseMotion, face: Picture?, firstArmSide: Float, firstLegSide: Float
+    p: List<Offset>, u: Float, motion: ExerciseMotion, face: Picture?, firstArmSide: Float, firstLegSide: Float,
+    phase: Float
 ) {
     val head=p[0];val shoulder=p[1];val hip=p[2]
     val down=direction(shoulder,hip)
@@ -250,16 +252,19 @@ private fun DrawScope.drawActor(
                 planted -> Offset(if (left) -1f else 1f, 0f)
                 else -> forearm
             }
-            drawHand(end, fingers, u, tone, near, planted && !overhead)
+            val gesture = motion.handGesture
+            drawHand(end, gesture?.direction(fingers,phase,near) ?: fingers, u, tone, near,
+                planted && !overhead, gesture?.curl(phase) ?: 0f, gesture?.projectedLength(phase) ?: 1f)
         } else if (broad && !overhead) {
             drawFrontShoe(end, u, if (near) motion.firstFootOnLeft else !motion.firstFootOnLeft)
         } else {
-            val foot = ExercisePoseCommands.foot(motion, p, joint, end, near)
+            val foot = ExercisePoseCommands.foot(motion, p, joint, end, near, phase)
             val lower=normal(foot)*(if(foot.x<0) -1f else 1f)
-            val heel=end-foot*(10*u)
-            val toe=end+foot*(29*u)
+            val heelAxis=if(motion.toeLift!=null) Offset(if(foot.x<0) -1f else 1f,0f) else foot
+            val heel=end-heelAxis*(10*u)
+            val toe=heel+foot*(39*u)
             val toeBottom=toe+lower*(9*u)
-            val heelBottom=heel+lower*(9*u)
+            val heelBottom=heel+(if(motion.toeLift!=null) Offset(0f,1f) else lower)*(9*u)
             val topHeel=heel-lower*(9*u)
             val topToe=toe-lower*(4*u)
             val upper=Path().apply{
@@ -271,6 +276,14 @@ private fun DrawScope.drawActor(
             drawPath(upper,shoe)
             drawLine(sole,heelBottom,toeBottom,3f*u,StrokeCap.Round)
             drawLine(Color(0xFF79B7B0),mix(heel,toe,.24f),mix(heel,toe,.83f),1.5f*u,StrokeCap.Round)
+            if(motion.equipment=="tibialis-machine") {
+                val pivot=heel+Offset(-12f*u,8f*u)
+                val roller=heel+foot*(30f*u)-lower*(11f*u)
+                val support=Color(0xFF799BAA)
+                drawLine(support,pivot,pivot+Offset(36f*u,0f),4f*u,StrokeCap.Round)
+                drawLine(support,pivot,roller,4f*u,StrokeCap.Round)
+                drawCircle(Color(0xFF527187),6.5f*u,roller)
+            }
         }
     }
     if (!broad) limb(false, false)
@@ -407,10 +420,11 @@ private fun DrawScope.drawFrontShoe(ankle: Offset, unit: Float, left: Boolean) {
 }
 
 private fun DrawScope.drawHand(
-    wrist: Offset, forward: Offset, unit: Float, tone: Color, near: Boolean, sideSupport: Boolean
+    wrist: Offset, forward: Offset, unit: Float, tone: Color, near: Boolean, sideSupport: Boolean,
+    curl: Float, projectedLength: Float
 ) {
     val across = normal(forward) * if (near) 1f else -1f
-    fun point(length: Float, width: Float) = wrist + (forward * length + across * width) * unit
+    fun point(length: Float, width: Float) = wrist + (forward * (length * projectedLength) + across * width) * unit
     val palmWidth = if (sideSupport) .53f else 1f
     val palm = smoothBody(
         listOf(point(-4f, 0f), point(4f, 0f), point(11f, 0f), point(14f, 0f)),
@@ -420,11 +434,12 @@ private fun DrawScope.drawHand(
     val fingerLengths = listOf(20f, 24f, 25f, 22f)
     for ((index, length) in fingerLengths.withIndex()) {
         val spread = (index - 1.5f) * 4.4f
-        drawLine(tone, point(10f, spread * palmWidth),
-            point(length, spread * 1.32f * palmWidth), (if (sideSupport) 3f else 3.7f) * unit, StrokeCap.Round)
+        val flexedTip = point(length - (length - 12.5f) * curl, spread * (1.32f - .36f * curl) * palmWidth)
+        drawLine(tone, point(10f, spread * palmWidth), flexedTip,
+            (if (sideSupport) 3f else 3.7f) * unit, StrokeCap.Round)
     }
     val thumb = if (sideSupport) 5.5f else 10.5f
-    drawLine(tone, point(3f, 4f * palmWidth), point(12f, thumb), 5f * unit, StrokeCap.Round)
+    drawLine(tone, point(3f, 4f * palmWidth), point(12f, thumb - 5f * curl), 5f * unit, StrokeCap.Round)
 }
 
 private fun DrawScope.drawProp(prop: ExerciseProp, unit: Float) {
@@ -463,12 +478,18 @@ private fun DrawScope.drawEquipment(kind:String,p:List<Offset>,u:Float,floor:Flo
             drawCircle(muted,13*u,between-Offset(56*u,0f))
             drawCircle(muted,13*u,between+Offset(56*u,0f))
         }
-        "dumbbell" -> {
-            val axis = normal(direction(p[3], a))
-            val end = axis * (13f * u)
-            drawLine(muted, a - end, a + end, 4f * u, StrokeCap.Round)
-            drawCircle(muted, 5.5f * u, a - end)
-            drawCircle(muted, 5.5f * u, a + end)
+        "dumbbell", "dumbbells", "goblet-weight" -> {
+            fun weight(center: Offset, axis: Offset) {
+                val end = axis * (15f * u)
+                drawLine(muted, center - end, center + end, 5f * u, StrokeCap.Round)
+                drawCircle(muted, 7f * u, center - end)
+                drawCircle(muted, 7f * u, center + end)
+            }
+            if (kind == "goblet-weight") weight(between, Offset(0f, 1f))
+            else {
+                if (kind == "dumbbells") weight(b, normal(direction(p[5], b)))
+                weight(a, normal(direction(p[3], a)))
+            }
         }
         "rear-wall" -> {
             val x = p[8].x - 22f * u

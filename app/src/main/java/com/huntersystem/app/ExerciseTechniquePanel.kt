@@ -27,13 +27,19 @@ internal enum class TechniqueDiagram(val title: String, val cue: String) {
     SPLIT("Colocación de los pies", "Vista desde arriba. Coloca un pie delante y el otro detrás, dejando un espacio lateral entre ambos para mantener el equilibrio."),
     LATERAL("Desplazamiento lateral", "Separa los pies para el paso lateral. Desplaza la pelvis hacia la pierna que se flexiona, con su rodilla en la dirección de la punta del pie."),
     NECK("Giro suave del cuello", "Gira la cara hacia un lado y vuelve al centro. Alterna hacia el otro lado con los hombros quietos."),
+    TOE_LIFT("Puntas arriba, talones apoyados", "Eleva las puntas hacia las espinillas. Mantén los talones apoyados y las rodillas quietas durante la subida y la bajada."),
     ANKLE("Movimiento del tobillo", "Mueve la punta del pie en el sentido indicado en la ficha. El movimiento es pequeño y se concentra en el tobillo."),
     WRIST("Movimiento de la muñeca", "Mantén el antebrazo estable y mueve la mano desde la muñeca en el sentido indicado en la ficha."),
+    FINGERS("Abre y cierra los dedos", "Apoya los antebrazos. Abre la mano, recoge los dedos suavemente y vuelve a abrirla sin apretar."),
     OPPOSITE("Brazo y pierna contrarios", "Boca abajo, eleva un brazo y la pierna contraria ligeramente. Baja y alterna al otro lado con el tronco estable."),
     SCAPULA("Brazos en W", "Boca abajo, dobla los codos formando una W. Eleva suavemente las manos y los codos al acercar los omóplatos. Baja con control."),
     V_UP("Eleva torso y piernas juntos", "Desde el suelo, eleva el torso y las piernas a la vez. Lleva las manos hacia las espinillas y vuelve con control."),
     REVERSE_CLAM("Rodillas juntas, pie superior arriba", "Túmbate de lado con las rodillas flexionadas. Mantén la pelvis estable y las rodillas juntas mientras sube y baja el pie superior."),
     KICKBACK("Extensión desde la cadera", "Apoya manos y una rodilla. Eleva el otro muslo hacia atrás con la rodilla flexionada, sin arquear la espalda ni girar la pelvis."),
+    COPENHAGEN_HOLD("Apoya el antebrazo y la pierna superior", "Apoya la pierna superior en un banco estable. Mantén la pelvis elevada y el tronco alineado."),
+    COPENHAGEN_LIFT("Eleva la pierna de abajo", "Deja fija la pierna superior sobre el banco. Eleva la inferior hacia ella con la pelvis estable y bájala con control."),
+    SIDE_ADDUCTION("La pierna de abajo se eleva", "Cruza la pierna superior y apoya su pie. Sube y baja la pierna inferior estirada con la pelvis estable."),
+    PRONE_HIP_ROTATION("Separa los pies con las rodillas fijas", "Boca abajo, flexiona las rodillas y separa los pies suavemente. Mantén apoyados la pelvis y los muslos."),
     REFERENCE("Detalle de la posición", "La figura muestra la posición de referencia. Sigue la indicación de la ficha para el gesto pequeño o la posición sostenida.")
 }
 
@@ -43,7 +49,13 @@ internal fun techniqueDiagram(exercise: Exercise, motion: ExerciseMotion?, subje
         motion?.authoredFloor == AuthoredFloorMovement.V_UP -> TechniqueDiagram.V_UP
         motion?.authoredFloor == AuthoredFloorMovement.REVERSE_CLAM -> TechniqueDiagram.REVERSE_CLAM
         motion?.authoredFloor == AuthoredFloorMovement.KICKBACK -> TechniqueDiagram.KICKBACK
-        "contralateral" in base && motion?.prone == true && motion.needsPlacementGuide -> TechniqueDiagram.OPPOSITE
+        motion?.authoredFloor == AuthoredFloorMovement.COPENHAGEN_HOLD -> TechniqueDiagram.COPENHAGEN_HOLD
+        motion?.authoredFloor == AuthoredFloorMovement.COPENHAGEN_LIFT -> TechniqueDiagram.COPENHAGEN_LIFT
+        motion?.authoredFloor == AuthoredFloorMovement.SIDE_ADDUCTION -> TechniqueDiagram.SIDE_ADDUCTION
+        motion?.authoredFloor == AuthoredFloorMovement.PRONE_HIP_ROTATION -> TechniqueDiagram.PRONE_HIP_ROTATION
+        motion?.toeLift != null -> TechniqueDiagram.TOE_LIFT
+        motion?.handGesture == HandGesture.FINGER_CLOSE -> TechniqueDiagram.FINGERS
+        subject == "contralateral" -> TechniqueDiagram.OPPOSITE
         subject in setOf("prone","prone_slow","prone_pause") -> TechniqueDiagram.SCAPULA
         "diamond" in base || "diamante" in base -> TechniqueDiagram.DIAMOND
         "pelvictilt" in base || "basculacion pelvica" in base || "inclinacion pelvica" in base -> TechniqueDiagram.PELVIS
@@ -171,6 +183,18 @@ private fun DrawScope.drawTechnique(diagram: TechniqueDiagram, ink: Color, accen
             arrow(Offset(106f,36f),Offset(74f,36f))
             arrow(Offset(154f,36f),Offset(186f,36f))
         }
+        TechniqueDiagram.TOE_LIFT -> {
+            val heel=Offset(104f,72f)
+            val ankle=Offset(114f,62f)
+            val flat=Offset(171f,72f)
+            val raised=Offset(163f,43f)
+            line(Offset(74f,78f),Offset(192f,78f),ink.copy(alpha=.38f))
+            chain(listOf(Offset(118f,18f),ankle,heel),w=8f)
+            line(heel,flat,ink.copy(alpha=.33f),7f)
+            line(heel,raised,w=7f)
+            drawCircle(accent,4f,heel)
+            arrow(Offset(185f,65f),Offset(178f,38f))
+        }
         TechniqueDiagram.ANKLE, TechniqueDiagram.WRIST -> {
             val joint=Offset(119f,60f)
             line(Offset(112f,18f),joint,w=10f)
@@ -178,6 +202,19 @@ private fun DrawScope.drawTechnique(diagram: TechniqueDiagram, ink: Color, accen
             line(joint,Offset(153f,35f),ink.copy(alpha=.36f),8f)
             drawCircle(accent,5f,joint)
             arrow(Offset(179f,58f),Offset(167f,31f))
+        }
+        TechniqueDiagram.FINGERS -> {
+            for (closed in listOf(false,true)) {
+                val x = if (closed) 191f else 69f
+                line(Offset(x,81f),Offset(x,50f),w=24f)
+                for (i in 0..3) {
+                    val finger = x + (i - 1.5f) * 8f
+                    val length = if (closed) 8f else 23f - kotlin.math.abs(i - 1.5f) * 5f
+                    line(Offset(finger,54f),Offset(finger,48f-length),w=6f)
+                }
+                line(Offset(x-8f,69f),Offset(x-if(closed) 16f else 24f,56f),w=7f)
+            }
+            arrow(Offset(113f,52f),Offset(146f,52f))
         }
         TechniqueDiagram.OPPOSITE, TechniqueDiagram.SCAPULA -> {
             val upper=Offset(130f,31f)
@@ -197,15 +234,22 @@ private fun DrawScope.drawTechnique(diagram: TechniqueDiagram, ink: Color, accen
             }
         }
         TechniqueDiagram.V_UP, TechniqueDiagram.REVERSE_CLAM, TechniqueDiagram.KICKBACK,
+        TechniqueDiagram.COPENHAGEN_HOLD, TechniqueDiagram.COPENHAGEN_LIFT,
+        TechniqueDiagram.SIDE_ADDUCTION, TechniqueDiagram.PRONE_HIP_ROTATION,
         TechniqueDiagram.REFERENCE -> {
             val pose=motion?.frames?.firstOrNull() ?: return
             val movingIndex=when(diagram){
                 TechniqueDiagram.V_UP->1
                 TechniqueDiagram.REVERSE_CLAM->10
                 TechniqueDiagram.KICKBACK->7
+                TechniqueDiagram.COPENHAGEN_LIFT, TechniqueDiagram.SIDE_ADDUCTION, TechniqueDiagram.PRONE_HIP_ROTATION ->8
                 else->null
             }
-            val peak=movingIndex?.let { joint -> motion.frames.minBy { it[joint].y } } ?: pose
+            val peak=when {
+                diagram==TechniqueDiagram.PRONE_HIP_ROTATION -> motion.frames.minBy { it[8].x }
+                movingIndex!=null -> motion.frames.minBy { it[movingIndex].y }
+                else -> pose
+            }
             val points=pose+peak
             val left=points.minOf { it.x }
             val right=points.maxOf { it.x }
@@ -219,13 +263,24 @@ private fun DrawScope.drawTechnique(diagram: TechniqueDiagram, ink: Color, accen
                     listOf(2,7,8),listOf(2,9,10)))chain(indices.map(sketch::get),color)
                 drawCircle(color,5f,sketch[0])
             }
+            for (prop in motion.props.filter { it.kind=="bench" }) {
+                val leftLeg=project(prop.bounds.topLeft)
+                val rightLeg=project(prop.bounds.topRight)
+                line(leftLeg,rightLeg,w=4f)
+                line(leftLeg,Offset(leftLeg.x,81f))
+                line(rightLeg,Offset(rightLeg.x,81f))
+            }
             if(movingIndex==null){
                 figure(pose,ink)
                 for(joint in listOf(4,6,8,10))drawCircle(accent,3f,project(pose[joint]))
             }else{
                 figure(pose,ink.copy(alpha=.35f))
                 figure(peak,ink)
-                val indices=if(diagram==TechniqueDiagram.V_UP)listOf(1,8) else listOf(movingIndex)
+                val indices=when(diagram) {
+                    TechniqueDiagram.V_UP->listOf(1,8)
+                    TechniqueDiagram.PRONE_HIP_ROTATION->listOf(8,10)
+                    else->listOf(movingIndex)
+                }
                 for(joint in indices)arrow(project(pose[joint]),project(peak[joint]))
                 if(diagram==TechniqueDiagram.REVERSE_CLAM)drawCircle(accent,4f,project(pose[9]))
             }

@@ -90,6 +90,10 @@ internal fun planMonarchBoss(
     return BossOffer(boss,selected.map { BossExerciseGoal(it.id,range.random(random),unit=checkNotNull(it.workUnit)) })
 }
 
+internal fun Exercise.isSingleMonarchMovement(): Boolean =
+    raw.a("sequenceParts").length()==0 && !raw.b("compositeSequence") &&
+        !id.startsWith("sport-seq-")
+
 internal class MonarchBossChallenges(private val store:NativeStore) {
     private val source by lazy { store.planner.planningSource(store.adjusted()) }
     private val profile=MonarchProfileAdapter.from(store)
@@ -113,17 +117,18 @@ internal class MonarchBossChallenges(private val store:NativeStore) {
     fun offer(date:LocalDate,boss:MonarchBoss=MonarchBoss.IGRIS):BossOffer? {
         val configured=profile?:return null
         val seed=date.toEpochDay() xor (current()?.startedAt?:0L) xor boss.name.hashCode().toLong()
-        return planMonarchBoss(boss,configured,source.all(),seed) { id ->
-            val exercise=store.catalog.byId.getValue(id)
-            ExerciseMotions.loadSequence(store.context,exercise)!=null||
-                ExerciseMotions.load(store.context,exercise.id)!=null
+        val individual=source.all().filter { store.catalog.byId[it.id]?.isSingleMonarchMovement()==true }
+        return planMonarchBoss(boss,configured,individual,seed) { id ->
+            ExerciseMotions.load(store.context,id)!=null
         }
     }
 
     fun compatible(id:String):Boolean {
         val configured=profile?:return false
+        if(store.catalog.byId[id]?.isSingleMonarchMovement()!=true)return false
         val exercise=source.byId(id)?:return false
-        return exercise.workUnit!=null&&EligibilityPolicy.compatible(exercise,configured)
+        return exercise.category!=Category.MOBILITY&&exercise.workUnit!=null&&
+            EligibilityPolicy.compatible(exercise,configured)
     }
 
     fun start(offer:BossOffer, date:LocalDate=LocalDate.now(), now:Long=System.currentTimeMillis()) {

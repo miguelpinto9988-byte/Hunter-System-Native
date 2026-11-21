@@ -117,8 +117,38 @@ class MonarchBossChallengeTest {
             offers.map { it.boss.repetitions })
         for(offer in offers) {
             assertEquals(5,offer.goals.distinctBy { it.id }.size)
-            assertTrue(offer.goals.all { it.target in offer.boss.repetitions && repository.compatible(it.id) })
+            for (goal in offer.goals) {
+                val exercise = store.catalog.byId.getValue(goal.id)
+                assertTrue(goal.target in offer.boss.repetitions && repository.compatible(goal.id))
+                assertTrue(exercise.isSingleMonarchMovement())
+                assertNull(ExerciseMotions.loadSequence(context, exercise))
+            }
         }
+    }
+
+    @Test fun savedCompoundCountsSurviveAndBothKindsAreExcluded() {
+        val repository = MonarchBossChallenges(store)
+        val sequence = store.catalog.exercises.first { it.raw.a("sequenceParts").length() == 2 }
+        val compound = store.catalog.historicalExercises.first {
+            it.raw.b("compositeSequence") && it.raw.a("sequenceParts").length() == 0
+        }
+        for (exercise in listOf(sequence, compound)) {
+            assertFalse(exercise.isSingleMonarchMovement())
+            assertFalse(repository.compatible(exercise.id))
+        }
+
+        val offer = repository.offer(date)!!
+        repository.start(offer, date, start)
+        store.state.o("monarchBossChallenge").a("goals").getJSONObject(0)
+            .put("id", sequence.id).put("count", 12)
+        store.save()
+        val reopened = MonarchBossChallenges(NativeStore(context))
+        assertEquals(sequence.id, reopened.current()!!.offer.goals.first().id)
+        assertEquals(12, reopened.current()!!.offer.goals.first().count)
+        assertThrows(IllegalArgumentException::class.java) { reopened.record(start, sequence.id, 1, 12, start) }
+        reopened.abandon(start, start + 1)
+        assertEquals(BossStatus.ABANDONED, reopened.current()!!.status(start + 2))
+        assertEquals(12, reopened.current()!!.offer.goals.first().count)
     }
 
     @Test fun challengeOnlyCompletesWhenAllDeclaredTargetsAreReached(){
@@ -248,6 +278,8 @@ class MonarchBossChallengeTest {
         val name=store.catalog.byId.getValue(goal.id).name
         compose.onNodeWithText(name).performScrollTo().performClick()
         compose.onNodeWithText("El registro se habilita al aceptar el desafío.").assertExists()
+        compose.onNodeWithText("Gesto 1").assertDoesNotExist()
+        compose.onNodeWithText("Gesto 2").assertDoesNotExist()
         compose.runOnIdle { ui.back() }
         compose.onNodeWithText("135–170").assertExists()
         compose.onNodeWithText("Aceptar desafío").performScrollTo().performClick()

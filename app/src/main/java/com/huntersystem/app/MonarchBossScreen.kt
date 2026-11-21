@@ -104,7 +104,7 @@ internal fun MonarchBossScreen(ui:NativeUi,windowState:JSONObject) {
     }
 
     if(offer==null){
-        HNotice("No hay cinco ejercicios distintos con demostración compatibles con tu perfil.")
+        HNotice("No hay cinco ejercicios individuales distintos con demostración compatibles con tu perfil.")
     }else{
         Column(verticalArrangement=Arrangement.spacedBy(6.dp)){
             Heading("Objetivos del desafío",size=26)
@@ -112,6 +112,7 @@ internal fun MonarchBossScreen(ui:NativeUi,windowState:JSONObject) {
                 else "Las metas son acumuladas durante los cinco días.",size=14,color=LocalHunter.current.muted)
             for(goal in offer.goals) {
                 val exercise=store.catalog.byId[goal.id]
+                val legacyCompound=exercise?.isSingleMonarchMovement()==false
                 HPanel(onClick={ui.open("monarch-boss-exercise",obj("id" to goal.id,"target" to goal.target,"unit" to goal.unit.name,
                     "start" to (run?.startedAt?.takeIf { showRun }?:0L)))},decor=false,padding=9){
                     Row(Modifier.fillMaxWidth(),verticalAlignment=Alignment.CenterVertically,
@@ -119,7 +120,9 @@ internal fun MonarchBossScreen(ui:NativeUi,windowState:JSONObject) {
                         MonarchExerciseBadge(remember(exercise) { monarchExerciseIcon(exercise) })
                         Column(Modifier.weight(1f),verticalArrangement=Arrangement.spacedBy(3.dp)){
                             HText(exercise?.name?:goal.id,bold=true,size=16)
-                            exercise?.let { e ->
+                            if(legacyCompound) HText("Ficha combinada del desafío anterior",
+                                size=12,color=LocalHunter.current.muted)
+                            else exercise?.let { e ->
                                 val category=store.catalog.classification(e.id)?.category ?: CategoryMapper.normalize(e.type)
                                 HText(trainingCategoryLabels[category]?:e.group,
                                     size=12,color=LocalHunter.current.muted)
@@ -128,7 +131,8 @@ internal fun MonarchBossScreen(ui:NativeUi,windowState:JSONObject) {
                         }
                         HText(if(showRun) "${goal.count} / ${goal.target} ${goal.shortUnit}" else "${goal.target} ${goal.shortUnit}",
                             size=14,bold=true)
-                        HText(if(showRun&&status==BossStatus.ACTIVE) "+" else "›",size=19,color=LocalHunter.current.accent)
+                        HText(if(showRun&&status==BossStatus.ACTIVE&&!legacyCompound) "+" else "›",
+                            size=19,color=LocalHunter.current.accent)
                     }
                 }
             }
@@ -224,6 +228,13 @@ internal fun MonarchBossExercise(ui:NativeUi,data:JSONObject) {
     Row(verticalAlignment=Alignment.CenterVertically,horizontalArrangement=Arrangement.spacedBy(10.dp)) {
         MonarchExerciseBadge(remember(exercise) { monarchExerciseIcon(exercise) })
         Heading(exercise.name,Modifier.weight(1f),size=34)
+    }
+    if(!exercise.isSingleMonarchMovement()){
+        HNotice(if(run?.status(now)==BossStatus.ACTIVE)
+            "El avance de esta ficha se conserva. Puedes abandonar este desafío y elegir otro con ejercicios individuales."
+            else "Esta ficha combinada pertenece a un desafío anterior. El avance registrado se conserva.")
+        if(goal!=null)HText("${goal.count} / ${goal.target} ${goal.unitLabel}",size=17,bold=true)
+        return
     }
     MonarchExerciseStage(exercise,mirror,height=265,play=play)
     Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){

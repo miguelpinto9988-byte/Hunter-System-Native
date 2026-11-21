@@ -23,7 +23,9 @@ internal data class ExerciseMotion(
     val prone: Boolean = false,
     val handSupport: Boolean = false,
     val posture: ExercisePosture = if (prone) ExercisePosture.PRONE else ExercisePosture.UPRIGHT,
-    val authoredFloor: AuthoredFloorMovement? = null
+    val authoredFloor: AuthoredFloorMovement? = null,
+    val toeLift: ToeLiftMotion? = null,
+    val handGesture: HandGesture? = null
 ) {
     val firstFootOnLeft: Boolean by lazy { frames.sumOf { (it[8].x-it[10].x).toDouble() } <= 0.0 }
     private val ankleFloor: List<Float> by lazy { listOf(8,10).map { index -> frames.maxOf { it[index].y } } }
@@ -148,9 +150,18 @@ internal object ExerciseMotions {
             maxOf(frame[4].y, frame[6].y) >= lower - .12f * torso &&
                 frame[0].y + .20f * torso < maxOf(frame[4].y, frame[6].y)
         })
+        val toeLift = ToeLiftMotion.forId(exerciseId)
+        val drawnEquipment = when (exerciseId) {
+            "gym-front-bb23", "gym-front-bb23-tempo23", "gym-front-bb23-pause23" -> "barbell"
+            "gym-tibialis30", "gym-tibialis30-ecc30", "gym-tibialis30-hold30" -> "tibialis-machine"
+            "doublefront", "doublefront_slow", "doublefront_pause" -> "dumbbells"
+            "goblet", "goblet_slow", "goblet_pause", "goblet-15-19", "goblet-control18", "goblethold" -> "goblet-weight"
+            else -> json.optString("equipment")
+        }
         return ExerciseMotion(
-            frames, duration, times, source, json.optString("facing23", "right"),
-            json.optBoolean("hold"), json.optString("equipment"), props, view, prone, handSupport, posture
+            frames, toeLift?.duration ?: duration, times, source, json.optString("facing23", "right"),
+            json.optBoolean("hold"), drawnEquipment, props, view, prone, handSupport, posture,
+            toeLift = toeLift, handGesture = HandGesture.forId(exerciseId)
         )
     }
 }
