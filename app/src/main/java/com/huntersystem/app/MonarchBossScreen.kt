@@ -12,9 +12,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.huntersystem.app.planning.CategoryMapper
 import kotlinx.coroutines.delay
 import org.json.JSONObject
@@ -215,14 +212,8 @@ internal fun MonarchBossExercise(ui:NativeUi,data:JSONObject) {
     val compatible=remember(repository,exercise.id,start) { start==0L||repository.compatible(exercise.id) }
     val canRecord=run?.status(now)==BossStatus.ACTIVE&&remaining>0&&compatible
     var amount by remember(start,exercise.id,goal?.count) { mutableStateOf("") }
-    var play by remember(exercise.id) { mutableStateOf(false) }
+    var play by remember(exercise.id) { mutableStateOf(true) }
     var mirror by remember(exercise.id) { mutableStateOf(false) }
-    val lifecycle=LocalLifecycleOwner.current.lifecycle
-    DisposableEffect(lifecycle){
-        val observer=LifecycleEventObserver { _,event -> if(event==Lifecycle.Event.ON_STOP) play=false }
-        lifecycle.addObserver(observer)
-        onDispose { lifecycle.removeObserver(observer) }
-    }
     val units=amount.toIntOrNull()?:0
     val target=goal ?: BossExerciseGoal(exercise.id,data.i("target"),unit=
         if(data.s("unit")=="SECONDS") com.huntersystem.app.planning.VolumeUnit.SECONDS
@@ -236,7 +227,7 @@ internal fun MonarchBossExercise(ui:NativeUi,data:JSONObject) {
     }
     MonarchExerciseStage(exercise,mirror,height=265,play=play)
     Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){
-        HButton(if(play) "Pausar demostración" else "Reproducir demostración"){play=!play}
+        HButton(if(play) "Pausar demostración" else "Reanudar demostración"){play=!play}
         HButton(if(mirror) "Espejo ✓" else "Espejo"){mirror=!mirror}
     }
     HPanel(decor=false,padding=13){

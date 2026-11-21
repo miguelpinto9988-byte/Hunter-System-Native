@@ -21,8 +21,23 @@ internal data class ExerciseMotion(
     val props: List<ExerciseProp> = emptyList(),
     val view: ExerciseView = ExerciseView.SIDE,
     val prone: Boolean = false,
-    val handSupport: Boolean = false
+    val handSupport: Boolean = false,
+    val posture: ExercisePosture = if (prone) ExercisePosture.PRONE else ExercisePosture.UPRIGHT
 ) {
+    val firstFootOnLeft: Boolean by lazy { frames.sumOf { (it[8].x-it[10].x).toDouble() } <= 0.0 }
+    private val ankleFloor: List<Float> by lazy { listOf(8,10).map { index -> frames.maxOf { it[index].y } } }
+
+    fun ankleTouchesFloor(ankle: Offset, first: Boolean, torsoLength: Float): Boolean =
+        ankle.y >= ankleFloor[if(first) 0 else 1] - torsoLength * .035f
+
+    val needsPlacementGuide: Boolean by lazy {
+        val first = frames.first()
+        val torso = (first[2] - first[1]).getDistance().coerceAtLeast(1f)
+        !staticHold && frames.all { pose ->
+            pose.indices.all { (pose[it] - first[it]).getDistance() < torso * .10f }
+        }
+    }
+
     fun at(phase: Float): List<Offset> {
         if (staticHold) return frames.first()
         val wrap = phase - floor(phase)
@@ -30,8 +45,7 @@ internal data class ExerciseMotion(
         val next = (previous + 1) % frames.size
         val interval = (times.getOrNull(previous + 1) ?: 1f) - times[previous]
         val fraction = if (interval > 0f) ((wrap - times[previous]) / interval).coerceIn(0f,1f) else 0f
-        if (next == 0 && source == "sport") return frames[previous]
-        return frames[previous].zip(frames[next]) { a,b -> a + (b - a) * fraction }
+        return ExercisePoseCommands.interpolate(frames[previous], frames[next], fraction)
     }
 }
 
@@ -52,7 +66,7 @@ internal object ExerciseMotions {
                     val records = sports ?: read(context,"exercise-actor/sports-poses.json").also { sports = it }
                     parse(records.getJSONObject(exerciseId),"sport")
                 }
-                else -> parse(read(context,"demos30/$exerciseId.json"),"original")
+                else -> parse(read(context,"demos30/$exerciseId.json"),"original",exerciseId)
             }
         }.getOrNull()
     }
@@ -66,11 +80,11 @@ internal object ExerciseMotions {
     private fun read(context: Context, file: String) =
         context.assets.open(file).bufferedReader().use { JSONObject(it.readText()) }
 
-    internal fun parse(json: JSONObject, source: String): ExerciseMotion {
+    internal fun parse(json: JSONObject, source: String, exerciseId: String = ""): ExerciseMotion {
         val native = source == "original"
         val data = json.getJSONArray(if (native) "frames" else "poses")
         require(data.length() in 2..240)
-        val frames = List(data.length()) { i ->
+        val decoded = List(data.length()) { i ->
             val frame = if (native) data.getJSONObject(i).getJSONArray("p") else data.getJSONArray(i)
             require(frame.length() == 11)
             List(11) { j ->
@@ -80,6 +94,7 @@ internal object ExerciseMotions {
                 }
             }
         }
+        val frames = ExercisePoseCommands.animateMissingGesture(exerciseId, decoded)
         val keyTimes = json.optJSONArray("times")
         val times = if (keyTimes == null) frames.indices.map { it.toFloat() / frames.size }
         else List(keyTimes.length()) { keyTimes.getDouble(it).toFloat() }
@@ -103,8 +118,11 @@ internal object ExerciseMotions {
             "rear" -> ExerciseView.REAR
             else -> ExerciseView.SIDE
         }
-        val prone = json.optString("posture23") == "prone"
-        val handSupport = prone && (view == ExerciseView.OVERHEAD || frames.any { frame ->
+        val posture = ExercisePoseCommands.posture(json.optString("posture23"), view, frames)
+        val prone = posture == ExercisePosture.PRONE
+        val floorWithoutPalms = camera?.optString("family") in setOf("prone","reverse","contralateral","w-t19","y-t-w19") ||
+            exerciseId in setOf("w-t19","y-t-w19")
+        val handSupport = prone && !floorWithoutPalms && (view == ExerciseView.OVERHEAD || frames.any { frame ->
             val lower = maxOf(frame[7].y, frame[8].y, frame[9].y, frame[10].y)
             val torso = (frame[2] - frame[1]).getDistance()
             maxOf(frame[4].y, frame[6].y) >= lower - .12f * torso &&
@@ -112,7 +130,7 @@ internal object ExerciseMotions {
         })
         return ExerciseMotion(
             frames, duration, times, source, json.optString("facing23", "right"),
-            json.optBoolean("hold"), json.optString("equipment"), props, view, prone, handSupport
+            json.optBoolean("hold"), json.optString("equipment"), props, view, prone, handSupport, posture
         )
     }
 }

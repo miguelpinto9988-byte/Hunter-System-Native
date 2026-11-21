@@ -34,6 +34,33 @@ class ExercisePerspectiveTest {
             assertTrue(motion.handSupport)
         }
     }
+    @Test fun aSupineBridgeKeepsTheGazeUpAndShoesGrounded() {
+        val motion = checkNotNull(ExerciseMotions.load(context,"bridge"))
+        assertEquals(ExercisePosture.SUPINE,motion.posture)
+        for (step in 0..20) {
+            val pose = motion.at(step/20f)
+            val head = ExercisePoseCommands.head(motion,pose)
+            assertFalse(head.left)
+            assertEquals(-90f,head.rotation,.001f)
+            val foot = ExercisePoseCommands.foot(motion,pose,pose[7],pose[8])
+            assertTrue(foot.x>.99f && kotlin.math.abs(foot.y)<.001f)
+            assertEquals(motion.frames.first()[8],pose[8])
+            assertEquals(motion.frames.first()[10],pose[10])
+        }
+        assertFalse(checkNotNull(ExerciseMotions.load(context,"prone")).handSupport)
+    }
+
+    @Test fun pelvicTiltMovesAndDiagramExplainsDiamondHandPlacement() {
+        val catalog=Catalog(context)
+        val pelvic=checkNotNull(ExerciseMotions.load(context,"new46-pelvictilt"))
+        assertFalse(pelvic.frames.first()[2]==pelvic.at(.25f)[2])
+        assertEquals(pelvic.frames.first()[8],pelvic.at(.25f)[8])
+        val diamond=catalog.byId.getValue("home-diamond23")
+        assertEquals(TechniqueDiagram.DIAMOND,techniqueDiagram(diamond,ExerciseMotions.load(context,diamond.id)))
+        val neck=catalog.byId.getValue("neck")
+        assertEquals(TechniqueDiagram.NECK,techniqueDiagram(neck,ExerciseMotions.load(context,neck.id)))
+    }
+
     @Test fun sportsExpansionLoadsFromTheCatalogWithAllThreeDifficultyLevels() {
         val catalog = Catalog(context)
         val expansion = catalog.historicalExercises.filter { it.id.startsWith("sport-ampl-") }

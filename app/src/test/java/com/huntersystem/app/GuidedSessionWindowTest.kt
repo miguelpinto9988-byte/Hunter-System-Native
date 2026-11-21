@@ -49,9 +49,8 @@ class GuidedSessionWindowTest {
         compose.onNodeWithText("Anterior").assertIsNotEnabled()
         compose.onNodeWithText("Completar y registrar").assertIsDisplayed()
         compose.onNodeWithText("Detener por molestias").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Reproducir demostración").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Pausar demostración").assertIsDisplayed()
         compose.mainClock.autoAdvance=false
-        compose.onNodeWithContentDescription("Reproducir demostración").performClick()
         val frames=(0..7).map { frame ->
             compose.mainClock.advanceTimeBy(160)
             capture("movimiento-$frame")
@@ -62,6 +61,7 @@ class GuidedSessionWindowTest {
         frames[5].copyTo(File("../qa/sesion-paso-a-paso-ejercicio-oscuro.png"),overwrite=true)
         compose.onNodeWithContentDescription("Pausar demostración").performClick()
         compose.mainClock.advanceTimeByFrame()
+        compose.onNodeWithContentDescription("Reanudar demostración").assertExists()
         compose.mainClock.autoAdvance=true
 
         compose.onNodeWithText("Indicaciones").performScrollTo().performClick()
@@ -98,7 +98,7 @@ class GuidedSessionWindowTest {
 
         compose.onNodeWithText("Anterior").performClick()
         compose.onNodeWithText("Paso 1 de 3").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Reproducir demostración").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Pausar demostración").assertIsDisplayed()
         capture("ejercicio-claro")
         compose.onNodeWithText("Completar y registrar").performClick()
         compose.onNodeWithText("Confirmar serie realizada").performScrollTo().performClick()

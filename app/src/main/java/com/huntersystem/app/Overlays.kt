@@ -109,12 +109,10 @@ import kotlin.math.*
  }
  }}}}
 @Composable fun ExerciseDetail(ui:NativeUi,id:String){val s=ui.store;val e=s.catalog.byId[id]?:return;val c=LocalHunter.current;var mirror by remember(id){mutableStateOf(false)}
- var play by remember(id){mutableStateOf(false)}
- val lifecycle=LocalLifecycleOwner.current.lifecycle
- DisposableEffect(lifecycle){val observer=LifecycleEventObserver{_,event->if(event==Lifecycle.Event.ON_STOP)play=false};lifecycle.addObserver(observer);onDispose{lifecycle.removeObserver(observer)}}
+ var play by remember(id){mutableStateOf(true)}
  Eyebrow(listOf(e.group,e.category,e.sport).filter{it.isNotBlank()}.joinToString(" · "));Heading(e.name,size=35);HText("${if(e.unit=="sec")"Por tiempo" else "Por repeticiones"}${if(e.sides)" · Cantidad por lado" else ""} · ${if(e.impact)"Con saltos" else "Sin saltos"}",size=16,color=c.muted)
  Row(horizontalArrangement=Arrangement.spacedBy(8.dp)){
-  HButton(if(play)"Pausar demostración" else "Reproducir demostración"){play=!play}
+  HButton(if(play)"Pausar demostración" else "Reanudar demostración"){play=!play}
   HButton(if(mirror)"⇄ ESPEJO ✓" else "⇄ ESPEJO"){mirror=!mirror}
  }
  MonarchExerciseStage(e,mirror,height=360,play=play)
@@ -157,7 +155,7 @@ import kotlin.math.*
  if(!id.startsWith("monarca-routine-"))HButton("Usar esta rutina",Modifier.fillMaxWidth(),primary=true,enabled=reasons.isEmpty()){ui.open("assign",obj("id" to id))}
 }
 @Composable fun AssignRoutine(ui:NativeUi,id:String){val r=ui.routine(id)?:return;var date by remember{mutableStateOf(today())};Heading("Usar esta rutina",size=35);HText(r.s("name"),bold=true);HText("Los ejercicios y cantidades mostrados se copiarán a la fecha elegida.",size=17,color=LocalHunter.current.muted);HSelect("Fecha",date,(0L..20L).map{val d=plus(today(),it);d to "$d${if(it==0L)" · Hoy" else ""}"}){date=it};for(x in r.a("items").objects())HText("${ui.store.catalog.byId[x.s("id")]?.name} · ${x.i("sets")} × ${x.i("target")}",size=16);HButton("Confirmar asignación",Modifier.fillMaxWidth(),primary=true){ui.attempt{ui.store.assign(r,date);ui.stack.clear();ui.go("plan");ui.message("Rutina asignada a $date")}}}
-@Composable fun ColumnScope.SessionPlayer(ui:NativeUi,data:JSONObject){val s=ui.store;val date=data.s("date",today());val preview=data.has("routineId");val day=if(preview)ui.routine(data.s("routineId"))?:return else s.day(date);val p=s.adjusted();val reasons=day.a("items").objects().flatMap{item->s.catalog.byId[item.s("id")]?.let{s.rules.missionReasons(it,p,item)}?:listOf("Ejercicio desconocido")};if(reasons.isNotEmpty()){GuidedSessionContent { Heading("Revisa tu perfil");HNotice(reasons.distinct().joinToString("\n")) };return};val steps=remember(day.toString(),p.toString()){s.planner.steps(day,p)};if(steps.isEmpty()){GuidedSessionContent { Heading("No hay ejercicios para esta sesión") };return};val signature=hash(arr(steps).toString()).toString(16);val saved=if(preview)JSONObject() else s.state.o("guidedSessions").o(date).takeIf{it.s("nativeSignature")==signature}?:JSONObject();var index by remember(signature){mutableIntStateOf(saved.i("index").coerceIn(0,steps.size))};var remaining by remember(signature){mutableIntStateOf(saved.i("remaining",steps.getOrNull(index)?.i("seconds")?:0).coerceAtLeast(0))};var running by remember{mutableStateOf(false)};var pending by remember(index){mutableStateOf(false)};var mirror by remember{mutableStateOf(false)};var demoPlaying by remember(signature,index){mutableStateOf(false)};val latestIndex by rememberUpdatedState(index);val latestRemaining by rememberUpdatedState(remaining)
+@Composable fun ColumnScope.SessionPlayer(ui:NativeUi,data:JSONObject){val s=ui.store;val date=data.s("date",today());val preview=data.has("routineId");val day=if(preview)ui.routine(data.s("routineId"))?:return else s.day(date);val p=s.adjusted();val reasons=day.a("items").objects().flatMap{item->s.catalog.byId[item.s("id")]?.let{s.rules.missionReasons(it,p,item)}?:listOf("Ejercicio desconocido")};if(reasons.isNotEmpty()){GuidedSessionContent { Heading("Revisa tu perfil");HNotice(reasons.distinct().joinToString("\n")) };return};val steps=remember(day.toString(),p.toString()){s.planner.steps(day,p)};if(steps.isEmpty()){GuidedSessionContent { Heading("No hay ejercicios para esta sesión") };return};val signature=hash(arr(steps).toString()).toString(16);val saved=if(preview)JSONObject() else s.state.o("guidedSessions").o(date).takeIf{it.s("nativeSignature")==signature}?:JSONObject();var index by remember(signature){mutableIntStateOf(saved.i("index").coerceIn(0,steps.size))};var remaining by remember(signature){mutableIntStateOf(saved.i("remaining",steps.getOrNull(index)?.i("seconds")?:0).coerceAtLeast(0))};var running by remember{mutableStateOf(false)};var pending by remember(index){mutableStateOf(false)};var mirror by remember{mutableStateOf(false)};var demoPlaying by remember(signature,index){mutableStateOf(true)};val latestIndex by rememberUpdatedState(index);val latestRemaining by rememberUpdatedState(remaining)
  fun persist(){if(!preview){val all=s.state.o("guidedSessions");all.put(date,obj("nativeSignature" to signature,"index" to latestIndex,"remaining" to latestRemaining,"mode22" to p.s("blockMode22","exercise")));s.state.put("guidedSessions",all);s.save()}}
  if(preview && day.s("id").startsWith("monarca-routine-")){
      val repository=remember(s){MonarchProgressRepository(s)}
@@ -168,7 +166,7 @@ import kotlin.math.*
          return
      }
  }
- val lifecycle=LocalLifecycleOwner.current.lifecycle;DisposableEffect(lifecycle,signature){val observer=LifecycleEventObserver{_,event->if(event==Lifecycle.Event.ON_STOP){running=false;demoPlaying=false;persist()}};lifecycle.addObserver(observer);onDispose{lifecycle.removeObserver(observer);persist()}}
+ val lifecycle=LocalLifecycleOwner.current.lifecycle;DisposableEffect(lifecycle,signature){val observer=LifecycleEventObserver{_,event->if(event==Lifecycle.Event.ON_STOP){running=false;persist()}};lifecycle.addObserver(observer);onDispose{lifecycle.removeObserver(observer);persist()}}
  LaunchedEffect(running,index){while(running&&remaining>0){delay(1000);remaining--;if(remaining==0){running=false;TimerSound.play(s.context)}}}
 
  GuidedSessionHeader(preview,day.s("title",day.s("name")),min(index+1,steps.size),steps.size)
@@ -223,6 +221,11 @@ import kotlin.math.*
                  }
                  if(isExercise)GuidedSessionButton(if(showGuide)"Ocultar indicaciones" else "Indicaciones",GuidedSessionGlyph.BOOK,
                      Modifier.weight(1.4f)){showGuide=!showGuide}
+             }
+             if(isExercise){
+                 val parts=e.raw.a("sequenceParts").strings()
+                 if(parts.isEmpty()) ExerciseTechniquePanel(e)
+                 else parts.forEach { ExerciseTechniquePanel(e,subject=it) }
              }
              if(isExercise&&showGuide)HNotice(CompanionDialogue.message(s.profile,LocalVisualTier.current,
                  DialogueContext(DialogueMoment.EXERCISE,group=e.type,exercise=e.name,

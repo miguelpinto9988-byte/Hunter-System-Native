@@ -27,9 +27,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.caverock.androidsvg.SVG
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.currentStateAsState
 import kotlinx.coroutines.isActive
 import kotlin.math.abs
-import kotlin.math.atan2
 import kotlin.math.max
 import kotlin.math.min
 
@@ -45,9 +47,10 @@ private val sole = Color(0xFFD5E6E3)
 @Composable
 internal fun rememberExercisePhase(key: Any, duration: Float, play: Boolean, reset: Int): MutableFloatState {
     val reduced = LocalMonarchMotion.current.reduced
+    val visible = LocalLifecycleOwner.current.lifecycle.currentStateAsState().value.isAtLeast(Lifecycle.State.STARTED)
     val phase = remember(key, reset) { mutableFloatStateOf(0f) }
-    LaunchedEffect(key, duration, play, reduced, reset) {
-        if (!play || reduced) return@LaunchedEffect
+    LaunchedEffect(key, duration, play, reduced, reset, visible) {
+        if (!play || reduced || !visible) return@LaunchedEffect
         var previous = withFrameNanos { it }
         while (isActive) {
             val next = withFrameNanos { it }
@@ -190,7 +193,8 @@ private fun DrawScope.drawActor(
     val headPosition = if (overhead) head + down * (visibleNeck * .25f) else head
     val broad = motion.view != ExerciseView.SIDE
     val armsBehindShirt = overhead || motion.view == ExerciseView.REAR
-    val left = if (motion.prone && !broad) down.x > 0f else motion.facing == "left"
+    val headPlacement = ExercisePoseCommands.head(motion, p)
+    val left = headPlacement.left
     val shirt = Brush.linearGradient(listOf(tealLight, teal, navy),
         start = shoulder, end = hip + down * (17f * u))
     fun limb(near:Boolean,leg:Boolean) {
@@ -249,15 +253,9 @@ private fun DrawScope.drawActor(
             }
             drawHand(end, fingers, u, tone, near, planted && !overhead)
         } else if (broad && !overhead) {
-            drawFrontShoe(end, u, end.x < hip.x)
+            drawFrontShoe(end, u, if (near) motion.firstFootOnLeft else !motion.firstFootOnLeft)
         } else {
-            val axis=direction(joint,end)
-            val turn=if(abs(down.y)<.60f) side*(if(left)1f else -1f) else Offset(if(left)-1f else 1f,0f)
-            val foot = when {
-                overhead -> direction(Offset.Zero, mix(down, axis, .4f))
-                motion.handSupport && motion.prone -> direction(Offset.Zero, Offset(if (left) -.43f else .43f, .9f))
-                else -> direction(Offset.Zero, mix(turn, axis, .16f))
-            }
+            val foot = ExercisePoseCommands.foot(motion, p, joint, end, near)
             val lower=normal(foot)*(if(foot.x<0) -1f else 1f)
             val heel=end-foot*(10*u)
             val toe=end+foot*(29*u)
@@ -320,17 +318,11 @@ private fun DrawScope.drawActor(
     }
     if(face!=null){
         val headScale=u*.96f
-        val angle = atan2(down.y, down.x) * 180f / Math.PI.toFloat() - 90f
-        val tilt = when {
-            overhead -> angle
-            motion.prone -> angle.coerceIn(-100f, 100f)
-            else -> angle.coerceIn(-28f, 28f)
-        }
         drawIntoCanvas { compose ->
             val c=compose.nativeCanvas
             c.save()
             c.translate(headPosition.x, headPosition.y)
-            c.rotate(tilt)
+            c.rotate(headPlacement.rotation)
             c.scale(if (left && !broad) -headScale else headScale,headScale)
             c.translate(-35f,-45f)
             c.drawPicture(face)

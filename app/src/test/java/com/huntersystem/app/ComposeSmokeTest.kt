@@ -31,7 +31,7 @@ class ComposeSmokeTest {
     capture(tab)
    }
   }
-  compose.runOnIdle{ui.open("exercise",obj("id" to "chair"))};compose.waitForIdle();compose.onAllNodesWithText("Sentadilla a silla").onFirst().assertExists();compose.onNodeWithText("Reproducir demostración").assertExists();compose.runOnIdle{ui.back()};compose.waitForIdle()
+  compose.runOnIdle{ui.open("exercise",obj("id" to "chair"))};compose.waitForIdle();compose.onAllNodesWithText("Sentadilla a silla").onFirst().assertExists();compose.onNodeWithText("Pausar demostración").assertExists();compose.runOnIdle{ui.back()};compose.waitForIdle()
  }
  @Test(timeout=60000) fun catalogSearchOpensMatchingExercise() {
   compose.runOnIdle { ui.go("book") }
@@ -42,7 +42,19 @@ class ComposeSmokeTest {
   catalog.performScrollToNode(card)
   compose.onNode(card).performClick()
   compose.onNodeWithText("DEMOSTRACIÓN").assertExists()
-  compose.onNodeWithText("Reproducir demostración").assertExists()
+  compose.onNodeWithText("Pausar demostración").assertExists()
+ }
+ @Test(timeout=60000) fun bridgeAndDiamondGuidesRenderWithAutoplay() {
+  val cases=mapOf("bridge" to TechniqueDiagram.BRIDGE,"home-diamond23" to TechniqueDiagram.DIAMOND)
+  for((id,diagram) in cases){
+   compose.runOnIdle { ui.open("exercise",obj("id" to id)) }
+   compose.onNodeWithText("Pausar demostración").assertExists()
+   val illustration=compose.onNodeWithContentDescription(diagram.title+". "+diagram.cue)
+   illustration.performScrollTo().assertIsDisplayed()
+   val picture=illustration.captureToImage().asAndroidBitmap()
+   File("../qa/tecnica-$id.png").outputStream().use { picture.compress(Bitmap.CompressFormat.PNG,100,it) }
+   compose.runOnIdle { ui.back() }
+  }
  }
  @Test(timeout=60000) fun sequencePreviewCanOpenBothGestures() {
   val exercise = store.catalog.exercises.first { it.id.startsWith("sport-seq-") }

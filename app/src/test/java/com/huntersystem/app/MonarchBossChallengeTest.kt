@@ -254,7 +254,7 @@ class MonarchBossChallengeTest {
         compose.onNodeWithText(name).performScrollTo().performClick()
         compose.onNodeWithText("DEMOSTRACIÓN").assertExists()
         compose.onNodeWithText("Registrar ${goal.unitLabel}").assertExists()
-        compose.onNodeWithText("Reproducir demostración").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Pausar demostración").performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("+").performScrollTo().performClick()
         compose.runOnIdle { assertEquals(0,repository.current()!!.offer.goals.first().count) }
         compose.onNodeWithText("Guardar ${goal.unitLabel}").performScrollTo().performClick()

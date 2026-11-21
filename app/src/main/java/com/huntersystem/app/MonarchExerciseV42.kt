@@ -60,7 +60,7 @@ fun MonarchExerciseStage(exercise:Exercise,mirror:Boolean,height:Int=340,
                 } else if(motion!=null) ExerciseActor(motion,Modifier.fillMaxSize(),play,mirror,reset,
                     themedStage=guided,controlsWidth=controlsWidth)
                 if(hasPlaybackControl&&onTogglePlayback!=null)
-                    GuidedSessionButton(if(play)"Pausar demostración" else "Reproducir demostración",
+                    GuidedSessionButton(if(play)"Pausar demostración" else "Reanudar demostración",
                         if(play)GuidedSessionGlyph.PAUSE else GuidedSessionGlyph.PLAY,
                         Modifier.align(Alignment.TopEnd).padding(5.dp),
                         iconOnly=true,onClick=onTogglePlayback)
@@ -77,6 +77,8 @@ fun MonarchExerciseStage(exercise:Exercise,mirror:Boolean,height:Int=340,
             if(!thumbnail && (parts != null || motion?.source in listOf("historical","sport")))
                 HText("Animación ilustrativa. Consulta la guía del ejercicio.",size=12,color=c.muted)
         }
+        if(!guided)ExerciseTechniquePanel(exercise, parts?.getOrNull(current) ?: motion,
+            exercise.raw.a("sequenceParts").strings().getOrNull(current) ?: exercise.id)
         if(showExerciseName)HText(exercise.name,size=14,color=c.text,maxLines=1)
     }
 }
