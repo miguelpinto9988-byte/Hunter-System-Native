@@ -180,6 +180,7 @@ internal object MobilityExerciseClips {
             }
         }
         return motion.copy(
+            staticHold = move==Move.PALMS,
             handGesture = if (move==Move.WRIST_FLEX) HandGesture.WRIST_FLEX else null,
             footGesture = when(move) {
                 Move.TOES -> FootGesture.TOE_ALTERNATE

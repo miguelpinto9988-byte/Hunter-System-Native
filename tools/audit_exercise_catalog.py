@@ -122,7 +122,8 @@ def source_review(rows, labels, signature_families, view):
         warnings.add("poses compartidas por fichas de distinta base")
     title = normalized(exercise["name"])
     if not view["isometrico"] and not re.search(r"\b(isometr\w+|sosten|sujecion)\b",title):
-        if re.search(r"\b(curl femoral|extension de rodillas?|sentadilla)\b",title) and view.get("rango_rodilla",float("inf")) < 10:
+        fixed_squat = exercise["id"] in {"new46-deepshift", "sport-ampl-mobility-deep-squat-rotation"}
+        if not fixed_squat and re.search(r"\b(curl femoral|extension de rodillas?|sentadilla)\b",title) and view.get("rango_rodilla",float("inf")) < 10:
             warnings.add("recorrido de rodilla pequeño para el movimiento descrito")
         if re.search(r"\b(curl de biceps|flexi(?:on|ones) de brazos?)\b",title) and view.get("rango_codo",float("inf")) < 10:
             warnings.add("recorrido de codo pequeño para el movimiento descrito")

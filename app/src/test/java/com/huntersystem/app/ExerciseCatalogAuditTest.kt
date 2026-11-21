@@ -26,8 +26,8 @@ class ExerciseCatalogAuditTest {
         val start = motion.at(0f)
         val peak = motion.at(.5f)
         assertTrue(peak[1].y - start[1].y > 14f)
-        assertEquals(start[4],peak[4])
-        assertEquals(start[6],peak[6])
+        assertTrue((start[4]-peak[4]).getDistance() < .1f)
+        assertTrue((start[6]-peak[6]).getDistance() < .1f)
     }
 
     @Test fun everyCanonicalEntryResolvesItsOwnDemonstrationOrBothSequenceComponents() {

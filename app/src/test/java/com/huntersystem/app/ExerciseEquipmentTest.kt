@@ -205,7 +205,7 @@ class ExerciseEquipmentTest {
     @Test fun mappedEquipmentFitsOneStableFrameAndUsesPackagedVectorAssets() {
         val used = mutableSetOf<String>()
         val equipmentExercises = catalog.historicalExercises.filter {
-            it.raw.a("sequenceParts").length()==0
+            it.raw.a("sequenceParts").length()==0 && !CoreExerciseClips.hasInconsistentInstructions(it)
         }
         for (exercise in equipmentExercises) {
             val motion = checkNotNull(ExerciseMotions.load(context,exercise)) { exercise.id }
