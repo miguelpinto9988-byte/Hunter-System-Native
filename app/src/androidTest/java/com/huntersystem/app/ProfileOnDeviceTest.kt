@@ -10,9 +10,8 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
 import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.UiScrollable
-import androidx.test.uiautomator.UiSelector
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import java.io.ByteArrayOutputStream
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
@@ -105,11 +104,20 @@ class ProfileOnDeviceTest {
                     scenario.recreate()
                     checkNotNull(device.wait(Until.findObject(exercises), 20_000)).click()
                     assertTrue("Catalog did not load", device.wait(Until.hasObject(By.text("5000 fichas")), 20_000))
-                    val exercise = By.descStartsWith("Abrir ejercicio: ")
-                    val scroll = UiScrollable(UiSelector().resourceId("exerciseCatalog").scrollable(true)).setMaxSearchSwipes(12)
+                    val exercise = By.descContains("Abrir ejercicio:")
+                    val list = checkNotNull(device.findObject(By.res("exerciseCatalog")))
+                    val bounds = list.visibleBounds
+                    repeat(8) {
+                        if (!device.wait(Until.hasObject(exercise), 500)) {
+                            device.swipe(bounds.centerX(), bounds.top + bounds.height() * 4 / 5,
+                                bounds.centerX(), bounds.top + bounds.height() / 3, 30)
+                            device.waitForIdle()
+                        }
+                    }
                     if (!device.hasObject(exercise)) {
-                        assertTrue("Exercise cards were not reachable",
-                            scroll.scrollIntoView(UiSelector().descriptionStartsWith("Abrir ejercicio: ")))
+                        val dump = ByteArrayOutputStream()
+                        device.dumpWindowHierarchy(dump)
+                        error("Exercise card unavailable: ${dump.toString("UTF-8").takeLast(12000)}")
                     }
                     checkNotNull(device.findObject(exercise)).click()
                     assertTrue("The exercise detail did not open",
