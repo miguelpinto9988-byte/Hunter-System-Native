@@ -8,7 +8,7 @@ import androidx.compose.runtime.MutableFloatState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.withFrameNanos
+import androidx.compose.animation.core.withInfiniteAnimationFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -51,9 +51,9 @@ internal fun rememberExercisePhase(key: Any, duration: Float, play: Boolean, res
     val phase = remember(key, reset) { mutableFloatStateOf(0f) }
     LaunchedEffect(key, duration, play, reduced, reset, visible) {
         if (!play || reduced || !visible) return@LaunchedEffect
-        var previous = withFrameNanos { it }
+        var previous = withInfiniteAnimationFrameNanos { it }
         while (isActive) {
-            val next = withFrameNanos { it }
+            val next = withInfiniteAnimationFrameNanos { it }
             phase.floatValue = (phase.floatValue + (next - previous).coerceAtMost(80_000_000L) /
                 (duration * 1_000_000_000f)) % 1f
             previous = next
