@@ -16,7 +16,7 @@ class MonarchActivitySource(
     private val catalog: Catalog, private val rules: Rules, private val adjusted: JSONObject
 ) : ActivityRepositoryInterface {
     constructor(store: NativeStore) : this(store.catalog, store.rules, store.adjusted())
-    override val revision: String = "native-" + catalog.exercises.size
+    override val revision: String = "native-" + catalog.automaticExercises.size
     private fun metadata(e: Exercise): ActivityMetadata? {
         val classification = catalog.classification(e.id) ?: return null
         val category = classification.category
@@ -74,7 +74,7 @@ class MonarchActivitySource(
             when (e.unit) { "sec" -> VolumeUnit.SECONDS; "reps" -> VolumeUnit.REPETITIONS; else -> null })
     }
     private val validatedRows by lazy {
-        catalog.exercises.mapNotNull(::metadata).also(ActivityCatalogValidator::verify)
+        catalog.automaticExercises.mapNotNull(::metadata).also(ActivityCatalogValidator::verify)
     }
     private val cachedHash by lazy { ProfileSignature.source(validatedRows) + ":" + revision }
     private val variantsById by lazy { validatedRows.associateBy(ActivityMetadata::id) }

@@ -133,9 +133,12 @@ object MonarchMissionCatalog {
  fun offerFor(store:NativeStore,date:LocalDate,zone:ZoneId=ZoneId.systemDefault()):MonarchMissionSpec {
   val base=missionFor(date,2,zone)
   val gear=store.profile?.s("equipment","body")?:"body"
-  val eligible=store.catalog.exercises.filter{equipmentReady(store,it.id)}
+  val eligible=store.catalog.automaticExercises.filter {
+   it.isMainTraining(store.catalog.classification(it.id)?.category) && equipmentReady(store,it.id)
+  }
+  val eligibleById=eligible.associateBy{it.id}
   val picks=base.goals.mapNotNull{g->
-   store.catalog.byId[g.exerciseId]?.takeIf{equipmentReady(store,it.id)}
+   store.catalog.byId[g.exerciseId]?.id?.let(eligibleById::get)
   }.distinctBy{it.id}.toMutableList()
   // Si el perfil declara mancuernas o equipamiento de gimnasio, aparecen
   // desafíos que realmente usan esos materiales; sin equipamiento, nunca.

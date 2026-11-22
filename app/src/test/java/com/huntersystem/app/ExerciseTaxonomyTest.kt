@@ -32,6 +32,26 @@ class ExerciseTaxonomyTest {
         assertTrue(includes(CatalogFocus.IMPACT, "squatjump"))
     }
 
+    @Test fun performanceLibraryConsolidatesDuplicatesAndPreservesSavedIds() {
+        val legacyBike = "gym-bike30-ecc30"
+        val displayed = catalog.libraryExercises.mapTo(hashSetOf()) { it.id }
+        val automatic = catalog.automaticExercises.mapTo(hashSetOf()) { it.id }
+        assertEquals(16, catalog.originalExercises.size - displayed.size)
+        assertEquals(612, catalog.libraryExercises.map { it.oldFamily }.distinct().size)
+        assertNotNull(catalog.byId[legacyBike])
+        assertFalse(legacyBike in displayed)
+        assertFalse(legacyBike in automatic)
+        assertTrue("gym-bike30" in automatic)
+        assertTrue("pushup_slow" in displayed)
+        assertFalse("seatedpunch" in automatic)
+        assertFalse("plank" in automatic)
+        assertTrue("neck" in automatic)
+        val landing = catalog.byId.getValue("new46-droplanding")
+        assertTrue(CatalogFocus.PREPARATION.includes(landing, null))
+        assertFalse(CatalogFocus.IMPACT.includes(landing, null))
+        assertTrue(CatalogFocus.POWER.includes(catalog.byId.getValue("new46-sprintbrake"), Category.CARDIO))
+    }
+
     @Test fun onlyTwentyEssentialMobilityExercisesAreSelectable() {
         val active = catalog.exercises.groupBy { catalog.classification(it.id)!!.category }
         assertEquals(Category.entries.toSet(), active.keys)

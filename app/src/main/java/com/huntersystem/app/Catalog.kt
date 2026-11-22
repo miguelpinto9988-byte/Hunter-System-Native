@@ -1,6 +1,7 @@
 package com.huntersystem.app
 
 import android.content.Context
+import com.huntersystem.app.planning.Category
 import org.json.JSONObject
 import org.json.JSONArray
 
@@ -36,6 +37,7 @@ class Catalog(val context:Context?=null,val loader:((String)->String)?=null){
  val originalExercises=JSONArray(text("catalog.json")).objects().map(::Exercise)
  private val originalById=originalExercises.associateBy{it.id}
  internal fun originalExercise(id:String)=originalById[id]
+ internal val libraryExercises=originalExercises.filterNot{it.isRedundantCardioVariant}
  val expansionExercises=runCatching{JSONArray(text("catalog-hunter2000-extra.json")).objects().map(::Exercise)}.getOrElse{emptyList()}
  val sportExercises=JSONArray(text("catalog-sports.json")).objects().map(::Exercise)
  private val sourceExercises=originalExercises+expansionExercises+sportExercises
@@ -55,7 +57,13 @@ class Catalog(val context:Context?=null,val loader:((String)->String)?=null){
   ExerciseTaxonomy.classify(exercise,byId::get)?.let{exercise.id to it}
  }.toMap()
  val exercises=originalExercises.filter{it.id in classifications}
- private fun isTrainingExercise(id:String)=byId[id]?.id?.let{it in originalById&&it in classifications}==true
+ internal val automaticExercises=exercises.filter { exercise ->
+  val category=classifications.getValue(exercise.id).category
+  !exercise.isRedundantCardioVariant && (category==Category.MOBILITY ||
+   exercise.isMainTraining(category))
+ }
+ private val automaticExerciseIds=automaticExercises.mapTo(hashSetOf()){it.id}
+ private fun isTrainingExercise(id:String)=byId[id]?.id?.let(automaticExerciseIds::contains)==true
  internal fun classification(id:String)=byId[id]?.id?.let(classifications::get)
  val materials=JSONObject(text("materials.json"));val capabilities=JSONObject(text("capabilities.json"))
  val routines=JSONArray(text("routines.json")).objects().filter{routine->

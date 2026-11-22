@@ -37,8 +37,6 @@ class ComposeSmokeTest {
  @Test(timeout=60000) fun catalogSearchOpensMatchingExercise() {
   compose.runOnIdle { ui.go("book") }
   val catalog = compose.onNodeWithTag("exerciseCatalog")
-  catalog.performScrollToNode(hasText("1200 fichas"))
-  compose.onNodeWithText("1200 fichas").assertIsDisplayed()
   catalog.performScrollToNode(hasSetTextAction())
   compose.onNode(hasSetTextAction()).performTextReplacement("Sentadilla a silla")
   val card = hasContentDescription("Abrir ejercicio: Sentadilla a silla")

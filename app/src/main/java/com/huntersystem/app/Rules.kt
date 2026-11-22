@@ -88,7 +88,7 @@ class Rules(val catalog:Catalog){
    else->kind=="strength"
   }
  }
- fun pool(p:JSONObject,kind:String)=if(!gate(p).ok) emptyList() else catalog.exercises.filter{inKind(it,kind)&&compatible(it,p)}
+ fun pool(p:JSONObject,kind:String)=if(!gate(p).ok) emptyList() else catalog.automaticExercises.filter{inKind(it,kind)&&compatible(it,p)}
  fun powerReady(p:JSONObject,logs:JSONObject,date:String,status:Gate=gate(p),strain:Boolean=false,planned:List<PlanRow> = emptyList()):Boolean{
   if(reduced(p,status)||strain||p.n("trainingScale",1.0)<1)return false
   val l=logs.o(date);if(l.b("pain")||l.b("fatigue")||l.n("rpe")>=8)return false

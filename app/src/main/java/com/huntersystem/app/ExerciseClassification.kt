@@ -16,20 +16,45 @@ private val staticExerciseFamilies = setOf(
     "new46-ringturnout", "new46-copenhagen", "new46-lsit", "new46-tucklever"
 )
 
+private val preparationFamilies = setOf(
+    "march", "breathing", "seatedpunch", "seatedmarch", "seatedstep", "seatedmarchinterval",
+    "wallslide", "scapular", "reverse", "hs379-palms", "hs379-isobiceps",
+    "new46-droplanding", "new46-mbcatch", "pau-pushchild"
+)
+
+private val cardioMachineFamilies = setOf(
+    "gym-treadmill23", "gym-row-erg23", "gym-stepmill30", "gym-bike30",
+    "gym-elliptical30", "gym-skierg30", "gym-airbike30", "gym-recumbent30"
+)
+
+internal val Exercise.isRedundantCardioVariant: Boolean
+    get() = !isBaseVariant && oldFamily in cardioMachineFamilies && raw.s("variant") in setOf("pause", "controlled")
+
+internal val Exercise.isPreparation: Boolean
+    get() = role == "activation" || oldFamily in preparationFamilies || role == "skill"
+
+internal fun Exercise.isMainTraining(category: Category?): Boolean =
+    category != Category.MOBILITY && this.category != "Movilidad" &&
+        !isPreparation && oldFamily !in staticExerciseFamilies
+
+internal val Exercise.isExplosiveMovement: Boolean
+    get() = power || oldFamily in setOf("new46-sprintbrake", "new46-resistedsprint")
+
 internal enum class CatalogFocus(val label: String) {
     DYNAMIC("Entrenamiento dinámico"),
     POWER("Potencia"),
     IMPACT("Impacto"),
     MOBILITY("Movilidad"),
+    PREPARATION("Preparación"),
+    ACCESSORIES("Isométricos"),
     ALL("Todo");
 
     fun includes(exercise: Exercise, category: Category?): Boolean = when (this) {
-        DYNAMIC -> category != Category.MOBILITY &&
-            exercise.category != "Movilidad" &&
-            exercise.oldFamily !in staticExerciseFamilies &&
-            (category != null || exercise.power || exercise.impact)
-        POWER -> exercise.power
-        IMPACT -> exercise.impact
+        DYNAMIC -> exercise.isMainTraining(category) && (category != null || exercise.isExplosiveMovement || exercise.impact)
+        POWER -> exercise.isExplosiveMovement && !exercise.isPreparation
+        IMPACT -> exercise.impact && !exercise.isPreparation
+        PREPARATION -> exercise.isPreparation && !MOBILITY.includes(exercise, category)
+        ACCESSORIES -> exercise.oldFamily in staticExerciseFamilies && !exercise.isPreparation
         MOBILITY -> category == Category.MOBILITY || exercise.category == "Movilidad"
         ALL -> true
     }
