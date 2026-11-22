@@ -100,5 +100,280 @@
       "initial": 3,
       "rest": 90
     }
+  },
+  {
+    "id": "performance-ring-false-grip",
+    "baseId": "performance-ring-false-grip",
+    "name": "Sostén de agarre falso en anillas",
+    "group": "Espalda",
+    "category": "Fuerza",
+    "variant": "base",
+    "unit": "sec",
+    "level": 1,
+    "equipment": "body",
+    "materialRequirements": [],
+    "materials46": [
+      "rings"
+    ],
+    "capabilities46": [
+      "hanging"
+    ],
+    "pack46": true,
+    "highSkill46": true,
+    "requiresSupervision": true,
+    "impact": "Sin saltos",
+    "intensity": "moderada",
+    "progressionTierNative": 1,
+    "overhead": true,
+    "wristLoad": true,
+    "planning49": {
+      "id": "performance-ring-false-grip",
+      "group": "upper",
+      "role": "primary",
+      "pattern": "traccion_vertical",
+      "level": 1,
+      "impact": false,
+      "conditioning": 1,
+      "power": false,
+      "primary": true,
+      "family": "performance-ring-false-grip"
+    },
+    "steps": "Coloca las anillas a una altura que te permita mantener los pies en el suelo. Apoya la base de la mano sobre cada anilla y conserva parte del peso en los pies. Registra los segundos de control con el mismo apoyo. Detente si aparece dolor en la muñeca.",
+    "instructions": [
+      "Coloca las anillas a una altura que te permita mantener los pies en el suelo.",
+      "Apoya la base de la mano sobre cada anilla y conserva parte del peso en los pies.",
+      "Registra los segundos de control con el mismo apoyo. Detente si aparece dolor en la muñeca."
+    ]
+  },
+  {
+    "id": "performance-ring-transition",
+    "baseId": "performance-ring-transition",
+    "name": "Transición de muscle-up en anillas bajas",
+    "group": "Espalda",
+    "category": "Fuerza",
+    "variant": "base",
+    "unit": "reps",
+    "level": 1,
+    "equipment": "body",
+    "materialRequirements": [],
+    "materials46": [
+      "rings"
+    ],
+    "capabilities46": [
+      "supporthold"
+    ],
+    "pack46": true,
+    "highSkill46": true,
+    "requiresSupervision": true,
+    "impact": "Sin saltos",
+    "intensity": "moderada",
+    "progressionTierNative": 1,
+    "overhead": true,
+    "wristLoad": true,
+    "planning49": {
+      "id": "performance-ring-transition",
+      "group": "upper",
+      "role": "primary",
+      "pattern": "traccion_vertical",
+      "level": 1,
+      "impact": false,
+      "conditioning": 1,
+      "power": false,
+      "primary": true,
+      "family": "performance-ring-transition"
+    },
+    "steps": "Coloca las anillas bajas y deja los pies apoyados para regular la asistencia. Tira de las anillas cerca del pecho y pasa los hombros hacia delante para llegar a la posición baja de un fondo. Regresa despacio por la misma trayectoria. Reduce la ayuda de los pies cuando controles ambos sentidos.",
+    "instructions": [
+      "Coloca las anillas bajas y deja los pies apoyados para regular la asistencia.",
+      "Tira de las anillas cerca del pecho y pasa los hombros hacia delante para llegar a la posición baja de un fondo.",
+      "Regresa despacio por la misma trayectoria. Reduce la ayuda de los pies cuando controles ambos sentidos."
+    ]
+  },
+  {
+    "id": "performance-strict-ring-muscle-up",
+    "baseId": "performance-strict-ring-muscle-up",
+    "name": "Muscle-up estricto en anillas",
+    "group": "Espalda",
+    "category": "Fuerza",
+    "variant": "base",
+    "unit": "reps",
+    "level": 2,
+    "equipment": "body",
+    "materialRequirements": [],
+    "materials46": [
+      "rings",
+      "mat"
+    ],
+    "capabilities46": [
+      "strictpull",
+      "supporthold",
+      "hanging"
+    ],
+    "pack46": true,
+    "highSkill46": true,
+    "requiresSupervision": true,
+    "impact": "Sin saltos",
+    "intensity": "moderada",
+    "progressionTierNative": 2,
+    "overhead": true,
+    "wristLoad": true,
+    "planning49": {
+      "id": "performance-strict-ring-muscle-up",
+      "group": "upper",
+      "role": "primary",
+      "pattern": "traccion_vertical",
+      "level": 2,
+      "impact": false,
+      "conditioning": 1,
+      "power": false,
+      "primary": true,
+      "family": "performance-strict-ring-muscle-up"
+    },
+    "steps": "Practica con supervisión y anillas adecuadas. Antes debes controlar el agarre falso, la transición asistida y los fondos en anillas. Desde la suspensión, tira de las anillas hacia el pecho sin balanceo, pasa los hombros hacia delante y completa el apoyo. Baja con control. Registra las repeticiones sin impulso y termina la serie antes de perder la técnica.",
+    "instructions": [
+      "Practica con supervisión y anillas adecuadas. Antes debes controlar el agarre falso, la transición asistida y los fondos en anillas.",
+      "Desde la suspensión, tira de las anillas hacia el pecho sin balanceo, pasa los hombros hacia delante y completa el apoyo.",
+      "Baja con control. Registra las repeticiones sin impulso y termina la serie antes de perder la técnica."
+    ]
+  },
+  {
+    "id": "performance-advanced-tuck-lever",
+    "baseId": "performance-advanced-tuck-lever",
+    "name": "Front lever agrupado avanzado",
+    "group": "Core",
+    "category": "Fuerza",
+    "variant": "base",
+    "unit": "sec",
+    "level": 2,
+    "equipment": "body",
+    "materialRequirements": [],
+    "materials46": [
+      "pullbar"
+    ],
+    "capabilities46": [
+      "hanging",
+      "strictpull"
+    ],
+    "pack46": true,
+    "highSkill46": true,
+    "requiresSupervision": true,
+    "impact": "Sin saltos",
+    "intensity": "moderada",
+    "progressionTierNative": 2,
+    "overhead": false,
+    "wristLoad": true,
+    "planning49": {
+      "id": "performance-advanced-tuck-lever",
+      "group": "core",
+      "role": "primary",
+      "pattern": "estabilizacion_tronco",
+      "level": 2,
+      "impact": false,
+      "conditioning": 1,
+      "power": false,
+      "primary": true,
+      "family": "performance-advanced-tuck-lever"
+    },
+    "steps": "Empieza desde el front lever agrupado. Mantén los codos extendidos y lleva las rodillas un poco más lejos del pecho. Conserva el tronco aproximadamente horizontal sin arquear la zona lumbar. Registra el tiempo en el mismo ángulo. Vuelve a agrupar si la pelvis empieza a bajar.",
+    "instructions": [
+      "Empieza desde el front lever agrupado. Mantén los codos extendidos y lleva las rodillas un poco más lejos del pecho.",
+      "Conserva el tronco aproximadamente horizontal sin arquear la zona lumbar.",
+      "Registra el tiempo en el mismo ángulo. Vuelve a agrupar si la pelvis empieza a bajar."
+    ],
+    "motionReference": "new46-tucklever",
+    "motionReferenceLabel": "Referencia: posición agrupada inicial. En esta variante las rodillas se alejan del pecho."
+  },
+  {
+    "id": "performance-one-leg-lever",
+    "baseId": "performance-one-leg-lever",
+    "name": "Front lever a una pierna",
+    "group": "Core",
+    "category": "Fuerza",
+    "variant": "base",
+    "unit": "sec",
+    "level": 2,
+    "equipment": "body",
+    "materialRequirements": [],
+    "materials46": [
+      "pullbar"
+    ],
+    "capabilities46": [
+      "hanging",
+      "strictpull"
+    ],
+    "pack46": true,
+    "highSkill46": true,
+    "requiresSupervision": true,
+    "impact": "Sin saltos",
+    "intensity": "moderada",
+    "progressionTierNative": 2,
+    "overhead": false,
+    "wristLoad": true,
+    "planning49": {
+      "id": "performance-one-leg-lever",
+      "group": "core",
+      "role": "primary",
+      "pattern": "estabilizacion_tronco",
+      "level": 2,
+      "impact": false,
+      "conditioning": 1,
+      "power": false,
+      "primary": true,
+      "family": "performance-one-leg-lever"
+    },
+    "steps": "Desde el agrupado avanzado, extiende una pierna mientras la otra se mantiene recogida. Mantén la pelvis nivelada y los codos extendidos. Vuelve a la posición agrupada antes de bajar. Alterna qué pierna extiendes y compara los segundos de control por lado.",
+    "instructions": [
+      "Desde el agrupado avanzado, extiende una pierna mientras la otra se mantiene recogida.",
+      "Mantén la pelvis nivelada y los codos extendidos. Vuelve a la posición agrupada antes de bajar.",
+      "Alterna qué pierna extiendes y compara los segundos de control por lado."
+    ],
+    "sides": true,
+    "motionReference": "new46-tucklever",
+    "motionReferenceLabel": "Referencia: posición agrupada inicial. Sigue la ficha para extender una pierna."
+  },
+  {
+    "id": "performance-continuous-run",
+    "name": "Carrera continua al aire libre",
+    "baseId": "performance-continuous-run",
+    "variant": "base",
+    "category": "Cardio",
+    "group": "Cardio",
+    "unit": "sec",
+    "level": 1,
+    "equipment": "body",
+    "materialRequirements": [],
+    "materials46": [
+      "space"
+    ],
+    "pack46": true,
+    "impact": "Con saltos",
+    "planning49": {
+      "group": "cardio",
+      "role": "conditioning",
+      "pattern": "carrera",
+      "level": 1,
+      "impact": true,
+      "conditioning": 2,
+      "power": false,
+      "primary": false,
+      "id": "performance-continuous-run",
+      "family": "performance-continuous-run"
+    },
+    "standing": false,
+    "kneeBend": false,
+    "overhead": false,
+    "instructions": [
+      "Elige un recorrido llano y despejado. Empieza caminando o trotando suave para entrar en calor.",
+      "Mantén un ritmo estable al que puedas conversar. Si pierdes el ritmo, alterna carrera y caminata.",
+      "Registra los minutos de carrera continua. Si conoces la distancia, úsala para comparar recorridos similares.",
+      "Cuando controles el bloque completo, aumenta primero el tiempo y mantén un ritmo parecido."
+    ],
+    "steps": "Elige un recorrido llano y despejado. Empieza caminando o trotando suave para entrar en calor. Mantén un ritmo estable al que puedas conversar. Si pierdes el ritmo, alterna carrera y caminata. Registra los minutos de carrera continua. Si conoces la distancia, úsala para comparar recorridos similares. Cuando controles el bloque completo, aumenta primero el tiempo y mantén un ritmo parecido.",
+    "motionReference": "jog",
+    "capabilities46": [
+      "landing"
+    ],
+    "motionReferenceLabel": "Referencia técnica: zancada de trote en el sitio.",
+    "progressionTierNative": 1
   }
 ]

@@ -144,14 +144,18 @@ class MonarchSinglePlannerIntegrationTest {
         store.saveProfile(configured)
         val routine = store.planner.generateRoutineOptions("offline", "cardio", 1, 15,
             "test", store.adjusted(), store.logs, day, cardioIntervals = true).single()
+        val continuous = store.planner.generateRoutineOptions("offline", "cardio", 1, 15,
+            "test", store.adjusted(), store.logs, day, cardioContinuous = true).single()
         val repo = MonarchProgressRepository(store)
         assertTrue(repo.canRunOptionalRoutine(day, routine))
+        assertTrue(repo.canRunOptionalRoutine(day, continuous))
         assertTrue(store.planner.steps(routine, store.adjusted()).any {
             it.s("id") == "performance-outdoor-run" && it.s("unit") == "sec"
         })
         configured.put("restrictions", obj("noImpact" to true))
         store.saveProfile(configured)
         assertFalse(repo.canRunOptionalRoutine(day, routine))
+        assertFalse(repo.canRunOptionalRoutine(day, continuous))
     }
 
     @Test fun explicitlySavedEffortUsesTodayCategoryNotAnotherDay() {

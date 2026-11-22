@@ -541,10 +541,11 @@ class MonarchProgressRepository(
         val items = routine.a("items").objects()
         val adjusted = store.adjusted()
         if (!store.rules.gate(adjusted).ok || items.isEmpty()) return false
-        if (routine.b("cardioIntervals")) {
+        if (routine.b("cardioIntervals") || routine.b("cardioContinuous")) {
             if (category != Category.CARDIO) return false
             val exercise = items.singleOrNull()?.let { store.catalog.originalExercise(it.s("id")) } ?: return false
-            return canRunCardioIntervals(exercise, store.rules, adjusted, selectedLevel.ordinal, adaptation)
+            return canRunCardioSession(exercise, store.rules, adjusted, selectedLevel.ordinal, adaptation,
+                continuous = routine.b("cardioContinuous"))
         }
         if (adaptation == Adaptation.RECOVER_ONE && items.size > 1 ||
             adaptation == Adaptation.REDUCE_TWO && items.size > 2) return false

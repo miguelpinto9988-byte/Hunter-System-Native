@@ -256,7 +256,7 @@ fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->Unit){
     var level by rememberSaveable(mode){mutableStateOf(level(s.profile?:JSONObject()).toString())}
     var noImpact by rememberSaveable(mode){mutableStateOf(false)}
     var noGear by rememberSaveable(mode){mutableStateOf(false)}
-    var cardioIntervals by rememberSaveable(mode){mutableStateOf(false)}
+    var cardioFormat by rememberSaveable(mode){mutableStateOf("")}
     var busy by remember{mutableStateOf(false)}
     var info by remember(mode){mutableStateOf("")}
     HPanel(padding=17){
@@ -293,8 +293,12 @@ fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->Unit){
         Chips(routineLevels,level){level=it}
         Eyebrow("04  ·  CONTROL DEL EQUIPAMIENTO E IMPACTO")
         if (selected=="cardio") {
-            HCheck("Cardio por intervalos",cardioIntervals){cardioIntervals=!cardioIntervals}
-            if (cardioIntervals) HText("Alterna esfuerzo y recuperación. Elige un ritmo que puedas repetir.",
+            val formats = listOf("" to "General", "intervals" to "Por intervalos")
+            Chips(if (mode=="offline") formats + ("continuous" to "Carrera continua") else formats,
+                cardioFormat){cardioFormat=it}
+            if (cardioFormat=="intervals") HText("Alterna esfuerzo y recuperación. Elige un ritmo que puedas repetir.",
+                size=14,color=c.muted)
+            if (cardioFormat=="continuous") HText("Mantén un ritmo conversacional después del calentamiento.",
                 size=14,color=c.muted)
         }
         HCheck("Limitar a ejercicios sin saltos ni potencia",noImpact){noImpact=!noImpact}
@@ -324,7 +328,7 @@ fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->Unit){
                         p.put("bench",false)
                         p.put("step",false)
                         p.put("gymEquipment23",arr(emptyList<String>()))
-                        p.put("materials46",arr(p.a("materials46").strings().filter { it=="space" && cardioIntervals && selected=="cardio" }))
+                        p.put("materials46",arr(p.a("materials46").strings().filter { it=="space" && cardioFormat.isNotBlank() && selected=="cardio" }))
                     }
                     val category=selected
                     val requestedLevel=level.toInt()
@@ -333,14 +337,15 @@ fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->Unit){
                     val logs=s.logs.copyJson()
                     val avoidImpact=noImpact
                     val onlyBody=noGear
-                    val intervals=cardioIntervals && category=="cardio"
+                    val intervals=cardioFormat=="intervals" && category=="cardio"
+                    val continuous=cardioFormat=="continuous" && category=="cardio"
                     busy=true
                     info="Construyendo sesiones compatibles con tu perfil…"
                     scope.launch {
                         try {
                             val result=withContext(Dispatchers.Default){
                                 s.planner.generateRoutineOptions(mode,category,requestedLevel,
-                                    requestedMinutes,"default",p,logs,avoidImpact=avoidImpact,onlyBody=onlyBody,cardioIntervals=intervals)
+                                    requestedMinutes,"default",p,logs,avoidImpact=avoidImpact,onlyBody=onlyBody,cardioIntervals=intervals,cardioContinuous=continuous)
                             }
                             if(s.revision.intValue!=requestedRevision){
                                 info="El perfil cambió mientras se generaban las rutinas. Vuelve a generar para usar la configuración actual."

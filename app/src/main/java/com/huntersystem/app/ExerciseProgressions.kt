@@ -1,13 +1,35 @@
 package com.huntersystem.app
 
-internal data class ExerciseProgression(val guidance: String, val nextId: String? = null)
+internal class ExerciseProgression(val guidance: String, vararg val nextIds: String)
 
 internal val performanceProgressions = mapOf(
     "gym-pullassist30" to ExerciseProgression(
         "Reduce la asistencia cuando completes las repeticiones con el mismo recorrido y sin impulso.",
         "new46-pullup"),
     "new46-pullup" to ExerciseProgression(
-        "Completa varias repeticiones limpias antes de introducir lastre.", "performance-weighted-pullup"),
+        "Domina varias repeticiones limpias antes de introducir lastre o practicar la transición en anillas.",
+        "performance-weighted-pullup", "performance-ring-false-grip"),
+    "performance-ring-false-grip" to ExerciseProgression(
+        "Mantén el agarre con apoyo de pies antes de practicar la transición.", "performance-ring-transition"),
+    "performance-ring-transition" to ExerciseProgression(
+        "Reduce la ayuda de los pies gradualmente. Domina también los fondos en anillas antes del muscle-up completo.",
+        "performance-strict-ring-muscle-up"),
+    "new46-tucklever" to ExerciseProgression(
+        "Compara los segundos con el mismo ángulo. Aleja las rodillas cuando puedas mantener el tronco horizontal.",
+        "performance-advanced-tuck-lever"),
+    "performance-advanced-tuck-lever" to ExerciseProgression(
+        "Extiende una pierna solo si mantienes la pelvis nivelada en el agrupado avanzado.", "performance-one-leg-lever"),
+    "new46-trxsquat" to ExerciseProgression(
+        "Reduce la ayuda de las correas cuando controles el descenso. Después usa un banco como referencia.",
+        "home-pistol-box23"),
+    "home-pistol-box23" to ExerciseProgression(
+        "Usa un banco más bajo cuando controles la bajada y la subida sin impulso.", "single-squat19"),
+    "performance-outdoor-run" to ExerciseProgression(
+        "Si ya mantienes un ritmo conversacional con control, prueba un bloque de carrera continua.",
+        "performance-continuous-run"),
+    "performance-continuous-run" to ExerciseProgression(
+        "Registra los minutos continuos. Aumenta el tiempo antes de subir el ritmo y vuelve a los intervalos si necesitas pausas.",
+        "performance-outdoor-run"),
     "benchpress" to ExerciseProgression(
         "Compara el peso por mancuerna y las repeticiones con el mismo recorrido antes de subir la carga."),
     "row" to ExerciseProgression(

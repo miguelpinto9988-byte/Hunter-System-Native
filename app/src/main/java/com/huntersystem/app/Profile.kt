@@ -87,7 +87,7 @@ internal class ProfileRegistration(private val ui:NativeUi) {
   addAll(additionalMaterials.filter { it.first in profileAllowedMaterials(equipment) })
  }
 
- val capabilityOptions = listOf("landing", "hanging", "strictpull", "overhead", "nordic")
+ val capabilityOptions = listOf("landing", "hanging", "strictpull", "supporthold", "overhead", "nordic")
   .map { id -> id to store.catalog.capabilities.s(id) }
 
  private val initialGear=buildMap {

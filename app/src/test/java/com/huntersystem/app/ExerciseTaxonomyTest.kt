@@ -40,7 +40,7 @@ class ExerciseTaxonomyTest {
         assertEquals(78, withdrawn.count { it.isBaseVariant })
         assertEquals(132, withdrawn.size)
         assertEquals(148, catalog.originalExercises.count { it.id !in displayed })
-        assertEquals(536, catalog.libraryExercises.map { it.oldFamily }.distinct().size)
+        assertEquals(542, catalog.libraryExercises.map { it.oldFamily }.distinct().size)
         assertTrue(withdrawn.none { it.id in displayed || it.id in automatic })
         assertTrue(withdrawn.all { catalog.byId.containsKey(it.id) })
         assertTrue(catalog.isWithdrawn("heelcontrolled"))
@@ -90,6 +90,35 @@ class ExerciseTaxonomyTest {
         assertEquals(Category.MOBILITY, catalog.classification("new46-bentcalfstretch")?.category)
         assertEquals(Category.MOBILITY, catalog.classification("new46-hip9090lift")?.category)
         assertTrue(catalog.originalExercise("performance-weighted-pullup")!!.recordsExternalLoad)
+    }
+
+    @Test fun calisthenicsProgressionsStayInTheLibraryAndContinuousRunningIsOptIn() {
+        val ids = listOf("performance-ring-false-grip", "performance-ring-transition",
+            "performance-strict-ring-muscle-up", "performance-advanced-tuck-lever", "performance-one-leg-lever")
+        assertTrue(ids.all { id -> catalog.libraryExercises.any { it.id == id } })
+        assertTrue(ids.none { id -> catalog.automaticExercises.any { it.id == id } })
+        assertEquals(listOf("performance-ring-transition"),
+            performanceProgressions.getValue("performance-ring-false-grip").nextIds.toList())
+        assertEquals(listOf("performance-advanced-tuck-lever"),
+            performanceProgressions.getValue("new46-tucklever").nextIds.toList())
+        assertTrue(performanceProgressions.values.flatMap { it.nextIds.toList() }.all {
+            catalog.originalExercise(it) != null
+        })
+        val planner = Planner(catalog, rules)
+        val home = profile.copyJson().put("difficulty", "intermediate")
+            .put("materials46", arr(listOf("space"))).put("capabilities46", arr(listOf("landing")))
+        fun running(level: Int, profile: org.json.JSONObject, avoidImpact: Boolean = false) =
+            planner.generateRoutineOptions("offline", "cardio", level, 15, "test", profile,
+                obj(), today, avoidImpact = avoidImpact, cardioContinuous = true)
+        val routine = running(1, home).single()
+        val steps = planner.steps(routine, home)
+        assertEquals(listOf("preparation", "exercise", "cooldown"), steps.map { it.s("kind") })
+        assertEquals("performance-continuous-run", steps[1].s("id"))
+        assertEquals(420, steps[1].i("seconds"))
+        assertEquals(15, planner.minutes(routine, home))
+        assertTrue(running(0, home).isEmpty())
+        assertTrue(running(1, home, avoidImpact = true).isEmpty())
+        assertTrue(running(1, home.copyJson().put("materials46", arr(emptyList<String>()))).isEmpty())
     }
 
     @Test fun onlyPublishedEssentialMobilityExercisesAreSelectable() {

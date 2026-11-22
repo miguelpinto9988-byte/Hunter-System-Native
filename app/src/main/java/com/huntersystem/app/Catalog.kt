@@ -85,7 +85,7 @@ class Catalog(val context:Context?=null,val loader:((String)->String)?=null){
  val exercises=libraryExercises.filter{it.id in classifications}
  internal val automaticExercises=exercises.filter { exercise ->
   val category=classifications.getValue(exercise.id).category
-  category==Category.MOBILITY || exercise.isMainTraining(category)
+  !exercise.raw.b("requiresSupervision") && (category==Category.MOBILITY || exercise.isMainTraining(category))
  }
  private val automaticExerciseIds=automaticExercises.mapTo(hashSetOf()){it.id}
  private fun isTrainingExercise(id:String)=byId[id]?.id?.let(automaticExerciseIds::contains)==true

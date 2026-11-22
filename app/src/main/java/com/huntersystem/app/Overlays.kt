@@ -126,12 +126,12 @@ import kotlin.math.*
   HPanel(decor=false,padding=16) {
    Heading("Progresión",size=25)
    HText(progression.guidance,size=17)
-   val next=progression.nextId?.let(s.catalog::originalExercise)
-   if(next!=null) HButton(next.name,Modifier.fillMaxWidth()) {
+   for (next in progression.nextIds.mapNotNull(s.catalog::originalExercise)) HButton(next.name,Modifier.fillMaxWidth()) {
     ui.open("exercise",obj("id" to next.id,"originalCatalog" to true))
    }
   }
  }
+ if(e.raw.b("requiresSupervision"))HNotice("Practica esta habilidad con supervisión técnica.")
  if(e.sides)HNotice("Realiza la cantidad indicada en cada lado. El registro especifica si corresponde a un lado o a ambos.")
  if(s.profile!=null){val reasons=s.rules.reasons(e,s.adjusted());HPanel(decor=false,padding=16){Heading("Compatibilidad con tu perfil",size=26);HText(if(reasons.isEmpty())"Incluido por los filtros del perfil actual" else reasons.joinToString("\n"){"· $it"},size=16)}}
 }

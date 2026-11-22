@@ -13,7 +13,8 @@ internal val trainingCategoryLabels = mapOf(
 private val staticExerciseFamilies = setOf(
     "plank", "wallsit", "towelrow", "sideplank", "kneelingplank", "suitcase", "curlhold",
     "farmerhold", "wallplank", "bearhold", "full-sideplank19", "hs379-palms", "hs379-isobiceps",
-    "new46-ringturnout", "new46-copenhagen", "new46-lsit", "new46-tucklever"
+    "new46-ringturnout", "new46-copenhagen", "new46-lsit", "new46-tucklever",
+    "performance-ring-false-grip", "performance-advanced-tuck-lever", "performance-one-leg-lever"
 )
 
 private val preparationFamilies = setOf(
