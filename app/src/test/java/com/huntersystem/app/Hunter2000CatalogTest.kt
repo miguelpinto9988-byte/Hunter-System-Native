@@ -104,6 +104,18 @@ class Hunter2000CatalogTest {
         assertTrue(planner.steps(day,profile).any{it.s("id")=="heel_slow"})
     }
 
+    @Test fun equipoOriginalIncluyeMaterialesHistoricosYAccesorios() {
+        val c=Catalog(loader={java.io.File("src/main/assets",it).readText()})
+        val options=c.originalEquipmentOptions.toMap()
+        assertEquals("Mancuernas",options["db"])
+        assertEquals("Máquina Smith",options["smith"])
+        assertTrue(c.originalExercises.count { "db" in it.equipmentKeys } >= 207)
+        assertTrue(c.originalExercises.any { it.equipment == "gym" && "gym" in it.equipmentKeys })
+        assertTrue(c.originalExercise("new46-tke")!!.equipmentKeys.containsAll(listOf("band","anchor")))
+        assertTrue("towel" in c.originalExercise("towelrow")!!.equipmentKeys)
+        assertTrue("step" in c.originalExercise("stepup")!!.equipmentKeys)
+    }
+
     @Test(expected=IllegalArgumentException::class)
     fun rechazaIdentificadoresDuplicados(){
         val arr=JSONArray(extra);arr.put(0,exercise("legacy_1",true))

@@ -200,11 +200,8 @@ fun ExercisesScreen(ui: NativeUi) {
                 (!restricted || profile != null && classification != null && store.rules.compatible(exercise, profile)) &&
                 when (gear) {
                     "" -> true
-                    "body" -> exercise.equipment == "body" && !exercise.gym &&
-                        (exercise.sport.isBlank() || exercise.raw.a("materialRequirements").length() == 0)
-                    "db" -> exercise.equipment == "db"
-                    "gym" -> exercise.gym
-                    else -> gear in exercise.raw.a("materialRequirements").strings()
+                    "body" -> exercise.equipmentKeys.isEmpty()
+                    else -> gear in exercise.equipmentKeys
                 }
         }
     }
@@ -238,12 +235,9 @@ fun ExercisesScreen(ui: NativeUi) {
                 HSelect("Nivel", difficulty, listOf(all) + levels.mapIndexed { index, label ->
                     index.toString() to label
                 }, Modifier.weight(1f)) { difficulty = it }
-                HSelect("Equipo", gear, listOf(all, "body" to "Sin equipo", "db" to "Mancuernas",
-                    "bench" to "Banco", "step" to "Plataforma", "gym" to "Gimnasio",
-                    "barbell" to "Barras", "cable" to "Poleas", "machine" to "Máquinas",
-                    "smith" to "Smith", "cardio" to "Cinta o ergómetro"),
-                    Modifier.weight(1f)) { gear = it }
             }
+            HSelect("Equipo", gear, listOf(all, "body" to "Sin equipo declarado") +
+                store.catalog.originalEquipmentOptions, Modifier.fillMaxWidth()) { gear = it }
             HCheck("Incluir variantes de técnica y ritmo", variants) { variants = !variants }
             HCheck("Aplicar mis restricciones", restricted) { restricted = !restricted }
         }
@@ -260,13 +254,9 @@ fun ExercisesScreen(ui: NativeUi) {
                 }) { ui.open("exercise", obj("id" to exercise.id, "originalCatalog" to true)) }
                 if (exercise.validationBlocked)
                     HText("PENDIENTE DE VALIDACIÓN", size = 13, color = LocalHunter.current.accent, bold = true)
-                val equipment = when {
-                    exercise.equipment == "body" -> "Sin equipo especial"
-                    exercise.gym -> "Equipo de gimnasio"
-                    else -> "Mancuernas"
-                }
-                HText(exercise.raw.s("equipmentLabel", equipment),
-                    size = 15, color = LocalHunter.current.muted)
+                val equipment = exercise.equipmentKeys.filter { it != "gym" || exercise.equipmentKeys.size == 1 }
+                    .map(store.catalog::equipmentLabel).joinToString(" · ").ifBlank { "Sin equipo declarado" }
+                HText(equipment, size = 15, color = LocalHunter.current.muted)
                 val impact = if (exercise.impact) "Con saltos" else "Sin saltos"
                 val unit = if (exercise.unit == "sec") "Por tiempo" else "Por repeticiones"
                 HText("$impact · $unit  ↗", size = 15, color = LocalHunter.current.muted)

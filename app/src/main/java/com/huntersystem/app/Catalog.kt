@@ -4,6 +4,11 @@ import android.content.Context
 import org.json.JSONObject
 import org.json.JSONArray
 
+private val catalogEquipmentLabels = mapOf(
+ "gym" to "Gimnasio", "machine" to "Máquinas guiadas", "smith" to "Máquina Smith",
+ "cardio" to "Máquinas de cardio", "partner" to "Compañero de entrenamiento"
+)
+
 class Exercise(val raw:JSONObject){
  val id=raw.s("id");val name=raw.s("name");val group=raw.s("group");val category=raw.s("category");val unit=raw.s("unit");val equipment=raw.s("equipment");val meta=raw.o("planning49");val type=meta.s("group");val family=meta.s("family",id);val oldFamily=raw.s("baseId",raw.s("family",id));val pattern=meta.s("pattern");val role=meta.s("role");val primary=meta.b("primary");val power=meta.b("power");val impact=meta.b("impact");val planningLevel=meta.i("level");val sides=raw.b("sides");val sport=raw.s("sport")
  val hunter2000=raw.b("sourceExpansion2k")
@@ -14,6 +19,11 @@ class Exercise(val raw:JSONObject){
  val gymRequirements=if(hunter2000)
   raw.a("materialRequirements").strings().filter{it in setOf("barbell","cable","machine","smith","cardio","bench")}
  else raw.a("gymRequirements23").strings()
+ private val materialKeys = (raw.a("materialRequirements").strings() +
+  raw.a("materials46").strings() + raw.a("requirements").strings() + gymRequirements).toSet()
+ internal val equipmentKeys = materialKeys - "body" +
+  (if(equipment=="db") setOf("db") else emptySet()) +
+  (if(gym||equipment=="gym") setOf("gym") else emptySet())
  val cardioEquipment=when{
   id.startsWith("gym-bike")||id.startsWith("gym-airbike")||id.startsWith("gym-recumbent")->"bike"
   id.startsWith("gym-row")->"rower"
@@ -58,5 +68,10 @@ class Catalog(val context:Context?=null,val loader:((String)->String)?=null){
    }
  }
  val editorial=JSONObject(text("editorial.json"));val design=JSONObject(text("design.json"));val defaultState=JSONObject(text("default-state.json"));val profileForm=JSONArray(text("profile-form.json"))
+ internal fun equipmentLabel(key:String)=catalogEquipmentLabels[key] ?: materials.s(key,key)
+ internal val originalEquipmentOptions by lazy {
+  originalExercises.flatMap{it.equipmentKeys}.distinct()
+   .map{it to equipmentLabel(it)}.sortedBy{normalize(it.second)}
+ }
  init{require(originalExercises.size==1200&&originalExercises.map{it.id}.toSet().size==1200);require(expansionExercises.isEmpty()||expansionExercises.size==800);require(sourceById.size==sourceExercises.size);require(aliases.all{(id,target)->id in sourceById&&target in sourceById&&target !in aliases})}
 }

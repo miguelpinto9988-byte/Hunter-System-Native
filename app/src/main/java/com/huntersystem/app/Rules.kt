@@ -46,7 +46,7 @@ class Rules(val catalog:Catalog){
   if(raw.b("pack46")&&raw.has("materials46")){
    if(raw.i("level")>maxPlanningLevel)out+="Nivel superior al seleccionado"
    for(k in raw.a("materials46").strings()){
-    val has=when(k){"db"->gear in listOf("db","gym");"bench"->p.b("bench")||"bench" in gym;"step"->p.b("step");"barbell","cable"->gear=="gym"&&k in gym;else->k in mats}
+    val has=when(k){"db"->p.b("dumbbellsAvailable",gear in listOf("db","gym"));"bench"->p.b("bench")||"bench" in gym;"step"->p.b("step");"barbell","cable"->gear=="gym"&&k in gym;else->k in mats}
     if(!has)out+="Falta material: "+catalog.materials.s(k,k)
    }
    for(k in raw.a("capabilities46").strings())if(k !in caps)out+="Capacidad previa pendiente: "+catalog.capabilities.s(k,k)

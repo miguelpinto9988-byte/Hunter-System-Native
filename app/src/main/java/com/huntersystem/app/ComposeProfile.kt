@@ -89,6 +89,11 @@ internal fun ComposeHunterProfile(ui: NativeUi, registration: ProfileRegistratio
     val fields = draft.o("fields")
     val gear = draft.o("gear")
     val week = draft.a("week")
+    val accessories = registration.accessoryOptions(when {
+        gear.b("gym") -> "gym"
+        gear.b("db") -> "db"
+        else -> "body"
+    })
     fun field(id: String, value: String) { draftJson = JSONObject(draftJson).apply { getJSONObject("fields").put(id, value) }.toString() }
     fun equipment(id: String, enabled: Boolean) {
         draftJson = JSONObject(draftJson).apply { getJSONObject("gear").put(id, enabled) }.toString()
@@ -133,14 +138,14 @@ internal fun ComposeHunterProfile(ui: NativeUi, registration: ProfileRegistratio
                         ProfileHeader(step, titleSize)
                         when (step) {
                             0 -> ProfileIdentity(fields, ui.pendingAvatar ?: ui.store.state.s("avatar"), ::field, ui.chooseAvatar)
-                            1 -> ProfileTraining(fields, gear, List(7) { week.getInt(it) }, ::field, ::equipment,
+                            1 -> ProfileTraining(fields, gear, List(7) { week.getInt(it) }, accessories, ::field, ::equipment,
                                 { day -> draftJson = JSONObject(draftJson).apply {
                                     val days = getJSONArray("week")
                                     days.put(day, (days.getInt(day) + 1) % categories.size)
                                 }.toString() }, { onSupplement("health") })
                             2 -> ProfileAppearance(fields, initial.o("legacyArtwork"), ::field,
                                 if (editing) ({ onSupplement("settings") }) else null)
-                            3 -> ProfileReview(fields, gear, List(7) { week.getInt(it) }, confirmed) { confirmed = it }
+                            3 -> ProfileReview(fields, gear, List(7) { week.getInt(it) }, accessories, confirmed) { confirmed = it }
                             4 -> Box(Modifier.fillMaxWidth().padding(vertical = 40.dp), contentAlignment = Alignment.Center) {
                                 ProfileTitle(if (editing) "Cambios guardados" else "Registro completado", 18)
                             }
@@ -398,7 +403,8 @@ private fun ProfileNote(text: String) {
 }
 
 @Composable
-private fun ProfileTraining(fields: JSONObject, gear: JSONObject, week: List<Int>, set: (String, String) -> Unit,
+private fun ProfileTraining(fields: JSONObject, gear: JSONObject, week: List<Int>,
+    accessories: List<Pair<String, String>>, set: (String, String) -> Unit,
     equipment: (String, Boolean) -> Unit, cycleDay: (Int) -> Unit, health: () -> Unit) {
     ProfileModule("Nivel", "bars") {
         ProfileChoices(levels, fields.s("difficulty"), listOf("shield", "bars", "crown")) { set("difficulty", it) }
@@ -462,9 +468,16 @@ private fun ProfileTraining(fields: JSONObject, gear: JSONObject, week: List<Int
         if (gear.b("db")) ProfileInput("Pesos disponibles (kg), separados por comas", "2, 4, 6",
             fields.s("dumbbellWeights")) { set("dumbbellWeights", it) }
         if (gear.b("gym")) gymOptions.forEachIndexed { index, (id, label) ->
-            ProfileCheck(label, gear.b("gym_$id"), listOf("cycle", "gym", "chair", "dumbbell", "bike", "move", "pulse")[index]) {
+            val icon = listOf("cycle", "gym", "chair", "dumbbell", "bike", "move", "pulse", "gym", "cycle")[index]
+            ProfileCheck(label, gear.b("gym_$id"), icon) {
                 equipment("gym_$id", it)
             }
+        }
+        var showAccessories by rememberSaveable { mutableStateOf(false) }
+        ProfileChoice(if (showAccessories) "Ocultar complementos" else "Ver complementos",
+            Modifier.fillMaxWidth(), icon = "gym") { showAccessories = !showAccessories }
+        if (showAccessories) accessories.forEach { (id, label) ->
+            ProfileCheck(label, gear.b(id), null) { equipment(id, it) }
         }
     }
     ProfileChoice("Indicaciones y restricciones", Modifier.fillMaxWidth(), icon = "shield", onClick = health)
@@ -542,12 +555,14 @@ private fun ProfileAppearance(fields: JSONObject, legacy: JSONObject, set: (Stri
 }
 
 @Composable
-private fun ProfileReview(fields: JSONObject, gear: JSONObject, week: List<Int>, confirmed: Boolean, confirm: (Boolean) -> Unit) {
+private fun ProfileReview(fields: JSONObject, gear: JSONObject, week: List<Int>,
+    accessories: List<Pair<String, String>>, confirmed: Boolean, confirm: (Boolean) -> Unit) {
     fun label(id: String, values: List<Pair<String, String>>) = values.toMap()[fields.s(id)] ?: "Opción guardada"
     fun detail(id: String, unit: String) = fields.s(id).takeIf(String::isNotBlank)?.let { "$it $unit" } ?: "Sin indicar"
     val routine = fields.s("trainingMode") == "routines"
     val equipment = buildList {
         gearChoices.filter { gear.b(it.first) }.forEach { add(it.second) }
+        accessories.filter { gear.b(it.first) }.forEach { add(it.second) }
         if (gear.b("db") && fields.s("dumbbellWeights").isNotBlank()) add(fields.s("dumbbellWeights") + " kg")
         if (gear.b("gym")) gymOptions.filter { gear.b("gym_" + it.first) }.forEach { add(it.second) }
     }

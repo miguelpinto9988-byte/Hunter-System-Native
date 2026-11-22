@@ -14,7 +14,8 @@ internal val objectives = mapOf("general" to "Mejorar mi bienestar general", "st
 internal val materials = listOf("mat" to "Colchoneta o superficie acolchada estable",
  "wall" to "Pared o apoyo vertical firme", "chair" to "Silla estable")
 internal val gymOptions = listOf("cable" to "Poleas", "machine" to "Máquinas guiadas", "bench" to "Banco",
- "barbell" to "Barras", "bike" to "Bicicleta estática", "rower" to "Máquina de remo", "elliptical" to "Elíptica")
+ "barbell" to "Barras", "bike" to "Bicicleta estática", "rower" to "Máquina de remo", "elliptical" to "Elíptica",
+ "smith" to "Máquina Smith", "cardio" to "Todas las máquinas de cardio del catálogo")
 
 private val profileChoiceIds=mapOf(
  "gender" to setOf("unspecified","male","female"),
@@ -76,11 +77,23 @@ internal class ProfileRegistration(private val ui:NativeUi) {
  private val initialHealth=healthValues.toMap()
  val injuries=mutableStateListOf<JSONObject>().apply { addAll(original?.a("injuries")?.objects().orEmpty()) }
  private val initialWeek=original?.let { MonarchProfileAdapter.from(it,LocalDate.now())?.weekly }?:List(7){5}
+ private val additionalMaterials = store.catalog.originalEquipmentOptions.filter { (id, _) ->
+  id in profileAllowedMaterials("gym") && materials.none { it.first == id }
+ }
+ private val materialOptions = materials + additionalMaterials
+ fun accessoryOptions(equipment:String) = buildList {
+  if(equipment!="gym") add("bench" to "Banco estable")
+  add("step" to "Escalón estable")
+  addAll(additionalMaterials.filter { it.first in profileAllowedMaterials(equipment) })
+ }
+
  private val initialGear=buildMap {
   put("body",original?.b("bodyAvailable",true)?:true)
   put("db",original?.b("dumbbellsAvailable",original.s("equipment") in listOf("db","gym"))?:false)
   put("gym",original?.s("equipment")=="gym")
-  materials.forEach { (id,_) -> put(id,id in original?.a("materials46")?.strings().orEmpty()) }
+  put("bench",original?.b("bench")==true && "bench" !in original.a("gymEquipment23").strings())
+  put("step",original?.b("step")==true)
+  materialOptions.forEach { (id,_) -> put(id,id in original?.a("materials46")?.strings().orEmpty()) }
   gymOptions.forEach { (id,_) -> put("gym_$id",id in original?.a("gymEquipment23")?.strings().orEmpty()) }
  }
 
@@ -114,7 +127,7 @@ internal class ProfileRegistration(private val ui:NativeUi) {
    (0..6).map { index -> values.getInt(index).also { require(it in 0..5) } }
   }
   val declared=input.o("gear")
-  val gear=initialGear.keys.associateWith { declared.getBoolean(it) }
+  val gear=initialGear.keys.associateWith { declared.b(it,initialGear.getValue(it)) }
   for(key in initial.keys){
    val value=incoming.optString(key,"")
    val allowed=profileChoiceIds[key]
@@ -163,13 +176,14 @@ internal class ProfileRegistration(private val ui:NativeUi) {
   p.put("weekPlan",arr(legacyWeek.map { when(it){3->"mobility";4->"cardio";5->"rest";else->"train"} }))
   p.put("weekFocus",arr(legacyWeek.map { listOf("upper","core","lower","mobility","cardio","general")[it] }))
   val selectedMaterials=original?.a("materials46")?.strings().orEmpty().toMutableSet()
-  for((key,_) in materials)if(gear[key]==true)selectedMaterials.add(key) else selectedMaterials.remove(key)
+  for((key,_) in materialOptions)if(gear[key]==true)selectedMaterials.add(key) else selectedMaterials.remove(key)
   val selectedGym=original?.a("gymEquipment23")?.strings().orEmpty().toMutableSet()
   for((key,_) in gymOptions)if(gear["gym_$key"]==true)selectedGym.add(key) else selectedGym.remove(key)
   if(equipment!="gym")selectedGym.clear()
   p.put("materials46",arr(selectedMaterials.filter { it in profileAllowedMaterials(equipment) }))
   p.put("gymEquipment23",arr(selectedGym))
-  p.put("bench","bench" in selectedGym || equipment=="db"&&original?.b("bench")==true)
+  p.put("bench","bench" in selectedGym || equipment!="gym"&&gear["bench"]==true)
+  p.put("step",gear["step"]==true)
   p.put("equipment",equipment).put("bodyAvailable",gear["body"]==true).put("dumbbellsAvailable",gear["db"]==true)
   p.put("dumbbellWeightsKg",arr(selectedWeights)).put("load",selectedWeights.firstOrNull()?:0)
   store.saveProfile(p,appearance,ui.pendingAvatar)
