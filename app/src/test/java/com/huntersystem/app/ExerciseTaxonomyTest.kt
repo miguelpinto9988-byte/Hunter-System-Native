@@ -36,8 +36,16 @@ class ExerciseTaxonomyTest {
         val legacyBike = "gym-bike30-ecc30"
         val displayed = catalog.libraryExercises.mapTo(hashSetOf()) { it.id }
         val automatic = catalog.automaticExercises.mapTo(hashSetOf()) { it.id }
-        assertEquals(16, catalog.originalExercises.size - displayed.size)
-        assertEquals(612, catalog.libraryExercises.map { it.oldFamily }.distinct().size)
+        val withdrawn = catalog.originalExercises.filter { catalog.isWithdrawn(it.id) }
+        assertEquals(80, withdrawn.count { it.isBaseVariant })
+        assertEquals(134, withdrawn.size)
+        assertEquals(150, catalog.originalExercises.size - displayed.size)
+        assertEquals(532, catalog.libraryExercises.map { it.oldFamily }.distinct().size)
+        assertTrue(withdrawn.none { it.id in displayed || it.id in automatic })
+        assertTrue(withdrawn.all { catalog.byId.containsKey(it.id) })
+        assertTrue(catalog.isWithdrawn("heelcontrolled"))
+        assertTrue(catalog.isWithdrawn("heel_slow"))
+        assertFalse(catalog.isWithdrawn("ankle"))
         assertNotNull(catalog.byId[legacyBike])
         assertFalse(legacyBike in displayed)
         assertFalse(legacyBike in automatic)
@@ -45,19 +53,19 @@ class ExerciseTaxonomyTest {
         assertTrue("pushup_slow" in displayed)
         assertFalse("seatedpunch" in automatic)
         assertFalse("plank" in automatic)
-        assertTrue("neck" in automatic)
+        assertFalse("neck" in automatic)
+        assertTrue("ankle" in automatic)
         val landing = catalog.byId.getValue("new46-droplanding")
         assertTrue(CatalogFocus.PREPARATION.includes(landing, null))
         assertFalse(CatalogFocus.IMPACT.includes(landing, null))
         assertTrue(CatalogFocus.POWER.includes(catalog.byId.getValue("new46-sprintbrake"), Category.CARDIO))
     }
 
-    @Test fun onlyTwentyEssentialMobilityExercisesAreSelectable() {
+    @Test fun onlyPublishedEssentialMobilityExercisesAreSelectable() {
         val active = catalog.exercises.groupBy { catalog.classification(it.id)!!.category }
         assertEquals(Category.entries.toSet(), active.keys)
-        assertEquals(ExerciseTaxonomy.essentialMobility.keys,
+        assertEquals(ExerciseTaxonomy.essentialMobility.keys.filterNot(catalog::isWithdrawn).toSet(),
             active.getValue(Category.MOBILITY).map { it.id }.toSet())
-        assertEquals(20, active.getValue(Category.MOBILITY).size)
         assertNull(catalog.classification("sport-yoga-warrior3"))
         assertNotNull(catalog.byId["sport-yoga-warrior3"])
         assertNull(catalog.classification("pau-armworld"))
