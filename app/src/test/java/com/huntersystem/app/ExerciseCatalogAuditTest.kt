@@ -75,7 +75,7 @@ class ExerciseCatalogAuditTest {
                     .plus(framing.equipment.authoredSupports.mapNotNull { ExerciseEquipmentPlan.forProp(it.kind)?.asset })
                     .distinct()))
         }
-        val visible = catalog.exercises.mapTo(hashSetOf()) { it.id }
+        val visible = catalog.originalExercises.mapTo(hashSetOf()) { it.id }
         val items = JSONArray()
         var inconsistent = 0
         for (exercise in cards) {

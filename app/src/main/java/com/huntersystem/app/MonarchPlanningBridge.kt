@@ -176,7 +176,7 @@ class MonarchProgressRepository(
 ) : VolumeProfileInterface {
     private fun activitySource() = store.planner.planningSource(store.adjusted())
     private fun activity(id: String): ActivityMetadata? =
-        if (activityLookup != null) activityLookup.invoke(id) else activitySource().byId(id)
+        if (activityLookup != null) activityLookup.invoke(id) else activitySource().savedExercise(id)
 
     fun history() = TrainingHistory(efforts(), participation(), interruptions(), phases())
 

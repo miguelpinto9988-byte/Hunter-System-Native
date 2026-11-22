@@ -9,7 +9,7 @@ import kotlin.math.*
 data class Feedback(val strain:Boolean,val avg:Double,val adherence:Double,val completed:Int,val canProgress:Boolean)
 class Planner(val catalog:Catalog,val rules:Rules){
  // Un solo adaptador del catálogo por configuración; evita reanalizar los
- // 2000 registros al dibujar siete días del mismo calendario.
+ // ejercicios elegibles al dibujar siete días del mismo calendario.
  private var cachedPlanningKey:String?=null
  private var cachedPlanningSource:MonarchActivitySource?=null
  @Synchronized internal fun planningSource(p:JSONObject):MonarchActivitySource {
