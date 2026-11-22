@@ -10,6 +10,31 @@ internal val trainingCategoryLabels = mapOf(
     Category.LOWER to "Tren inferior", Category.MOBILITY to "Movilidad", Category.CARDIO to "Cardio"
 )
 
+private val staticExerciseFamilies = setOf(
+    "plank", "wallsit", "towelrow", "sideplank", "kneelingplank", "suitcase", "curlhold",
+    "farmerhold", "wallplank", "bearhold", "full-sideplank19", "hs379-palms", "hs379-isobiceps",
+    "new46-ringturnout", "new46-copenhagen", "new46-lsit", "new46-tucklever"
+)
+
+internal enum class CatalogFocus(val label: String) {
+    DYNAMIC("Entrenamiento dinámico"),
+    POWER("Potencia"),
+    IMPACT("Impacto"),
+    MOBILITY("Movilidad"),
+    ALL("Todo");
+
+    fun includes(exercise: Exercise, category: Category?): Boolean = when (this) {
+        DYNAMIC -> category != Category.MOBILITY &&
+            exercise.category != "Movilidad" &&
+            exercise.oldFamily !in staticExerciseFamilies &&
+            (category != null || exercise.power || exercise.impact)
+        POWER -> exercise.power
+        IMPACT -> exercise.impact
+        MOBILITY -> category == Category.MOBILITY || exercise.category == "Movilidad"
+        ALL -> true
+    }
+}
+
 /** Classifies inventory for new sessions while leaving the original metadata available to old records. */
 internal object ExerciseTaxonomy {
     val essentialMobility = mapOf(

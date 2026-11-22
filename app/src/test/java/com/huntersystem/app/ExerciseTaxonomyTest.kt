@@ -15,6 +15,23 @@ class ExerciseTaxonomyTest {
     private val profile = obj("name" to "Auditoría", "age" to 30, "difficulty" to "basic",
         "bodyAvailable" to true, "dailyMissions" to 3, "minutes" to 30)
 
+    @Test fun catalogFocusSeparatesMobilityAndHoldsFromDynamicTraining() {
+        fun includes(focus: CatalogFocus, id: String): Boolean {
+            val exercise = checkNotNull(catalog.originalExercise(id))
+            return focus.includes(exercise, catalog.classification(id)?.category)
+        }
+        assertTrue(includes(CatalogFocus.MOBILITY, "neck"))
+        assertFalse(includes(CatalogFocus.DYNAMIC, "neck"))
+        assertFalse(includes(CatalogFocus.DYNAMIC, "plank"))
+        assertTrue(includes(CatalogFocus.ALL, "plank"))
+        assertTrue(includes(CatalogFocus.DYNAMIC, "home-plankjack30"))
+        assertTrue(includes(CatalogFocus.DYNAMIC, "goblethold"))
+        assertTrue(includes(CatalogFocus.DYNAMIC, "farmerwalk"))
+        assertTrue(includes(CatalogFocus.POWER, "new46-kbswing"))
+        assertFalse(includes(CatalogFocus.IMPACT, "new46-kbswing"))
+        assertTrue(includes(CatalogFocus.IMPACT, "squatjump"))
+    }
+
     @Test fun onlyTwentyEssentialMobilityExercisesAreSelectable() {
         val active = catalog.exercises.groupBy { catalog.classification(it.id)!!.category }
         assertEquals(Category.entries.toSet(), active.keys)
