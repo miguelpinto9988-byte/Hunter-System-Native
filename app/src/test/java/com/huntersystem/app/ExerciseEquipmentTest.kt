@@ -20,6 +20,18 @@ class ExerciseEquipmentTest {
 
     private fun motion(id: String) = checkNotNull(ExerciseMotions.load(context, catalog.byId.getValue(id)))
 
+    @Test fun newLoadedMovementsShowTheirDeclaredEquipment() {
+        val chestRow = motion("performance-db-chest-supported-row")
+        assertTrue(chestRow.apparatus.any { it.gear == DemoGear.DUMBBELL })
+        assertTrue(chestRow.apparatus.any { it.gear == DemoGear.INCLINED_SUPPORT })
+        val step = motion("performance-db-step-up")
+        assertTrue(step.apparatus.any { it.gear == DemoGear.DUMBBELL })
+        assertTrue(step.props.any { it.kind == "step" })
+        val deadlift = motion("performance-high-handle-trapbar-deadlift")
+        assertEquals(listOf(DemoGear.TRAP_BAR), deadlift.apparatus.map { it.gear })
+        assertTrue(motion("gym-skierg30").apparatus.any { it.gear == DemoGear.SKI_ERG })
+    }
+
     @Test fun unilateralRowMovesOneDumbbellAndKeepsTheOtherHandOnTheTable() {
         val row = motion("row")
         val framing = ExerciseFraming.from(row)

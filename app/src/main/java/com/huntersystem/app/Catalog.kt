@@ -7,7 +7,8 @@ import org.json.JSONArray
 
 private val catalogEquipmentLabels = mapOf(
  "gym" to "Gimnasio", "machine" to "Máquinas guiadas", "smith" to "Máquina Smith",
- "cardio" to "Máquinas de cardio", "partner" to "Compañero de entrenamiento", "weightbelt" to "Cinturón de lastre"
+ "cardio" to "Máquinas de cardio", "partner" to "Compañero de entrenamiento", "weightbelt" to "Cinturón de lastre",
+ "inclinebench" to "Banco inclinado"
 )
 
 // Ejercicios base retirados según la auditoría de rendimiento. Las variantes heredan la decisión.
@@ -51,6 +52,7 @@ class Exercise(val raw:JSONObject){
   id.startsWith("gym-bike")||id.startsWith("gym-recumbent")->"bike"
   id.startsWith("gym-row")->"rower"
   id.startsWith("gym-elliptical")->"elliptical"
+  id.startsWith("gym-skierg")->"skierg"
   else->null
  }
 }

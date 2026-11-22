@@ -58,7 +58,7 @@ internal object ExerciseEquipmentPlan {
         "pullup_bar" to DemoGear.PULL_BAR, "lowbar" to DemoGear.LOW_BAR, "parallels" to DemoGear.PARALLETTES,
         "parallettes" to DemoGear.PARALLETTES, "stick" to DemoGear.STICK, "lightlever" to DemoGear.STICK,
         "slider" to DemoGear.SLIDER, "foamroller" to DemoGear.FOAM_ROLLER, "abwheel" to DemoGear.AB_WHEEL,
-        "bench" to DemoGear.BENCH, "romanchair" to DemoGear.INCLINED_SUPPORT,
+        "bench" to DemoGear.BENCH, "inclinebench" to DemoGear.INCLINED_SUPPORT, "romanchair" to DemoGear.INCLINED_SUPPORT,
         "chair" to DemoGear.CHAIR, "table" to DemoGear.TABLE, "step" to DemoGear.STEP, "plyobox" to DemoGear.BOX,
         "mat" to DemoGear.MAT, "wall" to DemoGear.WALL, "throwwall" to DemoGear.WALL, "doorframe" to DemoGear.WALL,
         "cones" to DemoGear.CONES, "ladder" to DemoGear.LADDER, "hurdle" to DemoGear.HURDLE,
@@ -92,6 +92,7 @@ internal object ExerciseEquipmentPlan {
             kinds -= DemoGear.DUMBBELL
         if ("toalla" in name || motion.authoredFloor?.isHamstringSlide == true) kinds += DemoGear.TOWEL
         if (DemoGear.SOCCER in kinds) kinds -= DemoGear.BALL
+        if (DemoGear.TRAP_BAR in kinds) kinds -= DemoGear.PLATE
         if (DemoGear.SMITH in kinds || DemoGear.LANDMINE in kinds) kinds -= DemoGear.BARBELL
         if (DemoGear.BAND in kinds || DemoGear.STRAP in kinds || DemoGear.BATTLE_ROPE in kinds)
             kinds -= DemoGear.ANCHOR

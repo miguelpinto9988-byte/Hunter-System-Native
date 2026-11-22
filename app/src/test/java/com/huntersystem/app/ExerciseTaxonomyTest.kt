@@ -40,7 +40,7 @@ class ExerciseTaxonomyTest {
         assertEquals(78, withdrawn.count { it.isBaseVariant })
         assertEquals(132, withdrawn.size)
         assertEquals(148, catalog.originalExercises.count { it.id !in displayed })
-        assertEquals(542, catalog.libraryExercises.map { it.oldFamily }.distinct().size)
+        assertEquals(545, catalog.libraryExercises.map { it.oldFamily }.distinct().size)
         assertTrue(withdrawn.none { it.id in displayed || it.id in automatic })
         assertTrue(withdrawn.all { catalog.byId.containsKey(it.id) })
         assertTrue(catalog.isWithdrawn("heelcontrolled"))
@@ -119,6 +119,41 @@ class ExerciseTaxonomyTest {
         assertTrue(running(0, home).isEmpty())
         assertTrue(running(1, home, avoidImpact = true).isEmpty())
         assertTrue(running(1, home.copyJson().put("materials46", arr(emptyList<String>()))).isEmpty())
+    }
+
+    @Test fun gymAndDumbbellAdditionsRequireTheirActualEquipment() {
+        val planner = Planner(catalog, rules)
+        val dumbbells = profile.copyJson().put("difficulty", "intermediate").put("equipment", "db")
+            .put("dumbbellsAvailable", true).put("bench", true).put("step", true)
+        val row = checkNotNull(catalog.originalExercise("performance-db-chest-supported-row"))
+        val step = checkNotNull(catalog.originalExercise("performance-db-step-up"))
+        val deadlift = checkNotNull(catalog.originalExercise("performance-high-handle-trapbar-deadlift"))
+        assertFalse(rules.compatible(row, dumbbells))
+        dumbbells.put("materials46", arr(listOf("inclinebench")))
+        assertTrue(rules.compatible(row, dumbbells))
+        assertTrue(rules.compatible(step, dumbbells))
+        assertFalse(rules.compatible(step, dumbbells.copyJson().put("step", false)))
+        assertFalse(rules.compatible(row, dumbbells.copyJson().put("dumbbellsAvailable", false)))
+        assertFalse(rules.compatible(deadlift, dumbbells))
+        val gym = profile.copyJson().put("difficulty", "intermediate").put("equipment", "gym")
+        gym.put("materials46", arr(listOf("trapbar")))
+        assertFalse(rules.compatible(deadlift, gym))
+        gym.put("materials46", arr(listOf("trapbar", "plate")))
+        assertTrue(rules.compatible(deadlift, gym))
+        assertTrue(catalog.byId.getValue("hx_lower_0002").raw.b("sourceOnly"))
+        val technical = checkNotNull(MonarchProfileAdapter.from(gym, today))
+        val metadata = checkNotNull(planner.planningSource(gym).byId(deadlift.id))
+        assertTrue(com.huntersystem.app.planning.EligibilityPolicy.compatible(metadata, technical, 2))
+        gym.put("gymEquipment23", arr(listOf("skierg")))
+        fun intervals(p: org.json.JSONObject) =
+            planner.generateRoutineOptions("gym", "cardio", 1, 15, "test", p, obj(), today,
+                avoidImpact = true, cardioIntervals = true)
+        val routine = intervals(gym).single()
+        assertEquals("gym-skierg30", routine.a("items").objects().single().s("id"))
+        assertTrue(planner.steps(routine, gym).any { it.s("id") == "gym-skierg30" && it.s("unit") == "sec" })
+        assertTrue(intervals(gym.copyJson().put("gymEquipment23", arr(listOf("bike")))).none {
+            it.a("items").objects().any { item -> item.s("id") == "gym-skierg30" }
+        })
     }
 
     @Test fun onlyPublishedEssentialMobilityExercisesAreSelectable() {

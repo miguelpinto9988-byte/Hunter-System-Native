@@ -148,7 +148,7 @@ object MonarchProfileAdapter {
             addAll(p.a("materials46").strings())
             val gym=p.a("gymEquipment23").strings()
             addAll(gym)
-            if(gym.any { it in setOf("bike","airbike","rower","elliptical") })add("cardio")
+            if(gym.any { it in setOf("bike","airbike","rower","elliptical","skierg") })add("cardio")
             if (p.b("bench")) add("bench")
             if (p.b("step")) add("step")
         }

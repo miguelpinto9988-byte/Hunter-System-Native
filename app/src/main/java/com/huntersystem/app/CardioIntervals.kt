@@ -7,7 +7,7 @@ import com.huntersystem.app.planning.ProfileSignature
 import org.json.JSONObject
 import java.time.LocalDate
 
-internal val continuousGymCardio = setOf("gym-row-erg23", "gym-bike30", "gym-airbike30")
+internal val continuousGymCardio = setOf("gym-row-erg23", "gym-bike30", "gym-airbike30", "gym-skierg30")
 
 private val intervalExerciseIds = listOf(
     "performance-outdoor-run", "new46-jumpropealt", "new46-jumpropeside"

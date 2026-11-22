@@ -15,7 +15,8 @@ internal val materials = listOf("mat" to "Colchoneta o superficie acolchada esta
  "wall" to "Pared o apoyo vertical firme", "chair" to "Silla estable")
 internal val gymOptions = listOf("cable" to "Poleas", "machine" to "Máquinas guiadas", "bench" to "Banco",
  "barbell" to "Barras", "bike" to "Bicicleta estática", "rower" to "Máquina de remo", "elliptical" to "Elíptica",
- "smith" to "Máquina Smith", "airbike" to "Bicicleta de aire", "cardio" to "Todas las máquinas de cardio del catálogo")
+ "smith" to "Máquina Smith", "airbike" to "Bicicleta de aire", "skierg" to "Ergómetro de esquí (SkiErg)",
+ "cardio" to "Todas las máquinas de cardio del catálogo")
 
 private val profileChoiceIds=mapOf(
  "gender" to setOf("unspecified","male","female"),

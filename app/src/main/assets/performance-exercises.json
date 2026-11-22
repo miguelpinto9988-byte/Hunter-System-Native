@@ -375,5 +375,142 @@
     ],
     "motionReferenceLabel": "Referencia técnica: zancada de trote en el sitio.",
     "progressionTierNative": 1
+  },
+  {
+    "id": "performance-db-chest-supported-row",
+    "baseId": "performance-db-chest-supported-row",
+    "name": "Remo con mancuernas y pecho apoyado en banco inclinado",
+    "variant": "base",
+    "category": "Fuerza",
+    "group": "Espalda",
+    "equipment": "db",
+    "unit": "reps",
+    "level": 1,
+    "progressionTierNative": 1,
+    "pack46": true,
+    "loaded46": true,
+    "materialRequirements": [],
+    "materials46": [
+      "db",
+      "inclinebench"
+    ],
+    "impact": "Sin saltos",
+    "intensity": "baja",
+    "standing": true,
+    "planning49": {
+      "id": "performance-db-chest-supported-row",
+      "group": "upper",
+      "role": "primary",
+      "pattern": "traccion_horizontal",
+      "level": 1,
+      "impact": false,
+      "conditioning": 1,
+      "power": false,
+      "primary": true,
+      "family": "performance-db-chest-supported-row"
+    },
+    "instructions": [
+      "Ajusta un banco inclinado estable y apoya el pecho sobre el respaldo. Planta los pies y deja las mancuernas debajo de los hombros.",
+      "Lleva los codos hacia atrás y acerca las mancuernas a las costillas sin separar el pecho del banco.",
+      "Baja con control. Compara carga y repeticiones con el mismo ángulo del banco."
+    ],
+    "steps": "Ajusta un banco inclinado estable y apoya el pecho sobre el respaldo. Planta los pies y deja las mancuernas debajo de los hombros. Lleva los codos hacia atrás y acerca las mancuernas a las costillas sin separar el pecho del banco. Baja con control. Compara carga y repeticiones con el mismo ángulo del banco.",
+    "motionReference": "bentrow",
+    "motionReferenceLabel": "La animación muestra la trayectoria del remo. Mantén el pecho apoyado como indica esta ficha."
+  },
+  {
+    "id": "performance-db-step-up",
+    "baseId": "performance-db-step-up",
+    "name": "Subida a plataforma con mancuernas",
+    "variant": "base",
+    "category": "Fuerza",
+    "group": "Piernas",
+    "equipment": "db",
+    "unit": "reps",
+    "level": 1,
+    "progressionTierNative": 1,
+    "pack46": true,
+    "loaded46": true,
+    "materialRequirements": [],
+    "materials46": [
+      "db",
+      "step"
+    ],
+    "impact": "Sin saltos",
+    "intensity": "baja",
+    "standing": true,
+    "planning49": {
+      "id": "performance-db-step-up",
+      "group": "lower",
+      "role": "primary",
+      "pattern": "subida_escalon",
+      "level": 1,
+      "impact": false,
+      "conditioning": 1,
+      "power": false,
+      "primary": true,
+      "family": "performance-db-step-up"
+    },
+    "instructions": [
+      "Usa una plataforma firme y baja. Sujeta una mancuerna a cada lado y coloca todo el pie de trabajo sobre la plataforma.",
+      "Sube con la pierna adelantada evitando impulsarte con la de abajo. Mantén las mancuernas a los lados.",
+      "Desciende con control y completa ambos lados. Mantén la misma altura al comparar repeticiones y carga."
+    ],
+    "steps": "Usa una plataforma firme y baja. Sujeta una mancuerna a cada lado y coloca todo el pie de trabajo sobre la plataforma. Sube con la pierna adelantada evitando impulsarte con la de abajo. Mantén las mancuernas a los lados. Desciende con control y completa ambos lados. Mantén la misma altura al comparar repeticiones y carga.",
+    "motionReference": "stepup",
+    "motionReferenceLabel": "La animación muestra la colocación de los pies. Mantén las mancuernas a los lados.",
+    "kneeBend": true,
+    "sides": true
+  },
+  {
+    "id": "performance-high-handle-trapbar-deadlift",
+    "baseId": "performance-high-handle-trapbar-deadlift",
+    "name": "Peso muerto con barra hexagonal desde asas altas",
+    "variant": "base",
+    "category": "Fuerza",
+    "group": "Piernas",
+    "equipment": "gym",
+    "unit": "reps",
+    "level": 1,
+    "progressionTierNative": 1,
+    "pack46": true,
+    "loaded46": true,
+    "materialRequirements": [],
+    "materials46": [
+      "trapbar",
+      "plate"
+    ],
+    "impact": "Sin saltos",
+    "intensity": "baja",
+    "standing": true,
+    "planning49": {
+      "id": "performance-high-handle-trapbar-deadlift",
+      "group": "lower",
+      "role": "primary",
+      "pattern": "bisagra_cadera",
+      "level": 1,
+      "impact": false,
+      "conditioning": 1,
+      "power": false,
+      "primary": true,
+      "family": "performance-high-handle-trapbar-deadlift"
+    },
+    "instructions": [
+      "Asegura los discos y sitúate en el centro de la barra con las asas altas hacia arriba. Usa una carga que puedas controlar.",
+      "Flexiona caderas y rodillas para sujetar ambas asas. Presiona el suelo y extiende caderas y rodillas a la vez.",
+      "Baja con control y deja que la barra se detenga antes de repetir. Registra la carga total contando la barra y los discos."
+    ],
+    "steps": "Asegura los discos y sitúate en el centro de la barra con las asas altas hacia arriba. Usa una carga que puedas controlar. Flexiona caderas y rodillas para sujetar ambas asas. Presiona el suelo y extiende caderas y rodillas a la vez. Baja con control y deja que la barra se detenga antes de repetir. Registra la carga total contando la barra y los discos.",
+    "motionReference": "hx_lower_0002",
+    "motionReferenceLabel": "La animación ilustra el patrón de bisagra desde las asas altas.",
+    "gymOnly23": true,
+    "kneeBend": true,
+    "spineMove": true,
+    "doseCap46": {
+      "sets": 3,
+      "target": 8,
+      "initial": 5,
+      "rest": 90
+    }
   }
 ]

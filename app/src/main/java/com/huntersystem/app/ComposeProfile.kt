@@ -469,7 +469,7 @@ private fun ProfileTraining(fields: JSONObject, gear: JSONObject, week: List<Int
         if (gear.b("db")) ProfileInput("Pesos disponibles (kg), separados por comas", "2, 4, 6",
             fields.s("dumbbellWeights")) { set("dumbbellWeights", it) }
         if (gear.b("gym")) gymOptions.forEachIndexed { index, (id, label) ->
-            val icon = listOf("cycle", "gym", "chair", "dumbbell", "bike", "move", "pulse", "gym", "bike", "cycle")[index]
+            val icon = listOf("cycle", "gym", "chair", "dumbbell", "bike", "move", "pulse", "gym", "bike", "cycle", "cycle")[index]
             ProfileCheck(label, gear.b("gym_$id"), icon) {
                 equipment("gym_$id", it)
             }

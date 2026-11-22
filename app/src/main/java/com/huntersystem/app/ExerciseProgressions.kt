@@ -34,6 +34,17 @@ internal val performanceProgressions = mapOf(
         "Compara el peso por mancuerna y las repeticiones con el mismo recorrido antes de subir la carga."),
     "row" to ExerciseProgression(
         "Registra el peso y las repeticiones de cada lado. Aumenta la carga cuando ambos lados mantengan el control."),
+    "bentrow" to ExerciseProgression(
+        "Usa el apoyo de pecho si sostener la inclinación del torso limita la serie.",
+        "performance-db-chest-supported-row"),
+    "stepup" to ExerciseProgression(
+        "Cuando controles la subida y la bajada de cada lado, conserva la altura y añade mancuernas.",
+        "performance-db-step-up"),
+    "gym-dead-bb23" to ExerciseProgression(
+        "Si tienes barra hexagonal, las asas altas ofrecen otra posición de partida para cargar la bisagra.",
+        "performance-high-handle-trapbar-deadlift"),
+    "gym-skierg30" to ExerciseProgression(
+        "En Rutinas de gimnasio selecciona Cardio → Por intervalos. Compara el ritmo o los vatios en el mismo tramo de trabajo."),
     "bulgarian" to ExerciseProgression(
         "Mantén el apoyo y el recorrido constantes. Aumenta la carga cuando completes las repeticiones con ambos lados."),
     "single-rdl19" to ExerciseProgression(
