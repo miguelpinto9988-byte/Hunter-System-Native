@@ -79,8 +79,8 @@ private fun routineMinutes(s:NativeStore,r:JSONObject,p:JSONObject)=
         MonarchRoutinesLibrary(ui,ui.library)
         return
     }
-    val normal=s.catalog.routines.count{!it.b("gymOnly23")}
-    val gym=s.catalog.routines.count{it.b("gymOnly23")}
+    val normal=s.catalog.trainingRoutines.count{!it.b("gymOnly23")}
+    val gym=s.catalog.trainingRoutines.count{it.b("gymOnly23")}
     SceneColumn(ui){
         TopTabs(ui)
         Eyebrow("SISTEMA MONARCA  /  ENTRENAMIENTO")
@@ -165,7 +165,7 @@ private fun MonarchRoutineModeCard(title:String,subtitle:String,tag:String,count
     val p=remember(revision){s.adjusted()}
     val generated=ui.generated[mode]
     val base=remember(generated,revision,mode){
-        generated ?: (s.catalog.routines+s.state.a("customRoutines").objects())
+        generated ?: (s.catalog.trainingRoutines+s.state.a("customRoutines").objects())
             .filter{it.b("gymOnly23")== (mode=="gym") &&
                 it.a("items").objects().all { item -> s.catalog.classification(item.s("id")) != null }}
     }

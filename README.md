@@ -1,4 +1,4 @@
-# Hunter System V43.12.2 — Monarca con mejoras Eclipse, catálogo de 5000 ejercicios sin SVG animados
+# Hunter System V43.12.2 — Monarca con mejoras Eclipse, catálogo de 1.200 ejercicios sin SVG animados
 
 Rama principal: `main`. El código integra Monarca V43.11 y las mejoras recientes de Eclipse. Las dos historias se conservan en el commit de fusión.
 
@@ -23,7 +23,7 @@ Las pruebas Android/JVM y la APK debug de QA están en [planificación y tests](
 - Conservación del historial de sesiones y recursos propios de Monarca.
 
 ## Recursos de ejercicio
-- El catálogo tiene **5.000 ejercicios activos** con identificadores estables. Los alias conservan la compatibilidad con el historial.
+- El catálogo muestra los **1.200 ejercicios originales** de Hunter System Java desde `catalog.json`. Las nuevas selecciones aplican las reglas de compatibilidad a ese inventario. Las fichas ampliadas y los alias siguen disponibles para resolver sesiones guardadas e historial.
 - La ficha, la sesión guiada y Misiones Monarca usan el personaje vectorial de Compose con las poses del catálogo. Las secuencias reutilizan los movimientos de sus dos gestos.
 - La auditoría comprueba la cobertura de poses y la ausencia de las ilustraciones y clips históricos en los recursos de la APK. Los SVG faciales forman parte del personaje actual.
 

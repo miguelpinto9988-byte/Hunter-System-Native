@@ -95,7 +95,7 @@ class ExercisePerspectiveTest {
         for(index in listOf(4,6,9,10))assertEquals(lower[index],raised[index])
         assertTrue(raised[7].x > lower[7].x+100f)
         val catalog=Catalog(context)
-        val sequence=catalog.exercises.first { it.raw.a("sequenceParts").strings()==listOf("kickback","new46-reverseclam") }
+        val sequence=catalog.historicalExercises.first { it.raw.a("sequenceParts").strings()==listOf("kickback","new46-reverseclam") }
         assertEquals(listOf(AuthoredFloorMovement.KICKBACK,AuthoredFloorMovement.REVERSE_CLAM),
             ExerciseMotions.loadSequence(context,sequence)?.map { it.authoredFloor })
     }

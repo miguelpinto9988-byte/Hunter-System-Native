@@ -92,7 +92,7 @@ class Rules(val catalog:Catalog){
  fun powerReady(p:JSONObject,logs:JSONObject,date:String,status:Gate=gate(p),strain:Boolean=false,planned:List<PlanRow> = emptyList()):Boolean{
   if(reduced(p,status)||strain||p.n("trainingScale",1.0)<1)return false
   val l=logs.o(date);if(l.b("pain")||l.b("fatigue")||l.n("rpe")>=8)return false
-  val dates=mutableSetOf<String>();fun powerId(id:String)=catalog.byId[id]?.let{it.power||it.impact}?:catalog.exercises.firstOrNull{it.family==id}?.let{it.power||it.impact}?:false
+  val dates=mutableSetOf<String>();fun powerId(id:String)=catalog.byId[id]?.let{it.power||it.impact}?:catalog.historicalExercises.firstOrNull{it.family==id&&catalog.classification(it.id)!=null}?.let{it.power||it.impact}?:false
   for((d,v) in logs.entries()){val log=v as? JSONObject?:continue;if(d>=date||!Regex("\\d{4}-\\d{2}-\\d{2}").matches(d))continue;if(log.a("items").objects().any{powerId(it.s("id"))&&(log.b("complete")||it.a("actual").objects().any{a->a.b("done")})}){if(distance(d,date)<2)return false;if(distance(d,date)<7)dates+=d}}
   for(row in planned)if(powerId(row.id)){if(distance(row.date,date)<2)return false;if(row.date<date&&distance(row.date,date)<7)dates+=row.date}
   return dates.size<3

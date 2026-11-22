@@ -126,7 +126,7 @@ internal class MonarchBossChallenges(private val store:NativeStore) {
     fun compatible(id:String):Boolean {
         val configured=profile?:return false
         if(store.catalog.byId[id]?.isSingleMonarchMovement()!=true)return false
-        val exercise=source.byId(id)?:return false
+        val exercise=source.savedExercise(id)?:return false
         return exercise.category!=Category.MOBILITY&&exercise.workUnit!=null&&
             EligibilityPolicy.compatible(exercise,configured)
     }

@@ -24,6 +24,8 @@ class Exercise(val raw:JSONObject){
 class Catalog(val context:Context?=null,val loader:((String)->String)?=null){
  fun text(path:String)=loader?.invoke(path)?:context!!.assets.open(path).bufferedReader().use{it.readText()}
  val originalExercises=JSONArray(text("catalog.json")).objects().map(::Exercise)
+ private val originalById=originalExercises.associateBy{it.id}
+ internal fun originalExercise(id:String)=originalById[id]
  val expansionExercises=runCatching{JSONArray(text("catalog-hunter2000-extra.json")).objects().map(::Exercise)}.getOrElse{emptyList()}
  val sportExercises=JSONArray(text("catalog-sports.json")).objects().map(::Exercise)
  private val sourceExercises=originalExercises+expansionExercises+sportExercises
@@ -35,17 +37,26 @@ class Catalog(val context:Context?=null,val loader:((String)->String)?=null){
   { aliases[it.id] ?: it.id }, { normalize(it.name) }
  )
  fun matchesExercise(exercise:Exercise,normalizedQuery:String)=
-  namesByExercise[exercise.id].orEmpty().any{normalizedQuery in it}
+  normalizedQuery in normalize(exercise.name)||
+   namesByExercise[exercise.id].orEmpty().any{normalizedQuery in it}
  internal val historicalExercises=sourceExercises.filterNot{it.id in aliases}
  val byId=sourceById+aliases.mapValues{(_,canonical)->sourceById.getValue(canonical)}
  private val classifications=historicalExercises.mapNotNull{exercise->
   ExerciseTaxonomy.classify(exercise,byId::get)?.let{exercise.id to it}
  }.toMap()
- val exercises=historicalExercises.filter{it.id in classifications}
+ val exercises=originalExercises.filter{it.id in classifications}
+ private fun isTrainingExercise(id:String)=byId[id]?.id?.let{it in originalById&&it in classifications}==true
  internal fun classification(id:String)=byId[id]?.id?.let(classifications::get)
  val materials=JSONObject(text("materials.json"));val capabilities=JSONObject(text("capabilities.json"))
  val routines=JSONArray(text("routines.json")).objects().filter{routine->
   routine.a("items").objects().all{classification(it.s("id"))!=null}
- };val editorial=JSONObject(text("editorial.json"));val design=JSONObject(text("design.json"));val defaultState=JSONObject(text("default-state.json"));val profileForm=JSONArray(text("profile-form.json"))
+ }
+ val trainingRoutines=routines.filter{routine->
+  routine.a("items").objects().all{isTrainingExercise(it.s("id"))} &&
+   routine.o("sourceSequence").a("steps").objects().all{step->
+    step.s("kind")!="exercise"||isTrainingExercise(step.s("exerciseId"))
+   }
+ }
+ val editorial=JSONObject(text("editorial.json"));val design=JSONObject(text("design.json"));val defaultState=JSONObject(text("default-state.json"));val profileForm=JSONArray(text("profile-form.json"))
  init{require(originalExercises.size==1200&&originalExercises.map{it.id}.toSet().size==1200);require(expansionExercises.isEmpty()||expansionExercises.size==800);require(sourceById.size==sourceExercises.size);require(aliases.all{(id,target)->id in sourceById&&target in sourceById&&target !in aliases})}
 }

@@ -172,7 +172,6 @@ fun HomeScreen(ui:NativeUi) {
 fun ExercisesScreen(ui: NativeUi) {
     val store = ui.store
     var query by remember { mutableStateOf("") }
-    var sport by remember { mutableStateOf("") }
     var category by remember { mutableStateOf("") }
     var group by remember { mutableStateOf("") }
     var difficulty by remember { mutableStateOf("") }
@@ -180,27 +179,25 @@ fun ExercisesScreen(ui: NativeUi) {
     var variants by remember { mutableStateOf(true) }
     var restricted by remember { mutableStateOf(false) }
     val levels = listOf("Inicial", "Intermedio", "Avanzado")
-    val sports = store.catalog.exercises.map { it.sport }.filter(String::isNotBlank).distinct().sorted()
     val families = remember(category, store.catalog) {
-        store.catalog.exercises.mapNotNull { store.catalog.classification(it.id) }
+        store.catalog.originalExercises.mapNotNull { store.catalog.classification(it.id) }
             .filter { category.isBlank() || it.category.code == category }
             .map { it.family }.distinct().sorted()
     }
     val all = "" to "Todos"
     var showFilters by rememberSaveable { mutableStateOf(false) }
-    val list = remember(query, sport, category, group, difficulty, gear, variants,
+    val list = remember(query, category, group, difficulty, gear, variants,
         restricted, store.revision.intValue) {
         val term = normalize(query)
         val profile = if (restricted && store.profile != null) store.adjusted() else null
-        store.catalog.exercises.filter { exercise ->
-            val classification = store.catalog.classification(exercise.id) ?: return@filter false
-            (term.isBlank() || store.catalog.matchesExercise(exercise,term) || term in normalize(exercise.sport)) &&
-                (sport.isBlank() || exercise.sport == sport) &&
-                (category.isBlank() || classification.category.code == category) &&
-                (group.isBlank() || classification.family == group) &&
+        store.catalog.originalExercises.filter { exercise ->
+            val classification = store.catalog.classification(exercise.id)
+            store.catalog.matchesExercise(exercise,term) &&
+                (category.isBlank() || classification?.category?.code == category) &&
+                (group.isBlank() || classification?.family == group) &&
                 (difficulty.isBlank() || exercise.raw.i("level").toString() == difficulty) &&
                 (variants || exercise.isBaseVariant) &&
-                (!restricted || profile != null && store.rules.compatible(exercise, profile)) &&
+                (!restricted || profile != null && classification != null && store.rules.compatible(exercise, profile)) &&
                 when (gear) {
                     "" -> true
                     "body" -> exercise.equipment == "body" && !exercise.gym &&
@@ -220,7 +217,7 @@ fun ExercisesScreen(ui: NativeUi) {
         item {
             Eyebrow("ARCHIVO DE ENTRENAMIENTO")
             Heading("Todos los ejercicios")
-            HText("${store.catalog.exercises.size} fichas", size = 16, color = LocalHunter.current.muted)
+            HText("${store.catalog.originalExercises.size} fichas", size = 16, color = LocalHunter.current.muted)
         }
         item {
             HInput(query, { query = it }, "Buscar ejercicio")
@@ -247,7 +244,6 @@ fun ExercisesScreen(ui: NativeUi) {
                     "smith" to "Smith", "cardio" to "Cinta o ergómetro"),
                     Modifier.weight(1f)) { gear = it }
             }
-            HSelect("Deporte", sport, listOf(all) + sports.map { it to it }) { sport = it }
             HCheck("Incluir variantes de técnica y ritmo", variants) { variants = !variants }
             HCheck("Aplicar mis restricciones", restricted) { restricted = !restricted }
         }
@@ -261,7 +257,7 @@ fun ExercisesScreen(ui: NativeUi) {
                 Heading(exercise.name, size = 27)
                 HButton("Ver demostración", Modifier.fillMaxWidth().semantics {
                     contentDescription = "Abrir ejercicio: ${exercise.name}"
-                }) { ui.open("exercise", obj("id" to exercise.id)) }
+                }) { ui.open("exercise", obj("id" to exercise.id, "originalCatalog" to true)) }
                 if (exercise.validationBlocked)
                     HText("PENDIENTE DE VALIDACIÓN", size = 13, color = LocalHunter.current.accent, bold = true)
                 val equipment = when {

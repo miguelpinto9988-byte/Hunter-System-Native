@@ -128,7 +128,7 @@ class MonarchBossChallengeTest {
 
     @Test fun savedCompoundCountsSurviveAndBothKindsAreExcluded() {
         val repository = MonarchBossChallenges(store)
-        val sequence = store.catalog.exercises.first { it.raw.a("sequenceParts").length() == 2 }
+        val sequence = store.catalog.historicalExercises.first { it.raw.a("sequenceParts").length() == 2 }
         val compound = store.catalog.historicalExercises.first {
             it.raw.b("compositeSequence") && it.raw.a("sequenceParts").length() == 0
         }

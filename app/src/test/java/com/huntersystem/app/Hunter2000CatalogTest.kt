@@ -37,11 +37,11 @@ class Hunter2000CatalogTest {
         assertTrue(c.expansionExercises.isEmpty())
     }
 
-    @Test fun fusiona2000IdsSinUsarLaRevisionComoBloqueo(){
+    @Test fun conserva2000IdsParaLecturaYSeleccionaLos1200Originales(){
         val c=catalog(true)
         assertEquals(1200,c.originalExercises.size)
         assertEquals(800,c.expansionExercises.size)
-        assertEquals(2000,c.exercises.size)
+        assertEquals(1200,c.exercises.size)
         assertEquals(2000,c.byId.size)
         val rules=Rules(c)
         for(e in c.expansionExercises){
@@ -67,7 +67,7 @@ class Hunter2000CatalogTest {
         assertFalse(Rules(c).compatible(c.byId.getValue("sport-futbol-sole"),profile))
     }
 
-    @Test fun incorporaHunter2000YResuelveAliasHistoricos(){
+    @Test fun usaSoloElInventarioOriginalParaNuevosPlanesYResuelveElHistorial(){
         val c=Catalog(loader={java.io.File("src/main/assets",it).readText()})
         val profile=JSONObject().put("age",30).put("difficulty","basic")
         val rules=Rules(c)
@@ -75,22 +75,29 @@ class Hunter2000CatalogTest {
         assertTrue(rules.reasons(basic,profile).joinToString(),rules.compatible(basic,profile))
         assertFalse(rules.compatible(c.byId.getValue("hx_upper_0002"),profile))
         assertFalse(rules.compatible(c.byId.getValue("hx_upper_0001"),profile))
-        assertTrue(MonarchActivitySource(c,rules,profile).all().any{it.id==basic.id&&it.automaticEligible})
         val planner=Planner(c,rules)
         val date=java.time.LocalDate.parse("2026-11-16")
         val coreProfile=profile.copyJson().put("weeklyCategories",arr(List(7){1}))
         val native=checkNotNull(MonarchProfileAdapter.from(coreProfile,date))
         val source=MonarchActivitySource(c,rules,coreProfile)
+        val originalIds=c.originalExercises.map { it.id }.toSet()
+        assertEquals(1200,originalIds.size)
+        assertTrue(source.all().all { it.id in originalIds })
+        assertTrue(source.byId(basic.id)==null)
+        assertTrue(source.savedExercise(basic.id)?.automaticEligible==true)
         val core=com.huntersystem.app.planning.Category.CENTRAL
         val selected=com.huntersystem.app.planning.DailyMission(date,core,
             com.huntersystem.app.planning.ProfileSignature.of(native),source.signature(),
             listOf(basic.id),"Candidato de expansión admisible")
-        assertEquals(listOf(basic.id),planner.choose(coreProfile,"strength","hunter",
-            date=date.toString(),trainingProfile=native,pinned=selected).a("items").objects().map{it.s("id")})
+        val plannedIds=planner.choose(coreProfile,"strength","hunter",
+            date=date.toString(),trainingProfile=native,pinned=selected).a("items").objects().map{it.s("id")}
+        assertTrue(plannedIds.isNotEmpty())
+        assertTrue(plannedIds.all { it in originalIds })
         val day=obj("items" to arr(listOf(planner.libraryDose(basic,profile,"strength"))))
         assertTrue(planner.steps(day,profile).any{it.s("id")==basic.id})
         val legacy=c.byId.getValue("heelcontrolled")
         assertEquals("heel_slow",legacy.id)
+        assertEquals("heelcontrolled",c.originalExercise("heelcontrolled")?.id)
         assertTrue(c.matchesExercise(legacy,normalize("Deslizamiento de talón con retorno lento")))
         assertFalse(c.exercises.any{it.id=="heelcontrolled"||it.id=="birdcontrolled"})
         day.put("items",arr(listOf(obj("id" to "heelcontrolled","sets" to 1,"target" to 5))))

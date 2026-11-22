@@ -133,7 +133,7 @@ object MonarchMissionCatalog {
  fun offerFor(store:NativeStore,date:LocalDate,zone:ZoneId=ZoneId.systemDefault()):MonarchMissionSpec {
   val base=missionFor(date,2,zone)
   val gear=store.profile?.s("equipment","body")?:"body"
-  val eligible=store.catalog.originalExercises.filter{equipmentReady(store,it.id)}
+  val eligible=store.catalog.exercises.filter{equipmentReady(store,it.id)}
   val picks=base.goals.mapNotNull{g->
    store.catalog.byId[g.exerciseId]?.takeIf{equipmentReady(store,it.id)}
   }.distinctBy{it.id}.toMutableList()

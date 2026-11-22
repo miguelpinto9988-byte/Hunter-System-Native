@@ -17,69 +17,71 @@ class MonarchActivitySource(
 ) : ActivityRepositoryInterface {
     constructor(store: NativeStore) : this(store.catalog, store.rules, store.adjusted())
     override val revision: String = "native-" + catalog.exercises.size
-    private val rows by lazy {
-        catalog.exercises.mapNotNull { e ->
-            val classification = catalog.classification(e.id) ?: return@mapNotNull null
-            val category = classification.category
-            val declaredLevel = when {
-                e.raw.has("technicalLevel") -> e.raw.i("technicalLevel")
-                e.raw.has("technicalLevel46") -> e.raw.i("technicalLevel46")
-                e.meta.has("level") -> e.planningLevel + 1
-                else -> 0 // sin metadatos: nivel 0 bloqueado
-            }.takeIf { it in 0..5 } ?: 0
-            val levelValue = if (declaredLevel == 0) 0 else maxOf(
-                declaredLevel, e.planningLevel + 1, e.raw.i("progressionTierNative") + 1,
-                if (e.raw.b("pack46")) e.raw.i("level") + 1 else 1
-            ).coerceAtMost(5)
-            val declaredMaterials = e.raw.optJSONArray("materialRequirements")
-            val allowedGear = buildSet {
-                addAll(e.raw.a("materials46").strings())
-                addAll(e.raw.a("materialRequirements").strings())
-                if (e.equipment == "db") add("db")
-                if (e.equipment == "gym" || e.gym) add("gym")
-            }.filterNot { it == "body" }.toSet()
-            val intensity = when (e.raw.s("intensity", e.meta.s("intensity")).lowercase()) {
-                "low", "baja", "suave" -> Intensity.LOW
-                "moderate", "moderada", "media", "medium" -> Intensity.MODERATE
-                "high", "alta" -> Intensity.HIGH
-                else -> when {
-                    // Solo descriptores que ya constan en el catálogo; no inferir técnica de edad.
-                    !e.power && !e.impact &&
-                        e.raw.s("impact") in listOf("Bajo", "Sin saltos") &&
-                        e.meta.has("conditioning") && e.meta.i("conditioning") <= 1 ->
-                        Intensity.LOW
-                    (e.raw.s("impact") in listOf("Moderado", "Medio") ||
-                        e.hunter2000 && !e.power && !e.impact && e.raw.s("impact") == "Sin saltos") &&
-                        e.meta.has("conditioning") && e.meta.i("conditioning") <= 2 ->
-                        Intensity.MODERATE
-                    else -> Intensity.UNKNOWN
-                }
+    private fun metadata(e: Exercise): ActivityMetadata? {
+        val classification = catalog.classification(e.id) ?: return null
+        val category = classification.category
+        val declaredLevel = when {
+            e.raw.has("technicalLevel") -> e.raw.i("technicalLevel")
+            e.raw.has("technicalLevel46") -> e.raw.i("technicalLevel46")
+            e.meta.has("level") -> e.planningLevel + 1
+            else -> 0 // sin metadatos: nivel 0 bloqueado
+        }.takeIf { it in 0..5 } ?: 0
+        val levelValue = if (declaredLevel == 0) 0 else maxOf(
+            declaredLevel, e.planningLevel + 1, e.raw.i("progressionTierNative") + 1,
+            if (e.raw.b("pack46")) e.raw.i("level") + 1 else 1
+        ).coerceAtMost(5)
+        val declaredMaterials = e.raw.optJSONArray("materialRequirements")
+        val allowedGear = buildSet {
+            addAll(e.raw.a("materials46").strings())
+            addAll(e.raw.a("materialRequirements").strings())
+            if (e.equipment == "db") add("db")
+            if (e.equipment == "gym" || e.gym) add("gym")
+        }.filterNot { it == "body" }.toSet()
+        val intensity = when (e.raw.s("intensity", e.meta.s("intensity")).lowercase()) {
+            "low", "baja", "suave" -> Intensity.LOW
+            "moderate", "moderada", "media", "medium" -> Intensity.MODERATE
+            "high", "alta" -> Intensity.HIGH
+            else -> when {
+                // Solo descriptores que ya constan en el catálogo; no inferir técnica de edad.
+                !e.power && !e.impact &&
+                    e.raw.s("impact") in listOf("Bajo", "Sin saltos") &&
+                    e.meta.has("conditioning") && e.meta.i("conditioning") <= 1 ->
+                    Intensity.LOW
+                (e.raw.s("impact") in listOf("Moderado", "Medio") ||
+                    e.hunter2000 && !e.power && !e.impact && e.raw.s("impact") == "Sin saltos") &&
+                    e.meta.has("conditioning") && e.meta.i("conditioning") <= 2 ->
+                    Intensity.MODERATE
+                else -> Intensity.UNKNOWN
             }
-            val familyId = category.code + "/" + classification.family
-            val typeId = familyId + "/" + classification.type
-            val eligibility = (declaredMaterials != null || e.raw.optJSONArray("materials46") != null) &&
-                rules.compatible(e, adjusted, maxPlanningLevel = 2)
-            ActivityMetadata(e.id, category, familyId, typeId, levelValue, intensity, allowedGear,
-                e.raw.s("modality", "no_especificada"),
-                e.raw.b("requiresSupervision") || e.raw.b("supervisionRequired") ||
-                    e.raw.b("highSkill46"),
-                eligibility, buildSet {
-                    addAll(e.raw.a("sportTags").strings())
-                    addAll(e.raw.a("goalTags").strings())
-                    addAll(e.raw.a("tags").strings())
-                    if (e.pattern.isNotBlank()) add(e.pattern)
-                    addAll(PersonalGoalInterpreter.affinity(
-                        (listOf(e.name, e.sport, e.pattern) + this.toList()).joinToString(" ")
-                    ))
-                }, e.raw.a("restrictionTags").strings().toSet(), e.sport, e.name,
-                when (e.unit) { "sec" -> VolumeUnit.SECONDS; "reps" -> VolumeUnit.REPETITIONS; else -> null })
         }
+        val familyId = category.code + "/" + classification.family
+        val typeId = familyId + "/" + classification.type
+        val eligibility = (declaredMaterials != null || e.raw.optJSONArray("materials46") != null) &&
+            rules.compatible(e, adjusted, maxPlanningLevel = 2)
+        return ActivityMetadata(e.id, category, familyId, typeId, levelValue, intensity, allowedGear,
+            e.raw.s("modality", "no_especificada"),
+            e.raw.b("requiresSupervision") || e.raw.b("supervisionRequired") ||
+                e.raw.b("highSkill46"),
+            eligibility, buildSet {
+                addAll(e.raw.a("sportTags").strings())
+                addAll(e.raw.a("goalTags").strings())
+                addAll(e.raw.a("tags").strings())
+                if (e.pattern.isNotBlank()) add(e.pattern)
+                addAll(PersonalGoalInterpreter.affinity(
+                    (listOf(e.name, e.sport, e.pattern) + this.toList()).joinToString(" ")
+                ))
+            }, e.raw.a("restrictionTags").strings().toSet(), e.sport, e.name,
+            when (e.unit) { "sec" -> VolumeUnit.SECONDS; "reps" -> VolumeUnit.REPETITIONS; else -> null })
     }
-    private val validatedRows by lazy { rows.also(ActivityCatalogValidator::verify) }
+    private val validatedRows by lazy {
+        catalog.exercises.mapNotNull(::metadata).also(ActivityCatalogValidator::verify)
+    }
     private val cachedHash by lazy { ProfileSignature.source(validatedRows) + ":" + revision }
     private val variantsById by lazy { validatedRows.associateBy(ActivityMetadata::id) }
     override fun all(): List<ActivityMetadata> = validatedRows
     override fun byId(id: String): ActivityMetadata? = variantsById[id]
+    internal fun savedExercise(id: String): ActivityMetadata? =
+        byId(id) ?: catalog.byId[id]?.let(::metadata)
     override fun verified(): List<ActivityMetadata> = validatedRows
     override fun signature(): String = cachedHash
 }

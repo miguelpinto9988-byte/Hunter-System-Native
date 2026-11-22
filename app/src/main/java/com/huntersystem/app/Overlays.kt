@@ -55,7 +55,7 @@ import kotlin.math.*
  Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(scroll)
     .padding(top=18.dp,bottom=20.dp),
     verticalArrangement=Arrangement.spacedBy(16.dp)){key(overlay){when(overlay.type){
- "exercise"->ExerciseDetail(ui,overlay.data.s("id"))
+ "exercise"->ExerciseDetail(ui,overlay.data.s("id"),overlay.data.b("originalCatalog"))
  "monarch-boss"->MonarchBossScreen(ui,overlay.data)
  "monarch-boss-exercise"->MonarchBossExercise(ui,overlay.data)
  "mission"->{val date=overlay.data.s("date",today());Eyebrow(date);MissionContent(ui,date)}
@@ -109,7 +109,7 @@ import kotlin.math.*
  }}}
  }
  }}}}
-@Composable fun ExerciseDetail(ui:NativeUi,id:String){val s=ui.store;val e=s.catalog.byId[id]?:return;val c=LocalHunter.current;var mirror by remember(id){mutableStateOf(false)}
+@Composable fun ExerciseDetail(ui:NativeUi,id:String,originalCatalog:Boolean=false){val s=ui.store;val e=(if(originalCatalog)s.catalog.originalExercise(id) else s.catalog.byId[id])?:return;val c=LocalHunter.current;var mirror by remember(id){mutableStateOf(false)}
  var play by remember(id){mutableStateOf(true)}
  Eyebrow(listOf(e.group,e.category,e.sport).filter{it.isNotBlank()}.joinToString(" · "));Heading(e.name,size=35);HText("${if(e.unit=="sec")"Por tiempo" else "Por repeticiones"}${if(e.sides)" · Cantidad por lado" else ""} · ${if(e.impact)"Con saltos" else "Sin saltos"}",size=16,color=c.muted)
  val reviewing = CoreExerciseClips.hasInconsistentInstructions(e)
