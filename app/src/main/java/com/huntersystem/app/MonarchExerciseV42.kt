@@ -80,6 +80,8 @@ fun MonarchExerciseStage(exercise:Exercise,catalog:Catalog,mirror:Boolean,height
                     HButton("Gesto 2", Modifier.weight(1f)) { playlist.floatValue = boundary }
                 }
             }
+            val reference = exercise.raw.s("motionReferenceLabel")
+            if (!thumbnail && reference.isNotBlank()) HText(reference,size=12,color=c.muted)
             if(!thumbnail && (parts != null || motion?.source in listOf("historical","sport")))
                 HText("Animación ilustrativa. Consulta la guía del ejercicio.",size=12,color=c.muted)
         }

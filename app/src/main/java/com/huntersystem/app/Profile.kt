@@ -15,7 +15,7 @@ internal val materials = listOf("mat" to "Colchoneta o superficie acolchada esta
  "wall" to "Pared o apoyo vertical firme", "chair" to "Silla estable")
 internal val gymOptions = listOf("cable" to "Poleas", "machine" to "Máquinas guiadas", "bench" to "Banco",
  "barbell" to "Barras", "bike" to "Bicicleta estática", "rower" to "Máquina de remo", "elliptical" to "Elíptica",
- "smith" to "Máquina Smith", "cardio" to "Todas las máquinas de cardio del catálogo")
+ "smith" to "Máquina Smith", "airbike" to "Bicicleta de aire", "cardio" to "Todas las máquinas de cardio del catálogo")
 
 private val profileChoiceIds=mapOf(
  "gender" to setOf("unspecified","male","female"),
@@ -87,6 +87,9 @@ internal class ProfileRegistration(private val ui:NativeUi) {
   addAll(additionalMaterials.filter { it.first in profileAllowedMaterials(equipment) })
  }
 
+ val capabilityOptions = listOf("landing", "hanging", "strictpull", "overhead", "nordic")
+  .map { id -> id to store.catalog.capabilities.s(id) }
+
  private val initialGear=buildMap {
   put("body",original?.b("bodyAvailable",true)?:true)
   put("db",original?.b("dumbbellsAvailable",original.s("equipment") in listOf("db","gym"))?:false)
@@ -94,6 +97,7 @@ internal class ProfileRegistration(private val ui:NativeUi) {
   put("bench",original?.b("bench")==true && "bench" !in original.a("gymEquipment23").strings())
   put("step",original?.b("step")==true)
   materialOptions.forEach { (id,_) -> put(id,id in original?.a("materials46")?.strings().orEmpty()) }
+  capabilityOptions.forEach { (id,_) -> put("cap_$id",id in original?.a("capabilities46")?.strings().orEmpty()) }
   gymOptions.forEach { (id,_) -> put("gym_$id",id in original?.a("gymEquipment23")?.strings().orEmpty()) }
  }
 
@@ -182,6 +186,9 @@ internal class ProfileRegistration(private val ui:NativeUi) {
   if(equipment!="gym")selectedGym.clear()
   p.put("materials46",arr(selectedMaterials.filter { it in profileAllowedMaterials(equipment) }))
   p.put("gymEquipment23",arr(selectedGym))
+  val capabilities=original?.a("capabilities46")?.strings().orEmpty().toMutableSet()
+  for((key,_) in capabilityOptions)if(gear["cap_$key"]==true)capabilities.add(key) else capabilities.remove(key)
+  p.put("capabilities46",arr(capabilities))
   p.put("bench","bench" in selectedGym || equipment!="gym"&&gear["bench"]==true)
   p.put("step",gear["step"]==true)
   p.put("equipment",equipment).put("bodyAvailable",gear["body"]==true).put("dumbbellsAvailable",gear["db"]==true)

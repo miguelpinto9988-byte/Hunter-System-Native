@@ -43,6 +43,7 @@ class MonarchActivitySource(
             "high", "alta" -> Intensity.HIGH
             else -> when {
                 // Solo descriptores que ya constan en el catálogo; no inferir técnica de edad.
+                e.id in continuousGymCardio -> Intensity.LOW
                 !e.power && !e.impact &&
                     e.raw.s("impact") in listOf("Bajo", "Sin saltos") &&
                     e.meta.has("conditioning") && e.meta.i("conditioning") <= 1 ->
@@ -147,7 +148,7 @@ object MonarchProfileAdapter {
             addAll(p.a("materials46").strings())
             val gym=p.a("gymEquipment23").strings()
             addAll(gym)
-            if(gym.any { it in setOf("bike","rower","elliptical") })add("cardio")
+            if(gym.any { it in setOf("bike","airbike","rower","elliptical") })add("cardio")
             if (p.b("bench")) add("bench")
             if (p.b("step")) add("step")
         }
@@ -540,6 +541,11 @@ class MonarchProgressRepository(
         val items = routine.a("items").objects()
         val adjusted = store.adjusted()
         if (!store.rules.gate(adjusted).ok || items.isEmpty()) return false
+        if (routine.b("cardioIntervals")) {
+            if (category != Category.CARDIO) return false
+            val exercise = items.singleOrNull()?.let { store.catalog.originalExercise(it.s("id")) } ?: return false
+            return canRunCardioIntervals(exercise, store.rules, adjusted, selectedLevel.ordinal, adaptation)
+        }
         if (adaptation == Adaptation.RECOVER_ONE && items.size > 1 ||
             adaptation == Adaptation.REDUCE_TWO && items.size > 2) return false
         return items.all { item ->

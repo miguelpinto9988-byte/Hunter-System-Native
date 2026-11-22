@@ -192,8 +192,9 @@ class MonarchBossChallengeTest {
         assertEquals(5_000, catalogIcons.size)
         assertEquals(MonarchExerciseIcon.entries.toSet() - MonarchExerciseIcon.GENERAL,
             catalogIcons.values.toSet())
+        val publishedIcons = catalog.libraryExercises.associateBy({ it.id }, ::monarchExerciseIcon)
         for ((id, canonical) in catalog.byId) {
-            val expected = catalogIcons.getValue(canonical.id)
+            val expected = catalogIcons[canonical.id] ?: publishedIcons.getValue(canonical.id)
             assertEquals(id, expected, monarchExerciseIcon(canonical))
         }
 

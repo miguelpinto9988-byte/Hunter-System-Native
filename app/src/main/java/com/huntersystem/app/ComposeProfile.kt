@@ -138,7 +138,7 @@ internal fun ComposeHunterProfile(ui: NativeUi, registration: ProfileRegistratio
                         ProfileHeader(step, titleSize)
                         when (step) {
                             0 -> ProfileIdentity(fields, ui.pendingAvatar ?: ui.store.state.s("avatar"), ::field, ui.chooseAvatar)
-                            1 -> ProfileTraining(fields, gear, List(7) { week.getInt(it) }, accessories, ::field, ::equipment,
+                            1 -> ProfileTraining(fields, gear, List(7) { week.getInt(it) }, accessories, registration.capabilityOptions, ::field, ::equipment,
                                 { day -> draftJson = JSONObject(draftJson).apply {
                                     val days = getJSONArray("week")
                                     days.put(day, (days.getInt(day) + 1) % categories.size)
@@ -404,7 +404,8 @@ private fun ProfileNote(text: String) {
 
 @Composable
 private fun ProfileTraining(fields: JSONObject, gear: JSONObject, week: List<Int>,
-    accessories: List<Pair<String, String>>, set: (String, String) -> Unit,
+    accessories: List<Pair<String, String>>, capabilityOptions: List<Pair<String, String>>,
+    set: (String, String) -> Unit,
     equipment: (String, Boolean) -> Unit, cycleDay: (Int) -> Unit, health: () -> Unit) {
     ProfileModule("Nivel", "bars") {
         ProfileChoices(levels, fields.s("difficulty"), listOf("shield", "bars", "crown")) { set("difficulty", it) }
@@ -468,7 +469,7 @@ private fun ProfileTraining(fields: JSONObject, gear: JSONObject, week: List<Int
         if (gear.b("db")) ProfileInput("Pesos disponibles (kg), separados por comas", "2, 4, 6",
             fields.s("dumbbellWeights")) { set("dumbbellWeights", it) }
         if (gear.b("gym")) gymOptions.forEachIndexed { index, (id, label) ->
-            val icon = listOf("cycle", "gym", "chair", "dumbbell", "bike", "move", "pulse", "gym", "cycle")[index]
+            val icon = listOf("cycle", "gym", "chair", "dumbbell", "bike", "move", "pulse", "gym", "bike", "cycle")[index]
             ProfileCheck(label, gear.b("gym_$id"), icon) {
                 equipment("gym_$id", it)
             }
@@ -479,6 +480,12 @@ private fun ProfileTraining(fields: JSONObject, gear: JSONObject, week: List<Int
         if (showAccessories) accessories.forEach { (id, label) ->
             ProfileCheck(label, gear.b(id), null) { equipment(id, it) }
         }
+    }
+    var showCapabilities by rememberSaveable { mutableStateOf(false) }
+    ProfileChoice(if (showCapabilities) "Ocultar habilidades" else "Habilidades de entrenamiento",
+        Modifier.fillMaxWidth(), icon = "shield") { showCapabilities = !showCapabilities }
+    if (showCapabilities) capabilityOptions.forEach { (id, label) ->
+        ProfileCheck(label, gear.b("cap_$id"), null) { equipment("cap_$id", it) }
     }
     ProfileChoice("Indicaciones y restricciones", Modifier.fillMaxWidth(), icon = "shield", onClick = health)
 }

@@ -70,9 +70,9 @@ internal object ExerciseTaxonomy {
         "cat" to "Columna y pelvis", "thoracic" to "Columna y pelvis",
         "new46-chairthoracic" to "Columna y pelvis", "sidebendstand" to "Columna y pelvis",
         "new46-pelvictilt" to "Columna y pelvis",
-        "hipcircle" to "Caderas", "home-hip909030" to "Caderas", "hipflex" to "Caderas",
+        "new46-hip9090lift" to "Caderas", "hipcircle" to "Caderas", "home-hip909030" to "Caderas", "hipflex" to "Caderas",
         "new46-adductorrock" to "Caderas", "hamstretch" to "Caderas",
-        "ankle" to "Tobillos y pantorrillas", "calfstretch" to "Tobillos y pantorrillas"
+        "new46-bentcalfstretch" to "Tobillos y pantorrillas", "ankle" to "Tobillos y pantorrillas", "calfstretch" to "Tobillos y pantorrillas"
     )
     private val unloadedUpper = setOf(
         "wallslide", "scapular", "reverse", "pau-armworld", "pau-armcircle-f", "pau-armcircle-b",

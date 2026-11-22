@@ -1,0 +1,104 @@
+[
+  {
+    "id": "performance-outdoor-run",
+    "name": "Carrera por intervalos al aire libre",
+    "baseId": "performance-outdoor-run",
+    "variant": "base",
+    "category": "Cardio",
+    "group": "Cardio",
+    "unit": "sec",
+    "level": 1,
+    "equipment": "body",
+    "materialRequirements": [],
+    "materials46": [
+      "space"
+    ],
+    "pack46": true,
+    "impact": "Con saltos",
+    "planning49": {
+      "group": "cardio",
+      "role": "conditioning",
+      "pattern": "carrera",
+      "level": 1,
+      "impact": true,
+      "conditioning": 3,
+      "power": false,
+      "primary": false,
+      "id": "performance-outdoor-run",
+      "family": "performance-outdoor-run"
+    },
+    "standing": false,
+    "kneeBend": false,
+    "overhead": false,
+    "instructions": [
+      "Elige un recorrido llano, despejado y con superficie estable.",
+      "Calienta caminando y trotando antes de acelerar. En el tramo rápido, mantén un ritmo vivo que puedas repetir.",
+      "Camina o trota suave en la recuperación. Registra el tiempo de trabajo y, si lo conoces, el ritmo medio.",
+      "Termina reduciendo el ritmo de forma gradual."
+    ],
+    "steps": "Elige un recorrido llano, despejado y con superficie estable. Calienta caminando y trotando antes de acelerar. En el tramo rápido, mantén un ritmo vivo que puedas repetir. Camina o trota suave en la recuperación. Registra el tiempo de trabajo y, si lo conoces, el ritmo medio. Termina reduciendo el ritmo de forma gradual.",
+    "motionReference": "jog",
+    "capabilities46": [
+      "landing"
+    ],
+    "motionReferenceLabel": "Referencia técnica: zancada de trote en el sitio.",
+    "progressionTierNative": 1
+  },
+  {
+    "id": "performance-weighted-pullup",
+    "name": "Dominada pronada con lastre",
+    "baseId": "performance-weighted-pullup",
+    "variant": "base",
+    "category": "Fuerza",
+    "group": "Espalda",
+    "unit": "reps",
+    "level": 2,
+    "equipment": "body",
+    "materialRequirements": [],
+    "materials46": [
+      "pullbar",
+      "weightbelt",
+      "plate"
+    ],
+    "pack46": true,
+    "impact": "Sin saltos",
+    "planning49": {
+      "group": "upper",
+      "role": "primary",
+      "pattern": "traccion_vertical",
+      "level": 2,
+      "impact": false,
+      "conditioning": 1,
+      "power": false,
+      "primary": true,
+      "id": "performance-weighted-pullup",
+      "family": "performance-weighted-pullup"
+    },
+    "standing": true,
+    "kneeBend": false,
+    "overhead": true,
+    "instructions": [
+      "Usa una barra fija y un cinturón de lastre con la carga asegurada. Empieza con un lastre pequeño si ya dominas varias dominadas libres seguidas.",
+      "Eleva el cuerpo sin impulso y desciende con control. Mantén el lastre estable durante todo el recorrido.",
+      "Registra los kilos añadidos y las repeticiones limpias. Aumenta la carga cuando puedas repetir el recorrido con control."
+    ],
+    "steps": "Usa una barra fija y un cinturón de lastre con la carga asegurada. Empieza con un lastre pequeño si ya dominas varias dominadas libres seguidas. Eleva el cuerpo sin impulso y desciende con control. Mantén el lastre estable durante todo el recorrido. Registra los kilos añadidos y las repeticiones limpias. Aumenta la carga cuando puedas repetir el recorrido con control.",
+    "motionReference": "new46-pullup",
+    "capabilities46": [
+      "hanging",
+      "strictpull",
+      "overhead"
+    ],
+    "loaded46": true,
+    "recordExternalLoad": true,
+    "progressionTierNative": 2,
+    "motionReferenceLabel": "Referencia técnica: dominada sin lastre. Sigue las indicaciones de la ficha para colocar la carga.",
+    "intensity": "moderada",
+    "doseCap46": {
+      "sets": 2,
+      "target": 5,
+      "initial": 3,
+      "rest": 90
+    }
+  }
+]

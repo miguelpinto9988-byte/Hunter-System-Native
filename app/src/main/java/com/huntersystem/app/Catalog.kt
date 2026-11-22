@@ -7,7 +7,7 @@ import org.json.JSONArray
 
 private val catalogEquipmentLabels = mapOf(
  "gym" to "Gimnasio", "machine" to "Máquinas guiadas", "smith" to "Máquina Smith",
- "cardio" to "Máquinas de cardio", "partner" to "Compañero de entrenamiento"
+ "cardio" to "Máquinas de cardio", "partner" to "Compañero de entrenamiento", "weightbelt" to "Cinturón de lastre"
 )
 
 // Ejercicios base retirados según la auditoría de rendimiento. Las variantes heredan la decisión.
@@ -15,9 +15,9 @@ private val withdrawnExerciseFamilies = setOf(
  "balance", "breathing", "childpose", "elbowmob", "fingers", "forearmmob", "hamstretch", "heel",
  "heelcontrolled", "heeltoe", "hs379-isobiceps", "hs379-palms", "hs379-scapular",
  "hs379-shoulderset", "latstretch", "legextend", "legextend-control18", "linewalk", "march",
- "neck", "new46-benchprayer", "new46-bentcalfstretch", "new46-bigtoestretch", "new46-butterfly",
+ "neck", "new46-benchprayer", "new46-bigtoestretch", "new46-butterfly",
  "new46-chairthoracic", "new46-chinretract", "new46-couchstretch", "new46-crossshoulder",
- "new46-doorpec", "new46-foampec", "new46-frogrock", "new46-hip9090lift", "new46-hipcapsule",
+ "new46-doorpec", "new46-foampec", "new46-frogrock", "new46-hipcapsule",
  "new46-mediannerve", "new46-pelvicclock", "new46-pelvictilt", "new46-peronealnerve",
  "new46-pronehipcontrol", "new46-pronequad", "new46-quadthoracic", "new46-scapcar",
  "new46-sciaticnerve", "new46-seatedhipir", "new46-shortfoot", "new46-sleeper",
@@ -32,6 +32,7 @@ private val withdrawnExerciseFamilies = setOf(
 
 class Exercise(val raw:JSONObject){
  val id=raw.s("id");val name=raw.s("name");val group=raw.s("group");val category=raw.s("category");val unit=raw.s("unit");val equipment=raw.s("equipment");val meta=raw.o("planning49");val type=meta.s("group");val family=meta.s("family",id);val oldFamily=raw.s("baseId",raw.s("family",id));val pattern=meta.s("pattern");val role=meta.s("role");val primary=meta.b("primary");val power=meta.b("power");val impact=meta.b("impact");val planningLevel=meta.i("level");val sides=raw.b("sides");val sport=raw.s("sport")
+ internal val recordsExternalLoad=equipment!="body"||raw.b("recordExternalLoad")
  val hunter2000=raw.b("sourceExpansion2k")
  val gym=raw.b("gymOnly23")||hunter2000&&(equipment=="gym"||
   raw.a("materialRequirements").strings().any{it in setOf("barbell","trapbar","safetybar","cable","machine","smith")})
@@ -46,7 +47,8 @@ class Exercise(val raw:JSONObject){
   (if(equipment=="db") setOf("db") else emptySet()) +
   (if(gym||equipment=="gym") setOf("gym") else emptySet())
  val cardioEquipment=when{
-  id.startsWith("gym-bike")||id.startsWith("gym-airbike")||id.startsWith("gym-recumbent")->"bike"
+  id.startsWith("gym-airbike")->"airbike"
+  id.startsWith("gym-bike")||id.startsWith("gym-recumbent")->"bike"
   id.startsWith("gym-row")->"rower"
   id.startsWith("gym-elliptical")->"elliptical"
   else->null
@@ -55,14 +57,16 @@ class Exercise(val raw:JSONObject){
 class Catalog(val context:Context?=null,val loader:((String)->String)?=null){
  fun text(path:String)=loader?.invoke(path)?:context!!.assets.open(path).bufferedReader().use{it.readText()}
  val originalExercises=JSONArray(text("catalog.json")).objects().map(::Exercise)
- private val originalById=originalExercises.associateBy{it.id}
+ private val performanceExercises=JSONArray(text("performance-exercises.json")).objects().map(::Exercise)
+ private val baseInventory=originalExercises+performanceExercises
+ private val originalById=baseInventory.associateBy{it.id}
  internal fun originalExercise(id:String)=originalById[id]
- internal val libraryExercises=originalExercises.filterNot {
+ internal val libraryExercises=baseInventory.filterNot {
   it.oldFamily in withdrawnExerciseFamilies || it.isRedundantCardioVariant
  }
  val expansionExercises=runCatching{JSONArray(text("catalog-hunter2000-extra.json")).objects().map(::Exercise)}.getOrElse{emptyList()}
  val sportExercises=JSONArray(text("catalog-sports.json")).objects().map(::Exercise)
- private val sourceExercises=originalExercises+expansionExercises+sportExercises
+ private val sourceExercises=baseInventory+expansionExercises+sportExercises
  private val sourceById=sourceExercises.associateBy{it.id}
  private val aliases=JSONObject(text("exercise-aliases.json")).entries().associate{(id,value)->
   id to (value as? String ?: error("Alias inválido: $id"))
@@ -73,9 +77,9 @@ class Catalog(val context:Context?=null,val loader:((String)->String)?=null){
  fun matchesExercise(exercise:Exercise,normalizedQuery:String)=
   normalizedQuery in normalize(exercise.name)||
    namesByExercise[exercise.id].orEmpty().any{normalizedQuery in it}
- internal val historicalExercises=sourceExercises.filterNot{it.id in aliases}
+ internal val historicalExercises=sourceExercises.filterNot{it.id in aliases||it in performanceExercises}
  val byId=sourceById+aliases.mapValues{(_,canonical)->sourceById.getValue(canonical)}
- private val classifications=historicalExercises.mapNotNull{exercise->
+ private val classifications=(historicalExercises+performanceExercises).mapNotNull{exercise->
   ExerciseTaxonomy.classify(exercise,byId::get)?.let{exercise.id to it}
  }.toMap()
  val exercises=libraryExercises.filter{it.id in classifications}

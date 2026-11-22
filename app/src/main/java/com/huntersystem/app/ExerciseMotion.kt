@@ -85,7 +85,7 @@ internal object ExerciseMotions {
     fun load(context: Context, exercise: Exercise): ExerciseMotion? {
         if (CoreExerciseClips.hasInconsistentInstructions(exercise)) return null
         val motion = CoreExerciseClips.load(exercise) ?: LegacySingleExerciseMotions.load(exercise.id) { load(context,it) }
-            ?: load(context,exercise.id)
+            ?: load(context,exercise.raw.s("motionReference",exercise.id))
         return motion?.withApparatus(exercise)
     }
 

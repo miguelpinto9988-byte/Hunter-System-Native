@@ -37,10 +37,10 @@ class ExerciseTaxonomyTest {
         val displayed = catalog.libraryExercises.mapTo(hashSetOf()) { it.id }
         val automatic = catalog.automaticExercises.mapTo(hashSetOf()) { it.id }
         val withdrawn = catalog.originalExercises.filter { catalog.isWithdrawn(it.id) }
-        assertEquals(80, withdrawn.count { it.isBaseVariant })
-        assertEquals(134, withdrawn.size)
-        assertEquals(150, catalog.originalExercises.size - displayed.size)
-        assertEquals(532, catalog.libraryExercises.map { it.oldFamily }.distinct().size)
+        assertEquals(78, withdrawn.count { it.isBaseVariant })
+        assertEquals(132, withdrawn.size)
+        assertEquals(148, catalog.originalExercises.count { it.id !in displayed })
+        assertEquals(536, catalog.libraryExercises.map { it.oldFamily }.distinct().size)
         assertTrue(withdrawn.none { it.id in displayed || it.id in automatic })
         assertTrue(withdrawn.all { catalog.byId.containsKey(it.id) })
         assertTrue(catalog.isWithdrawn("heelcontrolled"))
@@ -59,6 +59,37 @@ class ExerciseTaxonomyTest {
         assertTrue(CatalogFocus.PREPARATION.includes(landing, null))
         assertFalse(CatalogFocus.IMPACT.includes(landing, null))
         assertTrue(CatalogFocus.POWER.includes(catalog.byId.getValue("new46-sprintbrake"), Category.CARDIO))
+    }
+
+    @Test fun intervalsUseDeclaredEquipmentAndFitTheTimeWindow() {
+        val planner = Planner(catalog, rules)
+        val home = profile.copyJson().put("difficulty", "intermediate")
+            .put("materials46", arr(listOf("space", "jumprope")))
+            .put("capabilities46", arr(listOf("landing")))
+        fun offers(p: org.json.JSONObject, mode: String, avoidImpact: Boolean = false, intervals: Boolean = true) =
+            planner.generateRoutineOptions(mode, "cardio", 1, 15, "test", p, obj(), today,
+                avoidImpact = avoidImpact, cardioIntervals = intervals)
+        val outdoors = offers(home, "offline")
+        val ids = outdoors.flatMap { it.a("items").objects() }.map { it.s("id") }
+        assertTrue("performance-outdoor-run" in ids)
+        assertTrue("new46-jumpropealt" in ids)
+        assertTrue(offers(home, "offline", avoidImpact = true).isEmpty())
+        assertTrue(offers(home.copyJson().put("capabilities46", arr(emptyList<String>())), "offline").isEmpty())
+        val gym = home.copyJson().put("equipment", "gym").put("gymEquipment23", arr(listOf("rower")))
+        val gymIntervals = offers(gym, "gym", avoidImpact = true)
+        assertEquals(listOf("gym-row-erg23"), gymIntervals.flatMap { it.a("items").objects() }.map { it.s("id") })
+        assertTrue(offers(gym, "gym", intervals = false).isNotEmpty())
+        for (routine in outdoors + gymIntervals) {
+            val steps = planner.steps(routine, home)
+            assertEquals("preparation", steps.first().s("kind"))
+            assertEquals("cooldown", steps.last().s("kind"))
+            assertTrue(steps.count { it.s("kind") == "exercise" } >= 2)
+            assertTrue(steps.filter { it.s("kind") == "exercise" }.all { it.s("unit") == "sec" })
+            assertTrue(planner.minutes(routine, home) <= 15)
+        }
+        assertEquals(Category.MOBILITY, catalog.classification("new46-bentcalfstretch")?.category)
+        assertEquals(Category.MOBILITY, catalog.classification("new46-hip9090lift")?.category)
+        assertTrue(catalog.originalExercise("performance-weighted-pullup")!!.recordsExternalLoad)
     }
 
     @Test fun onlyPublishedEssentialMobilityExercisesAreSelectable() {

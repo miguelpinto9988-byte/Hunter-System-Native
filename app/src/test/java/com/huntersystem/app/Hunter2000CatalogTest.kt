@@ -25,7 +25,7 @@ class Hunter2000CatalogTest {
         when(path){
             "catalog.json"->original
             "catalog-hunter2000-extra.json"->if(withExtra)expansion else error("Recursos no importados")
-            "routines.json","profile-form.json","catalog-sports.json"->"[]"
+            "routines.json","profile-form.json","catalog-sports.json","performance-exercises.json"->"[]"
             else->"{}"
         }
     })
@@ -81,8 +81,9 @@ class Hunter2000CatalogTest {
         val native=checkNotNull(MonarchProfileAdapter.from(coreProfile,date))
         val source=MonarchActivitySource(c,rules,coreProfile)
         val originalIds=c.originalExercises.map { it.id }.toSet()
+        val libraryIds=c.libraryExercises.map { it.id }.toSet()
         assertEquals(1200,originalIds.size)
-        assertTrue(source.all().all { it.id in originalIds })
+        assertTrue(source.all().all { it.id in libraryIds })
         assertTrue(source.byId(basic.id)==null)
         assertTrue(source.savedExercise(basic.id)?.automaticEligible==true)
         val core=com.huntersystem.app.planning.Category.CENTRAL
@@ -92,7 +93,7 @@ class Hunter2000CatalogTest {
         val plannedIds=planner.choose(coreProfile,"strength","hunter",
             date=date.toString(),trainingProfile=native,pinned=selected).a("items").objects().map{it.s("id")}
         assertTrue(plannedIds.isNotEmpty())
-        assertTrue(plannedIds.all { it in originalIds })
+        assertTrue(plannedIds.all { it in libraryIds })
         val day=obj("items" to arr(listOf(planner.libraryDose(basic,profile,"strength"))))
         assertTrue(planner.steps(day,profile).any{it.s("id")==basic.id})
         val legacy=c.byId.getValue("heelcontrolled")

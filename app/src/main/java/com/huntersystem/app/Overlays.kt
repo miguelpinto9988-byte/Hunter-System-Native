@@ -122,6 +122,16 @@ import kotlin.math.*
  if(e.raw.a("instructions").length()==0&&e.raw.s("steps").isNotBlank())
   HPanel(decor=false,padding=16){Heading("Ejecución",size=25);HText(e.raw.s("steps"),size=17)}
  for((key,label)in listOf("setup" to "Preparación","instructions" to "Ejecución","commonErrors" to "Errores comunes","initialDose" to "Dosis inicial","control" to "Control","breath" to "Respiración","tempo" to "Ritmo","muscles" to "Músculos implicados","cue" to "Punto clave")){val text=if(key=="instructions")e.raw.a(key).strings().mapIndexed{i,t->"${i+1}. $t"}.joinToString("\n") else e.raw.s(key);if(text.isNotBlank())HPanel(decor=false,padding=16){Heading(label,size=25);HText(text,size=17)}}
+ performanceProgressions[e.oldFamily]?.let { progression ->
+  HPanel(decor=false,padding=16) {
+   Heading("Progresión",size=25)
+   HText(progression.guidance,size=17)
+   val next=progression.nextId?.let(s.catalog::originalExercise)
+   if(next!=null) HButton(next.name,Modifier.fillMaxWidth()) {
+    ui.open("exercise",obj("id" to next.id,"originalCatalog" to true))
+   }
+  }
+ }
  if(e.sides)HNotice("Realiza la cantidad indicada en cada lado. El registro especifica si corresponde a un lado o a ambos.")
  if(s.profile!=null){val reasons=s.rules.reasons(e,s.adjusted());HPanel(decor=false,padding=16){Heading("Compatibilidad con tu perfil",size=26);HText(if(reasons.isEmpty())"Incluido por los filtros del perfil actual" else reasons.joinToString("\n"){"· $it"},size=16)}}
 }
@@ -146,12 +156,12 @@ import kotlin.math.*
  HText(CompanionDialogue.message(s.profile,LocalVisualTier.current,DialogueContext(
   DialogueMoment.SERIES,group=e.type,exercise=e.name,set=setIndex+1,sets=x.i("sets"))),
   size=15,color=LocalHunter.current.muted)
- HInput(amount,{amount=it},if(x.s("unit",e.unit)=="sec")"Segundos realizados" else "Repeticiones realizadas",number=true);if(e.sides)HText("Indica la cantidad por lado.",size=16,color=LocalHunter.current.muted);if(e.equipment!="body")HInput(load,{load=it},"Carga utilizada · kg",number=true)
+ HInput(amount,{amount=it},if(x.s("unit",e.unit)=="sec")"Segundos realizados" else "Repeticiones realizadas",number=true);if(e.sides)HText("Indica la cantidad por lado.",size=16,color=LocalHunter.current.muted);if(e.recordsExternalLoad)HInput(load,{load=it},"Carga utilizada · kg",number=true)
  HButton("Confirmar serie realizada",Modifier.fillMaxWidth(),primary=true){ui.attempt{s.confirmSet(date,itemIndex,setIndex,amount.replace(',','.').toDouble(),load.replace(',','.').toDouble());ui.back()}}
  if(a.b("done"))HButton("Desmarcar esta serie",Modifier.fillMaxWidth()){ui.attempt{s.confirmSet(date,itemIndex,setIndex,amount.replace(',','.').toDouble(),load.replace(',','.').toDouble(),false);ui.back()}}
 }
 @Composable fun RoutineDetail(ui:NativeUi,id:String){val s=ui.store;val r=ui.routine(id)?:return;Eyebrow(r.s("category"));Heading(r.s("name"),size=35);HText(r.s("description"),size=17,color=LocalHunter.current.muted);HText("≈ ${s.planner.minutes(r,s.adjusted())} min · ${r.a("items").length()} ejercicios",size=16);val phase=if(r.b("unifiedPlanning")) null else s.planner.phase(r.a("items").objects(),s.adjusted());if(phase!=null)HPanel(onClick={ui.open("exercise",obj("id" to phase.id))},padding=15){HText("Calentamiento progresivo · ${phase.name}",bold=true);HText("${s.planner.phaseSeconds(s.adjusted())} s",size=15)}
- for(x in r.a("items").objects()){val e=s.catalog.byId[x.s("id")]?:continue;HPanel(onClick={ui.open("exercise",obj("id" to e.id))},padding=16){Heading(e.name,size=26);HText("${x.i("sets")} × ${x.i("target")} ${if(e.unit=="sec")"segundos" else "repeticiones"}${if(e.sides)" por lado" else ""} · ${x.i("rest",s.planner.rest(s.adjusted()))} s descanso  ↗",size=16,color=LocalHunter.current.muted)}}
+ for(x in r.a("items").objects()){val e=s.catalog.byId[x.s("id")]?:continue;HPanel(onClick={ui.open("exercise",obj("id" to e.id))},padding=16){Heading(e.name,size=26);HText("${x.i("sets")} × ${x.i("target")} ${if(x.s("unit",e.unit)=="sec")"segundos" else "repeticiones"}${if(e.sides)" por lado" else ""} · ${x.i("rest",s.planner.rest(s.adjusted()))} s descanso  ↗",size=16,color=LocalHunter.current.muted)}}
  if(phase!=null)HNotice("Cierre suave · ${phase.name} · ${s.planner.phaseSeconds(s.adjusted())} s")
  val reasons=r.a("items").objects().flatMap{x->s.catalog.byId[x.s("id")]?.let{s.rules.reasons(it,s.adjusted())}?:listOf("Ejercicio desconocido")}.distinct();if(reasons.isNotEmpty())HNotice("Revisa compatibilidad y equipo en Perfil:\n"+reasons.joinToString("\n"){"· $it"})
  HButton("Ver sesión paso a paso",Modifier.fillMaxWidth()){ui.open("session",obj("routineId" to id))}

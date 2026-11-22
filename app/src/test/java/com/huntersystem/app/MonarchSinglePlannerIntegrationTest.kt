@@ -134,6 +134,26 @@ class MonarchSinglePlannerIntegrationTest {
 
     }
 
+    @Test fun outdoorIntervalsRemainPlayableAndRespondToProfileRestrictions() {
+        val store = store()
+        val day = LocalDate.now()
+        val configured = store.profile!!.copyJson().put("difficulty", "intermediate")
+            .put("equipment", "body").put("bodyAvailable", true)
+            .put("weeklyCategories", arr(List(7) { Category.CARDIO.ordinal }))
+            .put("materials46", arr(listOf("space"))).put("capabilities46", arr(listOf("landing")))
+        store.saveProfile(configured)
+        val routine = store.planner.generateRoutineOptions("offline", "cardio", 1, 15,
+            "test", store.adjusted(), store.logs, day, cardioIntervals = true).single()
+        val repo = MonarchProgressRepository(store)
+        assertTrue(repo.canRunOptionalRoutine(day, routine))
+        assertTrue(store.planner.steps(routine, store.adjusted()).any {
+            it.s("id") == "performance-outdoor-run" && it.s("unit") == "sec"
+        })
+        configured.put("restrictions", obj("noImpact" to true))
+        store.saveProfile(configured)
+        assertFalse(repo.canRunOptionalRoutine(day, routine))
+    }
+
     @Test fun explicitlySavedEffortUsesTodayCategoryNotAnotherDay() {
         val store=store()
         val day=store.day(today())

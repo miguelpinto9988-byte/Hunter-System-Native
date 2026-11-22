@@ -216,11 +216,13 @@ class Planner(val catalog:Catalog,val rules:Rules){
  fun generateRoutineOptions(mode: String, type: String, requestedLevel: Int,
   duration: Int, variation: String, p: JSONObject, logs: JSONObject,
   date: LocalDate = LocalDate.now(), avoidImpact: Boolean = false,
-  onlyBody: Boolean = false): List<JSONObject> {
+  onlyBody: Boolean = false, cardioIntervals: Boolean = false): List<JSONObject> {
   val category = CategoryMapper.normalize(type) ?: return emptyList()
   val profile = MonarchProfileAdapter.from(p, date) ?: return emptyList()
   val routineLevel = RoutineLevel.values().getOrNull(requestedLevel) ?: return emptyList()
   if (!rules.gate(p).ok) return emptyList()
+  if (cardioIntervals && category == Category.CARDIO)
+   return cardioIntervalRoutines(this, mode, requestedLevel, duration, p, logs, date, avoidImpact, onlyBody)
   val metadata = planningSource(p).verified().filter { row ->
    val exercise = catalog.byId[row.id] ?: return@filter false
    (if (mode == "gym") exercise.gym else !exercise.gym) &&
