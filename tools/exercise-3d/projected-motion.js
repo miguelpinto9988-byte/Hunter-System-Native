@@ -352,6 +352,7 @@ export async function projectedMotion(athlete, clips, scene, controls, camera) {
     for (const [kind,left,top,right,bottom] of clip.props) {
       if (right <= left || bottom <= top || (wedge && kind==='step')) continue;
       const a = map([left,top]), b = map([right,bottom]);
+      if (kind==='table' && /^singlehinge(?:_|$)/.test(clip.exerciseId)) a.y+=.205;
       const span = Math.abs(right-left)*clip.scale;
       const height = overhead ? .025 : Math.max(.035,Math.abs(a.y-b.y));
       const mat = kind === 'mat';
@@ -676,6 +677,8 @@ export async function projectedMotion(athlete, clips, scene, controls, camera) {
       else if (view.thirdBatch && /^(?:benchpress|inclinebench|squeezepress|pullover)/.test(clip.exerciseId)) camera.position.set(-2.38,1.65,.96);
       else if (view.thirdBatch && /^(?:clam|sideleg)(?:_|$)/.test(clip.exerciseId)) camera.position.set(2.9,1.40,-1.08);
       else if (view.thirdBatch && /^lateralunge(?:_|$)/.test(clip.exerciseId)) camera.position.set(-1.75,1.54,3.22);
+      else if (view.thirdBatch && /^dbbridge(?:_|$)/.test(clip.exerciseId)) camera.position.set(-2.72,1.89,-1.25);
+      else if (view.thirdBatch && /^sumodead(?:_|$)/.test(clip.exerciseId)) camera.position.set(-2.15,1.65,2.62);
       else if (view.reviewedGround) camera.position.set(-2.45,1.82,1.65);
       else if (view.proneRaise) camera.position.set(-2.6,2.3,1.6);
       else if (view.batch==='deadbug') camera.position.set(-2.85,1.60,1.28);

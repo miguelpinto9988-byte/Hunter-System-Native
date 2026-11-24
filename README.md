@@ -25,7 +25,7 @@ Las pruebas Android/JVM y la APK debug de QA están en [planificación y tests](
 ## Recursos de ejercicio
 - La biblioteca activa contiene **1.063 fichas** entre ejercicios base y variantes. Las fichas históricas y los alias siguen disponibles para resolver sesiones guardadas e historial.
 - La ficha de ejercicio permite abrir el visor 3D con el [avatar incluido en la aplicación](app/src/main/assets/exercise-3d/step-up.glb). Las 1.063 fichas activas tienen demostración 3D. Cuatro usan clips del avatar y 1.059 proyectan las poses del catálogo.
-- La marca **✓ Animación 3D revisada** identifica las fichas aprobadas. El [registro de revisión](app/src/main/assets/exercise-3d/reviewed.json) contiene 79 identificadores aprobados. La revisión visual del resto continúa.
+- La marca **✓ Animación 3D revisada** identifica las fichas aprobadas. El [registro de revisión](app/src/main/assets/exercise-3d/reviewed.json) contiene 90 identificadores aprobados. La revisión visual del resto continúa.
 - La sesión guiada y Misiones Monarca usan el personaje vectorial de Compose. Las secuencias reutilizan los movimientos de sus gestos.
 - La auditoría comprueba la cobertura de poses y la ausencia de las ilustraciones y clips históricos en los recursos de la APK. Los SVG faciales forman parte del personaje actual.
 

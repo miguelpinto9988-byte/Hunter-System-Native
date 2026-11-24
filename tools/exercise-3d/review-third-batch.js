@@ -160,17 +160,18 @@ export function thirdBatchMotion(clip,map,feet) {
       const a=drive(frame,phase);
       const hinge=id==='sumodead';
       const width=.263;
-      const lean=hinge ? .08+.94*a : .12+.34*a;
+      const lean=hinge ? .05+.78*a : .12+.34*a;
       return {
-        hip:v(0,.965-(hinge?.105:.34)*a,-.025-.145*a),
+        hip:v(0,.965-(hinge?.235:.34)*a,-.025-.145*a),
         trunk:v(0,Math.cos(lean),Math.sin(lean)).multiplyScalar(.417), stillHead,
         foot:side=>flat(side,0,width),
         knee:side=>v(side*(width+.025),.60-.19*a,.255),
-        wrist:id==='dbsumo' ? side=>v(side*.055,.98-.34*a,.296-.11*a) : undefined,
-        elbow:id==='dbsumo' ? side=>v(side*.245,1.17-.36*a,.205-.09*a) : undefined,
-        arm:id==='dbsumo' ? undefined : side=>hinge
-          ? [v(-side*.48,-1,.12),v(-side*.45,-1,.06)]
-          : [v(side*.16,-.24,1),v(-side*.70,.24,.48)],
+        wrist:hinge ? side=>v(side*.061,.934-.373*a,.245-.025*a)
+          : id==='dbsumo' ? side=>v(side*.055,.98-.34*a,.296-.11*a) : undefined,
+        elbow:hinge ? side=>v(side*.239,1.12-.294*a,.14)
+          : id==='dbsumo' ? side=>v(side*.245,1.17-.36*a,.205-.09*a) : undefined,
+        arm:id==='sumo' ? side=>[v(side*.16,-.24,1),v(-side*.70,.24,.48)] : undefined,
+        armContact:hinge ? ()=>false : undefined,
         shoeYaw:side=>side*.23
       };
     };
@@ -205,25 +206,32 @@ export function thirdBatchMotion(clip,map,feet) {
     return (frame,phase)=>{
       const a=drive(frame,phase);
       if(id==='singlehinge') {
-        const angle=.04+1.14*a;
+        const angle=.06+.98*a;
+        const supportZ=top.z-.32;
+        const freeLeg=.82+.065*a;
+        const hip=v(.04,.984-.06*a,supportZ-.045-.10*a);
         return {
-          hip:v(.078,.945-.07*a,top.z-.435-.13*a),trunk:v(0,Math.cos(angle),Math.sin(angle)).multiplyScalar(.417),stillHead,
-          foot:side=>side===1 ? v(.20,feet[1].flat,top.z-.495) : v(-.11,.15+.55*a,top.z-.72-.51*a),
-          knee:side=>v(side*.17,.5+(side===1?0:.19*a),top.z-.46-(side===1?0:.63*a)),
-          wrist:side=>side===-1 ? v(-.225,top.y+.047,top.z+.055) : v(.30,.67-.40*a,top.z-.48),
-          elbow:side=>v(side*.23,.68,top.z-.26),armContact:side=>side===-1,stabilizeHands:true
+          hip,trunk:v(0,Math.cos(angle),Math.sin(angle)).multiplyScalar(.417),stillHead,
+          foot:side=>side===1 ? v(.20,feet[1].flat,supportZ)
+            : v(-.125,hip.y-freeLeg*Math.cos(angle),hip.z-freeLeg*Math.sin(angle)),
+          knee:(side,joint,ankle)=>joint.clone().lerp(ankle,.5).add(v(0,0,.25)),
+          wrist:side=>side===-1 ? v(-.225,top.y+.252,top.z+.045) : v(.30,.74-.34*a,top.z-.37),
+          elbow:side=>v(side*.23,.83,top.z-.27),armContact:side=>side===-1,
+          contact:side=>side===1, shoePitch:side=>side===1 ? 0 : .13+.31*a
         };
       }
       if(id==='singlecalf') {
-        const pitch=.46*a;
+        const pitch=.42*a;
         const [y,z]=feet[1].contact(pitch);
+        const supportZ=top.z-.55+z;
         return {
-          hip:v(.155,y+.88,top.z-.55+z),trunk:v(0,.417,.027),stillHead,
-          foot:side=>side===1 ? v(.155,y,top.z-.55+z) : v(-.125,y+.255,top.z-.71+z),
-          knee:side=>v(side*.155,y+.49,top.z-.43),
+          hip:v(.038,y+.905,supportZ),trunk:v(.055,.417,.027),stillHead,
+          foot:side=>side===1 ? v(.195,y,supportZ) : v(-.145,y+.29,supportZ-.34),
+          knee:side=>side===1 ? v(.195,y+.45,supportZ+.09) : v(-.125,y+.48,supportZ+.12),
           wrist:side=>side===-1 ? v(-.16,1.10,top.z-.05) : v(.36,.79+y,top.z-.56),
           elbow:side=>v(side*.24,.91,top.z-.28),armContact:side=>side===-1,
-          shoePitch:side=>side===1 ? pitch : -.22
+          contact:side=>side===1,
+          shoePitch:side=>side===1 ? pitch : .27
         };
       }
       if(id==='ankle') {
@@ -269,7 +277,7 @@ export function thirdBatchMotion(clip,map,feet) {
         hip,trunk:v(0,-rise,-run),stillHead,
         foot:side=>id==='singlebridge'&&side===-1 ? v(-.16,.61+.14*a,.49) : flat(side,.465,.165),
         knee:side=>id==='singlebridge'&&side===-1 ? v(-.16,.58+.15*a,.255) : v(side*.165,.55,.335),
-        wrist:id==='dbbridge' ? side=>v(side*.091,hip.y+.142,hip.z+.035) : undefined,
+        wrist:id==='dbbridge' ? side=>v(side*.091,hip.y+.249,hip.z+.02) : undefined,
         elbow:side=>v(side*.315,.14,hip.z-.14),
         arm:id==='singlebridge'?side=>[v(side*.12,-.225,1),v(0,-.085,1)]:undefined,
         armContact:()=>false,
