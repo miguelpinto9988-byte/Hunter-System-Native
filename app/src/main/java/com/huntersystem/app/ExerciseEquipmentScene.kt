@@ -256,7 +256,7 @@ internal class ExerciseEquipmentScene(
                 mark("plate",center+(anchor-center)*.15f,47f,34f,angle(anchor-center))
             } else {
                 val width = if (side) 127f else ((p[4]-p[6]).getDistance()/unit + 69f).coerceAtLeast(135f)
-                mark(item.gear.asset,center,width,47f,angle)
+                mark(if (item.gear==DemoGear.SMITH) "barbell" else item.gear.asset,center,width,47f,angle)
             }
         }
 

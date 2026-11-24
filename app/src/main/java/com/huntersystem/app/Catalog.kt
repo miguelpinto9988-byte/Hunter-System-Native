@@ -66,6 +66,13 @@ class Catalog(val context:Context?=null,val loader:((String)->String)?=null){
  internal val libraryExercises=baseInventory.filterNot {
   it.oldFamily in withdrawnExerciseFamilies || it.isRedundantCardioVariant
  }
+ private val reviewed3dIds: Set<String> by lazy {
+  runCatching {
+   val reviewed=JSONArray(text("exercise-3d/reviewed.json"))
+   (0 until reviewed.length()).map { reviewed.getString(it) }.toSet()
+  }.getOrDefault(emptySet())
+ }
+ internal fun isExercise3dReviewed(id:String)=id in reviewed3dIds
  val expansionExercises=runCatching{JSONArray(text("catalog-hunter2000-extra.json")).objects().map(::Exercise)}.getOrElse{emptyList()}
  val sportExercises=JSONArray(text("catalog-sports.json")).objects().map(::Exercise)
  private val sourceExercises=baseInventory+expansionExercises+sportExercises

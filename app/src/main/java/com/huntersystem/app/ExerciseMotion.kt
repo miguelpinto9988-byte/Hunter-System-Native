@@ -28,7 +28,8 @@ internal data class ExerciseMotion(
     val handGesture: HandGesture? = null,
     val footGesture: FootGesture? = null,
     val apparatus: List<DemoApparatus> = emptyList(),
-    val floorTransition: Boolean = false
+    val floorTransition: Boolean = false,
+    val suspended: Boolean = false
 ) {
     val firstFootOnLeft: Boolean by lazy { frames.sumOf { (it[8].x-it[10].x).toDouble() } <= 0.0 }
     private val ankleFloor: List<Float> by lazy { listOf(8,10).map { index -> frames.maxOf { it[index].y } } }
@@ -65,40 +66,50 @@ internal object ExerciseMotions {
     private var legacy: JSONObject? = null
     private var sports: JSONObject? = null
 
-    fun load(context: Context, exerciseId: String): ExerciseMotion? {
+    fun load(context: Context, exerciseId: String): ExerciseMotion? =
+        loadAsset(exerciseId) { read(context, it) }
+
+    private fun loadAsset(exerciseId: String, readAsset: (String) -> JSONObject): ExerciseMotion? {
         if (!idPattern.matches(exerciseId)) return null
         return runCatching {
             when {
                 exerciseId.startsWith("hx_") -> {
-                    val records = legacy ?: read(context,"hunter2000-poses.json").also { legacy = it }
+                    val records = legacy ?: readAsset("hunter2000-poses.json").also { legacy = it }
                     parse(records.getJSONObject(exerciseId),"historical",exerciseId)
                 }
                 exerciseId.startsWith("sport-") -> {
-                    val records = sports ?: read(context,"exercise-actor/sports-poses.json").also { sports = it }
+                    val records = sports ?: readAsset("exercise-actor/sports-poses.json").also { sports = it }
                     parse(records.getJSONObject(exerciseId),"sport",exerciseId)
                 }
-                else -> parse(read(context,"demos30/$exerciseId.json"),"original",exerciseId)
+                else -> parse(readAsset("demos30/$exerciseId.json"),"original",exerciseId)
             }
         }.getOrNull()
     }
 
-    fun load(context: Context, exercise: Exercise): ExerciseMotion? {
+    fun load(context: Context, exercise: Exercise): ExerciseMotion? =
+        resolve(exercise) { read(context, it) }
+
+    fun resolve(exercise: Exercise, readAsset: (String) -> JSONObject): ExerciseMotion? {
+        RingExerciseMotions.load(exercise.id)?.let { return it }
         if (CoreExerciseClips.hasInconsistentInstructions(exercise)) return null
-        val motion = CoreExerciseClips.load(exercise) ?: LegacySingleExerciseMotions.load(exercise.id) { load(context,it) }
-            ?: load(context,exercise.raw.s("motionReference",exercise.id))
+        val motion = CoreExerciseClips.load(exercise) ?: LegacySingleExerciseMotions.load(exercise.id) { loadAsset(it,readAsset) }
+            ?: loadAsset(exercise.raw.s("motionReference",exercise.id),readAsset)
         return motion?.withApparatus(exercise)
     }
 
     fun loadSequence(context: Context, exercise: Exercise, catalog: Catalog? = null): List<ExerciseMotion>? =
         loadClips(context, exercise, catalog)?.map(ExerciseClip::motion)
 
-    fun loadClips(context: Context, exercise: Exercise, catalog: Catalog? = null): List<ExerciseClip>? {
+    fun loadClips(context: Context, exercise: Exercise, catalog: Catalog? = null): List<ExerciseClip>? =
+        resolveClips(exercise, catalog) { read(context, it) }
+
+    fun resolveClips(exercise: Exercise, catalog: Catalog?, readAsset: (String) -> JSONObject): List<ExerciseClip>? {
         val ids = exercise.raw.a("sequenceParts").strings()
-        if (ids.isEmpty()) return LegacyExerciseClips.load(exercise) { load(context, it) }
+        if (ids.isEmpty()) return LegacyExerciseClips.load(exercise) { loadAsset(it,readAsset) }
         if (ids.size != 2 || ids.distinct().size != ids.size) return null
         val labels = exercise.raw.a("sequenceLabels").strings()
         return ids.mapIndexed { index, id ->
-            val motion = load(context, id) ?: return null
+            val motion = loadAsset(id,readAsset) ?: return null
             val component = catalog?.byId?.get(id)
             ExerciseClip(labels.getOrNull(index) ?: component?.name ?: "Gesto ${index + 1}", id,
                 component?.let { motion.withApparatus(it) } ?: motion)
