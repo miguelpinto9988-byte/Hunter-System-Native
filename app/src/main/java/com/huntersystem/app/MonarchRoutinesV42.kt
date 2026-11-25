@@ -134,7 +134,7 @@ private fun MonarchRoutineModeCard(title:String,subtitle:String,tag:String,count
     val c=LocalHunter.current
     val shape=RoundedCornerShape(23.dp)
     Box(Modifier.fillMaxWidth().clip(shape)
-        .background(Brush.linearGradient(listOf(c.surface,c.panel,c.input)))
+        .then(if(LocalMonarchPanelRefresh.current)Modifier.background(c.panel) else Modifier.background(Brush.linearGradient(listOf(c.surface,c.panel,c.input))))
         .monarchPressable(shape,role=Role.Button,onClick=onClick)
         .semantics { contentDescription="$title, $subtitle. Abrir biblioteca." }
         .padding(21.dp)){

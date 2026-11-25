@@ -90,7 +90,8 @@ private fun MonarchNavItem(
      if(selected)c.accent else c.muted,
      animationSpec=if(LocalMonarchMotion.current.reduced)snap() else tween(180),
      label="nav-tint")
- val shape=RoundedCornerShape(18.dp)
+ val refresh=LocalMonarchPanelRefresh.current
+ val shape=RoundedCornerShape(if(refresh)14.dp else 18.dp)
  val interaction=remember{MutableInteractionSource()}
  val pressed by interaction.collectIsPressedAsState()
  val item=Modifier
@@ -106,7 +107,7 @@ private fun MonarchNavItem(
  Column(item.fillMaxWidth().fillMaxHeight().padding(vertical=5.dp),
      horizontalAlignment=Alignment.CenterHorizontally,
      verticalArrangement=Arrangement.spacedBy(4.dp)){
-     HunterNavigationPngIcon(monarchPngDestination(destination.id), selected, Modifier.size(44.dp), destination.title)
+     HunterNavigationPngIcon(monarchPngDestination(destination.id), selected, Modifier.size(if(refresh)34.dp else 44.dp), destination.title)
      HText(destination.title,size=11,bold=selected,color=tint,maxLines=1)
  }
 }
@@ -115,10 +116,11 @@ private fun MonarchNavItem(
 @Composable
 fun MonarchBottomNavigation(ui:NativeUi){
     val c=LocalHunter.current
+    val refresh=LocalMonarchPanelRefresh.current
     Row(Modifier.fillMaxWidth()
-        .background(Brush.verticalGradient(listOf(c.surface,c.panel)))
+        .then(if(refresh)Modifier.background(c.panel) else Modifier.background(Brush.verticalGradient(listOf(c.surface,c.panel))))
         .border(.8.dp,c.line.copy(alpha=.68f))
-        .navigationBarsPadding().height(86.dp).padding(horizontal=6.dp,vertical=5.dp),
+        .navigationBarsPadding().height(if(refresh)72.dp else 86.dp).padding(horizontal=6.dp,vertical=5.dp),
         verticalAlignment=Alignment.CenterVertically,
         horizontalArrangement=Arrangement.spacedBy(3.dp)){
         for(destination in MonarchNavigation.tabs){

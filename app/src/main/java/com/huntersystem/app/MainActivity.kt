@@ -78,7 +78,7 @@ fun HunterRoot(ui:NativeUi){
         containerColor=androidx.compose.ui.graphics.Color.Transparent,
         bottomBar={
             if(hasProfile && !profileStandalone && store.readError==null)
-                MonarchBottomNavigation(ui)
+                MonarchPanelTheme { MonarchBottomNavigation(ui) }
         }
     ){insets->
         Box(Modifier.fillMaxSize().padding(insets)){
@@ -91,12 +91,19 @@ fun HunterRoot(ui:NativeUi){
                     Box(Modifier.fillMaxSize()){
                         MonarchScreenTransition(ui.tab,Modifier.fillMaxSize()){route->
                             saveableScreens.SaveableStateProvider(route){
-                                when(route){
-                                    "home"->HomeScreen(ui)
-                                    "plan"->PlanScreen(ui)
+                                if(route in setOf("home","plan","routines","book")){
+                                    MonarchPanelTheme {
+                                        Box(Modifier.fillMaxSize().background(LocalHunter.current.bg)){
+                                            when(route){
+                                                "home"->HomeScreen(ui)
+                                                "plan"->PlanScreen(ui)
+                                                "routines"->RoutinesScreen(ui)
+                                                "book"->ExercisesScreen(ui)
+                                            }
+                                        }
+                                    }
+                                } else when(route){
                                     "objectives"->ObjectivesScreen(ui)
-                                    "routines"->RoutinesScreen(ui)
-                                    "book"->ExercisesScreen(ui)
                                     "stats"->ProgressScreen(ui)
                                     else->HomeScreen(ui)
                                 }

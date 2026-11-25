@@ -36,7 +36,7 @@ internal fun Modifier.monarchOutline(
  val target=when{
   !enabled->c.line.copy(alpha=.38f)
   emphasis->c.outlineAccent.copy(alpha=.96f)
-  else->lerp(c.line,c.outlineAccent,.16f).copy(alpha=.68f)
+  else->if(LocalMonarchPanelRefresh.current)c.line.copy(alpha=.85f) else lerp(c.line,c.outlineAccent,.16f).copy(alpha=.68f)
  }
  val color by animateColorAsState(target,
   animationSpec=if(reduced)snap() else tween(170),label="monarca-outline-color")

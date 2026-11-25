@@ -1,0 +1,32 @@
+name: Vista previa visual Monarca 134
+on:
+  push:
+    branches: [qa/redisenio-paneles-134]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Auditar catálogo intacto
+        run: python3 tools/check_hunter2000_complete.py
+      - name: Compilar vista previa
+        run: bash gradlew --no-daemon --max-workers=2 :app:assembleDebug
+      - name: Auditar APK
+        run: python3 tools/check_hunter2000_complete.py --apk app/build/outputs/apk/debug/app-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Monarca-134-redisenio-visual-preview
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
+      - name: Pruebas existentes
+        run: bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest

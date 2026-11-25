@@ -99,16 +99,17 @@ fun rankKey(level:Int)=listOf("E","D","C","B","A","S")[((level-1)/5).coerceIn(0,
 @Composable fun Header(ui:NativeUi){
  val s=ui.store
  val rank=rankKey(s.stats().i("level",1))
- Row(Modifier.fillMaxWidth().padding(bottom=12.dp),
+ val refresh=LocalMonarchPanelRefresh.current
+ Row(Modifier.fillMaxWidth().padding(bottom=if(refresh)4.dp else 12.dp),
      verticalAlignment=Alignment.CenterVertically,
      horizontalArrangement=Arrangement.spacedBy(8.dp)){
   Column(Modifier.weight(1f)){
-   Heading("HUNTER SYSTEM",size=28)
+   Heading("HUNTER SYSTEM",size=if(refresh)25 else 28)
    Eyebrow("SISTEMA DE SOMBRAS")
   }
   HText(rank,size=22,bold=true,color=LocalHunter.current.accent)
   Avatar(s.state.s("avatar"),s.profile?.s("name")?:"C",
-    Modifier.size(36.dp).clickable{ui.go("profile")}.semantics{
+    Modifier.size(if(refresh)48.dp else 36.dp).clickable{ui.go("profile")}.semantics{
       contentDescription="Abrir perfil"
     })
  }
@@ -118,7 +119,7 @@ fun rankKey(level:Int)=listOf("E","D","C","B","A","S")[((level-1)/5).coerceIn(0,
  Box(Modifier.fillMaxSize(),contentAlignment=Alignment.TopCenter){
   Column(Modifier.widthIn(max=960.dp).fillMaxWidth().fillMaxHeight()
     .verticalScroll(scroll).padding(horizontal=18.dp,vertical=20.dp),
-    verticalArrangement=Arrangement.spacedBy(20.dp)){
+    verticalArrangement=Arrangement.spacedBy(if(LocalMonarchPanelRefresh.current)16.dp else 20.dp)){
     if(showHeader)Header(ui)
     content()
     Spacer(Modifier.height(25.dp))
