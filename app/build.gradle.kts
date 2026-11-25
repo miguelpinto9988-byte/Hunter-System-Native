@@ -8,7 +8,10 @@ android {
  compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
  kotlinOptions { jvmTarget = "17" }
  buildFeatures { compose = true }
- androidResources { noCompress += listOf("mp4", "webp", "wav") }
+ androidResources {
+   noCompress += listOf("mp4", "webp", "wav")
+   ignoreAssetsPatterns.addAll(listOf("!.svn", "!.git", "!.ds_store", "!*.scc", ".*", "<dir>_*", "!CVS", "!thumbs.db", "!picasa.ini", "!*~", "<dir>exercise-3d"))
+ }
  testOptions { unitTests.isIncludeAndroidResources = true; unitTests.all { t ->
    t.systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
    listOf("http.proxyHost","http.proxyPort","https.proxyHost","https.proxyPort","javax.net.ssl.trustStore").forEach { key -> System.getProperty(key)?.let { t.systemProperty(key,it) } }
