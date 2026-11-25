@@ -1,97 +1,92 @@
 package com.huntersystem.app
 
-import androidx.compose.foundation.background
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
+/**
+ * Hunter System V42.6 Monarca fase 07: escenario reutilizable de ejercicios.
+ * Reproduce los SVG animados originales en Canvas Android, sin motor Rive ni WebView.
+ * Estas demostraciones no sustituyen la revisión biomecánica.
+ */
 @Composable
-fun MonarchExerciseStage(exercise:Exercise,catalog:Catalog,mirror:Boolean,height:Int=340,
-                         play:Boolean=true, reset:Int=0, showExerciseName:Boolean=true,
-                         onTogglePlayback:(()->Unit)?=null,thumbnail:Boolean=false){
-    val context=LocalContext.current
-    val clips = remember(context, catalog, exercise.id) {
-        ExerciseMotions.loadClips(context, exercise, catalog)
-    }
-    val parts = remember(clips) { clips?.map(ExerciseClip::motion) }
-    val motion = remember(context, exercise.id, parts) {
-        if (parts == null) ExerciseMotions.load(context, exercise) else null
-    }
-    val playlist = parts?.let {
-        rememberExercisePhase(it, it.sumOf { part -> part.duration.toDouble() }.toFloat(), play, reset)
-    }
-    val boundary = parts?.let { it[0].duration / (it[0].duration + it[1].duration) }
-    val current = remember(playlist, boundary) {
-        derivedStateOf { if (playlist != null && boundary != null && playlist.floatValue >= boundary) 1 else 0 }
-    }.value
-    val sequenceFraming = remember(parts) { parts?.map(ExerciseFraming::from).orEmpty() }
+fun MonarchExerciseStage(
+    name:String,
+    demo:String,
+    isRunning:Boolean,
+    speed:Float,
+    mirror:Boolean,
+    progress:Float=0f,
+    height:Int=340,
+    showProgress:Boolean=true,
+    restartToken:Int=0
+){
     val c=LocalHunter.current
-    val guided=onTogglePlayback!=null||thumbnail
-    val frame=if(guided)GuidedSessionFrame else RoundedCornerShape(24.dp)
-    val canPlay=parts?.any { !it.staticHold } ?: (motion?.staticHold==false)
-    val hasPlaybackControl=onTogglePlayback!=null&&canPlay&&!LocalMonarchMotion.current.reduced
-    val controlsWidth=if(hasPlaybackControl)56.dp else 0.dp
+    val frame=RoundedCornerShape(24.dp)
     Column(Modifier.fillMaxWidth().clip(frame)
         .background(Brush.verticalGradient(listOf(c.surface,c.panel)))
         .monarchOutline(frame)
-        .padding(if(thumbnail)0.dp else if(guided)8.dp else 12.dp),
-        verticalArrangement=Arrangement.spacedBy(if(guided)4.dp else 9.dp)){
-        if(!guided) Eyebrow("DEMOSTRACIÓN")
-        if(motion==null && parts==null){
-            if(!thumbnail) {
-                val message = if (CoreExerciseClips.hasInconsistentInstructions(exercise))
-                    "Demostración en revisión. La ficha combina indicaciones de movimientos distintos."
-                else "Este ejercicio aún no tiene demostración."
-                HText(message,size=15,color=c.muted)
-            }
-        }else{
-            Box(Modifier.fillMaxWidth().height(height.dp)
-                .clip(if(guided)GuidedSessionFrame else RoundedCornerShape(17.dp)).background(c.input),
-                contentAlignment=Alignment.Center){
-                if (parts != null && playlist != null && boundary != null) {
-                    ExerciseActor(parts[current], Modifier.fillMaxSize(), false, mirror, reset, sequenceFraming,
-                        themedStage=guided,controlsWidth=controlsWidth) {
-                        val phase = playlist.floatValue
-                        if (current == 0) (phase / boundary).coerceIn(0f, .9999f)
-                        else ((phase - boundary) / (1f - boundary)).coerceIn(0f, .9999f)
-                    }
-                } else if(motion!=null) ExerciseActor(motion,Modifier.fillMaxSize(),play,mirror,reset,
-                    themedStage=guided,controlsWidth=controlsWidth)
-                if(hasPlaybackControl)
-                    GuidedSessionButton(if(play)"Pausar demostración" else "Reanudar demostración",
-                        if(play)GuidedSessionGlyph.PAUSE else GuidedSessionGlyph.PLAY,
-                        Modifier.align(Alignment.TopEnd).padding(5.dp),
-                        iconOnly=true,onClick=onTogglePlayback)
-            }
-            if (!thumbnail && parts != null && playlist != null && boundary != null) {
-                val label = clips?.getOrNull(current)?.label.orEmpty()
-                HText("${current + 1} de ${parts.size} · $label",
-                    size=12,color=c.muted)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    HButton("Gesto 1", Modifier.weight(1f)) { playlist.floatValue = 0f }
-                    HButton("Gesto 2", Modifier.weight(1f)) { playlist.floatValue = boundary }
-                }
-            }
-            val reference = exercise.raw.s("motionReferenceLabel")
-            if (!thumbnail && reference.isNotBlank()) HText(reference,size=12,color=c.muted)
-            if(!thumbnail && (parts != null || motion?.source in listOf("historical","sport")))
-                HText("Animación ilustrativa. Consulta la guía del ejercicio.",size=12,color=c.muted)
+        .padding(12.dp),verticalArrangement=Arrangement.spacedBy(9.dp)){
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
+            verticalAlignment=Alignment.CenterVertically){
+            Eyebrow("DEMOSTRACIÓN NATIVA · SVG 2D")
+            HText(if(isRunning)"● EN MOVIMIENTO" else "Ⅱ PAUSADA",
+                size=12,bold=true,color=if(isRunning)c.accent else c.muted)
         }
-        if(!guided)ExerciseTechniquePanel(exercise, parts?.getOrNull(current) ?: motion,
-            clips?.getOrNull(current)?.sourceId ?: exercise.id)
-        if(!guided) {
-            val visible = parts?.getOrNull(current) ?: motion
-            val labels = visible?.let(::equipmentLabels).orEmpty()
-            if(labels.isNotEmpty()) HText("Equipo · ${labels.joinToString(" · ")}",size=13,color=c.muted)
+        Box(Modifier.fillMaxWidth().height(height.dp)
+            .clip(RoundedCornerShape(17.dp)).background(c.input),
+            contentAlignment=Alignment.Center){
+            key(demo,restartToken){
+                OriginalSvg(demo,Modifier.fillMaxWidth().fillMaxHeight(),
+                    play=isRunning,speed=speed,mirror=mirror,progress=progress.coerceIn(0f,1f))
+            }
         }
-        if(showExerciseName)HText(exercise.name,size=14,color=c.text,maxLines=1)
+        if(showProgress){
+            LinearProgressIndicator(progress={progress.coerceIn(0f,1f)},
+                modifier=Modifier.fillMaxWidth().height(4.dp).clip(RoundedCornerShape(6.dp)),
+                color=c.accent,trackColor=c.line)
+        }
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween){
+            HText(name,size=14,color=c.text,maxLines=1,modifier=Modifier.weight(1f))
+            HText("${speed}×  ${if(mirror)"ESPEJO" else "NORMAL"}",
+                size=12,color=c.muted)
+        }
+    }
+}
+
+/** Controles táctiles con objetivos grandes; velocidad visual y temporizador son independientes. */
+@Composable
+fun MonarchPlaybackControls(
+    running:Boolean,
+    speed:Float,
+    mirror:Boolean,
+    onToggle:()->Unit,
+    onRestart:()->Unit,
+    onMirror:()->Unit,
+    onSpeed:(Float)->Unit
+){
+    Column(verticalArrangement=Arrangement.spacedBy(10.dp)){
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(9.dp)){
+            HButton(if(running)"Ⅱ  PAUSAR" else "▶  REPRODUCIR",
+                Modifier.weight(1f),primary=true){onToggle()}
+            HButton("↺  REINICIAR",Modifier.weight(1f)){onRestart()}
+        }
+        Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(9.dp),
+            verticalAlignment=Alignment.CenterVertically){
+            HSelect("VELOCIDAD",speed.toString(),
+                listOf("0.5" to "0,5×","1.0" to "1×","1.5" to "1,5×","2.0" to "2×"),
+                Modifier.weight(1f)){onSpeed(it.toFloat())}
+            HButton(if(mirror)"ESPEJO ✓" else "⇄ ESPEJO",Modifier.weight(1f)){onMirror()}
+        }
     }
 }

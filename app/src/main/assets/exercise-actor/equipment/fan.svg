@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="100" height="64" viewBox="0 0 100 64">
-  <g id="fan" stroke-linecap="round" stroke-linejoin="round">
-    <circle cx="50" cy="32" r="28" fill="#38576D" stroke="#B5D3D7" stroke-width="3"/><path d="M50 30Q41 23 49 8q12-2 11 6t-10 16M51 33q11-4 20 10-3 11-11 8t-9-18M47 33q-1 12-19 11-6-10 1-14t18 3" fill="#7399AA"/><circle cx="50" cy="32" r="5" fill="#E9AC65"/>
-  </g>
-</svg>

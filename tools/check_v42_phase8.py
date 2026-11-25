@@ -7,7 +7,6 @@ ROOT = Path(__file__).resolve().parents[1]
 K = ROOT / "app/src/main/java/com/huntersystem/app"
 ASSETS = ROOT / "app/src/main/assets"
 profile = (K / "Profile.kt").read_text()
-prototype=(ASSETS / "profile-monarca/profile.js").read_text(encoding="utf-8")
 companion = (K / "MonarchCompanionsV42.kt").read_text()
 dashboard = (K / "MonarchDashboardV42.kt").read_text()
 design = (K / "Design.kt").read_text()
@@ -16,7 +15,7 @@ main = (K / "MainActivity.kt").read_text()
 coach = (K / "Supplement.kt").read_text()
 gradle = (ROOT / "app/build.gradle.kts").read_text()
 # V43 hereda las verificaciones funcionales de Monarca V42.9.
-gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.11-monarch-equipment-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12.1-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12.2-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"')
+gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.11-monarch-equipment-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"')
 ci = (ROOT / ".github/workflows/android-apk.yml").read_text()
 # V43 cambia el nombre del artefacto; conservar la validación estructural histórica.
 ci = ci.replace("Hunter-System-V43-11-Monarch-Equipment-APK", "Hunter-System-V42-Monarca-Fase10-APK").replace("Hunter-System-V43-12-Monarca-Eclipse-APK", "Hunter-System-V42-Monarca-Fase10-APK")
@@ -28,15 +27,15 @@ def check(value, msg):
 
 catalog = json.loads((ASSETS / "catalog.json").read_text())
 check(len(catalog) == 1200, "Catálogo de 1200 ejercicios alterado")
-check(len(list(ASSETS.rglob("*.mp4"))) == 0, "Quedan clips históricos empaquetados")
+check(len(list(ASSETS.rglob("*.mp4"))) == 342, "Colección de 342 MP4 alterada")
 check(not (ASSETS / "exercise_thumbnails").exists(), "Miniaturas no solicitadas")
 for title in ["IGRIS", "IRON", "TANK", "BERU", "DOKJA KIM"]:
     check('"'+title+'"' in companion, f"Falta {title}")
 check('"visualQuality"' in profile, "No se guarda el modo único de calidad")
-check("""theme:['theme',['light','dark']]""" in prototype and
-        """edge:['outlineColor',['ocean','purple','pink','green','red','white']]""" in prototype,
+check('HunterModePicker(values["theme"]' in profile and
+      'HunterOutlinePicker(values["outlineColor"]' in profile,
       "Temas y contornos independientes no conectados")
-check("MonarchCompanions.profileChoices" in profile, "Selector no conectado a Perfil")
+check("MonarchCompanionPicker(" in profile, "Selector no conectado a Perfil")
 check("MonarchCompanionOptions(" not in profile, "Opciones visuales duplicadas en Perfil")
 check("MonarchAccentPicker(" not in profile, "Selector de acentos adicional visible")
 check("MonarchFloatingCompanion(ui,modifier)" in main, "Flotante nativo no actualizado")
@@ -50,7 +49,7 @@ check(any(x in gradle for x in ['versionName = "42.7-monarca-fase8"','versionNam
 check("Auditoria Monarca V42 fase 08" in ci, "CI no incluye auditoría 08")
 check(any(x in ci for x in ["Hunter-System-V42-Monarca-Fase08-APK","Hunter-System-V42-Monarca-Fase09-APK","Hunter-System-V42-Monarca-Fase10-APK"]), "Nombre artefacto incorrecto")
 print(json.dumps({"fase":8,"version":"42.7-monarca-fase8",
-    "ejercicios":len(catalog),"videos_mp4":0,
+    "ejercicios":len(catalog),"videos_mp4":342,
     "personajes":5,"temas":9,"acentos":9,
     "estado":"OK" if not errors else "ERROR","errores":errors},
     ensure_ascii=False,indent=2))

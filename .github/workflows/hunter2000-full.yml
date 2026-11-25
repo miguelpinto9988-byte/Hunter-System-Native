@@ -1,4 +1,4 @@
-name: Validar catálogo y demostraciones de Hunter System
+name: Validar y compilar Hunter 2000 completo
 
 on:
   workflow_dispatch:
@@ -16,14 +16,14 @@ permissions:
 
 jobs:
   verify-and-build:
-    name: Auditoría del personaje vectorial y la APK
+    name: Auditoría de 2000 recursos + APK
     runs-on: ubuntu-latest
     timeout-minutes: 90
     steps:
       - name: Obtener código fuente
         uses: actions/checkout@v4
 
-      - name: Comprobar catálogo y ausencia de demostraciones históricas
+      - name: Exigir 2000 SVG originales y 800 fichas pendientes de QA
         run: python3 tools/check_hunter2000_complete.py
 
       - name: Configurar Java 17
@@ -65,13 +65,34 @@ jobs:
           HUNTER_STORE_PASSWORD: ${{ secrets.HUNTER_STORE_PASSWORD }}
         run: bash gradlew --no-daemon --max-workers=2 :app:assembleRelease
 
-      - name: Comprobar catálogo y animaciones en la APK
-        run: python3 tools/check_hunter2000_complete.py --apk "$(find app/build/outputs/apk/release -name '*.apk' -print -quit)"
+      - name: Comprobar contenido de la APK
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile
+          import json
+          apk = next(iter(Path('app/build/outputs/apk/release').glob('*.apk')))
+          with ZipFile(apk) as f:
+              ns=set(f.namelist())
+              svg={x for x in ns if x.startswith('assets/demos30/') and x.endswith('.svg')}
+              assert len(svg)==2000, f'La APK contiene {len(svg)} SVG, se esperaban 2000'
+              assert not [x for x in ns if x.endswith('.riv') or 'librive-android.so' in x]
+              import hashlib
+              qa=json.loads(Path('app/src/main/assets/hunter2000-qa-status.json').read_text())
+              assert all(hashlib.sha256(f.read(x)).hexdigest()==qa['SHA256_by_asset'][x.removeprefix('assets/')] for x in svg)
+              path='assets/catalog-hunter2000-extra.json'
+              assert path in ns
+              new=json.loads(f.read(path))
+              assert len(new)==800
+              assert all(not x.get('approvedForAutoplan',True) for x in new)
+              print(f'APK verificada: {len(svg)} SVG, 0 Rive, 800 pendientes de QA')
+          PY
 
-      - name: Publicar APK verificada
+      - name: Publicar APK de 2000 ejercicios
         uses: actions/upload-artifact@v4
         with:
-          name: Hunter-System-V43-Animaciones-Nativas-APK
+          name: Hunter-System-V43-2-2000-SVG-Preview-APK
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 14

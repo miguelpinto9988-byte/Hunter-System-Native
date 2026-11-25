@@ -46,14 +46,14 @@ object GroupEvolution {
  data class Adjustment(
   val group:String, val steps:Int=0, val lastDate:String="",
   val lastRpe:Int=0, val samples7:Int=0, val samples14:Int=0,
-  val samples21:Int=0,val technicalReady:Boolean=false
+  val samples21:Int=0
  )
 
  fun evaluate(logs:JSONObject,date:String,group:String,p:JSONObject?,catalog:Catalog):Adjustment {
   if(group !in families)return Adjustment(group)
   val past=logs.entries().mapNotNull{(d,raw)->
    val log=raw as? JSONObject?:return@mapNotNull null
-   if(d>=date||!Regex("\\d{4}-\\d{2}-\\d{2}").matches(d)||!log.b("complete")||!log.a("items").objects().any(MonarchLegacyHistory::completed)||log.b("pain")||log.i("rpe") !in 1..10)return@mapNotNull null
+   if(d>=date||!Regex("\\d{4}-\\d{2}-\\d{2}").matches(d)||!log.b("complete")||log.b("pain")||log.i("rpe") !in 1..10)return@mapNotNull null
    if(logGroup(log,p,catalog)!=group ||
        com.huntersystem.app.planning.CategoryMapper.normalize(log.s("categoryRpe")) !=
        com.huntersystem.app.planning.CategoryMapper.normalize(group))return@mapNotNull null
@@ -84,21 +84,21 @@ object GroupEvolution {
     else -> 0
    }
   }
-  val reviews=listOf(review(seven,2),review(fourteen,3),review(twentyOne,5))
-  steps+=reviews.sum()
+  steps+=review(seven,2)
+  steps+=review(fourteen,3)
+  steps+=review(twentyOne,5)
   // A stopped or painful session must block progression even if a previous
   // completed session was easy. It remains visible to the existing risk filters.
   val recentProblem=logs.entries().any{(d,v)->
    val l=v as? JSONObject
    l!=null&&d<date&&d>=plus(date,-14)&&logGroup(l,p,catalog)==group&&
-    (l.b("pain")||l.b("fatigue")||l.b("interrupted")||
+    (l.b("pain")||l.b("fatigue")||
      (com.huntersystem.app.planning.CategoryMapper.normalize(l.s("categoryRpe")) ==
       com.huntersystem.app.planning.CategoryMapper.normalize(group) && l.i("rpe")>=8))
   }
   if(high||recentProblem)steps=steps.coerceAtMost(0)
   // Global safety and medical gates are still enforced by the existing Rules.
-  return Adjustment(group,steps.coerceIn(-2,2),last.first,latestRpe,seven.size,
-   fourteen.size,twentyOne.size,!high&&!recentProblem&&latestRpe<=4&&reviews.any{it>0})
+  return Adjustment(group,steps.coerceIn(-2,2),last.first,latestRpe,seven.size,fourteen.size,twentyOne.size)
  }
 
  fun feedback(logs:JSONObject,date:String,group:String,p:JSONObject?,catalog:Catalog):Feedback {
@@ -108,13 +108,13 @@ object GroupEvolution {
    d to log
   }
   val week=rows.filter{it.first>=plus(date,-7)}
-  val done=week.map{it.second}.filter{it.b("complete")&&it.a("items").objects().any(MonarchLegacyHistory::completed)&&!it.b("pain")&&!it.b("manual")}
+  val done=week.map{it.second}.filter{it.b("complete")&&!it.b("pain")&&!it.b("manual")}
   val scores=done.filter{
    com.huntersystem.app.planning.CategoryMapper.normalize(it.s("categoryRpe")) ==
     com.huntersystem.app.planning.CategoryMapper.normalize(group)
   }.map{it.n("rpe")}.filter{it in 1.0..10.0}
   val avg=if(scores.isEmpty())0.0 else scores.average()
-  val strain=rows.any{it.second.b("pain")||it.second.b("fatigue")||it.second.b("interrupted")||
+  val strain=rows.any{it.second.b("pain")||it.second.b("fatigue")||
    (com.huntersystem.app.planning.CategoryMapper.normalize(it.second.s("categoryRpe")) ==
     com.huntersystem.app.planning.CategoryMapper.normalize(group) && it.second.n("rpe")>=8)}
   val adherence=if(week.isEmpty())0.0 else done.size.toDouble()/week.size

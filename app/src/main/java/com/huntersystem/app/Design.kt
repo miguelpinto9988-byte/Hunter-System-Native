@@ -220,5 +220,5 @@ private val adaptiveBitmapCache=object:android.util.LruCache<String,ImageBitmap>
  if(bitmap!=null)Image(bitmap!!,description,modifier,contentScale=scale,alignment=alignment)
 }
 @Composable fun Avatar(data:String,name:String,modifier:Modifier=Modifier){val image=remember(data){if(data.isBlank())null else runCatching{val b=Base64.decode(data.substringAfter(','),Base64.DEFAULT);BitmapFactory.decodeByteArray(b,0,b.size)?.asImageBitmap()}.getOrNull()};Box(modifier.clip(CircleShape).background(LocalHunter.current.selected),contentAlignment=Alignment.Center){if(image!=null)Image(image,null,Modifier.fillMaxSize(),contentScale=ContentScale.Crop) else HText(name.take(1).uppercase().ifBlank{"C"},size=23,bold=true)}}
-fun companionKey(p:JSONObject?)=mapOf("knight" to "igris","warrior" to "iron","bear" to "tank","insect" to "beru","scientist" to "dokja","tusk" to "tusk")[p?.s("companionCharacter")]?:"igris"
-fun companionName(p:JSONObject?)=mapOf("igris" to "IGRIS","iron" to "IRON","tank" to "TANK","beru" to "BERU","dokja" to "DOKJA KIM","tusk" to "TUSK")[companionKey(p)]?:"IGRIS"
+fun companionKey(p:JSONObject?)=mapOf("knight" to "igris","warrior" to "iron","bear" to "tank","insect" to "beru","scientist" to "dokja")[p?.s("companionCharacter")]?:"igris"
+fun companionName(p:JSONObject?)=mapOf("igris" to "IGRIS","iron" to "IRON","tank" to "TANK","beru" to "BERU","dokja" to "DOKJA KIM")[companionKey(p)]?:"IGRIS"

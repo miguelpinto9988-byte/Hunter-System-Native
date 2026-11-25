@@ -7,7 +7,6 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
 import android.util.Base64
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -37,23 +36,8 @@ class MainActivity:ComponentActivity(){
  private fun toast(message:String){Toast.makeText(this,message,Toast.LENGTH_LONG).show()}
  override fun onCreate(savedInstanceState:Bundle?){
   super.onCreate(savedInstanceState)
-  setContent{var repository by remember{mutableStateOf<NativeStore?>(null)};var error by remember{mutableStateOf<String?>(null)};
-  LaunchedEffect(Unit) {
-    delay(20000)
-    if(repository==null && error==null) {
-      Log.e("HunterStartup","Loading local catalog/profile exceeded 20s")
-      error="La carga de los datos locales no respondió. Puedes reintentar sin eliminar tus datos."
-    }
-  }
-  LaunchedEffect(Unit){try{val s=withContext(Dispatchers.IO){Log.i("HunterStartup","Opening local catalog and saved state");HunterRepository.get(this@MainActivity).also{Log.i("HunterStartup","Catalog opened; saved state present: "+(it.profile!=null));if(it.readError==null)it.refreshWeek()}};Log.i("HunterStartup","Repository prepared");val controller=NativeUi(s);controller.message={toast(it)};controller.export={createBackup.launch("Hunter-System-Backup-${today()}.json")};controller.import={openBackup.launch(arrayOf("application/json","text/plain","application/octet-stream"))};controller.chooseAvatar={pickAvatar.launch("image/*")};controller.requestNotifications={if(android.os.Build.VERSION.SDK_INT>=33)notifyPermission.launch(Manifest.permission.POST_NOTIFICATIONS)};controller.openUrl={url->runCatching{val uri=Uri.parse(url);require(uri.scheme=="https");startActivity(Intent(Intent.ACTION_VIEW,uri))}.onFailure{toast("No se pudo abrir el enlace")}};savedInstanceState?.getString("tab")?.let{if(it=="profile")controller.openProfile() else if(it in MonarchNavigation.routes&&s.profile!=null)controller.tab=it};savedInstanceState?.getString("library")?.let{if(s.profile!=null)controller.library=it};savedInstanceState?.getString("top")?.let{controller.top=it};if(savedInstanceState?.getBoolean("profileOpen")==true)controller.openProfile();ui=controller;repository=s;error=null;Log.i("HunterStartup","Controller attached");if(intent?.action==HunterAlarms.OPEN)controller.open("reminders");if(s.readError==null)HunterAlarms.sync(s);if(s.readError==null)CreatorFeedNative.schedule(this@MainActivity,s.state.b("creatorAuto",true))}catch(e:Exception){Log.e("HunterStartup","Startup failed",e);error=e.message?:"No se pudo abrir Hunter System"}}
- val s=repository;MonarchMotionProvider { if(s!=null){HunterTheme(s){HunterRoot(ui!!)}}else Box(Modifier.fillMaxSize()){
-     MonarchBootScreen(error){recreate()}
-     if(error==null) Text(
-       "Iniciando Hunter System 43.12.1",
-       color=androidx.compose.ui.graphics.Color.White,
-       modifier=Modifier.align(Alignment.BottomCenter).padding(bottom=18.dp)
-     )
-   } }
+  setContent{var repository by remember{mutableStateOf<NativeStore?>(null)};var error by remember{mutableStateOf<String?>(null)};LaunchedEffect(Unit){try{val s=withContext(Dispatchers.IO){HunterRepository.get(this@MainActivity).also{if(it.readError==null)it.refreshWeek()}};val controller=NativeUi(s);controller.message={toast(it)};controller.export={createBackup.launch("Hunter-System-Backup-${today()}.json")};controller.import={openBackup.launch(arrayOf("application/json","text/plain","application/octet-stream"))};controller.chooseAvatar={pickAvatar.launch("image/*")};controller.requestNotifications={if(android.os.Build.VERSION.SDK_INT>=33)notifyPermission.launch(Manifest.permission.POST_NOTIFICATIONS)};controller.openUrl={url->runCatching{val uri=Uri.parse(url);require(uri.scheme=="https");startActivity(Intent(Intent.ACTION_VIEW,uri))}.onFailure{toast("No se pudo abrir el enlace")}};savedInstanceState?.getString("tab")?.let{if(it=="profile")controller.openProfile() else if(it in MonarchNavigation.routes&&s.profile!=null)controller.tab=it};savedInstanceState?.getString("library")?.let{if(s.profile!=null)controller.library=it};savedInstanceState?.getString("top")?.let{controller.top=it};if(savedInstanceState?.getBoolean("profileOpen")==true)controller.openProfile();ui=controller;repository=s;if(intent?.action==HunterAlarms.OPEN)controller.open("reminders");if(s.readError==null)HunterAlarms.sync(s);if(s.readError==null)CreatorFeedNative.schedule(this@MainActivity,s.state.b("creatorAuto",true))}catch(e:Exception){error=e.message?:"No se pudo abrir Hunter System"}}
+ val s=repository;MonarchMotionProvider { if(s!=null){HunterTheme(s){HunterRoot(ui!!)}}else MonarchBootScreen(error){recreate()} }
  }}
  override fun onNewIntent(intent:Intent){super.onNewIntent(intent);setIntent(intent);if(intent.action==HunterAlarms.OPEN)ui?.open("reminders")}
  override fun onResume(){super.onResume();ui?.let{if(it.store.readError==null)runCatching{HunterAlarms.sync(it.store)}}}

@@ -12,8 +12,6 @@ import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextAlign
@@ -167,132 +165,7 @@ fun HomeScreen(ui:NativeUi) {
 @Composable fun RoutineLibrary(ui:NativeUi,mode:String){MonarchRoutinesLibrary(ui,mode)}
 @Composable fun RoutineGenerator(ui:NativeUi,mode:String){MonarchRoutineGenerator(ui,mode){}}
 @Composable fun RoutineTile(ui:NativeUi,r:JSONObject){MonarchRoutineCard(ui,r,ui.store.adjusted())}
-@Composable
-@OptIn(ExperimentalComposeUiApi::class)
-fun ExercisesScreen(ui: NativeUi) {
-    val store = ui.store
-    var query by remember { mutableStateOf("") }
-    var focus by rememberSaveable { mutableStateOf(CatalogFocus.DYNAMIC) }
-    var category by remember { mutableStateOf("") }
-    var group by remember { mutableStateOf("") }
-    var difficulty by remember { mutableStateOf("") }
-    var gear by remember { mutableStateOf("") }
-    var restricted by remember { mutableStateOf(false) }
-    val levels = listOf("Inicial", "Intermedio", "Avanzado")
-    val families = remember(focus, category, store.catalog) {
-        store.catalog.libraryExercises.mapNotNull { exercise ->
-            store.catalog.classification(exercise.id)?.takeIf { focus.includes(exercise, it.category) }
-        }
-            .filter { category.isBlank() || it.category.code == category }
-            .map { it.family }.distinct().sorted()
-    }
-    val all = "" to "Todos"
-    var showFilters by rememberSaveable { mutableStateOf(false) }
-    val groups = remember(query, focus, category, group, difficulty, gear,
-        restricted, store.revision.intValue) {
-        val term = normalize(query)
-        val profile = if (restricted && store.profile != null) store.adjusted() else null
-        store.catalog.libraryExercises.filter { exercise ->
-            val classification = store.catalog.classification(exercise.id)
-            focus.includes(exercise, classification?.category) &&
-                store.catalog.matchesExercise(exercise,term) &&
-                (category.isBlank() || classification?.category?.code == category) &&
-                (group.isBlank() || classification?.family == group) &&
-                (difficulty.isBlank() || exercise.raw.i("level").toString() == difficulty) &&
-                (!restricted || profile != null && classification != null && store.rules.compatible(exercise, profile)) &&
-                when (gear) {
-                    "" -> true
-                    "body" -> exercise.equipmentKeys.isEmpty()
-                    else -> gear in exercise.equipmentKeys
-                }
-        }.groupBy { it.oldFamily }.values.toList()
-    }
-    LazyColumn(Modifier.fillMaxSize().padding(horizontal = 18.dp)
-        .semantics { testTagsAsResourceId = true }.testTag("exerciseCatalog"),
-        verticalArrangement = Arrangement.spacedBy(14.dp),
-        contentPadding = PaddingValues(top = 20.dp, bottom = 30.dp)) {
-        item { Header(ui) }
-        item { AcademyTile(ui) }
-        item {
-            Eyebrow("ARCHIVO DE ENTRENAMIENTO")
-            Heading("Catálogo de ejercicios")
-        }
-        item {
-            HInput(query, { query = it }, "Buscar ejercicio")
-            Spacer(Modifier.height(12.dp))
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                CatalogFocus.entries.toList().let { focuses ->
-                    for (row in listOf(focuses.take(2)) + focuses.drop(2).chunked(3)) {
-                        Chips(row.map { it.name to it.label }, focus.name) { selected ->
-                            focus = CatalogFocus.valueOf(selected)
-                            category = ""
-                            group = ""
-                        }
-                    }
-                }
-            }
-        }
-        item {
-            HButton(if (showFilters) "Ocultar filtros" else "Mostrar filtros", Modifier.fillMaxWidth()) {
-                showFilters = !showFilters
-            }
-            HText("${groups.size} ejercicios", size = 15, color = LocalHunter.current.muted)
-        }
-        if (showFilters) item {
-            if (focus != CatalogFocus.MOBILITY && focus != CatalogFocus.PREPARATION) {
-                val categories = trainingCategoryLabels.filterKeys { it.code != "mobility" }
-                Chips(listOf("" to "Todas") + categories.map { (key, name) -> key.code to name },
-                    category) { category = it; group = "" }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                HSelect("Familia", group, listOf(all) + families.map { it to it },
-                    Modifier.weight(1f)) { group = it }
-                HSelect("Nivel", difficulty, listOf(all) + levels.mapIndexed { index, label ->
-                    index.toString() to label
-                }, Modifier.weight(1f)) { difficulty = it }
-            }
-            HSelect("Equipo", gear, listOf(all, "body" to "Sin equipo declarado") +
-                store.catalog.originalEquipmentOptions, Modifier.fillMaxWidth()) { gear = it }
-            HCheck("Aplicar mis restricciones", restricted) { restricted = !restricted }
-        }
-        items(groups, key = { it.first().oldFamily }) { groupExercises ->
-            val family = groupExercises.first().oldFamily
-            val exercise = groupExercises.firstOrNull { it.isBaseVariant }
-                ?: store.catalog.originalExercise(family) ?: groupExercises.first()
-            val variants = groupExercises.filter { it.id != exercise.id }
-            val showBase = groupExercises.any { it.id == exercise.id }
-            var showVariants by rememberSaveable(family) { mutableStateOf(false) }
-            HPanel(padding = 18) {
-                val levelLabel = levels[exercise.raw.i("level").coerceIn(0, 2)]
-                val classification = store.catalog.classification(exercise.id)
-                Eyebrow(listOf(exercise.sport, trainingCategoryLabels[classification?.category].orEmpty(),
-                    classification?.family.orEmpty(), levelLabel)
-                    .filter { it.isNotBlank() }.joinToString(" · "))
-                Heading(exercise.name, size = 27)
-                if (showBase) HButton("Ver demostración", Modifier.fillMaxWidth().semantics {
-                    contentDescription = "Abrir ejercicio: ${exercise.name}"
-                }) { ui.open("exercise", obj("id" to exercise.id, "originalCatalog" to true)) }
-                if (exercise.validationBlocked)
-                    HText("PENDIENTE DE VALIDACIÓN", size = 13, color = LocalHunter.current.accent, bold = true)
-                val equipment = exercise.equipmentKeys.filter { it != "gym" || exercise.equipmentKeys.size == 1 }
-                    .map(store.catalog::equipmentLabel).joinToString(" · ").ifBlank { "Sin equipo declarado" }
-                HText(equipment, size = 15, color = LocalHunter.current.muted)
-                val intensityTags = listOfNotNull("Potencia".takeIf { exercise.isExplosiveMovement },
-                    "Impacto".takeIf { exercise.impact })
-                val unit = if (exercise.unit == "sec") "Por tiempo" else "Por repeticiones"
-                HText((intensityTags + unit).joinToString(" · "), size = 15, color = LocalHunter.current.muted)
-                if (showBase && variants.isNotEmpty()) {
-                    HButton(if (showVariants) "Ocultar variantes" else "Ver variantes (${variants.size})",
-                        Modifier.fillMaxWidth()) { showVariants = !showVariants }
-                }
-                if (showVariants || !showBase) for (variant in variants) {
-                    val label = variant.name
-                    HButton(label, Modifier.fillMaxWidth()) {
-                        ui.open("exercise", obj("id" to variant.id, "originalCatalog" to true))
-                    }
-                }
-            }
-        }
-    }
+@Composable fun ExercisesScreen(ui:NativeUi){val s=ui.store;var query by remember{mutableStateOf("")};var category by remember{mutableStateOf("")};var group by remember{mutableStateOf("")};var n by remember{mutableStateOf("")};var gear by remember{mutableStateOf("")};var variants by remember{mutableStateOf(true)};var restricted by remember{mutableStateOf(false)};val list=remember(query,category,group,n,gear,variants,restricted,s.revision.intValue){s.catalog.exercises.filter{e->(query.isBlank()||normalize(e.name).contains(normalize(query)))&&(category.isBlank()||e.category==category)&&(group.isBlank()||e.group==group)&&(n.isBlank()||e.raw.i("level").toString()==n)&&(variants||e.raw.s("variant")=="base")&&(!restricted||s.profile!=null&&s.rules.compatible(e,s.adjusted()))&&(gear.isBlank()||when(gear){"body"->e.equipment=="body"&&!e.gym;"db"->e.equipment=="db";"gym"->e.gym;else->gear in e.raw.a("materialRequirements").strings()})}}
+ LazyColumn(Modifier.fillMaxSize().padding(horizontal=18.dp),verticalArrangement=Arrangement.spacedBy(14.dp),contentPadding=PaddingValues(top=20.dp,bottom=30.dp)){item{Header(ui)};item{AcademyTile(ui)};item{Eyebrow("ARCHIVO DE ENTRENAMIENTO");Heading("Todos los ejercicios");HText("${s.catalog.exercises.size} fichas: ${s.catalog.originalExercises.size} originales + ${s.catalog.expansionExercises.size} nuevas pendientes de validación técnica",size=16,color=LocalHunter.current.muted)};item{HInput(query,{query=it},"Buscar ejercicio");Spacer(Modifier.height(12.dp));Chips(listOf("" to "Todas","Fuerza" to "Fuerza","Cardio" to "Cardio","Movilidad" to "Movilidad"),category){category=it}};item{Row(horizontalArrangement=Arrangement.spacedBy(7.dp)){HSelect("Grupo muscular",group,listOf("" to "Todos")+s.catalog.exercises.map{it.group}.distinct().map{it to it},Modifier.weight(1f)){group=it};HSelect("Nivel",n,listOf("" to "Todos","0" to "Inicial","1" to "Intermedio","2" to "Avanzado"),Modifier.weight(1f)){n=it};HSelect("Equipo",gear,listOf("" to "Todos","body" to "Sin equipo","db" to "Mancuernas","bench" to "Banco","step" to "Plataforma","gym" to "Gimnasio","barbell" to "Barras","cable" to "Poleas","machine" to "Máquinas","smith" to "Smith","cardio" to "Cinta o ergómetro"),Modifier.weight(1f)){gear=it}};HCheck("Incluir variantes de técnica y ritmo",variants){variants=!variants};HCheck("Aplicar mis restricciones",restricted){restricted=!restricted};HText("${list.size} resultados",size=15,color=LocalHunter.current.muted)};items(list,key={it.id}){e->HPanel(onClick={ui.open("exercise",obj("id" to e.id))},padding=18){Eyebrow("${e.group} · ${listOf("Inicial","Intermedio","Avanzado")[e.raw.i("level").coerceIn(0,2)]}");Heading(e.name,size=27);if(e.raw.b("sourceExpansion2k"))HText("PROPUESTA NUEVA · PENDIENTE DE VALIDACIÓN",size=13,color=LocalHunter.current.accent,bold=true);HText(if(e.equipment=="body")"Sin equipo especial" else if(e.gym)"Equipo de gimnasio" else "Mancuernas",size=15,color=LocalHunter.current.muted);HText("${if(e.impact)"Con saltos" else "Sin saltos"} · ${if(e.unit=="sec")"Por tiempo" else "Por repeticiones"}  ↗",size=15,color=LocalHunter.current.muted)}}}
 }
 @Composable fun ProgressScreen(ui:NativeUi){ MonarchProgressScreen(ui) }

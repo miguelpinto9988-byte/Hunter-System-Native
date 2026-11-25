@@ -44,11 +44,8 @@ object MonarchCompanions {
         MonarchCompanionSpec("warrior","iron","IRON","Guardián de la fuerza","La constancia también es poder."),
         MonarchCompanionSpec("bear","tank","TANK","Protector del equilibrio","La fuerza crece con paciencia."),
         MonarchCompanionSpec("insect","beru","BERU","Centinela del progreso","Cada serie cuenta."),
-        MonarchCompanionSpec("tusk","tusk","TUSK","Mago de sombras","Cada paso cuenta."),
         MonarchCompanionSpec("scientist","dokja","DOKJA KIM","Estratega de la evolución","Avanza con intención.")
     )
-    val profileChoices = listOf("knight","insect","bear","tusk","warrior","scientist")
-        .map { id -> all.first { it.id==id } }
     fun forId(id: String?): MonarchCompanionSpec =
         all.firstOrNull { it.id == id } ?: all.first()
 

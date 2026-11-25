@@ -1,44 +1,218 @@
 package com.huntersystem.app
 
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.runtime.*
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.Text
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
+import java.time.ZoneId
 
-/** Los desafíos anteriores conservan sus resultados y pueden cerrarse desde el Panel. */
+/** Una sola misión semanal rotativa, visible en Inicio y renovada los domingos. */
 @Composable
-internal fun LegacyMonarchMissionPanel(ui:NativeUi) {
-    val store=ui.store
-    store.revision.intValue
-    val legacy=store.state.optJSONObject("monarchSpecialMission")?.takeIf { it.s("status")=="active" }
-    val planning=store.state.optJSONObject("monarcaPlanningV2")?:store.state.o("asterionV1")
-    val participation=planning.a("monarchCompletion").objects()
-    if(legacy==null&&participation.isEmpty())return
-    var expanded by rememberSaveable { mutableStateOf(false) }
-    HPanel(decor=false,padding=12){
-        HButton(if(expanded) "Ocultar desafíos anteriores" else "Ver desafíos anteriores",Modifier.fillMaxWidth()){
-            expanded=!expanded
-        }
-        if(expanded){
-            legacy?.let { run ->
-                val mission=runCatching { MonarchMissionCatalog.fromRun(run) }.getOrNull()
-                Heading(mission?.title?:"Desafío anterior",size=22)
-                val counts=run.o("counts").entries()
-                if(counts.isEmpty()) HText("Sin resultados declarados.")
-                for((id,count) in counts) HText("${store.catalog.byId[id]?.name?:id} · $count")
-                HButton("Cerrar desafío anterior",Modifier.fillMaxWidth()){
-                    ui.attempt {
-                        val now=System.currentTimeMillis()
-                        val status=MonarchMissionCatalog.status(run,now)
-                        run.put("status",if(status=="expired") "expired" else "stopped").put("finishedAt",now)
-                        store.save()
-                    }
-                }
-            }
-            for(row in participation.asReversed()){
-                val id=row.s("id")
-                HText("${row.s("date")} · ${store.catalog.byId[id]?.name?:id} · Participación declarada",size=14)
-            }
-        }
+fun MonarchSpecialMissionsPanel(ui:NativeUi) {
+ // Un único desafío activo. Las sesiones del ciclo histórico ya iniciado
+ // permanecen accesibles hasta que la persona las finalice o detenga.
+ ui.store.revision.intValue
+ if(ui.store.state.optJSONObject("monarchSpecialMission")?.s("status")=="active")
+  LegacyMonarchSpecialMissionsPanel(ui)
+ else MonarchFiveDayChallenge(ui)
+}
+
+@Composable
+private fun LegacyMonarchSpecialMissionsPanel(ui:NativeUi) {
+ val store=ui.store
+ store.revision.intValue
+ val colors=LocalHunter.current
+ val zone=remember{ZoneId.systemDefault()}
+ var now by remember{mutableLongStateOf(System.currentTimeMillis())}
+ val sunday=MonarchMissionCatalog.weekStart(now,zone)
+ LaunchedEffect(sunday){
+  ui.attempt{store.syncMonarchWeek(now,zone)}
+ }
+ LaunchedEffect(Unit){
+  while(true){delay(30000L);now=System.currentTimeMillis()}
+ }
+ val current=MonarchMissionCatalog.offerFor(store,sunday,zone)
+ val run=store.state.optJSONObject("monarchSpecialMission")
+ val weekly=run?.s("weekStart")==current.weekStart
+ val status=if(weekly)MonarchMissionCatalog.status(run,now) else "none"
+ val active=status=="active"
+ val mission=if(weekly&&run!=null)runCatching{MonarchMissionCatalog.fromRun(run)}.getOrDefault(current) else current
+ val history=store.state.a("monarchSpecialHistory").objects()
+ val seals=history.count{it.s("status")=="completed"}+if(status=="completed")1 else 0
+ val end=MonarchMissionCatalog.deadline(sunday,zone)
+ val ms=maxOf(0L,end-now)
+ val d=ms/86400000L
+ val h=(ms/3600000L)%24
+ val m=(ms/60000L)%60
+ val deadlineText=d.toString()+" d  "+h.toString()+" h  "+m.toString()+" min"
+ var detailsExpanded by rememberSaveable(current.weekStart){mutableStateOf(false)}
+ MonarchBossMissionCard(mission.id){
+  MonarchBossMissionHeading(mission.id, mission.title, current.cycleWeek, status)
+  Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
+   verticalAlignment=Alignment.CenterVertically){
+   Eyebrow("EVENTO SEMANAL · MISIÓN MONARCA")
+   HText("✦ "+seals+" sellos",size=14,color=colors.accent,bold=true)
+  }
+  HText("Ciclo Monarca · semana "+current.cycleWeek+" de 4",size=14,bold=true,color=colors.accent)
+  HText(mission.story,size=15,color=colors.muted)
+  HText("DESAFÍO MONARCA · EXIGENCIA EXTREMA · VOLUNTARIO",size=13,color=colors.accent,bold=true)
+  HText("La misión rota por semana sin depender de tu nivel u objetivos. Solo se seleccionan ejercicios con el equipo que declaraste; no es una orden de entrenamiento.",size=14,color=colors.muted)
+  HText("CIERRE AUTOMÁTICO EL DOMINGO · TIEMPO RESTANTE",size=13,color=colors.muted,bold=true)
+  Heading(deadlineText,size=24)
+  if(weekly&&run!=null)HProgress(MonarchMissionCatalog.progress(run,mission))
+  HButton(if(detailsExpanded) "OCULTAR OBJETIVOS DEL JEFE  ↑" else "ABRIR MISIÓN MONARCA  ↓",
+    Modifier.fillMaxWidth(),primary=!detailsExpanded){ detailsExpanded=!detailsExpanded }
+  if(detailsExpanded){
+  HText("Metas acumuladas durante la semana, no para una sola sesión. El registro es manual y la participación voluntaria.",size=15,color=colors.muted)
+  mission.goals.forEach{goal->
+   val exercise=store.catalog.byId[goal.exerciseId]
+   val count=if(weekly&&run!=null)run.o("counts").i(goal.exerciseId) else 0
+   val unit=if(exercise?.unit=="sec")"segundos" else "repeticiones"
+   Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.SpaceBetween,
+    verticalAlignment=Alignment.CenterVertically){
+    Column(Modifier.weight(1f)){
+     HText(exercise?.name?:goal.exerciseId,size=16,bold=true)
+     HText(count.toString()+" / "+goal.target+" "+unit,size=14,color=colors.muted)
     }
+    HButton("Técnica"){ui.open("exercise",obj("id" to goal.exerciseId))}
+   }
+   if(active)Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(6.dp)){
+    HButton("−1",Modifier.weight(1f),enabled=count>0){
+     ui.attempt{store.recordMonarchProgress(goal.exerciseId,-1)}
+    }
+    HButton("+1",Modifier.weight(1f),enabled=count<goal.target){
+     ui.attempt{store.recordMonarchProgress(goal.exerciseId,1)}
+    }
+    HButton("+5",Modifier.weight(1f),enabled=count<goal.target){
+     ui.attempt{store.recordMonarchProgress(goal.exerciseId,5)}
+    }
+    HButton("+10",Modifier.weight(1f),enabled=count<goal.target){
+     ui.attempt{store.recordMonarchProgress(goal.exerciseId,10)}
+    }
+   }
+  }
+  }
+  when(status){
+   "active"->{
+    HText("Registra únicamente lo realizado. Estas metas son semanales y muy exigentes: distribúyelas, descansa, adapta la intensidad a tu capacidad y detente ante dolor, mareo o pérdida de técnica.",size=14,color=colors.muted)
+    if(mission.goals.any{!MonarchMissionCatalog.equipmentReady(store,it.exerciseId)})
+     HText("Tu selección de equipo cambió: algunas metas ya no corresponden al material disponible. Puedes detener esta misión sin penalización.",size=14,color=colors.accent)
+    val reached=mission.goals.all{(run?.o("counts")?.i(it.exerciseId)?:0)>=it.target}
+    HButton("RECLAMAR SELLO MONARCA",Modifier.fillMaxWidth(),primary=true,enabled=reached){
+     ui.attempt{store.completeMonarchMission()}
+    }
+    HButton("Detener sin penalización",Modifier.fillMaxWidth()){ui.attempt{store.stopMonarchMission()}}
+   }
+   "completed"->HText("Misión completada: sello obtenido. La siguiente se renovará automáticamente el domingo.",size=15,color=colors.accent)
+   "stopped"->HText("Misión detenida sin penalización. Se conserva tu avance; la siguiente llegará el domingo.",size=15,color=colors.muted)
+   "expired"->HText("La ventana semanal concluyó; no hay penalización. El domingo comienza una nueva.",size=15,color=colors.muted)
+   else->{
+    val reason=MonarchMissionCatalog.eligibleReason(store,mission,now)
+    if(reason!=null)HText(reason,size=14,color=colors.muted)
+    else HText("No importa tu nivel, objetivo ni experiencia del perfil. La elección es tuya; confirma que comprendes la exigencia del desafío.",size=14,color=colors.muted)
+    // El botón solo crea la misión: no comienza automáticamente el ejercicio.
+    var consent by remember(current.weekStart){mutableStateOf(false)}
+    if(reason==null)HCheck("Acepto voluntariamente este desafío extremo de siete días. Solo usaré el equipo disponible; puedo parar sin penalización.",consent){
+     consent=!consent
+    }
+    HButton("ACTIVAR MISIÓN DE ESTA SEMANA",Modifier.fillMaxWidth(),primary=true,enabled=reason==null&&consent){
+     ui.attempt{store.startMonarchMission()}
+    }
+   }
+  }
+ }
+}
+
+/**
+ * El arte del jefe forma parte del fondo de la MISMA tarjeta: no existe una
+ * subventana de imagen independiente. El degradado inferior se funde con la
+ * superficie del panel y mantiene legibles los controles y el texto.
+ *
+ * Se usan los tres JPG ya empaquetados: guardia (Igris), fortaleza (Beru)
+ * y trono (Baran). No se modifican los datos ni la rotación de misiones.
+ */
+@Composable
+private fun MonarchBossMissionCard(
+ id:String,
+ content:@Composable ColumnScope.()->Unit
+){
+ val colors=LocalHunter.current
+ val shape=RoundedCornerShape(HunterDesignSystem.Dimensions.cornerCard)
+ Box(Modifier.fillMaxWidth().clip(shape)
+  .background(Brush.verticalGradient(listOf(colors.surface,colors.panel)))
+  .monarchOutline(shape)){
+  // Todas las misiones (Igris, Beru y Baran) comparten el fondo a
+  // tamaño COMPLETO. matchParentSize toma la altura final del contenido,
+  // incluso cuando se despliegan los objetivos; no deja cortes a mitad.
+  AssetImage(
+   "monarch-boss-original/"+id+".jpg",
+   Modifier.matchParentSize(),
+   scale=ContentScale.Crop,
+   alignment=Alignment.BottomCenter,
+   description=null
+  )
+  // La imagen continúa hasta el borde inferior de la tarjeta.
+  // Los degradados son semitransparentes para que el arte siga visible.
+  Box(Modifier.matchParentSize().background(
+   Brush.horizontalGradient(listOf(
+    Color(0xB8080D1B),Color(0x97080D1B),Color(0x60080D1B)))))
+  Box(Modifier.matchParentSize().background(
+   Brush.verticalGradient(listOf(
+    Color(0x65080D1B),Color(0x42080D1B),
+    colors.panel.copy(alpha=.53f),
+    colors.panel.copy(alpha=.72f)))))
+  Column(Modifier.fillMaxWidth().padding(16.dp),
+   verticalArrangement=Arrangement.spacedBy(HunterDesignSystem.Dimensions.spacing),
+   content=content)
+ }
+}
+
+/** Solo textos sobre el fondo compartido, sin bordes ni contenedor de imagen. */
+@Composable
+private fun MonarchBossMissionHeading(id:String,title:String,week:Int,status:String){
+ val boss=when(id){
+  "guardia"->"IGRIS · COMANDANTE CARMESÍ"
+  "fortaleza"->"BERU · REY HORMIGA"
+  else->"BARAN · MONARCA DE LAS LLAMAS BLANCAS"
+ }
+ val accent=when(id){
+  "guardia"->Color(0xFFFF809A)
+  "fortaleza"->Color(0xFFA999FF)
+  else->Color(0xFFC6B2FF)
+ }
+ Box(Modifier.fillMaxWidth().heightIn(min=188.dp)){
+  Column(Modifier.align(Alignment.TopStart).fillMaxWidth(.72f),
+   verticalArrangement=Arrangement.spacedBy(6.dp)){
+   Text("JEFE SEMANAL  ·  CICLO "+week+"/4",color=accent,
+    fontFamily=Barlow,fontSize=11.sp,fontWeight=FontWeight.Bold)
+   Text(title,color=Color(0xFFF5F7FF),fontFamily=Barlow,fontSize=25.sp,
+    lineHeight=27.sp,fontWeight=FontWeight.Bold)
+   Text("ARTE PROMOCIONAL · "+boss,color=Color(0xFFCED8F3),fontFamily=Barlow,
+    fontSize=11.sp,lineHeight=14.sp,maxLines=2)
+  }
+  Text(when(status){
+   "active"->"EN CURSO"
+   "completed"->"COMPLETADA"
+   "expired"->"FINALIZADA"
+   "stopped"->"DETENIDA"
+   else->"DISPONIBLE"
+  },
+   modifier=Modifier.align(Alignment.BottomEnd)
+    .clip(RoundedCornerShape(9.dp)).background(Color(0xDD0A1027))
+    .padding(horizontal=9.dp,vertical=5.dp),
+   fontFamily=Barlow,fontSize=10.sp,fontWeight=FontWeight.Bold,color=accent)
+ }
 }

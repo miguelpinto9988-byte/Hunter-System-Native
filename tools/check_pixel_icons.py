@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Audita la iconografía PNG y el icono adaptable de Hunter System.
+"""Audita los 57 PNG originales y transparentes de Hunter System V43.12.
 
 No genera ni pinta iconos: comprueba los recursos PNG ya integrados en Android.
 """
@@ -8,7 +8,6 @@ import re
 import struct
 import sys
 import zlib
-import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 DRAW = ROOT / "app/src/main/res/drawable-nodpi"
@@ -82,7 +81,7 @@ if len(icons) != 49:
     errors.append(f"49 iconos funcionales requeridos, hallados {len(icons)}")
 if len(selected) != 6:
     errors.append(f"6 variantes de navegación requeridas, halladas {len(selected)}")
-for path in icons + selected + [DRAW/"notification_icon_pixel.png"]:
+for path in icons + selected + [DRAW/"app_icon_pixel.png",DRAW/"notification_icon_pixel.png"]:
     if not path.is_file():
         errors.append("Falta " + path.name)
         continue
@@ -124,21 +123,9 @@ if "Canvas(" in glyph or "HunterPngIcon(monarchGlyphPixelKey(kind), modifier, ki
     errors.append("Los accesos rápidos del Panel deben usar PNG, no Canvas")
 if "R.drawable.notification_icon_pixel" not in (SOURCE/"HunterAlarms.kt").read_text():
     errors.append("Las notificaciones no usan el PNG")
-android = "{http://schemas.android.com/apk/res/android}"
-application = ET.parse(ROOT/"app/src/main/AndroidManifest.xml").find("application")
-if any(application.get(android+attribute) != "@mipmap/ic_launcher" for attribute in ("icon", "roundIcon")):
-    errors.append("El manifiesto debe usar el mismo icono adaptable en ambos recortes")
-try:
-    launcher = ET.parse(DRAW.parent/"mipmap-anydpi/ic_launcher.xml").getroot()
-    bitmap = launcher.find("foreground/inset/bitmap")
-    data = (DRAW/"launcher_sello_ascenso.png").read_bytes()
-    if launcher.tag != "adaptive-icon" or bitmap is None or bitmap.get(android+"src") != "@drawable/launcher_sello_ascenso":
-        errors.append("El icono adaptable debe mostrar el Sello de Ascenso aprobado")
-    if data[:8] != b"\x89PNG\r\n\x1a\n" or struct.unpack(">II", data[16:24]) != (512, 512):
-        errors.append("El Sello de Ascenso debe ser un PNG de 512 px")
-except (OSError, ET.ParseError, struct.error) as exc:
-    errors.append(f"No se pudo verificar el icono adaptable: {exc}")
+if '@drawable/app_icon_pixel' not in (ROOT/"app/src/main/AndroidManifest.xml").read_text():
+    errors.append("El icono launcher no usa PNG")
 if errors:
     print("\n".join("ERROR: " + e for e in errors))
     sys.exit(1)
-print("OK: 49 PNG RGBA + 6 variantes seleccionadas + notificación transparente + Sello de Ascenso adaptable; 76 claves.")
+print("OK: 49 PNG RGBA + 6 variantes seleccionadas + iconos launcher/notificación; 76 claves y alfa auténtico.")

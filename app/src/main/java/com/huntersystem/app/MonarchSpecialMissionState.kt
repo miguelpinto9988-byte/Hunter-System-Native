@@ -92,7 +92,6 @@ object MonarchMissionCatalog {
   * Los requisitos secundarios de cada ejercicio deben estar seleccionados.
   */
  fun equipmentReady(store:NativeStore,exerciseId:String):Boolean {
-  if(store.catalog.classification(exerciseId)==null)return false
   val e=store.catalog.byId[exerciseId]?:return false
   if(e.raw.b("sourceExpansion2k")||e.raw.b("sourceOnly"))return false
   val p=store.profile?:JSONObject()
@@ -133,12 +132,9 @@ object MonarchMissionCatalog {
  fun offerFor(store:NativeStore,date:LocalDate,zone:ZoneId=ZoneId.systemDefault()):MonarchMissionSpec {
   val base=missionFor(date,2,zone)
   val gear=store.profile?.s("equipment","body")?:"body"
-  val eligible=store.catalog.automaticExercises.filter {
-   it.isMainTraining(store.catalog.classification(it.id)?.category) && equipmentReady(store,it.id)
-  }
-  val eligibleById=eligible.associateBy{it.id}
+  val eligible=store.catalog.originalExercises.filter{equipmentReady(store,it.id)}
   val picks=base.goals.mapNotNull{g->
-   store.catalog.byId[g.exerciseId]?.id?.let(eligibleById::get)
+   store.catalog.byId[g.exerciseId]?.takeIf{equipmentReady(store,it.id)}
   }.distinctBy{it.id}.toMutableList()
   // Si el perfil declara mancuernas o equipamiento de gimnasio, aparecen
   // desafíos que realmente usan esos materiales; sin equipamiento, nunca.

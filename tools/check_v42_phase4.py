@@ -19,14 +19,14 @@ pilot = (src / "MonarchV42.kt").read_text(encoding="utf-8")
 store = (src / "NativeStore.kt").read_text(encoding="utf-8")
 gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
 # V43 hereda las verificaciones funcionales de Monarca V42.9.
-gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.11-monarch-equipment-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12.1-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12.2-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"')
+gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.11-monarch-equipment-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"')
 workflow = (root / ".github/workflows/android-apk.yml").read_text(encoding="utf-8")
 
 catalog = json.loads((assets / "catalog.json").read_text(encoding="utf-8"))
 check(isinstance(catalog, list) and len(catalog) == 1200,
       "La colección de 1200 ejercicios no debe cambiar")
-check(len(list(assets.rglob("*.mp4"))) == 0,
-      "Quedan clips históricos empaquetados")
+check(len(list(assets.rglob("*.mp4"))) == 342,
+      "Las 342 demostraciones MP4 deben mantenerse")
 check(all(not (assets / folder).exists() for folder in
           ("exercise_thumbnails", "v39-miniatures")),
       "No se deben reintroducir miniaturas de ejercicios")
@@ -93,7 +93,7 @@ check("Auditoria Monarca V42 fase 04" in workflow,
       "No se configuró la auditoría 04 en GitHub Actions")
 result = {
     "fase": "04", "version": "42.3-monarca-fase4",
-    "ejercicios": len(catalog), "mp4": 0,
+    "ejercicios": len(catalog), "mp4": 342,
     "componentes": len(required),
     "resultado": "CORRECTO" if not errors else "ERROR",
     "errores": errors,

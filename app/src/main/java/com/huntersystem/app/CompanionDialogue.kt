@@ -110,7 +110,6 @@ object CompanionDialogue {
    else->"Si aparece dolor nuevo o aumenta una molestia, detén la actividad y revisa tus restricciones."
   }
   val opening=when(id){
-   "tusk"->choose(date,context,"Controla el ritmo.","Una pausa también prepara el siguiente movimiento.")
    "igris"->choose(date,context,"Orden y constancia.","El progreso exige control.")
    "iron"->choose(date,context,"¡Escudo firme, energía lista!","¡Vamos con determinación!")
    "tank"->choose(date,context,"Cuento contigo, paso a paso.","No hace falta apresurarse.")
@@ -120,7 +119,6 @@ object CompanionDialogue {
   if(tier==VisualTier.BALANCED)return short+" "+detail+
    (if(isStrain)" "+attention else "")
   val closing=when(id){
-   "tusk"->"Mantén un ritmo que puedas sostener y descansa cuando lo necesites."
    "igris"->"Mantén la ejecución deliberada y registra los resultados con precisión."
    "iron"->"¡El objetivo es entrenar bien y llegar preparado a la siguiente misión!"
    "tank"->"Tu ritmo y tu descanso también forman parte del progreso."

@@ -12,7 +12,7 @@ evolution = (app / "Supplement.kt").read_text(encoding="utf-8")
 store = (app / "NativeStore.kt").read_text(encoding="utf-8")
 gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
 # V43 hereda las verificaciones funcionales de Monarca V42.9.
-gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.11-monarch-equipment-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12.1-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12.2-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"')
+gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.11-monarch-equipment-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"')
 workflow = (root / ".github/workflows/android-apk.yml").read_text(encoding="utf-8")
 # V43 cambia el nombre del artefacto; conservar la validación estructural histórica.
 workflow = workflow.replace("Hunter-System-V43-11-Monarch-Equipment-APK", "Hunter-System-V42-Monarca-Fase10-APK").replace("Hunter-System-V43-12-Monarca-Eclipse-APK", "Hunter-System-V42-Monarca-Fase10-APK")
@@ -24,7 +24,7 @@ def check(test, label):
         errs.append(label)
 
 check(len(exercises) == 1200, "No se conservan 1200 ejercicios")
-check(len(list(assets.rglob("*.mp4"))) == 0, "Quedan clips históricos empaquetados")
+check(len(list(assets.rglob("*.mp4"))) == 342, "No se conservan 342 videos")
 check(not (assets / "exercise_thumbnails").exists(), "Han vuelto miniaturas")
 for label, fragment in [
     ("Pantalla de estadísticas", "fun MonarchProgressScreen(ui:NativeUi)"),
@@ -55,7 +55,7 @@ check("Auditoria Monarca V42 fase 09" in workflow, "Falta auditoría fase 09 en 
 
 print(json.dumps({
     "fase":9, "version":"42.8-monarca-fase9",
-    "ejercicios":len(exercises), "videos_mp4":0,
+    "ejercicios":len(exercises), "videos_mp4":342,
     "estadisticas":"sólo registros reales",
     "estado":"OK" if not errs else "ERROR", "errores":errs
 },ensure_ascii=False,indent=2))

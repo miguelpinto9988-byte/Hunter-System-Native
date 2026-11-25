@@ -1,0 +1,2 @@
+# Lista de IDs autorizados para reemplazar SVG por MP4, uno por linea.
+# Vacía por diseño: no autorizar renders masivos sin QA de movimiento y estilo X-Ray.

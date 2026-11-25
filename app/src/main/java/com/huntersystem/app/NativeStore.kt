@@ -19,49 +19,34 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
  init{if(file.baseFile.exists())try{state=validateBackup(JSONObject(file.openRead().bufferedReader().use{it.readText()}))}catch(e:Exception){readError="No se pudo leer el guardado. Puedes restaurar una copia sin sobrescribir el archivo existente."}}
  val profile:JSONObject? get()=state.optJSONObject("profile")
  val logs get()=state.o("logs")
- fun adjusted()=goals.forPlanner(profile?:JSONObject())
+ fun adjusted()=goals.adjusted(profile?:JSONObject(),state.a("goals").objects().filter{it.s("repeat")=="daily"||it.a("dates").length()==0}.map{it.s("title",it.s("text"))})
  @Synchronized fun save(){check(readError==null){readError?:"Error de lectura"};val stream=file.startWrite();try{stream.write(state.toString().toByteArray());file.finishWrite(stream)}catch(e:Exception){file.failWrite(stream);throw e};previews.clear();revision.intValue++}
  fun export()=state.toString(2)
  fun validateBackup(data:JSONObject):JSONObject{
   require(data.has("version")||data.has("profile")){"No es una copia de Hunter System"};require(data.optJSONObject("logs")!=null&&data.optJSONArray("cycles")!=null){"La copia no contiene registros y ciclos válidos"};require(data.toString().length<=40*1024*1024){"Copia demasiado grande"}
-  data.optJSONObject("profile")?.let(::validateProfileMeasures)
+  data.optJSONObject("profile")?.let{p->require(p.n("age") in 13.0..100.0&&p.n("height") in 100.0..250.0&&p.n("weight") in 30.0..350.0){"Medidas del perfil fuera de rango"}}
   for((date,v)in data.o("logs").entries()){LocalDate.parse(date);val l=v as? JSONObject?:error("Registro inválido");for(x in l.a("items").objects()){require(catalog.byId.containsKey(x.s("id"))){"Ejercicio desconocido en la copia"};require(x.i("sets") in 1..30&&x.n("target")>0&&x.n("target")<=3600){"Dosis inválida"};for(a in x.a("actual").objects())require(a.n("value") in 0.0..3600.0&&a.n("kg") in 0.0..1000.0){"Serie inválida"}}}
   val out=catalog.defaultState.copyJson();for((k,v)in data.entries())out.put(k,v);return out
  }
  fun restore(data:JSONObject){val checked=validateBackup(data);state=checked;readError=null;save();refreshWeek()}
- fun updateAppearanceOnly(theme:String,appearance:JSONObject,avatar:String?=null,outlineColor:String="eclipse",companion:String?=null){
+ fun updateAppearanceOnly(theme:String,appearance:JSONObject,avatar:String?=null,outlineColor:String="eclipse"){
   val existing=profile?:error("Perfil no disponible")
   // Visual-only changes cannot silently re-interpret goals or rewrite training settings.
-  val updated=existing.copyJson().put("theme",theme).put("outlineColor",HunterAppearanceV43.outline(outlineColor))
-  companion?.let { updated.put("companionCharacter",it) }
-  state.put("profile",updated)
+  state.put("profile",existing.copyJson().put("theme",theme).put("outlineColor",HunterAppearanceV43.outline(outlineColor)))
   state.put("appearance33",appearance.copyJson())
   avatar?.let{state.put("avatar",it)}
   save()
  }
- private fun validateProfileMeasures(p:JSONObject){
-  val age=p.n("age",Double.NaN)
-  require(age>=0&&age==kotlin.math.floor(age)&&age<=Int.MAX_VALUE){"Escribe una edad válida en años"}
-  for(key in listOf("height","weight")){
-   if(p.isNull(key))continue
-   require(p.n(key,Double.NaN)>0){if(key=="height")"Revisa la estatura" else "Revisa el peso"}
-  }
- }
  fun saveProfile(p:JSONObject,appearance:JSONObject?=null,avatar:String?=null){
-  val q=p.copyJson()
-  validateProfileMeasures(q)
-  require(q.s("name").isNotBlank()){"Escribe tu nombre de cazador"}
-  q.put("name",q.s("name").take(40));q.put("finalGoal",q.s("finalGoal",q.s("custom_goal")));q.put("minutes",q.i("minutes",20));q.put("dailyMissions",q.i("dailyMissions",3).coerceIn(1,7));q.put("frequency",q.i("frequency",2));q.put("experience",if(level(q)==0)"beginner" else "regular");q.put("load",q.n("load").coerceIn(0.0,200.0));q.put("trainingScale",q.n("trainingScale",1.0).coerceIn(.4,1.0))
+  val q=p.copyJson();for((k,range)in mapOf("age" to 13.0..100.0,"height" to 100.0..250.0,"weight" to 30.0..350.0)){val n=q.n(k,Double.NaN);require(n in range){"Revisa "+mapOf("age" to "la edad","height" to "la estatura","weight" to "el peso")[k]};q.put(k,n)};require(q.s("name").isNotBlank()){ "Escribe tu nombre de cazador" }
+  q.put("name",q.s("name").take(60));q.put("finalGoal",q.s("finalGoal").take(300));q.put("minutes",q.i("minutes",20));q.put("dailyMissions",q.i("dailyMissions",3).coerceIn(1,7));q.put("frequency",q.i("frequency",2));q.put("experience",if(level(q)==0)"beginner" else "regular");q.put("load",q.n("load").coerceIn(0.0,200.0));q.put("trainingScale",q.n("trainingScale",1.0).coerceIn(.4,1.0))
   if(q.a("weekPlan").length()!=7)q.put("weekPlan",arr(listOf("rest","train","rest","train","rest","rest","rest")));if(q.a("weekFocus").length()!=7)q.put("weekFocus",arr(List(7){"upper"}))
-  val goalText=q.s("finalGoal",q.s("custom_goal"))
-  val interpreted=q.put("finalGoal",goalText).put("custom_goal",goalText)
+  val interpreted=goals.apply(q,q.b("manualGoalGroupNative"));if(interpreted.o("interpretation374").b("medical"))require(rules.injuries(interpreted).isNotEmpty()||interpreted.o("health").b("special")){"Tu meta menciona dolor o lesión. Completa Lesiones y salud antes de guardar el plan."}
+  interpreted.put("custom_goal",interpreted.s("finalGoal").take(500))
   val calendarChanged=profile==null||
    profile!!.a("weekPlan").toString()!=interpreted.a("weekPlan").toString()||
    profile!!.a("weekFocus").toString()!=interpreted.a("weekFocus").toString()
-  val explicitCalendarChanged=listOf("weeklyCategories","weekCategories").any{key->
-   q.has(key)&&q.opt(key).toString()!=profile?.opt(key)?.toString()
-  }
-  if(calendarChanged&&!explicitCalendarChanged){
+  if(calendarChanged){
    // No trasladar el índice 0=domingo del perfil antiguo a lunes por error.
    val categories=(0..6).map{mon->val i=(mon+1)%7
     when(interpreted.a("weekPlan").optString(i,"rest")){
@@ -73,7 +58,6 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
    }
    interpreted.put("weeklyCategories",arr(categories))
   }
-  require(MonarchProfileAdapter.from(interpreted)!=null){"Revisa el calendario y las preferencias"}
   for(d in allDays().filter{it.s("date")>=today()&&!activeLog(logs.optJSONObject(it.s("date")))})d.remove("reviewReducedNative")
   // Compatibilidad por lectura con el almacenamiento anterior; un único ciclo activo.
   val planning=(state.optJSONObject("monarcaPlanningV2")?:
@@ -83,16 +67,15 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
    planning.put("experienceSince",today())
    planning.put("phases",JSONObject())
    planning.put("blocks",JSONObject())
-   planning.put("acceptedTechnicalChanges",JSONObject())
   }
   state.put("monarcaPlanningV2",planning)
   state.put("profile",interpreted);appearance?.let{state.put("appearance33",it.copyJson())};avatar?.let{state.put("avatar",it)}
   // Confirmed work remains immutable; pending incompatible records are archived in place.
-  val ap=adjusted();for((date,v)in logs.entries()){val l=v as? JSONObject?:continue;if(date<today()||l.b("complete"))continue;for(x in l.a("items").objects()){val e=catalog.byId[x.s("id")]?:continue;if(!rules.compatibleWithMission(e,ap,x)){x.put("archived",true);x.put("archiveReason","Perfil actualizado: revisar compatibilidad antes de continuar.")}}}
+  val ap=adjusted();for((date,v)in logs.entries()){val l=v as? JSONObject?:continue;if(date<today()||l.b("complete"))continue;for(x in l.a("items").objects()){val e=catalog.byId[x.s("id")]?:continue;if(!rules.compatible(e,ap)){x.put("archived",true);x.put("archiveReason","Perfil actualizado: revisar compatibilidad antes de continuar.")}}}
   save();refreshWeek()
  }
  fun activeLog(l:JSONObject?)=l!=null&&(l.b("complete")||l.b("manual")||
-  l.b("pain")||l.b("fatigue")||l.b("interrupted")||l.b("selfReported")||l.i("rpe") in 1..10||
+  l.b("pain")||l.b("fatigue")||l.b("selfReported")||l.i("rpe") in 1..10||
   l.s("notes").isNotBlank()||l.a("missionTasks").objects().any{it.b("done")}||
   l.a("items").objects().any{it.b("missionState")||it.b("selfReported")||
    it.s("progressStatus")=="SKIPPED"||it.s("progressNote").isNotBlank()||
@@ -114,25 +97,16 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
   val choice=p.a("weekPlan").optString(weekday(date),"rest")
   val progress=MonarchProgressRepository(this)
   val old=allDays().firstOrNull{it.s("date")==date}
-  val pinned=old?.takeIf{date==today()&&it.s("kind")!="rest"&&it.a("items").length()>0&&
+  val pinned=progress.monarchPinned(localDate) ?: old?.takeIf{it.s("kind")!="rest"&&it.a("items").length()>0&&
    it.s("progressCategory").isNotBlank()&&it.s("progressSettingsHash").isNotBlank()}?.let{
    com.huntersystem.app.planning.DailyMission(localDate,category,
     it.s("progressSettingsHash"),it.s("progressCatalogHash"),
-    it.a("items").objects().map{x->x.s("id")},it.s("planningNote"),
-    it.o("progressEquivalentFrom").entries().mapNotNull { (id, value) ->
-      (value as? String)?.let { original -> id to original }
-    }.toMap())
+    it.a("items").objects().map{x->x.s("id")},it.s("planningNote"))
   }?:progress.pinned(localDate)
   val q=adjusted()
-  val result=planner.choose(q,kind,"$date|unificado",
+  val result=planner.choose(q,kind,planner.profileKey(q)+"|"+date+"|unificado",
    logs,date,used,planned,trainingProfile=adapted,
-   observations=progress.efforts(),phases=progress.phases(),pinned=pinned,
-   participation=progress.participation(),interruptions=progress.interruptions())
-  if(old!=null && date==today() && old.s("kind")==kind && old.s("progressCategory")==category?.code &&
-   old.s("progressSettingsHash").isNotBlank() &&
-   old.s("progressSettingsHash")==result.s("progressSettingsHash") &&
-   old.a("items").objects().map{it.s("id")}==result.a("items").objects().map{it.s("id")})
-   return old.copyJson().put("progressCatalogHash",result.s("progressCatalogHash"))
+   observations=progress.efforts(),phases=progress.phases(),pinned=pinned)
   val blocked=result.s("blocked")
   val title=when(category){
    null->"Descanso elegido"
@@ -149,84 +123,38 @@ class NativeStore(val context:Context,val catalog:Catalog=Catalog(context)){
    "progressCategory" to (category?.code?:"descanso"),
    "progressSettingsHash" to result.s("progressSettingsHash"),
    "progressCatalogHash" to result.s("progressCatalogHash"),
-   "progressEquivalentFrom" to result.o("progressEquivalentFrom"),
    "planningNote" to result.s("planningNote","Plan local conservador."))
  }
- private fun removeRetiredItems(day:JSONObject):JSONObject {
-  if(activeLog(logs.optJSONObject(day.s("date"))))return day
-  val items=day.a("items").objects()
-  val available=items.filter{catalog.classification(it.s("id"))!=null}
-  if(available.size==items.size)return day
-  return day.copyJson().put("items",arr(available)).apply{remove("sourceSequence")}
- }
- fun refreshWeek(){if(profile==null||readError!=null)return;val monday=LocalDate.now().minusDays((LocalDate.now().dayOfWeek.value-1).toLong()).toString();val cycles=state.a("cycles");var c=cycles.objects().firstOrNull{it.s("start")==monday};if(c==null){c=obj("index" to cycles.length()+1,"start" to monday,"days" to JSONArray(),"reviews" to JSONArray());cycles.put(c);state.put("cycles",cycles)};val q=adjusted();val key="monarca-planner-v2|hunter-performance-intervals|"+planner.profileKey(q)+"|"+today()+"|"+hash(logs.toString()).toString(36)+"|"+MonarchProgressRepository(this).planningRevisionKey();if(c.s("nativeKey")==key)return
+ fun refreshWeek(){if(profile==null||readError!=null)return;val monday=LocalDate.now().minusDays((LocalDate.now().dayOfWeek.value-1).toLong()).toString();val cycles=state.a("cycles");var c=cycles.objects().firstOrNull{it.s("start")==monday};if(c==null){c=obj("index" to cycles.length()+1,"start" to monday,"days" to JSONArray(),"reviews" to JSONArray());cycles.put(c);state.put("cycles",cycles)};val q=adjusted();val key="monarca-planner-v1|"+planner.profileKey(q)+"|"+today()+"|"+hash(logs.toString()).toString(36);if(c.s("nativeKey")==key)return
   if(c.a("reviews").objects().lastOrNull()?.s("action")=="pausar")return
-  val days=c.a("days").objects().associateBy{it.s("date")};val planned=allDays().filter{it.s("date")>=today()&&locked(it)}.flatMap{d->d.a("items").objects().mapNotNull{x->catalog.byId[x.s("id")]?.let{PlanRow(d.s("date"),it.oldFamily,it.group,it.pattern,x.i("sets").coerceAtMost(6))}}}.toMutableList();val used=mutableSetOf<String>();val newDays=(0L..6L).map{offset->val date=plus(monday,offset);val old=days[date];val d=when{
-   old==null->makeDay(date,planned,used)
-   date<today()->old
-   locked(old)->removeRetiredItems(old)
-   else->makeDay(date,planned,used)
-  };used+=d.a("items").objects().mapNotNull{catalog.byId[it.s("id")]?.family};d};c.put("days",arr(newDays));newDays.firstOrNull{it.s("date")==today()}?.let{
-   MonarchProgressRepository(this).syncVolumeBlocks(LocalDate.parse(today()),it)
-  };c.put("nativeKey",key);c.put("profile",profile!!.copyJson());c.put("dynamicVersion381","38.49");c.put("decision","Generación dinámica de sesiones: calendario, objetivo, historial y restricciones. Se conservan sesiones registradas.");save()
+  val days=c.a("days").objects().associateBy{it.s("date")};val planned=allDays().filter{it.s("date")>=today()&&locked(it)}.flatMap{d->d.a("items").objects().mapNotNull{x->catalog.byId[x.s("id")]?.let{PlanRow(d.s("date"),it.oldFamily,it.group,it.pattern,x.i("sets").coerceAtMost(6))}}}.toMutableList();val used=mutableSetOf<String>();val newDays=(0L..6L).map{offset->val date=plus(monday,offset);val old=days[date];val d=if(old!=null&&(date<today()||locked(old)))old else makeDay(date,planned,used);used+=d.a("items").objects().mapNotNull{catalog.byId[it.s("id")]?.family};d};c.put("days",arr(newDays));c.put("nativeKey",key);c.put("profile",profile!!.copyJson());c.put("dynamicVersion381","38.49");c.put("decision","Generación dinámica de sesiones: calendario, objetivo, historial y restricciones. Se conservan sesiones registradas.");save()
  }
  fun day(date:String)=allDays().firstOrNull{it.s("date")==date}?:previews.getOrPut(date){makeDay(date)}
  fun mutableDay(date:String):JSONObject{LocalDate.parse(date);allDays().firstOrNull{it.s("date")==date}?.let{return it};val start=LocalDate.parse(date).minusDays((LocalDate.parse(date).dayOfWeek.value-1).toLong()).toString();val cycles=state.a("cycles");var cycle=cycles.objects().firstOrNull{it.s("start")==start};if(cycle==null){cycle=obj("start" to start,"index" to cycles.length()+1,"days" to arr((0L..6L).map{day(plus(start,it)).copyJson()}));cycles.put(cycle);state.put("cycles",cycles)};return cycle.a("days").objects().first{it.s("date")==date}}
- fun log(date:String=today()):JSONObject{require(date==today()){ "El registro de series está disponible en la fecha de hoy" };logs.optJSONObject(date)?.let{return it};val d=day(date);val l=obj("date" to date,"kind" to d.s("kind"),"trainingGroup" to (GroupEvolution.sessionGroup(d,profile,catalog)?:""),"items" to arr(d.a("items").objects().map{x->x.copyJson().put("actual",arr((0 until x.i("sets")).map{obj("done" to false,"value" to x.i("target"),"kg" to 0)}))}),"progressCategory" to d.a("items").objects().mapNotNull{
-    catalog.classification(it.s("id"))?.category
-   }.distinct().singleOrNull()?.code.orEmpty(),"missionTasks" to d.a("tasks").copyJson(),"complete" to false,"pain" to false,"notes" to "");val logs=state.o("logs");logs.put(date,l);state.put("logs",logs);save();return l}
- fun toggleMission(date:String,index:Int){val l=log(date);require(!l.b("complete")&&!l.b("pain")){"La sesión está cerrada"};val x=l.a("items").getJSONObject(index);require(!x.b("archived")){x.s("archiveReason")};val e=catalog.byId[x.s("id")]?:error("Ejercicio desconocido");require(rules.compatibleWithMission(e,adjusted(),x)){"Revisa la compatibilidad del ejercicio en Perfil"};x.put("missionState",!x.b("missionState"));x.put("progressStatus",if(x.b("missionState"))"COMPLETED" else "PENDING");save()}
+ fun log(date:String=today()):JSONObject{require(date==today()){ "El registro de series está disponible en la fecha de hoy" };logs.optJSONObject(date)?.let{return it};val d=day(date);val l=obj("date" to date,"kind" to d.s("kind"),"trainingGroup" to (GroupEvolution.sessionGroup(d,profile,catalog)?:""),"items" to arr(d.a("items").objects().map{x->x.copyJson().put("actual",arr((0 until x.i("sets")).map{obj("done" to false,"value" to x.i("target"),"kg" to 0)}))}),"progressCategory" to d.s("progressCategory"),"missionTasks" to d.a("tasks").copyJson(),"complete" to false,"pain" to false,"rpe" to 0,"notes" to "");val logs=state.o("logs");logs.put(date,l);state.put("logs",logs);save();return l}
+ fun toggleMission(date:String,index:Int){val l=log(date);require(!l.b("complete")&&!l.b("pain")){"La sesión está cerrada"};val x=l.a("items").getJSONObject(index);require(!x.b("archived")){x.s("archiveReason")};val e=catalog.byId[x.s("id")]?:error("Ejercicio desconocido");require(rules.compatible(e,adjusted())){"Revisa la compatibilidad del ejercicio en Perfil"};x.put("missionState",!x.b("missionState"));x.put("progressStatus",if(x.b("missionState"))"COMPLETED" else "PENDING");save()}
  fun setMissionStatus(date:String,index:Int,status:com.huntersystem.app.planning.ParticipationStatus,note:String?=null){
   val l=log(date)
   require(!l.b("complete")&&!l.b("pain")){"Sesión cerrada"}
   val item=l.a("items").getJSONObject(index)
-  if(status==com.huntersystem.app.planning.ParticipationStatus.COMPLETED){
-   require(!item.b("archived")){"Ejercicio archivado"}
-   val e=catalog.byId[item.s("id")]?:error("Ejercicio no disponible")
-   require(rules.compatibleWithMission(e,adjusted(),item)){"Revisa las restricciones del perfil"}
-  }
+  require(!item.b("archived")){"Ejercicio archivado"}
+  val e=catalog.byId[item.s("id")]?:error("Ejercicio no disponible")
+  require(rules.compatible(e,adjusted())){"Revisa las restricciones del perfil"}
   item.put("progressStatus",status.name)
   item.put("missionState",status==com.huntersystem.app.planning.ParticipationStatus.COMPLETED)
   if(note!=null)item.put("progressNote",note.take(1000))
   save()
  }
  fun toggleTask(date:String,index:Int){val l=log(date);require(!l.b("complete")&&!l.b("pain"));val x=l.a("missionTasks").getJSONObject(index);x.put("done",!x.b("done"));save()}
- fun confirmSet(date:String,itemIndex:Int,setIndex:Int,value:Double,kg:Double,done:Boolean=true){val l=log(date);require(!l.b("complete")&&!l.b("pain")){"La sesión está cerrada"};val x=l.a("items").getJSONObject(itemIndex);require(!x.b("archived")){x.s("archiveReason")};val e=catalog.byId[x.s("id")]?:error("Ejercicio desconocido");require(rules.compatibleWithMission(e,adjusted(),x)){"Revisa la compatibilidad del ejercicio en Perfil"};require(value.isFinite()&&value>0&&value<=if(x.s("unit",e.unit)=="sec")3600 else 300);require(kg.isFinite()&&kg in 0.0..200.0);val actual=x.a("actual");require(setIndex in 0 until x.i("sets"));actual.put(setIndex,obj("done" to done,"value" to value,"kg" to if(e.recordsExternalLoad)kg else 0));x.put("actual",actual);if(done&&x.s("progressStatus")=="SKIPPED")x.put("progressStatus","PENDING");save()}
- fun feedback(date:String,rpe:Int,notes:String){
-  require(rpe in 0..10)
-  val l=log(date)
-  l.put("notes",notes.take(3000))
-  if(rpe==0){
-   l.remove("rpe")
-   l.remove("globalRpe")
-   l.remove("categoryRpe")
-  }else{
-   l.put("rpe",rpe)
-   l.put("globalRpe",rpe)
-   val categories=l.a("items").objects().filterNot{it.b("archived")}.mapNotNull{
-    catalog.classification(it.s("id"))?.category
-   }.distinct()
-   val category=categories.singleOrNull()
-   if(category==null)l.remove("categoryRpe") else l.put("categoryRpe",category.code)
-  }
-  save()
- }
- fun interruptSession(date:String){
-  val l=log(date)
-  require(!l.b("complete")&&!l.b("pain")){"La sesión está cerrada"}
-  l.put("interrupted",true)
-  save()
- }
+ fun confirmSet(date:String,itemIndex:Int,setIndex:Int,value:Double,kg:Double,done:Boolean=true){val l=log(date);require(!l.b("complete")&&!l.b("pain")){"La sesión está cerrada"};val x=l.a("items").getJSONObject(itemIndex);require(!x.b("archived")){x.s("archiveReason")};val e=catalog.byId[x.s("id")]?:error("Ejercicio desconocido");require(rules.compatible(e,adjusted())){"Revisa la compatibilidad del ejercicio en Perfil"};require(value.isFinite()&&value>0&&value<=if(x.s("unit",e.unit)=="sec")3600 else 300);require(kg.isFinite()&&kg in 0.0..200.0);val actual=x.a("actual");require(setIndex in 0 until x.i("sets"));actual.put(setIndex,obj("done" to done,"value" to value,"kg" to if(e.equipment=="body")0 else kg));x.put("actual",actual);save()}
+ fun feedback(date:String,rpe:Int,notes:String){require(rpe in 0..10);val l=log(date);require(!l.b("complete"));l.put("rpe",rpe);if(rpe in 1..10&&com.huntersystem.app.planning.CategoryMapper.normalize(l.s("progressCategory"))!=null)l.put("categoryRpe",l.s("progressCategory")) else l.remove("categoryRpe");l.put("notes",notes.take(3000));save()}
  fun finish(date:String){val l=log(date);require(!l.b("complete")&&!l.b("pain"));require(l.a("items").objects().all{it.b("archived")||it.s("progressStatus")=="SKIPPED"||it.b("missionState")||it.b("selfReported")||it.a("actual").objects().count{a->a.b("done")}>=it.i("sets")}&&l.a("missionTasks").objects().all{it.b("done")}){"Completa los objetivos o registra las series pendientes"};// El RPE es voluntario. Sin acción expresa permanece sin valorar.
   l.put("complete",true);l.put("trainingGroup",GroupEvolution.logGroup(l,profile,catalog)?:"");l.put("finishedAt",java.time.Instant.now().toString());save();refreshWeek()}
  fun pain(date:String,notes:String){val l=log(date);require(!l.b("complete"));l.put("pain",true);l.put("notes",notes.take(3000));save()}
- fun assign(routine:JSONObject,date:String){
-  require(!routine.s("id").startsWith("monarca-routine-")){"Las rutinas opcionales se ejecutan desde su guía"}
-  require(date>=today()){ "No se pueden sustituir días pasados" };require(!activeLog(logs.optJSONObject(date))){"Este día ya tiene actividad registrada"};val p=adjusted();require(rules.gate(p).ok);val items=routine.a("items").objects();require(items.isNotEmpty()&&items.all{item->catalog.classification(item.s("id"))!=null && catalog.byId[item.s("id")]?.let{e->rules.compatibleWithMission(e,p,item)}==true}){"Revisa compatibilidad y equipo en Perfil"};val d=mutableDay(date);d.put("items",arr(items.map{it.copyJson()}));d.put("kind",when(routine.s("category")){"Cardio"->"cardio";"Movilidad"->"recovery";"Mixta"->"mixed";else->"strength"});d.put("title",routine.s("name"));d.put("routineId",routine.s("id"));d.put("customized",true);d.put("tasks",JSONArray());routine.optJSONObject("sourceSequence")?.let{d.put("sourceSequence",it.copyJson())};val logs=state.o("logs");logs.remove(date);state.put("logs",logs);save()}
- fun customize(date:String,items:List<JSONObject>,tasks:List<String>,title:String){require(date>=today()&&!activeLog(logs.optJSONObject(date))){"No se puede sustituir una sesión con actividad"};require(items.all{catalog.classification(it.s("id"))!=null && catalog.byId[it.s("id")]?.let{e->rules.compatible(e,adjusted())}==true}){"Revisa las restricciones del perfil"};val d=mutableDay(date);d.put("items",arr(items));d.put("tasks",arr(tasks.filter{it.isNotBlank()}.mapIndexed{i,t->obj("id" to "custom-$i","text" to t.take(300),"done" to false)}));d.put("customized",true);d.put("title",title.take(160));d.remove("blocked381");save()}
- fun fraction(l:JSONObject?):Double{if(l==null)return 0.0;val tasks=l.a("missionTasks").objects();val items=l.a("items").objects();val total=tasks.size+items.size;if(total==0)return 0.0;return (tasks.count{it.b("done")}.toDouble()+items.sumOf{x->if(x.b("archived")||x.s("progressStatus")=="SKIPPED")0.0 else if(MonarchLegacyHistory.completed(x))1.0 else min(1.0,x.a("actual").objects().count{it.b("done")}.toDouble()/max(1,x.i("sets")))} )/total}
- fun stats():JSONObject{val entries=logs.entries().filter{it.first<=today()}.mapNotNull{(d,l)->(l as? JSONObject)?.let{d to it}};val completed=entries.filter{it.second.b("complete")&&
-   it.second.a("items").objects().any(MonarchLegacyHistory::completed)};var series=0;var reps=0.0;var seconds=0.0;var volume=0.0;var exercises=0
+ fun assign(routine:JSONObject,date:String){require(date>=today()){ "No se pueden sustituir días pasados" };require(!activeLog(logs.optJSONObject(date))){"Este día ya tiene actividad registrada"};val p=adjusted();require(rules.gate(p).ok);val items=routine.a("items").objects();require(items.isNotEmpty()&&items.all{catalog.byId[it.s("id")]?.let{e->rules.compatible(e,p)}==true}){"Revisa compatibilidad y equipo en Perfil"};val d=mutableDay(date);d.put("items",arr(items.map{it.copyJson()}));d.put("kind",when(routine.s("category")){"Cardio"->"cardio";"Movilidad"->"recovery";"Mixta"->"mixed";else->"strength"});d.put("title",routine.s("name"));d.put("routineId",routine.s("id"));d.put("customized",true);d.put("tasks",JSONArray());routine.optJSONObject("sourceSequence")?.let{d.put("sourceSequence",it.copyJson())};val logs=state.o("logs");logs.remove(date);state.put("logs",logs);save()}
+ fun customize(date:String,items:List<JSONObject>,tasks:List<String>,title:String){require(date>=today()&&!activeLog(logs.optJSONObject(date))){"No se puede sustituir una sesión con actividad"};require(items.all{catalog.byId[it.s("id")]?.let{e->rules.compatible(e,adjusted())}==true}){"Revisa las restricciones del perfil"};val d=mutableDay(date);d.put("items",arr(items));d.put("tasks",arr(tasks.filter{it.isNotBlank()}.mapIndexed{i,t->obj("id" to "custom-$i","text" to t.take(300),"done" to false)}));d.put("customized",true);d.put("title",title.take(160));d.remove("blocked381");save()}
+ fun fraction(l:JSONObject?):Double{if(l==null||l.b("pain"))return 0.0;if(l.b("complete"))return 1.0;val tasks=l.a("missionTasks").objects();val items=l.a("items").objects();val total=tasks.size+items.size;if(total==0)return 0.0;return (tasks.count{it.b("done")}.toDouble()+items.sumOf{x->if(x.b("selfReported")||x.b("missionState"))1.0 else min(1.0,x.a("actual").objects().count{it.b("done")}.toDouble()/max(1,x.i("sets")))} )/total}
+ fun stats():JSONObject{val entries=logs.entries().filter{it.first<=today()}.mapNotNull{(d,l)->(l as? JSONObject)?.let{d to it}};val completed=entries.filter{it.second.b("complete")};var series=0;var reps=0.0;var seconds=0.0;var volume=0.0;var exercises=0
   for((_,l)in entries)for(x in l.a("items").objects()){val e=catalog.byId[x.s("id")]?:continue;var count=0;for(a in x.a("actual").objects())if(a.b("done")){series++;count++;val n=a.n("value")*(if(e.sides&&(x.s("side").isBlank()||x.s("side")=="both"))2 else 1);if(x.s("unit",e.unit)=="sec")seconds+=n else{reps+=n;volume+=n*a.n("kg")}};if(count>0)exercises++}
   val dates=completed.map{it.first}.toSet();var cursor=if(today() in dates)today() else plus(today(),-1);var streak=0;while(cursor in dates){streak++;cursor=plus(cursor,-1)};val xp=entries.sumOf{(_,l)->floor(fraction(l)*when(l.s("kind")){"strength","mixed"->100;"cardio"->70;"recovery"->40;else->20}).toInt()};return obj("days" to completed.size,"series" to series,"reps" to reps,"seconds" to seconds,"volume" to volume,"exerciseCount" to exercises,"streak" to streak,"xp" to xp,"level" to 1+xp/300)
  }

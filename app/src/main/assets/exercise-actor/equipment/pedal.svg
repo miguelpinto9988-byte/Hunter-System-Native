@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="100" height="64" viewBox="0 0 100 64">
-  <g id="pedal" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M12 21H85L95 32L85 43H12L5 32Z" fill="#38576D" stroke="#B5D3D7" stroke-width="3"/><path d="M23 29h54m-54 7h54" stroke="#E9AC65" stroke-width="2"/>
-  </g>
-</svg>

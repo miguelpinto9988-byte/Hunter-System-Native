@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="100" height="64" viewBox="0 0 100 64">
-  <g id="plate" stroke-linecap="round" stroke-linejoin="round">
-    <ellipse cx="50" cy="32" rx="35" ry="28" fill="#38576D" stroke="#B5D3D7" stroke-width="3"/><ellipse cx="50" cy="32" rx="10" ry="8" fill="#1B3345" stroke="#B5D3D7" stroke-width="2"/><path d="M25 32q0-12 12-17m26 34q12-5 12-17" fill="none" stroke="#E9AC65" stroke-width="3"/>
-  </g>
-</svg>

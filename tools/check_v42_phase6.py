@@ -21,7 +21,7 @@ rules = (src / "Rules.kt").read_text(encoding="utf-8")
 store = (src / "NativeStore.kt").read_text(encoding="utf-8")
 gradle = (root / "app/build.gradle.kts").read_text(encoding="utf-8")
 # V43 hereda las verificaciones funcionales de Monarca V42.9.
-gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.11-monarch-equipment-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12.1-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12.2-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"')
+gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.11-monarch-equipment-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"')
 workflow = (root / ".github/workflows/android-apk.yml").read_text(encoding="utf-8")
 # V43 cambia el nombre del artefacto; conservar la validación estructural histórica.
 workflow = workflow.replace("Hunter-System-V43-11-Monarch-Equipment-APK", "Hunter-System-V42-Monarca-Fase10-APK").replace("Hunter-System-V43-12-Monarca-Eclipse-APK", "Hunter-System-V42-Monarca-Fase10-APK")
@@ -30,8 +30,8 @@ library = json.loads((assets / "routines.json").read_text(encoding="utf-8"))
 
 check(len(catalog) == 1200 and len({x["id"] for x in catalog}) == 1200,
       "El catálogo debe conservar 1200 IDs únicos.")
-check(len(list(assets.rglob("*.mp4"))) == 0,
-      "Quedan clips históricos empaquetados")
+check(len(list(assets.rglob("*.mp4"))) == 342,
+      "Las 342 demostraciones MP4 deben conservarse.")
 check(not (assets / "exercise_thumbnails").exists()
       and not (assets / "v39-miniatures").exists(),
       "Prohibido reinstalar miniaturas de ejercicios.")
@@ -71,20 +71,22 @@ check('p.put("equipment","body")' in routines and
 check('s.profile?.s("equipment")!="gym"' in routines,
       "Modo gimnasio no debe generar si el perfil no declara gimnasio.")
 
-check('s.planner.generateRoutineOptions(mode,category,requestedLevel' in routines,
-      "La generación debe reutilizar Planner con la categoría y el nivel solicitados.")
-check('val requestedLevel=level.toInt()' in routines and 'val category=selected' in routines,
-      "Falta respetar las selecciones del usuario.")
+check('s.planner.generateRoutine(mode,type,n,variant,' in routines,
+      "La generación debe reutilizar Planner.")
+check('chosenLevels.flatMap{n->' in routines,
+      "Falta generación para los niveles seleccionados.")
+check('groups.flatMap{type->' in routines,
+      "Falta selección múltiple de categorías.")
 check('ui.generated[mode]=result' in routines and
       'ui.generated.remove(mode)' in routines,
       "Los resultados deben ser reversibles y de sesión, no persistidos.")
 check('s.revision.intValue!=requestedRevision' in routines,
       "No se debe incorporar una rutina generada con perfil desactualizado.")
-check('avoidImpact=avoidImpact' in routines and '(!avoidImpact || !exercise.impact && !exercise.power)' in planner,
+check('!avoidImpact||!e.impact&&!e.power' in routines,
       "No se aplica el filtro sin saltos ni potencia tras generar.")
-check('rules.compatible(exercise, p)' in planner,
+check('s.rules.compatible(e,p)' in routines,
       "Es obligatorio revalidar los ejercicios generados.")
-check('rules.compatibleWithMission(e,p,item)' in store,
+check('rules.compatible(e,p)' in store,
       "Se perdió la validación al asignar rutinas.")
 check('fun generateRoutine(' in planner and 'fun pool(' in rules,
       "No se puede perder el planificador o Rules.")
@@ -101,7 +103,7 @@ print(json.dumps({
     "version": "42.5-monarca-fase6",
     "ejercicios": len(catalog),
     "rutinas_catalogo": len(library),
-    "demostraciones_mp4": 0,
+    "demostraciones_mp4": 342,
     "resultado": "CORRECTO" if not errors else "ERROR",
     "errores": errors
 }, ensure_ascii=False, indent=2))

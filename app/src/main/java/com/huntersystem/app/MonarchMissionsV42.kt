@@ -170,10 +170,8 @@ fun MonarchMissionContent(ui:NativeUi,date:String) {
         val style=missionDayStyle(s,date,day)
         val readOnly=date!=today()||log?.b("complete")==true||log?.b("pain")==true
         val canCustomize=date>=today()&&!s.activeLog(log)
-        val completed = items.count(MonarchLegacyHistory::completed)
-        val skipped = items.count { it.s("progressStatus") == "SKIPPED" }
-        val summary = com.huntersystem.app.planning.ProgressSummary(
-            items.size, completed, skipped, items.size - completed - skipped)
+        val fraction=s.fraction(log).toFloat().coerceIn(0f,1f)
+        val progress=(fraction*100f).roundToInt()
         val hasWorkout=items.isNotEmpty() && day.s("kind")!="rest"
         val canStart=date==today()&&!readOnly&&hasWorkout
         // La misma sesión nativa se muestra, ejecuta y registra en todos los casos.
@@ -190,14 +188,12 @@ fun MonarchMissionContent(ui:NativeUi,date:String) {
             Row(Modifier.fillMaxWidth(),
                 horizontalArrangement=Arrangement.SpaceBetween,
                 verticalAlignment=Alignment.CenterVertically) {
-                HText("CUMPLIMIENTO",size=12,color=c.muted,bold=true)
-                HText(summary.label,size=16,color=c.accent,bold=true)
+                HText("OBJETIVOS DE LA SESIÓN",size=12,color=c.muted,bold=true)
+                HText("$progress %",size=19,color=c.accent,bold=true)
             }
-            summary.percent?.let { HProgress(it / 100f) }
-            HText("${summary.planned} planificados · ${summary.completed} completados · " +
-                "${summary.skipped} omitidos · ${summary.pending} pendientes",
+            HProgress(fraction)
+            HText("${items.size} ejercicios · ${tasks.size} tareas",
                 size=14,color=c.muted)
-            if(tasks.isNotEmpty())HText("${tasks.size} tareas personales",size=14,color=c.muted)
             if(date>today())HNotice("Vista previa. No se permite confirmar ni registrar actividades futuras.")
             if(date<today())HNotice("Historial de solo lectura. Los días anteriores no pueden modificarse.")
             if(log?.b("complete")==true)HNotice("✓ Misión completada y guardada.")
@@ -312,7 +308,7 @@ private fun MonarchMissionExercise(
         ) {ui.attempt{s.toggleMission(date,index)}}
         if(skipped)HText("Actividad omitida voluntariamente; no cuenta como completada.",
             size=12,color=colors.muted)
-        if(date==today()&&!skipped)MonarchVolumeEditor(ui,date,e.id)
+        if(date==today()&&checked&&!skipped)MonarchVolumeEditor(ui,date,e.id)
         if(!readOnly&&!inactive){
             HButton(if(skipped)"VOLVER A PENDIENTE" else "OMITIR ACTIVIDAD"){
                 ui.attempt{s.setMissionStatus(date,index,

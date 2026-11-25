@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="100" height="64" viewBox="0 0 100 64">
-  <g id="slider" stroke-linecap="round" stroke-linejoin="round">
-    <ellipse cx="50" cy="34" rx="45" ry="19" fill="#1B3345" stroke="#B5D3D7" stroke-width="4"/><ellipse cx="50" cy="29" rx="37" ry="12" fill="#7399AA"/><path d="M28 28h44" stroke="#E9AC65" stroke-width="3"/>
-  </g>
-</svg>

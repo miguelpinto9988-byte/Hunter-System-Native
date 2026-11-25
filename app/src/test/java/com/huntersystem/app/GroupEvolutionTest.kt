@@ -11,8 +11,7 @@ class GroupEvolutionTest {
  private fun record(date:String,group:String,rpe:Int,fatigue:Boolean=false):JSONObject=
   obj("date" to date,"kind" to if(group=="cardio")"cardio" else if(group=="mobility")"recovery" else "strength",
    "trainingGroup" to group,"categoryRpe" to group,
-   "complete" to true,"pain" to false,"rpe" to rpe,"fatigue" to fatigue,
-   "items" to arr(listOf(obj("id" to "synthetic-completion","progressStatus" to "COMPLETED"))))
+   "complete" to true,"pain" to false,"rpe" to rpe,"fatigue" to fatigue)
  private fun records(vararg rs:JSONObject):JSONObject=JSONObject().apply{for(r in rs)put(r.s("date"),r)}
 
  @Test fun eachFamilyUsesOnlyItsOwnPreviousEvaluation(){

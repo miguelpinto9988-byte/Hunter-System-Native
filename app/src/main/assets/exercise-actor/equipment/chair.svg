@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="100" height="64" viewBox="0 0 100 64">
-  <g id="chair" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M17 11V59M83 26V59" stroke="#7399AA" stroke-width="5"/><path d="M7 4H27V31H7ZM17 25H90V33H17Z" fill="#38576D" stroke="#B5D3D7" stroke-width="2"/>
-  </g>
-</svg>

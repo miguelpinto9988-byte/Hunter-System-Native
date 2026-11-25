@@ -11,11 +11,11 @@ private data class MaterialGroup(val title:String,val ids:List<String>)
 private val materialGroups=listOf(
  MaterialGroup("Espacio y apoyo",listOf("space","wall","mat","chair","support","table","towel","stick","doorframe","ball","slider","swissball","foamroller","footanchor")),
  MaterialGroup("Bandas y barras",listOf("band","anchor","pullbar","lowbar","parallels","suspension","rings","abwheel")),
- MaterialGroup("Pesas y gimnasio",listOf("kb","plate","weightbelt","inclinebench","trapbar","safetybar","landmine","rack","lightlever","romanchair","sled","strap","medball","slamball","throwwall","battlerope","harness","rope")),
+ MaterialGroup("Pesas y gimnasio",listOf("kb","landmine","rack","lightlever","romanchair","sled","strap","medball","slamball","throwwall","battlerope","harness","rope")),
  MaterialGroup("Cardio y coordinación",listOf("plyobox","cones","ladder","hurdle","throwspace","partner","jumprope"))
 )
-private val specializedTools=setOf("trapbar","safetybar","landmine","rack","lightlever","romanchair","sled","strap","battlerope","harness","rope")
-private val weightsTools=setOf("kb","plate","weightbelt","inclinebench","medball","slamball","throwwall")
+private val specializedTools=setOf("landmine","rack","lightlever","romanchair","sled","strap","battlerope","harness","rope")
+private val weightsTools=setOf("kb","medball","slamball","throwwall")
 internal fun profileAllowedMaterials(equipment:String):Set<String>{
  val all=materialGroups.flatMap{it.ids}.toSet()
  return when(equipment){
@@ -169,20 +169,6 @@ internal fun profileLegacySelections(equipment:String,values:Map<String,String>)
   if(equipment=="gym"){
    HText("Para gimnasio",size=16,bold=true)
    for(option in profileCompactGym)ProfileCompactCheck(values,option)
-  }
-  val shownKeys=options.flatMap{it.keys}.toSet()
-  val hunterMaterials=catalog.expansionExercises.flatMap{it.raw.a("materialRequirements").strings()}.toSet()
-   .intersect(profileAllowedMaterials(equipment))
-   .filter{"materials46|$it" !in shownKeys}
-   .sortedBy{catalog.materials.s(it,it)}
-  val hunterPanel="profile-hunter2000-equipment"
-  if(hunterMaterials.isNotEmpty()){
-   HButton("Más material de Hunter 2000",Modifier.fillMaxWidth()){
-    expanded[hunterPanel]=expanded[hunterPanel]!=true
-   }
-   if(expanded[hunterPanel]==true)
-    for(key in hunterMaterials)
-     ProfileCompactCheck(values,ProfileCompactOption(catalog.materials.s(key,key),listOf("materials46|$key")))
   }
   HText("Habilidades comprobadas (opcional)",size=16,bold=true)
   HText(
