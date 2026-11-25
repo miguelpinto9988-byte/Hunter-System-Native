@@ -17,11 +17,17 @@ class ProfileOnDeviceTest {
     fun freshInstallActivatesNativeProfileAndPersistsAfterRecreation() {
         val instrumentation = InstrumentationRegistry.getInstrumentation()
         val device = UiDevice.getInstance(instrumentation)
+        val themeName = InstrumentationRegistry.getArguments().getString("captureTheme", "Blanco")
+        val mode = if (themeName == "Negro") "oscuro" else "claro"
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
             fun awaitText(label: String) = checkNotNull(device.wait(Until.findObject(By.text(label)), 25_000)) {
                 "Missing Compose control: $label"
             }
             fun capture(name: String) {
+                device.waitForIdle()
+                Thread.sleep(650)
+                val output = java.io.File(instrumentation.targetContext.filesDir, "capture-$mode-$name.xml")
+                device.dumpWindowHierarchy(output)
                 val image = checkNotNull(instrumentation.uiAutomation.takeScreenshot())
                 try {
                     var bright = 0
@@ -32,7 +38,7 @@ class ProfileOnDeviceTest {
                         }
                     }
                     assertTrue("Application area appears blank", bright > 120)
-                    instrumentation.targetContext.openFileOutput("profile-$name.png", 0).use {
+                    instrumentation.targetContext.openFileOutput("capture-$mode-$name.png", 0).use {
                         image.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
                     }
                 } finally {
@@ -40,24 +46,24 @@ class ProfileOnDeviceTest {
                 }
             }
             awaitText("PASO 1 DE 4")
-            capture("1-claro")
+            capture("perfil-1")
             val fields = device.findObjects(By.clazz("android.widget.EditText"))
             assertTrue("Missing identity fields", fields.size >= 2)
-            fields[0].text = "Auditoría Android"
-            fields[1].text = "14"
+            fields[0].text = "Cuenta de prueba"
+            fields[1].text = "30"
             awaitText("SIGUIENTE ›").click()
             awaitText("PASO 2 DE 4")
-            capture("2-claro")
+            capture("perfil-2")
             awaitText("SIGUIENTE ›").click()
             awaitText("PASO 3 DE 4")
-            capture("3-claro")
+            capture("perfil-3-inicial")
             val theme = checkNotNull(device.wait(Until.findObject(By.textContains("Tema del sistema")), 10_000))
             theme.click()
-            awaitText("Negro").click()
-            capture("3-oscuro")
+            awaitText(themeName).click()
+            capture("perfil-3")
             awaitText("SIGUIENTE ›").click()
             awaitText("PASO 4 DE 4")
-            capture("4-oscuro")
+            capture("perfil-4")
             // The visible Text can expose its own Android accessibility node.
             // Check the effect of a physical tap on the disabled activation control.
             awaitText("ACTIVAR PERFIL").click()
@@ -70,6 +76,29 @@ class ProfileOnDeviceTest {
             awaitText("Ejercicios")
             scenario.recreate()
             awaitText("Ejercicios")
+            fun tab(label: String) {
+                val node = device.wait(Until.findObject(By.desc(label)), 5000)
+                    ?: device.findObject(By.desc("$label, seleccionada"))
+                    ?: device.wait(Until.findObject(By.text(label)), 10000)
+                    ?: error("Missing navigation tab: $label")
+                node.click()
+                device.waitForIdle()
+                Thread.sleep(900)
+            }
+            fun scrollPage() {
+                device.swipe(device.displayWidth / 2, device.displayHeight * 72 / 100,
+                    device.displayWidth / 2, device.displayHeight * 28 / 100, 35)
+                device.waitForIdle()
+            }
+            for ((label, slug) in listOf("Panel" to "panel", "Misiones" to "misiones",
+                    "Rutinas" to "rutinas", "Ejercicios" to "ejercicios")) {
+                tab(label)
+                capture("$slug-00")
+                repeat(4) { index ->
+                    scrollPage()
+                    capture("$slug-0${index+1}")
+                }
+            }
         }
     }
 }
