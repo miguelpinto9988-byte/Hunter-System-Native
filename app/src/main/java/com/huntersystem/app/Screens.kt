@@ -272,8 +272,6 @@ fun ExercisesScreen(ui: NativeUi) {
                 if (showBase) HButton("Ver demostración", Modifier.fillMaxWidth().semantics {
                     contentDescription = "Abrir ejercicio: ${exercise.name}"
                 }) { ui.open("exercise", obj("id" to exercise.id, "originalCatalog" to true)) }
-                if (showBase && store.catalog.isExercise3dReviewed(exercise.id))
-                    HText("✓ Animación 3D revisada", size = 13, color = LocalHunter.current.accent, bold = true)
                 if (exercise.validationBlocked)
                     HText("PENDIENTE DE VALIDACIÓN", size = 13, color = LocalHunter.current.accent, bold = true)
                 val equipment = exercise.equipmentKeys.filter { it != "gym" || exercise.equipmentKeys.size == 1 }
@@ -288,7 +286,7 @@ fun ExercisesScreen(ui: NativeUi) {
                         Modifier.fillMaxWidth()) { showVariants = !showVariants }
                 }
                 if (showVariants || !showBase) for (variant in variants) {
-                    val label = if (store.catalog.isExercise3dReviewed(variant.id)) "✓ ${variant.name}" else variant.name
+                    val label = variant.name
                     HButton(label, Modifier.fillMaxWidth()) {
                         ui.open("exercise", obj("id" to variant.id, "originalCatalog" to true))
                     }
