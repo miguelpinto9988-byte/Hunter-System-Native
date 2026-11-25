@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -157,8 +158,18 @@ private fun MonarchBossMissionCard(
   // Todas las misiones (Igris, Beru y Baran) comparten el fondo a
   // tamaño COMPLETO. matchParentSize toma la altura final del contenido,
   // incluso cuando se despliegan los objetivos; no deja cortes a mitad.
+  val context = LocalContext.current
+  val artwork = remember(context,id) {
+   val original = "monarch-boss-original/"+id+".jpg"
+   if (runCatching { context.assets.open(original).use { it.read() } }.isSuccess) original
+   else when(id) {
+    "guardia" -> "ui33/companion-igris.webp"
+    "fortaleza" -> "ui33/companion-beru.webp"
+    else -> "ui33/scene-s-1.webp"
+   }
+  }
   AssetImage(
-   "monarch-boss-original/"+id+".jpg",
+   artwork,
    Modifier.matchParentSize(),
    scale=ContentScale.Crop,
    alignment=Alignment.BottomCenter,
@@ -200,7 +211,7 @@ private fun MonarchBossMissionHeading(id:String,title:String,week:Int,status:Str
     fontFamily=Barlow,fontSize=11.sp,fontWeight=FontWeight.Bold)
    Text(title,color=Color(0xFFF5F7FF),fontFamily=Barlow,fontSize=25.sp,
     lineHeight=27.sp,fontWeight=FontWeight.Bold)
-   Text("ARTE PROMOCIONAL · "+boss,color=Color(0xFFCED8F3),fontFamily=Barlow,
+   Text(boss,color=Color(0xFFCED8F3),fontFamily=Barlow,
     fontSize=11.sp,lineHeight=14.sp,maxLines=2)
   }
   Text(when(status){

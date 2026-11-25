@@ -48,8 +48,9 @@ checks={
     and 'setOf("objectives","stats","profile")' not in read(src+"MonarchNavigationV42.kt"),
  "recompensa real":'if(!log.b("complete")) return' in read(src+"HunterMissionCompletedCard.kt")
     and 'HunterMissionCompletedCard(ui,selected)' in read(src+"MonarchMissionsV42.kt"),
- "portadas originales descargables":(R/"tools/download_monarch_boss_originals.py").is_file()
+ "portadas originales opcionales y respaldo local":(R/"tools/download_monarch_boss_originals.py").is_file()
     and 'monarch-boss-original/' in read(src+"MonarchSpecialMissionUI.kt")
+    and all((R/('app/src/main/assets/'+asset)).is_file() and asset in read(src+"MonarchSpecialMissionUI.kt") for asset in ('ui33/companion-igris.webp','ui33/companion-beru.webp','ui33/scene-s-1.webp'))
     and not any((R/("app/src/main/assets/monarch-boss/"+boss+".svg")).exists()
       for boss in ("guardia","fortaleza","trono")),
  "reubicación Monarca":read(src+"Screens.kt").index("MonarchSpecialMissionsPanel(ui)") < read(src+"Screens.kt").index("MonarchHero(ui,stats)") and read(src+"Screens.kt").count("MonarchSpecialMissionsPanel(ui)")==1,

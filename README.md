@@ -12,7 +12,7 @@ El planificador histórico `Planner.kt` es la única ruta de selección de misio
 
 [Arquitectura única, cambios frente al planificador histórico y compatibilidad](docs/PLANIFICADOR-UNICO-MONARCA-ECLIPSE.md).
 
-Las pruebas Android/JVM y la APK debug de QA están en [planificación y tests](.github/workflows/monarca-planner-tests.yml) y [compilación debug](.github/workflows/monarca-debug-qa.yml). La validación visual en Android físico y la obtención del arte promocional de terceros para la APK firmada siguen pendientes.
+Las pruebas Android/JVM y la APK debug de QA están en [planificación y tests](.github/workflows/monarca-planner-tests.yml) y [compilación debug](.github/workflows/monarca-debug-qa.yml). La validación visual en Android físico sigue pendiente. La APK firmada utiliza fondos locales de respaldo y no depende de descargas de arte promocional de terceros.
 
 ## Mejoras Eclipse integradas
 - Perfil simplificado, cinco temas, acompañante y escenarios por tarjetas horizontales.
@@ -42,3 +42,5 @@ La validación visual en teléfono físico y la evaluación técnica de las 800 
 ## Restauración histórica 2D
 
 Restauración del código del 16 de noviembre de 2026 (`c0802ce`), sin visor 3D. Se incrementó versionCode a 133 para evitar el rechazo por versión inferior al instalar sobre una APK con la misma firma. La APK debug es para pruebas; no acredita QA técnica ni compatibilidad con datos de versiones posteriores. Las pruebas unitarias siguen ejecutándose; la APK debug puede estar disponible antes de que terminen y no se considera validada si fallan.
+
+La compilación firmada usa imágenes locales existentes para las tarjetas de jefes cuando no hay imágenes promocionales empaquetadas; no requiere conexión al servidor de imágenes. Las verificaciones de catálogo, firma y pruebas siguen siendo obligatorias.
