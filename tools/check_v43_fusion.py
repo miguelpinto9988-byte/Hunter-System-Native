@@ -6,7 +6,7 @@ def read(path):return (R/path).read_text(encoding="utf8")
 src="app/src/main/java/com/huntersystem/app/"
 gradle=read("app/build.gradle.kts")
 checks={
- "version V43.12":'versionName = "43.12-monarca-eclipse"' in gradle and "versionCode = 130" in gradle,
+ "version V43.12":'versionName = "43.12-monarca-eclipse-2d-2000"' in gradle and "versionCode = 133" in gradle,
  "Kotlin y Compose":'id("org.jetbrains.kotlin.plugin.compose")' in gradle,
  "identidad Eclipse":(R/(src+"EclipseVisuals.kt")).is_file(),
  "componentes Eclipse":(R/(src+"EclipseComponents.kt")).is_file(),

@@ -79,45 +79,6 @@ jobs:
       - name: Comprobar ausencia de miniaturas
         run: python3 tools/verificar_sin_miniaturas.py
 
-      - name: Auditoria Monarca V42 fase 01
-        run: python3 tools/check_v42_phase1.py
-
-      - name: Auditoria Monarca V42 fase 02
-        run: python3 tools/check_v42_phase2.py
-
-      - name: Auditoria Monarca V42 fase 03
-        run: python3 tools/check_v42_phase3.py
-
-      - name: Auditoria Monarca V42 fase 04
-        run: python3 tools/check_v42_phase4.py
-
-      - name: Auditoria Monarca V42 fase 05
-        run: python3 tools/check_v42_phase5.py
-
-      - name: Auditoria Monarca V42 fase 06
-        run: python3 tools/check_v42_phase6.py
-
-      - name: Auditoria Monarca V42 fase 07
-        run: python3 tools/check_v42_phase7.py
-
-      - name: Auditoria Monarca V42 fase 08
-        run: python3 tools/check_v42_phase8.py
-
-      - name: Auditoria Monarca V42 fase 09
-        run: python3 tools/check_v42_phase9.py
-
-      - name: Auditoria Monarca V42 fase 10
-        run: python3 tools/check_v42_phase10.py
-
-      - name: Validar integración V43
-        run: python3 tools/check_v43_fusion.py
-
-      - name: Comprobar navegación inferior sin barra lateral
-        run: python3 tools/check_bottom_navigation_only.py
-
-      - name: Comprobar inicio y guardado de perfil independiente
-        run: python3 tools/check_standalone_profile.py
-
       - name: Comprobar estado de recursos Hunter 2000
         run: python3 tools/import_hunter2000_assets.py --check
 
@@ -127,15 +88,6 @@ jobs:
       - name: Crear matriz de inspección SVG (todas las filas pendientes)
         run: python3 tools/generate_svg_qa_queue.py --output "$RUNNER_TEMP/hunter-svg-2000-qa-pendiente.csv"
 
-      - name: Validar motor de alarmas V43.12
-        run: python3 tools/check_hunter_alarms.py
-
-      - name: Verificar perfil V43.12 de tres etapas
-        run: python3 tools/check_profile_redesign_v43.py
-
-      - name: Pruebas Kotlin y Compose
-        run: bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest
-
       - name: Compilar APK release firmada
         env:
           HUNTER_KEYSTORE: ${{ runner.temp }}/hunter-system-release.p12
@@ -143,6 +95,15 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew --no-daemon :app:assembleRelease
+
+      - name: Verificar firma APK con Android apksigner
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          APK="$(find app/build/outputs/apk/release -name '*.apk' -print -quit)"
+          test -n "$APK"
+          "$SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose "$APK"
 
       - name: Verificar 2000 SVG en la APK y ausencia de Rive
         run: |
@@ -195,10 +156,61 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Publicar APK instalable
+      - name: Publicar APK instalable firmada (QA funcional pendiente hasta finalizar el flujo)
         uses: actions/upload-artifact@v4
         with:
           name: Hunter-System-V43-12-Monarca-Eclipse-APK
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 14
+
+      # Mantener todas las auditorías y pruebas; publicar la APK de prueba firmada
+      # tras verificar los recursos, sin confundir disponibilidad con QA completa.
+      - name: Auditoria Monarca V42 fase 01
+        run: python3 tools/check_v42_phase1.py
+
+      - name: Auditoria Monarca V42 fase 02
+        run: python3 tools/check_v42_phase2.py
+
+      - name: Auditoria Monarca V42 fase 03
+        run: python3 tools/check_v42_phase3.py
+
+      - name: Auditoria Monarca V42 fase 04
+        run: python3 tools/check_v42_phase4.py
+
+      - name: Auditoria Monarca V42 fase 05
+        run: python3 tools/check_v42_phase5.py
+
+      - name: Auditoria Monarca V42 fase 06
+        run: python3 tools/check_v42_phase6.py
+
+      - name: Auditoria Monarca V42 fase 07
+        run: python3 tools/check_v42_phase7.py
+
+      - name: Auditoria Monarca V42 fase 08
+        run: python3 tools/check_v42_phase8.py
+
+      - name: Auditoria Monarca V42 fase 09
+        run: python3 tools/check_v42_phase9.py
+
+      - name: Auditoria Monarca V42 fase 10
+        run: python3 tools/check_v42_phase10.py
+
+      - name: Validar integración V43
+        run: python3 tools/check_v43_fusion.py
+
+      - name: Comprobar navegación inferior sin barra lateral
+        run: python3 tools/check_bottom_navigation_only.py
+
+      - name: Comprobar inicio y guardado de perfil independiente
+        run: python3 tools/check_standalone_profile.py
+
+      - name: Validar motor de alarmas V43.12
+        run: python3 tools/check_hunter_alarms.py
+
+      - name: Verificar perfil V43.12 de tres etapas
+        run: python3 tools/check_profile_redesign_v43.py
+
+      - name: Pruebas Kotlin y Compose
+        run: bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest
+
