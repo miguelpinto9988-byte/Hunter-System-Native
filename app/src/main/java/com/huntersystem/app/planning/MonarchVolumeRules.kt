@@ -37,7 +37,13 @@ data class VolumeRecommendation(
     val decision: VolumeDecision, val reference: Int?, val sets: Int?,
     val unit: VolumeUnit?, val optional: Boolean, val explanation: String
 )
+data class VolumeReference(val value: Int, val sets: Int, val unit: VolumeUnit) {
+    init { require(value > 0 && sets in 1..3) }
+}
 object VolumeResetPolicy {
+    fun changedVariants(previous: Set<String>, selected: Set<String>): Set<String> =
+        if (previous.isEmpty()) emptySet() else selected - previous
+
     fun block(category: Category, variantId: String, experience: Experience, since: LocalDate): String =
         ProfileSignature.stable("volume|" + category.code + "|" + experience.name +
             "|" + since, variantId)
@@ -45,41 +51,35 @@ object VolumeResetPolicy {
 object VolumeProgressionEngine {
     fun review(today: LocalDate, activity: ActivityMetadata, profile: VolumeProfile?,
                history: List<VolumeObservation>, blockId: String,
-               categoryHistory: List<EffortObservation> = emptyList()): VolumeRecommendation {
-        if (profile == null || profile.variantId != activity.id)
+               categoryHistory: List<EffortObservation> = emptyList(),
+               interruptions: List<SessionInterruption> = emptyList()): VolumeRecommendation {
+        if (profile == null || profile.variantId != activity.id ||
+            (activity.workUnit != null && profile.unit != activity.workUnit))
             return VolumeRecommendation(VolumeDecision.GUIDED_REVIEW, null, null, null,
-                false, "La variante carece de parámetros numéricos validados.")
+                false, "La variante carece de parámetros numéricos compatibles y validados.")
+        val start = today.minusDays(21)
         val matches = history.filter {
-            it.date < today && !it.date.isBefore(today.minusDays(21)) &&
+            it.date < today && !it.date.isBefore(start) &&
                 it.category == activity.category && it.variantId == activity.id &&
                 it.typeId == activity.typeId && it.technicalLevel == activity.technicalLevel &&
                 it.unit == profile.unit && it.blockId == blockId
         }.sortedWith(compareBy<VolumeObservation> { it.date }.thenBy { it.id })
-        val latest = matches.lastOrNull()
-        val valid = matches.filter { it.completed && !it.interrupted && it.rpe != null }
-        val reference = valid.lastOrNull()?.quantityPerSet ?: profile.initialValue
-        val sets = valid.lastOrNull()?.sets ?: profile.initialSets
+        val completed = matches.filter { it.completed && !it.interrupted }
+        val latest = completed.lastOrNull()
+        val reference = latest?.quantityPerSet?.coerceIn(profile.minimum, profile.maximum)
+            ?: profile.initialValue
+        val sets = latest?.sets?.coerceAtMost(3) ?: profile.initialSets
+        fun result(decision: VolumeDecision, explanation: String, value: Int? = reference,
+                   series: Int? = sets, optional: Boolean = false) =
+            VolumeRecommendation(decision, value, series, profile.unit, optional, explanation)
         if (!profile.automaticReviewEligible)
-            return VolumeRecommendation(VolumeDecision.GUIDED_REVIEW, reference, sets,
-                profile.unit, false, "Revisión manual obligatoria; referencia sin cambios.")
-        val highCategory = categoryHistory.any {
-            it.category == activity.category && it.date < today &&
-                !it.date.isBefore(today.minusDays(21)) && (it.rpe >= 8 || it.interrupted)
-        }
-        if (latest?.interrupted == true || (latest != null && !latest.completed))
-            return VolumeRecommendation(VolumeDecision.PAUSED, reference, sets,
-                profile.unit, false, "Sesión interrumpida o no completada: sin aumentos.")
-        if (highCategory || latest?.rpe?.let { it >= 9 } == true)
-            return VolumeRecommendation(VolumeDecision.RECOVERY_PRIORITY, reference, sets,
-                profile.unit, false, "Señal reciente de esfuerzo elevado: prioridad de recuperación.")
-        if (reference == null)
-            return VolumeRecommendation(VolumeDecision.NO_HISTORY, null, sets,
-                profile.unit, false, "Sin historial comparable ni referencia inicial validada.")
-        if (valid.isEmpty())
-            return VolumeRecommendation(VolumeDecision.NO_HISTORY, reference, sets,
-                profile.unit, false, "Referencia inicial opcional; todavía no hay sesiones comparables.")
-        val effort = latest?.rpe ?: valid.last().rpe!!
-        val baseChange = when (effort) {
+            return result(VolumeDecision.GUIDED_REVIEW, "Revisión manual. La referencia queda disponible para consulta.")
+        fun relevant(date: LocalDate, category: Category?) =
+            category == activity.category && date < today && !date.isBefore(start)
+        if (matches.any { it.interrupted } || interruptions.any { relevant(it.date, it.category) } ||
+            categoryHistory.any { relevant(it.date, it.category) && it.interrupted })
+            return result(VolumeDecision.PAUSED, "Interrupción declarada en el período de revisión. Se suspenden los aumentos.")
+        val baseChange = when (latest?.rpe) {
             1 -> 5
             2 -> 3
             3 -> 1
@@ -88,31 +88,44 @@ object VolumeProgressionEngine {
             10 -> -3
             else -> 0
         }
-        if (effort == 8 || baseChange < 0) {
-            val reduced = (reference - min(abs(baseChange), profile.permittedIncrement))
+        val highCategory = categoryHistory.any { relevant(it.date, it.category) && it.rpe >= 8 }
+        val highVariant = completed.any { (it.rpe ?: 0) >= 8 }
+        if (reference != null && baseChange < 0) {
+            val lower = (reference - min(abs(baseChange), profile.permittedIncrement))
                 .coerceIn(profile.minimum, profile.maximum)
-            return VolumeRecommendation(VolumeDecision.REDUCE, reduced, sets, profile.unit,
-                true, "Referencia inferior orientativa por esfuerzo declarado; no se aplica sola.")
+            val severe = (latest?.rpe ?: 0) >= 9
+            return result(if (severe) VolumeDecision.RECOVERY_PRIORITY else VolumeDecision.REDUCE,
+                if (severe) "Esfuerzo 9–10. Prioridad de recuperación y referencia inferior opcional."
+                else "Esfuerzo 8. Referencia inferior opcional.",
+                value = lower, optional = lower < reference)
         }
-        if (baseChange == 0)
-            return VolumeRecommendation(VolumeDecision.MAINTAIN, reference, sets, profile.unit,
-                false, "Esfuerzo moderado: mantener referencia.")
-        val lowDays = valid.filter { it.rpe in 1..3 }.distinctBy { it.date }
-        val consistent = lowDays.size >= 3 && lowDays.map { it.sets }.distinct().size == 1 &&
+        if (highCategory || highVariant)
+            return result(VolumeDecision.RECOVERY_PRIORITY, "Esfuerzo alto reciente de la categoría o variante. Se conservan los límites de recuperación.")
+        if (latest == null)
+            return result(VolumeDecision.NO_HISTORY,
+                if (reference == null) "Sin historial comparable ni referencia inicial validada."
+                else "Referencia inicial opcional. Todavía no hay sesiones comparables.")
+        if (reference == null || baseChange == 0)
+            return result(VolumeDecision.MAINTAIN, "La observación más reciente carece de esfuerzo utilizable para un aumento o corresponde a mantenimiento.")
+        val lowDays = completed.asReversed().distinctBy { it.date }.asReversed()
+            .filter { it.rpe in 1..3 }
+        val consistent = lowDays.size >= 3 && lowDays.all { it.sets == latest.sets } &&
             ChronoUnit.DAYS.between(lowDays.first().date, lowDays.last().date) >= 7
-        if (consistent && sets != null && sets in 1..2 && !highCategory)
-            return VolumeRecommendation(VolumeDecision.REVIEW_EXTRA_SET, reference, sets + 1,
-                profile.unit, true, "Tres días de esfuerzo bajo: serie adicional opcional; valor por serie sin cambio.")
+        if (consistent && sets != null && sets < 3)
+            return result(VolumeDecision.REVIEW_EXTRA_SET,
+                "Tres sesiones comparables en días distintos. Puedes revisar una serie adicional con la misma cantidad por serie.",
+                series = sets + 1, optional = true)
         if (lowDays.size < 2)
-            return VolumeRecommendation(VolumeDecision.MAINTAIN, reference, sets, profile.unit,
-                false, "Una valoración baja aislada no justifica una subida.")
-        val increased = (reference + min(baseChange, profile.permittedIncrement))
-            .coerceIn(profile.minimum, profile.maximum)
+            return result(VolumeDecision.MAINTAIN, "Se necesitan al menos dos días comparables con esfuerzo bajo para revisar un aumento.")
+        val increased = (reference.toLong() + min(baseChange, profile.permittedIncrement))
+            .coerceAtMost(profile.maximum.toLong()).toInt()
         if (increased == reference)
-            return VolumeRecommendation(VolumeDecision.MAINTAIN, reference, sets, profile.unit,
-                false, "Límite de referencia validado alcanzado.")
-        return VolumeRecommendation(VolumeDecision.OPTIONAL_INCREASE, increased, sets,
-            profile.unit, true, "Cálculo orientativo con historial comparable; requiere consentimiento explícito.")
+            return result(VolumeDecision.MAINTAIN, "La referencia ya está en el máximo validado.")
+        val decision = if (increased - reference == 1) VolumeDecision.OPTIONAL_MINIMUM_ADJUSTMENT
+            else VolumeDecision.OPTIONAL_INCREASE
+        return result(decision,
+            "Cálculo orientativo con historial comparable. Puedes mantener tu referencia o aceptar el ajuste.",
+            value = increased, optional = true)
     }
 }
 object ProgressTrackingService {
@@ -121,6 +134,8 @@ object ProgressTrackingService {
         current.filterNot { it.date == next.date && it.variantId == next.variantId } + next
     fun byWeek(history: List<Participation>, monday: LocalDate): List<Participation> =
         history.filter { !it.date.isBefore(monday) && it.date.isBefore(monday.plusDays(7)) }
+    fun byDate(history: List<Participation>, date: LocalDate): List<Participation> =
+        history.filter { it.date == date }
     fun byVariant(history: List<Participation>, id: String): List<Participation> =
         history.filter { it.variantId == id }
 }

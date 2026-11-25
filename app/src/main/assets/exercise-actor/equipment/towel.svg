@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="64" viewBox="0 0 100 64">
+  <g id="towel" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M4 12Q32 6 55 13T96 12V53Q70 59 45 52T4 53Z" fill="#EEA86C" stroke="#603D35" stroke-width="3"/><path d="M9 20Q35 14 54 21T91 20M9 45Q35 39 54 46T91 45" fill="none" stroke="#FFE1B6" stroke-width="3"/><path d="M15 13V53m70-40v40" stroke="#C77550" stroke-width="2"/>
+  </g>
+</svg>

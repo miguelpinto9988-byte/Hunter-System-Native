@@ -22,7 +22,7 @@ exercise_ids = [row.get("id") for row in catalog] if isinstance(catalog, list) e
 check(len(exercise_ids) == 1200, "Se esperaban 1200 ejercicios")
 check(len(set(exercise_ids)) == len(exercise_ids), "Identificadores de ejercicio duplicados")
 videos = list(ASSETS.rglob("*.mp4"))
-check(len(videos) == 342, "Se modificó la colección de 342 demostraciones MP4")
+check(len(videos) == 0, "Quedan clips históricos empaquetados")
 for module in ("Rules.kt", "Planner.kt", "NativeStore.kt", "Profile.kt", "Goals.kt", "Overlays.kt"):
     check((SRC / module).is_file(), "Módulo funcional faltante: " + module)
 check((SRC / "MonarchV42.kt").is_file(), "Falta identidad de V42")

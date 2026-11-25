@@ -64,7 +64,7 @@ private fun routineReasons(s:NativeStore,r:JSONObject,p:JSONObject):List<String>
     val rs=mutableListOf<String>()
     for(row in r.a("items").objects()){
         val e=s.catalog.byId[row.s("id")]
-        if(e==null)rs+="Ejercicio no encontrado en catálogo"
+        if(e==null || s.catalog.classification(row.s("id"))==null)rs+="La rutina contiene ejercicios retirados del catálogo"
         else rs+=s.rules.reasons(e,p).take(2)
     }
     return rs.distinct()
@@ -79,8 +79,8 @@ private fun routineMinutes(s:NativeStore,r:JSONObject,p:JSONObject)=
         MonarchRoutinesLibrary(ui,ui.library)
         return
     }
-    val normal=s.catalog.routines.count{!it.b("gymOnly23")}
-    val gym=s.catalog.routines.count{it.b("gymOnly23")}
+    val normal=s.catalog.trainingRoutines.count{!it.b("gymOnly23")}
+    val gym=s.catalog.trainingRoutines.count{it.b("gymOnly23")}
     SceneColumn(ui){
         TopTabs(ui)
         Eyebrow("SISTEMA MONARCA  /  ENTRENAMIENTO")
@@ -165,8 +165,9 @@ private fun MonarchRoutineModeCard(title:String,subtitle:String,tag:String,count
     val p=remember(revision){s.adjusted()}
     val generated=ui.generated[mode]
     val base=remember(generated,revision,mode){
-        generated ?: (s.catalog.routines+s.state.a("customRoutines").objects())
-            .filter{it.b("gymOnly23")== (mode=="gym")}
+        generated ?: (s.catalog.trainingRoutines+s.state.a("customRoutines").objects())
+            .filter{it.b("gymOnly23")== (mode=="gym") &&
+                it.a("items").objects().all { item -> s.catalog.classification(item.s("id")) != null }}
     }
     val list=remember(base,revision,n,category,duration,equipment,impact,query,safeOnly){
         base.filter{r->
@@ -190,7 +191,17 @@ private fun MonarchRoutineModeCard(title:String,subtitle:String,tag:String,count
             HText("Rutinas consultables sin internet. El motor comprueba tu perfil antes de asignarlas.",
                 size=15,color=c.muted)
         }
-        item{MonarchRoutineGenerator(ui,mode){selected->n=selected}}
+        item {
+            MonarchRoutineGenerator(ui, mode) { selected ->
+                n = selected
+                category = ""
+                duration = ""
+                equipment = "all"
+                impact = "all"
+                query = ""
+                safeOnly = false
+            }
+        }
         item{
             HPanel(padding=16){
                 Eyebrow("FILTROS DE RUTINAS")
@@ -240,30 +251,31 @@ fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->Unit){
     val s=ui.store
     val scope=rememberCoroutineScope()
     val c=LocalHunter.current
-    val selected=remember(mode){mutableStateListOf<String>()}
-    var range by rememberSaveable(mode){mutableStateOf("medium")}
-    var levels by rememberSaveable(mode){mutableStateOf("all")}
+    var selected by rememberSaveable(mode){mutableStateOf("")}
+    var duration by rememberSaveable(mode){mutableStateOf((s.profile?.i("minutes",30)?.takeIf { it in listOf(10,15,20,30,45,60) }?:30).toString())}
+    var level by rememberSaveable(mode){mutableStateOf(level(s.profile?:JSONObject()).toString())}
     var noImpact by rememberSaveable(mode){mutableStateOf(false)}
     var noGear by rememberSaveable(mode){mutableStateOf(false)}
+    var cardioFormat by rememberSaveable(mode){mutableStateOf("")}
     var busy by remember{mutableStateOf(false)}
     var info by remember(mode){mutableStateOf("")}
     HPanel(padding=17){
         Eyebrow("GENERADOR MONARCA  /  100 % LOCAL")
-        Heading("Diseña tu desafío",size=29)
-        HText("Selección múltiple de grupos, duración y niveles. Se generan secuencias sin guardar combinaciones precargadas.",
+        Heading("Genera una rutina",size=29)
+        HText("Elige una categoría, el tiempo disponible y el nivel técnico.",
             size=15,color=c.muted)
         Eyebrow("01  ·  GRUPOS DE TRABAJO")
         groupLabels.entries.toList().chunked(2).forEach { pair->
             Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(7.dp)){
                 pair.forEach {entry->
                     val tint=routineGroupColors[entry.key]?:c.accent
-                    val active=entry.key in selected
+                    val active=entry.key == selected
                     val shape=RoundedCornerShape(12.dp)
                     Box(Modifier.weight(1f).defaultMinSize(minHeight=58.dp)
                         .clip(shape)
                         .background(if(active)tint.copy(alpha=.19f) else c.input)
-                        .monarchPressable(shape,active=active,role=Role.Checkbox){
-                            if(!selected.remove(entry.key))selected.add(entry.key)
+                        .monarchPressable(shape,active=active,role=Role.RadioButton){
+                            selected=entry.key
                         }
                         .semantics{contentDescription="${entry.value}, ${if(active)"seleccionado" else "sin seleccionar"}"}
                         .padding(horizontal=9.dp,vertical=9.dp),
@@ -276,11 +288,19 @@ fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->Unit){
             }
         }
         Eyebrow("02  ·  TIEMPO OBJETIVO")
-        Chips(listOf("short" to "5–10 min","medium" to "10–20 min",
-            "long" to "Hasta 30 min"),range){range=it}
-        Eyebrow("03  ·  INTENSIDAD / NIVEL")
-        Chips(listOf("all" to "Tres niveles")+routineLevels,levels){levels=it}
+        Chips(listOf(10,15,20,30,45,60).map { it.toString() to "$it min" },duration){duration=it}
+        Eyebrow("03  ·  NIVEL TÉCNICO")
+        Chips(routineLevels,level){level=it}
         Eyebrow("04  ·  CONTROL DEL EQUIPAMIENTO E IMPACTO")
+        if (selected=="cardio") {
+            val formats = listOf("" to "General", "intervals" to "Por intervalos")
+            Chips(if (mode=="offline") formats + ("continuous" to "Carrera continua") else formats,
+                cardioFormat){cardioFormat=it}
+            if (cardioFormat=="intervals") HText("Alterna esfuerzo y recuperación. Elige un ritmo que puedas repetir.",
+                size=14,color=c.muted)
+            if (cardioFormat=="continuous") HText("Mantén un ritmo conversacional después del calentamiento.",
+                size=14,color=c.muted)
+        }
         HCheck("Limitar a ejercicios sin saltos ni potencia",noImpact){noImpact=!noImpact}
         if(mode=="offline"){
             HCheck("Generar únicamente ejercicios sin equipamiento",noGear){noGear=!noGear}
@@ -288,11 +308,11 @@ fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->Unit){
             HText("Modo gimnasio: solo usa el material declarado en Perfil.",
                 size=14,color=c.muted)
         }
-        HButton(if(busy)"GENERANDO…" else "✦  GENERAR NUEVAS RUTINAS",
+        HButton(if(busy)"GENERANDO…" else "✦  GENERAR RUTINAS COMPATIBLES",
             Modifier.fillMaxWidth(),primary=true,enabled=!busy) {
             val gate=s.rules.gate(s.adjusted())
             when {
-                selected.isEmpty()->info="Selecciona al menos un grupo muscular."
+                selected.isEmpty()->info="Selecciona una categoría."
                 !gate.ok->info=gate.reason
                 mode=="gym"&&s.profile?.s("equipment")!="gym" ->
                     info="Configura el equipamiento de gimnasio en Perfil para continuar."
@@ -308,38 +328,24 @@ fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->Unit){
                         p.put("bench",false)
                         p.put("step",false)
                         p.put("gymEquipment23",arr(emptyList<String>()))
-                        p.put("materials46",arr(emptyList<String>()))
+                        p.put("materials46",arr(p.a("materials46").strings().filter { it=="space" && cardioFormat.isNotBlank() && selected=="cardio" }))
                     }
-                    val groups=selected.toList()
-                    val chosenLevels=if(levels=="all")(0..2).toList()
-                        else listOf(levels.toInt())
+                    val category=selected
+                    val requestedLevel=level.toInt()
+                    val requestedMinutes=duration.toInt()
                     val requestedRevision=s.revision.intValue
                     val logs=s.logs.copyJson()
                     val avoidImpact=noImpact
                     val onlyBody=noGear
-                    val epoch=++ui.serial
-                    val selectedDuration=range
+                    val intervals=cardioFormat=="intervals" && category=="cardio"
+                    val continuous=cardioFormat=="continuous" && category=="cardio"
                     busy=true
                     info="Construyendo sesiones compatibles con tu perfil…"
                     scope.launch {
                         try {
                             val result=withContext(Dispatchers.Default){
-                                chosenLevels.flatMap{n->
-                                    groups.flatMap{type->
-                                        (0..1).mapNotNull{variant->
-                                            s.planner.generateRoutine(mode,type,n,variant,
-                                                selectedDuration,epoch,p,logs)
-                                        }
-                                    }
-                                }.filter{r->
-                                    r.a("items").objects().all{x->
-                                        s.catalog.byId[x.s("id")]?.let{e->
-                                            s.rules.compatible(e,p)&&
-                                            (!avoidImpact||!e.impact&&!e.power)&&
-                                            (!onlyBody||mode!="offline"||e.equipment=="body"&&!e.gym)
-                                        }==true
-                                    }
-                                }
+                                s.planner.generateRoutineOptions(mode,category,requestedLevel,
+                                    requestedMinutes,"default",p,logs,avoidImpact=avoidImpact,onlyBody=onlyBody,cardioIntervals=intervals,cardioContinuous=continuous)
                             }
                             if(s.revision.intValue!=requestedRevision){
                                 info="El perfil cambió mientras se generaban las rutinas. Vuelve a generar para usar la configuración actual."
@@ -347,7 +353,7 @@ fun MonarchRoutineGenerator(ui:NativeUi,mode:String,onGenerated:(Int)->Unit){
                                 info="No hay combinaciones compatibles para el nivel, material y duración solicitados. Prueba otros filtros o revisa Perfil."
                             }else{
                                 ui.generated[mode]=result
-                                onGenerated(chosenLevels.first())
+                                onGenerated(requestedLevel)
                                 info="${result.size} rutinas generadas. Encontrarás las tarjetas debajo de los filtros."
                             }
                         }catch(e:Exception){
@@ -392,10 +398,12 @@ fun MonarchRoutineCard(ui:NativeUi,r:JSONObject,p:JSONObject){
         }
         Heading(r.s("name","Secuencia de entrenamiento"),size=25)
         Row(Modifier.fillMaxWidth(),horizontalArrangement=Arrangement.spacedBy(10.dp)){
-            HText("◷ $minutes min",size=15,color=c.muted)
+            HText("≈ $minutes min",size=15,color=c.muted)
             HText("◈ ${rows.size} ejercicios",size=15,color=c.muted)
             HText("${rows.sumOf{it.i("sets")}} series",size=15,color=c.muted)
         }
+        if (r.has("availableMinutes"))
+            HText("Tiempo disponible · ${r.i("availableMinutes")} min", size=13, color=c.muted)
         rows.take(4).forEachIndexed{index,row->
             val e=s.catalog.byId[row.s("id")]
             HText("${index+1}. ${e?.name?:row.s("id")}",size=15,maxLines=2)

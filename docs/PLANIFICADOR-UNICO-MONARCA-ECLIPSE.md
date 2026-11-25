@@ -1,6 +1,6 @@
 # Monarca Eclipse — planificador único histórico
 
-Estado: integración unificada, sin un motor paralelo de misiones ni un segundo generador de rutinas. El planificador real es `Planner.kt`, que conserva la ejecución, las series y el almacenamiento histórico.
+Este documento describe la integración histórica. Las reglas actuales de rutinas, volumen y Monarca se documentan en [Progresión local de Monarca Eclipse](PROGRESION-MONARCA.md).
 
 ## Flujo único de una sesión
 

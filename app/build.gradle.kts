@@ -2,7 +2,7 @@ import java.net.URI
 plugins { id("com.android.application"); id("org.jetbrains.kotlin.android"); id("org.jetbrains.kotlin.plugin.compose") }
 android {
  namespace = "com.huntersystem.app"; compileSdk = 36
- defaultConfig { applicationId = "com.huntersystem.app"; minSdk = 26; targetSdk = 35; versionCode = 133; versionName = "43.12-monarca-eclipse-2d-2000" }
+ defaultConfig { applicationId = "com.huntersystem.app"; minSdk = 26; targetSdk = 35; versionCode = 134; versionName = "43.12.2-monarca-eclipse"; testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner" }
  signingConfigs { create("release") { val path = System.getenv("HUNTER_KEYSTORE"); if (path != null) { storeFile = file(path); storePassword = System.getenv("HUNTER_STORE_PASSWORD"); keyAlias = "hunter-system-release"; keyPassword = System.getenv("HUNTER_STORE_PASSWORD"); storeType = "PKCS12" } } }
  buildTypes { getByName("release") { isMinifyEnabled = false; signingConfig = signingConfigs.getByName("release") } }
  compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
@@ -28,6 +28,10 @@ dependencies {
  implementation("androidx.compose.material3:material3")
  implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
  implementation("com.caverock:androidsvg-aar:1.4")
+ androidTestImplementation("androidx.test:core:1.6.1")
+ androidTestImplementation("androidx.test:runner:1.6.2")
+ androidTestImplementation("androidx.test.uiautomator:uiautomator:2.3.0")
+ androidTestImplementation("androidx.test.ext:junit:1.2.1")
  testImplementation("junit:junit:4.13.2")
  testImplementation("org.json:json:20240303")
  testImplementation("org.robolectric:robolectric:4.14.1")

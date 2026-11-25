@@ -16,7 +16,7 @@ profile=read("Profile.kt")
 main=read("MainActivity.kt")
 gradle=(root/"app/build.gradle.kts").read_text(encoding="utf-8")
 # V43 hereda las verificaciones funcionales de Monarca V42.9.
-gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.11-monarch-equipment-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12-monarca-eclipse-2d-2000"', 'versionName = "42.9-monarca-fase10"')
+gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.11-monarch-equipment-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12.1-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12.2-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"')
 workflow=(root/".github/workflows/android-apk.yml").read_text(encoding="utf-8")
 # V43 cambia el nombre del artefacto; conservar la validación estructural histórica.
 workflow = workflow.replace("Hunter-System-V43-11-Monarch-Equipment-APK", "Hunter-System-V42-Monarca-Fase10-APK").replace("Hunter-System-V43-12-Monarca-Eclipse-APK", "Hunter-System-V42-Monarca-Fase10-APK")
@@ -47,7 +47,7 @@ checks=[
 for label,predicate in checks: require(predicate,label)
 catalog=json.loads((assets/"catalog.json").read_text(encoding="utf-8"))
 require(len(catalog)==1200,"Se modificó catálogo 1200")
-require(len(list(assets.rglob("*.mp4")))==342,"Se modificaron los 342 vídeos locales")
+require(len(list(assets.rglob("*.mp4")))==0,"Quedan clips históricos empaquetados")
 require(not (assets/"exercise_thumbnails").exists(),"Se recuperaron miniaturas eliminadas")
 print(json.dumps({"version":"42.9-monarca-fase10","checks":len(checks)+3,"status":"OK" if not errors else "ERROR","errors":errors},indent=2,ensure_ascii=False))
 if errors:raise SystemExit(1)

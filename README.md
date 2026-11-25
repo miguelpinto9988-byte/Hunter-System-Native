@@ -1,8 +1,8 @@
-# Hunter System V43.12 — Monarca con mejoras Eclipse, catálogo de 2000 SVG
+# Hunter System V43.12.2 — Monarca Eclipse, personaje vectorial 2D y archivo de 2.000 fichas
 
 Rama principal: `main`. El código integra Monarca V43.11 y las mejoras recientes de Eclipse. Las dos historias se conservan en el commit de fusión.
 
-Monarca 42.9 + Eclipse 41.0, realizados en Kotlin y Jetpack Compose. La compilación de pruebas usa `versionCode=133` y `versionName=43.12-monarca-eclipse-2d-2000` (`applicationId=com.huntersystem.app`).
+Monarca 42.9 + Eclipse 41.0, realizados en Kotlin y Jetpack Compose. La compilación de pruebas usa `versionCode=134` y `versionName=43.12.2-monarca-eclipse` (`applicationId=com.huntersystem.app`).
 
 ## Un solo planificador: Monarca Eclipse
 
@@ -12,7 +12,7 @@ El planificador histórico `Planner.kt` es la única ruta de selección de misio
 
 [Arquitectura única, cambios frente al planificador histórico y compatibilidad](docs/PLANIFICADOR-UNICO-MONARCA-ECLIPSE.md).
 
-Las pruebas Android/JVM y la APK debug de QA están en [planificación y tests](.github/workflows/monarca-planner-tests.yml) y [compilación debug](.github/workflows/monarca-debug-qa.yml). La validación visual en Android físico sigue pendiente. La APK firmada utiliza fondos locales de respaldo y no depende de descargas de arte promocional de terceros.
+Las pruebas Android/JVM y la APK debug de QA están en [planificación y tests](.github/workflows/monarca-planner-tests.yml) y [compilación debug](.github/workflows/monarca-debug-qa.yml). La validación visual en Android físico sigue pendiente; la compilación no requiere descargas de arte promocional.
 
 ## Mejoras Eclipse integradas
 - Perfil simplificado, cinco temas, acompañante y escenarios por tarjetas horizontales.
@@ -23,11 +23,9 @@ Las pruebas Android/JVM y la APK debug de QA están en [planificación y tests](
 - Conservación del historial de sesiones y recursos propios de Monarca.
 
 ## Recursos de ejercicio
-- **2000 fichas**: 1200 originales y 800 adicionales, con identificadores únicos.
-- **2000 SVG animados originales** restaurados desde el repositorio anterior a la migración, alojados en `app/src/main/assets/demos30/`. Se conservan también sus ficheros JSON complementarios originales.
-- Cada ficha obtiene la ruta SVG desde `demoPath30` en `Catalog.kt`. `MonarchExerciseStage` reproduce el SVG en Canvas Android con `OriginalSvg` y proporciona pausa, reproducción, espejo, velocidad y reinicio, sin usar WebView.
-- El motor Rive y los 2000 `.riv` se han retirado del código y recursos empaquetados. El workflow verifica **0 archivos .riv** y **0 bibliotecas nativas de Rive** dentro de la APK.
-- Las **800 fichas nuevas** continúan `pendingTechnicalReview=true`, `approvedForAutoplan=false` y `autoProgressionApproved=false`; quedan excluidas de planificación automática.
+- La biblioteca actual conserva las exclusiones auditadas y progresiones de la revisión del 22 de noviembre. La pestaña Catálogo 2.000 permite consultar las 1.200 fichas originales y 800 de expansión por ID, sin habilitar fichas retiradas para nuevas selecciones automáticas.
+- La ficha, la sesión guiada y Misiones Monarca usan el personaje vectorial de Compose con las poses del catálogo. Las secuencias reutilizan los movimientos de sus dos gestos.
+- La auditoría comprueba la cobertura de poses y la ausencia de las ilustraciones y clips históricos en los recursos de la APK. Los SVG faciales forman parte del personaje actual.
 
 ## Auditoría y compilación
 ```sh
@@ -35,12 +33,12 @@ python3 tools/check_hunter2000_complete.py
 python3 tools/generate_svg_qa_queue.py
 bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest :app:assembleRelease
 ```
-`.github/workflows/android-apk.yml` realiza las auditorías, pruebas Kotlin/Compose y compilación firmada. Verifica los 2000 SHA-256 de los SVG que realmente se empaquetan en la APK. Esta verificación **no acredita** fidelidad visual en Android, rendimiento ni validación biomecánica.
+`.github/workflows/android-apk.yml` realiza las auditorías, pruebas Kotlin/Compose y compilación firmada. Verifica las poses JSON, los catálogos y la ausencia de clips históricos y del visor 3D. Esta verificación **no acredita** fidelidad visual en Android, rendimiento ni validación biomecánica.
 
-La validación visual en teléfono físico y la evaluación técnica de las 800 fichas siguen pendientes. Consultar [QA SVG](docs/QA-ANDROID-SVG-V43.md). Las 800 fichas continúan excluidas de la planificación automática.
+La validación visual en teléfono físico y la evaluación técnica de las 800 fichas siguen pendientes. Las 800 fichas de expansión conservan datos de movimiento vectorial; la cobertura de poses no equivale a validación visual. Consultar [QA SVG](docs/QA-ANDROID-SVG-V43.md). Las 800 fichas continúan excluidas de la planificación automática.
 
-## Restauración histórica 2D
+## Pantalla de inicio V43.12.2
 
-Restauración del código del 16 de noviembre de 2026 (`c0802ce`), sin visor 3D. Se incrementó versionCode a 133 para evitar el rechazo por versión inferior al instalar sobre una APK con la misma firma. La APK debug es para pruebas; no acredita QA técnica ni compatibilidad con datos de versiones posteriores. Las pruebas unitarias siguen ejecutándose; la APK debug puede estar disponible antes de que terminen y no se considera validada si fallan.
+El perfil nativo Compose se abre por defecto. La compilación 134 aparece junto al formulario. La prueba de dispositivo comprueba los campos y los píxeles de la pantalla, no solamente la URL. Para errores exclusivos de teléfonos físicos se necesita su registro adb logcat; no borrar datos.
 
-La compilación firmada usa imágenes locales existentes para las tarjetas de jefes cuando no hay imágenes promocionales empaquetadas; no requiere conexión al servidor de imágenes. Las verificaciones de catálogo, firma y pruebas siguen siendo obligatorias.
+Restauración basada en 5f76c8ce (22-11-2026), padre inmediato de la introducción del visor 3D. Se conserva el personaje vectorial de Compose y no se recuperan los MP4 antiguos.

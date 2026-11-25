@@ -9,7 +9,6 @@ class Rules(val catalog:Catalog){
  fun active(p:JSONObject):Boolean{val h=p.o("health");return injuries(p).isNotEmpty()||p.b("limits")||h.b("special")||h.b("acute")||h.b("redFlags")||h.s("pain","none")!="none"}
  fun impactStatus(p:JSONObject):Gate{
   val a=injuries(p);val h=p.o("health");val zones=a.map{it.s("zone")};val known=setOf("neck","shoulder","elbow","wrist","back","hip","knee","ankle")
-  if(p.n("age")<18)return Gate(false,reason="Se requiere una planificación individual apropiada para la edad.")
   if(h.b("acute")||h.s("pain")=="strong"||a.any{it.s("type") in listOf("bone","surgery")}||listOf("emergency","neurological","unstable","redFlags").any{h.b(it)})return Gate(false,reason="Se registró dolor intenso, una lesión reciente grave o una condición que requiere valoración. No es seguro asignar automáticamente ejercicios, incluso para otras zonas.")
   if(zones.any{it !in known})return Gate(false,reason="Indica qué zona está afectada para excluirla de todos los movimientos. Una zona desconocida no puede filtrarse de forma fiable.")
   if(h.b("special")&&!h.b("approved"))return Gate(false,reason="Existe una condición especial que necesita indicaciones individuales antes de programar ejercicio.")
@@ -20,47 +19,49 @@ class Rules(val catalog:Catalog){
  fun mode(p:JSONObject):Gate{
   val h=p.o("health");val a=injuries(p)
   if((a.isNotEmpty()||p.b("limits")||h.s("pain","none")!="none")&&impactStatus(p).ok)return Gate(true,true,"Entrenamiento limitado a otros grupos musculares. Ejercicios orientativos de intensidad reducida; no representan autorización médica.")
-  if(p.n("age")<18)return Gate(false,reason="Organizador disponible. Para menores, utiliza un plan indicado por un profesional.")
   if(p.b("limits")&&!p.has("health"))return Gate(false,reason="Actualiza las zonas y restricciones de tu perfil para revisar la selección.")
   if(h.s("pain") in listOf("strong","moderate")||h.b("acute"))return Gate(false,reason="Dolor actual o lesión reciente: conserva tus misiones personales y revisa con un profesional antes de generar ejercicios.")
   if(a.any{it.s("type") in listOf("bone","surgery")||it.s("zone")=="other"})return Gate(false,reason="Este caso requiere indicaciones individuales. Puedes organizar aquí el plan que recibas.")
   if((a.isNotEmpty()||h.b("special"))&&(!h.b("approved")||!h.b("translated")))return Gate(false,reason="Completa las recomendaciones recibidas y confirma qué actividad te han permitido antes de filtrar ejercicios.")
-  return Gate(true,a.isNotEmpty()||h.b("special")||p.n("age")>=65||h.s("pain")=="mild","Selección según objetivo, experiencia, equipo y calendario.")
+  return Gate(true,a.isNotEmpty()||h.b("special")||h.s("pain")=="mild","Selección según objetivo, experiencia, equipo y calendario.")
  }
  fun gate(p:JSONObject):Gate{val h=p.o("health");return if(injuries(p).isNotEmpty()||p.b("limits")||h.b("special")||h.s("pain") in listOf("mild","moderate","strong"))impactStatus(p) else mode(p)}
  fun reduced(p:JSONObject,status:Gate?=null)=status?.reduced==true||active(p)||(if(p.has("_adaptationReduced"))p.b("_adaptationReduced") else mode(p).reduced)
  fun groupReasons(e:Exercise,p:JSONObject):List<String>{val out=mutableListOf<String>();val caps=p.a("capabilities46").strings();val noImpact=listOf("restrictions","physicalLimits","preferences").any{p.o(it).b("noImpact")}
   if(e.impact&&noImpact)out+="Saltos e impactos excluidos por el perfil"
-  if((e.power||e.impact)&&(reduced(p)||p.n("age")<18))out+="Potencia e impactos pendientes de revisión individual"
+  if((e.power||e.impact)&&reduced(p))out+="Potencia e impactos pendientes de revisión individual"
   if(e.impact&&e.type!="upper"&&"landing" !in caps)out+="Confirma primero tu control de aterrizaje en Perfil"
   if(e.power&&e.type=="upper"&&"supporthold" !in caps)out+="Falta confirmar control de apoyos para el empuje explosivo"
   if(e.power&&"clean" in e.family&&("ballistichinge" !in caps||"olympic" !in caps))out+="Falta práctica previa de la cargada y su recepción"
   return out
  }
- fun materialReasons(e:Exercise,p:JSONObject):List<String>{val out=mutableListOf<String>();val raw=e.raw;val gear=p.s("equipment","body");val gym=p.a("gymEquipment23").strings();val mats=p.a("materials46").strings();val caps=p.a("capabilities46").strings();val req=raw.optJSONArray("materialRequirements")
-  if(req==null)out+="Requisitos de material no disponibles" else for(k in req.strings())if(when(k){"db"->gear !in listOf("db","gym");"gym"->gear!="gym";"bench"->!p.b("bench")&&k !in gym;"step"->!p.b("step");else->gear!="gym"||k !in gym})out+="Falta material: $k"
-  if(e.gym&&gear!="gym"||e.equipment=="gym"&&gear!="gym"||e.equipment=="db"&&gear !in listOf("db","gym"))out+="Equipo no configurado"
-  if(raw.i("progressionTierNative")>level(p)&&!mode(p).reduced&&!catalog.editorial.o("goalPlans").o(p.s("finalTarget")).b("gentle"))out+="Nivel superior al seleccionado"
-  if(e.planningLevel>level(p))out+="Nivel de planificación superior al seleccionado"
+ fun materialReasons(e:Exercise,p:JSONObject,maxPlanningLevel:Int=level(p)):List<String>{val out=mutableListOf<String>();val raw=e.raw;val gear=p.s("equipment","body");val gym=p.a("gymEquipment23").strings();val mats=p.a("materials46").strings();val caps=p.a("capabilities46").strings();val req=raw.optJSONArray("materialRequirements")
+  val hasCardio="cardio" in gym || e.cardioEquipment?.let { it in gym }==true
+  if(p.has("bodyAvailable")&&"cardio" in e.gymRequirements&&!hasCardio)out+="Falta la máquina de cardio correspondiente"
+  if(!p.b("bodyAvailable",true)&&e.equipment=="body"&&req?.strings().orEmpty().all { it=="body" })out+="Peso corporal desactivado en Perfil"
+  if(req==null)out+="Requisitos de material no disponibles" else for(k in req.strings())if(when(k){"db"->!p.b("dumbbellsAvailable",gear in listOf("db","gym"));"gym"->gear!="gym";"cardio"->!hasCardio;"bench"->!p.b("bench")&&k !in gym;"step"->!p.b("step");"towel"->k !in mats;else->if(e.hunter2000||e.sport.isNotBlank())k !in mats&&k !in gym else gear!="gym"||k !in gym})out+="Falta material: "+(if(k!="towel"&&e.sport.isBlank()&&!e.hunter2000)k else catalog.materials.s(k,k))
+  if(e.gym&&gear!="gym"||e.equipment=="gym"&&gear!="gym"||e.equipment=="db"&&!p.b("dumbbellsAvailable",gear in listOf("db","gym")))out+="Equipo no configurado"
+  if(raw.i("progressionTierNative")>maxPlanningLevel&&!mode(p).reduced&&!catalog.editorial.o("goalPlans").o(p.s("finalTarget")).b("gentle"))out+="Nivel superior al seleccionado"
+  if(e.planningLevel>maxPlanningLevel)out+="Nivel de planificación superior al seleccionado"
   if(raw.b("pack46")&&raw.has("materials46")){
-   if(raw.i("level")>level(p))out+="Nivel superior al seleccionado"
+   if(raw.i("level")>maxPlanningLevel)out+="Nivel superior al seleccionado"
    for(k in raw.a("materials46").strings()){
-    val has=when(k){"db"->gear in listOf("db","gym");"bench"->p.b("bench")||"bench" in gym;"step"->p.b("step");"barbell","cable"->gear=="gym"&&k in gym;else->k in mats}
+    val has=when(k){"db"->p.b("dumbbellsAvailable",gear in listOf("db","gym"));"bench"->p.b("bench")||"bench" in gym;"step"->p.b("step");"barbell","cable"->gear=="gym"&&k in gym;else->k in mats}
     if(!has)out+="Falta material: "+catalog.materials.s(k,k)
    }
    for(k in raw.a("capabilities46").strings())if(k !in caps)out+="Capacidad previa pendiente: "+catalog.capabilities.s(k,k)
-   if(raw.b("highSkill46")&&(p.n("age")<18||active(p)))out+="Movimiento complejo: revisar capacidad y restricciones individuales antes de asignar"
+   if(raw.b("highSkill46")&&active(p))out+="Movimiento complejo: revisar capacidad y restricciones individuales antes de asignar"
    if(raw.b("loaded46")&&p.o("restrictions").b("noLoad"))out+="Carga o resistencia externa excluida"
   }
   return out.distinct()
  }
- fun clinicalReasons(e:Exercise,p:JSONObject,risk:Boolean):List<String>{val r=p.o("restrictions");val raw=e.raw;val out=mutableListOf<String>();val affected=injuries(p).map{it.s("zone")}.toSet();val floor=raw.b("floor");val seated=raw.b("seated");val standing=raw.b("standing");val hand=raw.b("wristLoad");val overhead=raw.b("overhead");val knee=raw.b("kneeBend");val spine=raw.b("spineMove");val external=e.equipment in listOf("db","gym")||"db" in raw.a("requirements").strings();val txt=(e.id+" "+e.name+" "+raw.s("steps")).lowercase()
+ fun clinicalReasons(e:Exercise,p:JSONObject,risk:Boolean):List<String>{val r=p.o("restrictions");val raw=e.raw;val out=mutableListOf<String>();val affected=injuries(p).map{it.s("zone")}.toSet();val floor=raw.b("floor");val seated=raw.b("seated");val standing=raw.b("standing");val hand=raw.b("wristLoad");val overhead=raw.b("overhead");val knee=raw.b("kneeBend");val spine=raw.b("spineMove");val external=e.equipment in listOf("db","gym")||"db" in raw.a("requirements").strings()||e.hunter2000&&raw.a("materialRequirements").strings().any{it in setOf("db","gym","barbell","trapbar","safetybar","cable","machine","smith","plate","kb","band","medball","sled")};val txt=(e.id+" "+e.name+" "+raw.s("steps")).lowercase()
   fun reject(v:Boolean,s:String){if(v)out+=s}
   reject(raw.a("zones").strings().any{it in affected},"Zona declarada afectada")
   reject(r.b("noImpact")&&raw.s("impact")=="Con saltos","Saltos excluidos")
   reject(r.b("noFloor")&&floor,"Trabajo en suelo excluido");reject(r.b("noOverhead")&&overhead,"Elevación sobre la cabeza excluida");reject(r.b("noKnee")&&knee,"Flexión de rodilla excluida");reject(r.b("noWrist")&&hand,"Apoyo sobre manos excluido");reject(r.b("noLoad")&&external,"Carga externa excluida");reject(r.b("seatedOnly")&&!seated,"Solo movimientos sentado");reject(r.b("noSpine")&&spine,"Flexión o giro de tronco excluido")
   if(!risk){reject(!mode(p).ok,"Pendiente de indicaciones individuales");reject(raw.i("level")>(if(mode(p).reduced)0 else if(level(p)==0)1 else 2),"Nivel superior al seleccionado");reject(mode(p).reduced&&raw.s("impact")=="Con saltos","Saltos excluidos");return out}
-  reject(raw.b("sourceOnly")||raw.s("variant")!="base"||raw.i("level")>1||raw.s("impact")=="Con saltos","Ejercicio fuera del filtro de baja exigencia")
+  reject(e.validationBlocked||!e.isBaseVariant||raw.b("compositeSequence")||raw.i("level")>1||raw.s("impact")=="Con saltos","Ejercicio fuera del filtro de baja exigencia")
   reject("knee" in affected&&(knee||(!seated&&floor)||Regex("rodillas apoyadas|cuatro apoyos|cuadrupedia|arrodillad").containsMatchIn(txt)),"Rodilla implicada")
   reject("ankle" in affected&&(Regex("puente de gl[uú]teos|elevaci[oó]n de talones|heel raise|calf raise").containsMatchIn(txt)||!seated&&!floor||standing),"Tobillo implicado")
   reject("hip" in affected&&!seated&&Regex("sentadilla|zancada|estocada|peso muerto|bisagra").containsMatchIn(txt),"Cadera implicada")
@@ -71,15 +72,27 @@ class Rules(val catalog:Catalog){
   reject((r.b("noWrist")||"wrist" in affected)&&(hand||floorHand),"Evitar apoyo en manos");reject("knee" in affected&&floor&&knee,"Rodilla en apoyo")
   return out
  }
- fun reasons(e:Exercise,p:JSONObject):List<String>{if(e.raw.b("sourceExpansion2k")&&!e.raw.b("approvedForAutoplan"))return listOf("Pendiente de validación biomecánica y de requisitos; excluido de los generadores.");val g=gate(p);if(!g.ok)return listOf(g.reason);val risk=injuries(p).isNotEmpty()||p.b("limits")||p.o("health").b("special")||p.o("health").s("pain") in listOf("mild","moderate","strong");return (groupReasons(e,p)+materialReasons(e,p)+clinicalReasons(e,p,risk)).distinct()}
- fun compatible(e:Exercise,p:JSONObject)=reasons(e,p).isEmpty()
- fun matches(e:Exercise,type:String)=e.type==type||type=="cardio"&&e.meta.b("jumpPower")
- fun inKind(e:Exercise,kind:String)=when(kind){"strength"->e.type in listOf("upper","lower","core");"cardio"->matches(e,"cardio");"recovery"->e.type=="mobility";else->false}
- fun pool(p:JSONObject,kind:String)=if(!gate(p).ok) emptyList() else catalog.exercises.filter{inKind(it,kind)&&compatible(it,p)}
+ fun reasons(e:Exercise,p:JSONObject,maxPlanningLevel:Int=level(p)):List<String>{if(e.validationBlocked)return listOf("Pendiente de validación biomecánica y de requisitos; excluido de los generadores.");val g=gate(p);if(!g.ok)return listOf(g.reason);val risk=injuries(p).isNotEmpty()||p.b("limits")||p.o("health").b("special")||p.o("health").s("pain") in listOf("mild","moderate","strong");return (groupReasons(e,p)+materialReasons(e,p,maxPlanningLevel)+clinicalReasons(e,p,risk)).distinct()}
+ fun compatible(e:Exercise,p:JSONObject,maxPlanningLevel:Int=level(p))=reasons(e,p,maxPlanningLevel).isEmpty()
+ fun missionReasons(e:Exercise,p:JSONObject,item:JSONObject):List<String> {
+  val plannedLevel=level(p)+1
+  val guidedProgression=item.b("unifiedPlanning")&&item.i("progressionFromLevel")==plannedLevel
+  return reasons(e,p,maxPlanningLevel=if(guidedProgression)minOf(2,plannedLevel) else level(p))
+ }
+ fun compatibleWithMission(e:Exercise,p:JSONObject,item:JSONObject)=missionReasons(e,p,item).isEmpty()
+ fun inKind(e:Exercise,kind:String):Boolean {
+  val category=catalog.classification(e.id)?.category ?: return false
+  return when(category){
+   com.huntersystem.app.planning.Category.CARDIO->kind=="cardio"
+   com.huntersystem.app.planning.Category.MOBILITY->kind=="recovery"||kind=="mobility"
+   else->kind=="strength"
+  }
+ }
+ fun pool(p:JSONObject,kind:String)=if(!gate(p).ok) emptyList() else catalog.automaticExercises.filter{inKind(it,kind)&&compatible(it,p)}
  fun powerReady(p:JSONObject,logs:JSONObject,date:String,status:Gate=gate(p),strain:Boolean=false,planned:List<PlanRow> = emptyList()):Boolean{
   if(reduced(p,status)||strain||p.n("trainingScale",1.0)<1)return false
   val l=logs.o(date);if(l.b("pain")||l.b("fatigue")||l.n("rpe")>=8)return false
-  val dates=mutableSetOf<String>();fun powerId(id:String)=catalog.byId[id]?.let{it.power||it.impact}?:catalog.exercises.firstOrNull{it.family==id}?.let{it.power||it.impact}?:false
+  val dates=mutableSetOf<String>();fun powerId(id:String)=catalog.byId[id]?.let{it.power||it.impact}?:catalog.historicalExercises.firstOrNull{it.family==id&&catalog.classification(it.id)!=null}?.let{it.power||it.impact}?:false
   for((d,v) in logs.entries()){val log=v as? JSONObject?:continue;if(d>=date||!Regex("\\d{4}-\\d{2}-\\d{2}").matches(d))continue;if(log.a("items").objects().any{powerId(it.s("id"))&&(log.b("complete")||it.a("actual").objects().any{a->a.b("done")})}){if(distance(d,date)<2)return false;if(distance(d,date)<7)dates+=d}}
   for(row in planned)if(powerId(row.id)){if(distance(row.date,date)<2)return false;if(row.date<date&&distance(row.date,date)<7)dates+=row.date}
   return dates.size<3

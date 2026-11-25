@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="64" viewBox="0 0 100 64">
+  <g id="bench" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M17 15V59M83 15V59M6 59H29m42 0h23" stroke="#7399AA" stroke-width="5"/><rect x="4" y="1" width="91" height="13" rx="4" fill="#38576D" stroke="#B5D3D7" stroke-width="2"/>
+  </g>
+</svg>

@@ -29,30 +29,16 @@ jobs:
           yes | "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null || true
           "$SDK_ROOT/cmdline-tools/latest/bin/sdkmanager" "platforms;android-36" "build-tools;36.0.0"
       - uses: gradle/actions/setup-gradle@v4
-      - name: Comprobar catálogo local y 2000 SVG
+      - name: Comprobar catálogo y ausencia de demostraciones históricas
         run: python3 tools/check_hunter2000_complete.py
       - name: Compilar APK debug sin descargar imágenes promocionales de terceros
         run: bash gradlew --no-daemon --max-workers=2 :app:assembleDebug
-      - name: Verificar los 2000 SVG y excluir recursos 3D de la APK
-        run: |
-          python3 - <<'PY'
-          import json, hashlib, zipfile
-          from pathlib import Path
-          src = Path("app/src/main/assets")
-          rows = json.loads((src/"catalog.json").read_text()) + json.loads((src/"catalog-hunter2000-extra.json").read_text())
-          paths = {"assets/"+row["demoPath30"] for row in rows}
-          with zipfile.ZipFile("app/build/outputs/apk/debug/app-debug.apk") as apk:
-              names = set(apk.namelist())
-              assert len(rows) == len(paths) == 2000
-              assert {p for p in names if p.startswith("assets/demos30/") and p.endswith(".svg")} == paths
-              assert not any(p.startswith("assets/exercise-3d/") for p in names)
-              for path in paths:
-                  assert hashlib.sha256(apk.read(path)).digest() == hashlib.sha256((src/path.removeprefix("assets/")).read_bytes()).digest(), path
-          PY
-      - name: Publicar APK de pruebas (QA técnica pendiente)
+      - name: Verificar catálogos y alias empaquetados
+        run: python3 tools/check_hunter2000_complete.py --apk app/build/outputs/apk/debug/app-debug.apk
+      - name: Publicar APK de pruebas
         uses: actions/upload-artifact@v4
         with:
-          name: Hunter-System-Monarca-Eclipse-2D-2000-debug-QA
+          name: Hunter-System-Monarca-Eclipse-debug-QA
           path: app/build/outputs/apk/debug/*.apk
           retention-days: 14
           if-no-files-found: error

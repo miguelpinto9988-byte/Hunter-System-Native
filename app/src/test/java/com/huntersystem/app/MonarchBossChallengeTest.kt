@@ -1,0 +1,300 @@
+package com.huntersystem.app
+
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.*
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.test.core.app.ApplicationProvider
+import com.huntersystem.app.planning.*
+import org.json.JSONArray
+import org.junit.*
+import org.junit.Assert.*
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.*
+import org.robolectric.shadows.ShadowDialog
+import java.io.File
+import java.time.LocalDate
+
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk=[35],qualifiers="w393dp-h851dp-mdpi")
+@LooperMode(LooperMode.Mode.PAUSED)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
+class MonarchBossChallengeTest {
+    @get:Rule val compose=createAndroidComposeRule<ComponentActivity>()
+    private lateinit var context:Context
+    private lateinit var store:NativeStore
+    private val date=LocalDate.of(2026,11,20)
+    private val start=1_800_000_000_000L
+
+    @Before fun setup(){
+        context=ApplicationProvider.getApplicationContext()
+        context.filesDir.listFiles()?.filter { it.name.startsWith("hunter-system-native") }?.forEach { it.delete() }
+        val fixture=JSONArray(javaClass.classLoader!!.getResource("groups-golden.json")!!.readText())
+            .objects()[7].o("p")
+        val profile=fixture.copyJson().put("name","Cazador").put("animate",false).put("theme","dark")
+            .put("weeklyCategories",arr(List(7){5}))
+        store=NativeStore(context)
+        store.saveProfile(profile)
+    }
+
+    @Test fun drawCoversFourCategoriesAndSupportsTimedCardioWithoutMobility() {
+        val profile=TrainingProfile(Experience.INTERMEDIATE,date,List(7){5})
+        val compatible=Category.values().mapIndexed { index,category ->
+            ActivityMetadata("id-$index",category,"family-$index","type-$index",2,Intensity.LOW,
+                emptySet(),"body",false,true,displayName="Actividad $index",workUnit=VolumeUnit.REPETITIONS)
+        }
+        val candidates=compatible.dropLast(1)+listOf(
+            compatible[0].copy(id="duplicate"),
+            compatible[0].copy(id="another",displayName="Otra actividad"),
+            compatible.last().copy(id="timed",displayName="Tiempo",workUnit=VolumeUnit.SECONDS),
+            compatible[0].copy(id="equipment",displayName="Equipo",equipment=setOf("db")),
+            compatible[0].copy(id="advanced",displayName="Nivel",technicalLevel=4),
+            compatible[0].copy(id="no-demo",displayName="Sin demo")
+        )
+        val offer=planMonarchBoss(MonarchBoss.IGRIS,profile,candidates,7){it!="no-demo"}!!
+        assertEquals(5,offer.goals.size)
+        assertEquals(compatible.filter { it.category!=Category.MOBILITY && it.category!=Category.CARDIO }.map { it.displayName }.toSet()+setOf("Tiempo","Otra actividad"),
+            offer.goals.map { goal -> candidates.single { it.id==goal.id }.displayName }.toSet())
+        assertTrue(offer.goals.all { it.target in 80..100 })
+        assertEquals(VolumeUnit.SECONDS,offer.goals.single { it.id=="timed" }.unit)
+        assertEquals(offer,planMonarchBoss(MonarchBoss.IGRIS,profile,candidates.reversed(),7){it!="no-demo"})
+        assertNull(planMonarchBoss(MonarchBoss.IGRIS,profile,compatible.dropLast(1),7))
+    }
+
+    @Test fun accumulateAcrossDaysWithoutChangingNormalMissionsAndKeepProgressAfterReload(){
+        val snapshot=store.logs.toString()
+        val repository=MonarchBossChallenges(store)
+        val offer=repository.offer(date)!!
+        val goal=offer.goals.first()
+        assertNull(repository.current())
+        repository.start(offer,date,start)
+        assertThrows(IllegalArgumentException::class.java){repository.start(offer,date,start+1)}
+        val dayThree=start+2*86_400_000L
+        repository.record(start,goal.id,11,0,start)
+        repository.record(start,goal.id,12,11,dayThree)
+        assertThrows(IllegalArgumentException::class.java){repository.record(start,goal.id,12,11,dayThree)}
+        assertThrows(IllegalStateException::class.java){
+            repository.record(start,goal.id,3,23,start+monarchBossDuration)
+        }
+        val restored=NativeStore(context)
+        val reopened=MonarchBossChallenges(restored)
+        val run=reopened.current()!!
+        assertEquals(3,run.day(dayThree))
+        assertEquals(23,run.offer.goals.first().count)
+        assertEquals(BossStatus.EXPIRED,run.status(start+monarchBossDuration))
+        assertEquals(snapshot,restored.logs.toString())
+        assertEquals(MonarchBoss.IGRIS,reopened.offer(date.plusDays(5))!!.boss)
+        val chosen=reopened.offer(date.plusDays(5),MonarchBoss.BERU)!!
+        assertTrue(chosen.goals.all { it.target in 135..170 })
+        reopened.start(chosen,date.plusDays(5),start+monarchBossDuration)
+        assertEquals(chosen,MonarchBossChallenges(NativeStore(context)).current()!!.offer)
+        assertEquals(1,restored.state.a("monarchBossHistory").length())
+    }
+
+    @Test fun legacyBeruRetainsHisTargetsAndProgressWhenUpdated() {
+        val repository=MonarchBossChallenges(store)
+        val original=repository.offer(date)!!
+        repository.start(original,date,start)
+        store.state.o("monarchBossChallenge").put("boss","BERU")
+        store.save()
+        val restored=NativeStore(context)
+        val migrated=MonarchBossChallenges(restored)
+        val goal=original.goals.first()
+        migrated.record(start,goal.id,12,0,start+1)
+        val saved=MonarchBossChallenges(NativeStore(context)).current()!!
+        assertEquals(MonarchBoss.BERU,saved.offer.boss)
+        assertEquals(goal.copy(count=12),saved.offer.goals.first())
+        assertEquals(start+monarchBossDuration,saved.deadline)
+    }
+
+    @Test fun selectedDifficultyIncreasesTheRangeKeepingProfileFilters() {
+        val repository=MonarchBossChallenges(store)
+        val offers=MonarchBoss.entries.map { repository.offer(date,it)!! }
+        assertEquals(listOf(75..110,90..125,105..140,120..155,135..170),
+            offers.map { it.boss.repetitions })
+        for(offer in offers) {
+            assertEquals(5,offer.goals.distinctBy { it.id }.size)
+            for (goal in offer.goals) {
+                val exercise = store.catalog.byId.getValue(goal.id)
+                assertTrue(goal.target in offer.boss.repetitions && repository.compatible(goal.id))
+                assertTrue(exercise.isSingleMonarchMovement())
+                assertNull(ExerciseMotions.loadSequence(context, exercise))
+            }
+        }
+    }
+
+    @Test fun savedCompoundCountsSurviveAndBothKindsAreExcluded() {
+        val repository = MonarchBossChallenges(store)
+        val sequence = store.catalog.historicalExercises.first { it.raw.a("sequenceParts").length() == 2 }
+        val compound = store.catalog.historicalExercises.first {
+            it.raw.b("compositeSequence") && it.raw.a("sequenceParts").length() == 0
+        }
+        for (exercise in listOf(sequence, compound)) {
+            assertFalse(exercise.isSingleMonarchMovement())
+            assertFalse(repository.compatible(exercise.id))
+        }
+
+        val offer = repository.offer(date)!!
+        repository.start(offer, date, start)
+        store.state.o("monarchBossChallenge").a("goals").getJSONObject(0)
+            .put("id", sequence.id).put("count", 12)
+        store.save()
+        val reopened = MonarchBossChallenges(NativeStore(context))
+        assertEquals(sequence.id, reopened.current()!!.offer.goals.first().id)
+        assertEquals(12, reopened.current()!!.offer.goals.first().count)
+        assertThrows(IllegalArgumentException::class.java) { reopened.record(start, sequence.id, 1, 12, start) }
+        reopened.abandon(start, start + 1)
+        assertEquals(BossStatus.ABANDONED, reopened.current()!!.status(start + 2))
+        assertEquals(12, reopened.current()!!.offer.goals.first().count)
+    }
+
+    @Test fun challengeOnlyCompletesWhenAllDeclaredTargetsAreReached(){
+        val repository=MonarchBossChallenges(store)
+        val offer=repository.offer(date)!!
+        repository.start(offer,date,start)
+        offer.goals.forEach { goal -> repository.record(start,goal.id,goal.target,0,start+1) }
+        assertEquals(BossStatus.COMPLETED,repository.current()!!.status(start+2))
+        assertThrows(IllegalStateException::class.java){repository.abandon(start,start+2)}
+    }
+
+    @Test fun exerciseBadgesIdentifyDifferentMovementsAndColors() {
+        val examples=mapOf(
+            "squat" to MonarchExerciseIcon.SQUAT,
+            "pushup" to MonarchExerciseIcon.PUSH,
+            "row" to MonarchExerciseIcon.ROW,
+            "plank" to MonarchExerciseIcon.PLANK,
+            "reverselunge" to MonarchExerciseIcon.LUNGE,
+            "sport-cycling-spinups" to MonarchExerciseIcon.CYCLE
+        )
+        for((id,expected) in examples) {
+            assertEquals(id,expected,monarchExerciseIcon(store.catalog.byId.getValue(id)))
+        }
+        assertEquals(examples.size,examples.values.map { it.darkInk }.distinct().size)
+        assertEquals(examples.size,examples.values.map { it.lightInk }.distinct().size)
+        val plancha=Exercise(obj("name" to "Plancha con toque de rodilla","planning49" to obj("group" to "core")))
+        assertEquals(MonarchExerciseIcon.PLANK,monarchExerciseIcon(plancha))
+        val pelvic=Exercise(obj("name" to
+            "Secuencia basculación pélvica en cuadrupedia + inclinación pélvica adelante",
+            "planning49" to obj("group" to "mobility","pattern" to "movilidad general")))
+        assertEquals(MonarchExerciseIcon.PELVIC,monarchExerciseIcon(pelvic))
+        assertEquals(MonarchExerciseIcon.GENERAL,monarchExerciseIcon(null))
+        val paths=MonarchExerciseIcon.entries.map { it.path }
+        assertEquals(paths.size,paths.distinct().size)
+        assertTrue(paths.all { !androidx.compose.ui.graphics.vector.PathParser().parsePathString(it).toPath().isEmpty })
+    }
+
+    @Test fun everyCatalogRecordHasAMovementBadgeIncludingSportsSequences() {
+        val catalog = store.catalog
+        val catalogIcons = catalog.historicalExercises.associateBy({ it.id }, ::monarchExerciseIcon)
+        assertEquals(5_000, catalogIcons.size)
+        assertEquals(MonarchExerciseIcon.entries.toSet() - MonarchExerciseIcon.GENERAL,
+            catalogIcons.values.toSet())
+        val publishedIcons = catalog.libraryExercises.associateBy({ it.id }, ::monarchExerciseIcon)
+        for ((id, canonical) in catalog.byId) {
+            val expected = catalogIcons[canonical.id] ?: publishedIcons.getValue(canonical.id)
+            assertEquals(id, expected, monarchExerciseIcon(canonical))
+        }
+
+        val examples = mapOf(
+            "march" to MonarchExerciseIcon.WALK,
+            "stepup" to MonarchExerciseIcon.STEP,
+            "stepjack" to MonarchExerciseIcon.STEP,
+            "bridge" to MonarchExerciseIcon.BRIDGE,
+            "legextend" to MonarchExerciseIcon.KNEE,
+            "rope" to MonarchExerciseIcon.ROPE,
+            "farmerwalk" to MonarchExerciseIcon.CARRY,
+            "sport-futbol-sole" to MonarchExerciseIcon.BALL,
+            "sport-tennis-shadow-forehand" to MonarchExerciseIcon.RACKET,
+            "sport-seq-calistenia-wall-kneelingplank" to MonarchExerciseIcon.PUSH,
+            "sport-seq-fuerza-singlebridge-new46-spanishsquat" to MonarchExerciseIcon.BRIDGE,
+            "sport-seq-movilidad-neck-skaterreach" to MonarchExerciseIcon.MOBILITY
+        )
+        for ((id, expected) in examples) assertEquals(id, expected, catalogIcons.getValue(id))
+    }
+
+    @Test(timeout=120000) fun movementBadgeAppearsOnlyInMonarchViews() {
+        val ui = NativeUi(store)
+        compose.setContent { HunterTheme(store) { HunterRoot(ui) } }
+
+        compose.runOnIdle { ui.open("exercise", obj("id" to "pushup")) }
+        compose.onAllNodesWithText(store.catalog.byId.getValue("pushup").name).onFirst().assertIsDisplayed()
+        compose.onNodeWithContentDescription(MonarchExerciseIcon.PUSH.label, useUnmergedTree = true)
+            .assertDoesNotExist()
+
+        val goals = MonarchBossChallenges(store).offer(LocalDate.now(), MonarchBoss.IGRIS)!!.goals
+        val first = goals.first()
+        val expected = monarchExerciseIcon(store.catalog.byId.getValue(first.id))
+        val badge = hasContentDescription(expected.label)
+        compose.runOnIdle {
+            ui.stack.clear()
+            ui.open("monarch-boss", obj("selectedBoss" to MonarchBoss.IGRIS.name))
+        }
+        compose.onAllNodes(badge, useUnmergedTree = true).assertCountEquals(
+            goals.count {
+                monarchExerciseIcon(store.catalog.byId.getValue(it.id)) == expected
+            }
+        )
+        compose.onNodeWithText(store.catalog.byId.getValue(first.id).name).performScrollTo().performClick()
+        compose.onNode(badge, useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test(timeout=120000) fun eachNewBossDisplaysItsCoverInTheChallengeWindow() {
+        val ui=NativeUi(store)
+        compose.setContent { HunterTheme(store) { HunterRoot(ui) } }
+        val output=File("../qa").apply { mkdirs() }
+        for(boss in MonarchBoss.entries.filter { it!=MonarchBoss.IGRIS }) {
+            compose.runOnIdle {
+                ui.stack.clear()
+                ui.open("monarch-boss",obj("selectedBoss" to boss.name))
+            }
+            val cover=hasContentDescription("Ilustración de ${boss.title}")
+            compose.waitUntil(10_000) { compose.onAllNodes(cover).fetchSemanticsNodes().isNotEmpty() }
+            compose.onNode(cover).assertIsDisplayed()
+            compose.runOnIdle {
+                val view=ShadowDialog.getLatestDialog()?.window?.decorView ?: return@runOnIdle
+                if(view.width>0&&view.height>0) {
+                    val bitmap=Bitmap.createBitmap(view.width,view.height,Bitmap.Config.ARGB_8888)
+                    view.draw(Canvas(bitmap))
+                    File(output,"native-monarca-${boss.name.lowercase()}.png").outputStream().use {
+                        bitmap.compress(Bitmap.CompressFormat.PNG,100,it)
+                    }
+                }
+            }
+        }
+    }
+
+    @Test(timeout=120000) fun catalogDemonstrationPrecedesCounterAndOnlyExplicitSaveAddsRepetitions(){
+        val ui=NativeUi(store)
+        compose.setContent{HunterTheme(store){HunterRoot(ui)}}
+        compose.onNodeWithText("Ver Misiones Monarca").performClick()
+        compose.onNodeWithText("Igris · Inicial · 75–110 por objetivo",substring=true).performScrollTo().performClick()
+        compose.onNodeWithText("Beru · Monarca · 135–170 por objetivo").performClick()
+        compose.onNodeWithText("135–170").assertExists()
+        val repository=MonarchBossChallenges(store)
+        val offer=repository.offer(LocalDate.now(),MonarchBoss.BERU)!!
+        val goal=offer.goals.first()
+        val name=store.catalog.byId.getValue(goal.id).name
+        compose.onNodeWithText(name).performScrollTo().performClick()
+        compose.onNodeWithText("El registro se habilita al aceptar el desafío.").assertExists()
+        compose.onNodeWithText("Gesto 1").assertDoesNotExist()
+        compose.onNodeWithText("Gesto 2").assertDoesNotExist()
+        compose.runOnIdle { ui.back() }
+        compose.onNodeWithText("135–170").assertExists()
+        compose.onNodeWithText("Aceptar desafío").performScrollTo().performClick()
+        compose.onNodeWithText(name).performScrollTo().performClick()
+        compose.onNodeWithText("DEMOSTRACIÓN").assertExists()
+        compose.onNodeWithText("Registrar ${goal.unitLabel}").assertExists()
+        compose.onNodeWithText("Pausar demostración").performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("+").performScrollTo().performClick()
+        compose.runOnIdle { assertEquals(0,repository.current()!!.offer.goals.first().count) }
+        compose.onNodeWithText("Guardar ${goal.unitLabel}").performScrollTo().performClick()
+        compose.onNodeWithText("1 / ${goal.target} ${goal.unitLabel} acumulad${if(goal.unit==VolumeUnit.SECONDS) "os" else "as"}").assertExists()
+        compose.runOnIdle {
+            assertEquals(MonarchBoss.BERU,repository.current()!!.offer.boss)
+            assertEquals(1,repository.current()!!.offer.goals.first().count)
+        }
+    }
+}

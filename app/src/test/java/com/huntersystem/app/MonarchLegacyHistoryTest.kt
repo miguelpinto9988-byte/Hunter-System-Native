@@ -60,6 +60,7 @@ class MonarchLegacyHistoryTest {
         val first = MonarchLegacyHistory.participation(obj(date.toString() to log), catalog).first()
         assertTrue(first.interrupted)
         assertEquals(ParticipationStatus.COMPLETED, first.status)
+        assertTrue(MonarchLegacyHistory.interruptions(obj(date.toString() to log), catalog).isEmpty())
     }
     @Test fun categoryEffortFiltersLegacyGlobalEvenWithMatchingTrainingGroup() {
         val logs = obj(date.toString() to originalLog().put("trainingGroup", "upper"))

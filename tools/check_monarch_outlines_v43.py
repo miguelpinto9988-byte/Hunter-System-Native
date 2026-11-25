@@ -7,6 +7,7 @@ import re
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / "app/src/main/java/com/huntersystem/app"
 FILES = {p.name:p.read_text(encoding="utf-8") for p in SOURCE.glob("*.kt")}
+profile_css=(ROOT/"app/src/main/assets/profile-monarca/profile.css").read_text(encoding="utf-8")
 checks = {
     "espesor reposo 0.8 dp": "if(emphasis)1.4.dp else .8.dp" in FILES.get("MonarchOutlineV43.kt", ""),
     "color normal sutil y acento activo": all(
@@ -20,7 +21,7 @@ checks = {
     "chip seleccionable": ".monarchOutline(shape,active=selected,pressed=pressed)" in FILES.get("Design.kt", ""),
     "campo enfocado": ".monarchOutline(shape,focused=focused)" in FILES.get("Design.kt", ""),
     "cuadro de diálogo": ".monarchOutline(RoundedCornerShape(HunterDesignSystem.Dimensions.cornerDialog))" in FILES.get("Overlays.kt", ""),
-    "perfil y vista previa": ".monarchOutline(shape)" in FILES.get("HunterProfileLayoutV43.kt", ""),
+    "perfil y vista previa": ".preview{border:2px solid var(--accent)" in profile_css,
     "panel Monarca": ".monarchOutline(shape)" in FILES.get("MonarchDashboardV42.kt", ""),
     "misiones y días pulsables": ".monarchPressable(" in FILES.get("MonarchMissionsV42.kt", ""),
     "rutinas pulsables": ".monarchPressable(" in FILES.get("MonarchRoutinesV42.kt", ""),

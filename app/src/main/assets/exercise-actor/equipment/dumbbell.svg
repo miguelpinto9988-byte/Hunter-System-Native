@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="64" viewBox="0 0 100 64">
+  <g id="dumbbell" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M19 32H81" stroke="#B5D3D7" stroke-width="10"/><path d="M7 19L15 11H28L35 19V45L28 53H15L7 45ZM65 19L72 11H85L93 19V45L85 53H72L65 45Z" fill="#38576D" stroke="#B5D3D7" stroke-width="3"/><path d="M39 29h22M39 34h22" stroke="#7399AA" stroke-width="2"/>
+  </g>
+</svg>

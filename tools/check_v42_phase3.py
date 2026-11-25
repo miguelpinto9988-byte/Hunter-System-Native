@@ -23,14 +23,14 @@ styles = read("app/src/main/res/values/styles.xml")
 splash = read("app/src/main/res/values-v31/styles.xml")
 gradle = read("app/build.gradle.kts")
 # V43 hereda las verificaciones funcionales de Monarca V42.9.
-gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.11-monarch-equipment-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12-monarca-eclipse-2d-2000"', 'versionName = "42.9-monarca-fase10"')
+gradle = gradle.replace('versionName = "43.0-fusion-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.11-monarch-equipment-preview"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12.1-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"').replace('versionName = "43.12.2-monarca-eclipse"', 'versionName = "42.9-monarca-fase10"')
 manifest = read("app/src/main/AndroidManifest.xml")
 workflow = read(".github/workflows/android-apk.yml")
 catalog = json.loads((assets / "catalog.json").read_text(encoding="utf-8"))
 check(isinstance(catalog,list) and len(catalog) == 1200,
       "El catálogo de 1200 ejercicios debe conservarse")
-check(len(list(assets.rglob("*.mp4"))) == 342,
-      "Deben conservarse 342 demostraciones MP4")
+check(len(list(assets.rglob("*.mp4"))) == 0,
+      "Quedan clips históricos empaquetados")
 check(not (assets / "exercise_thumbnails").exists(), "No se admiten miniaturas de ejercicios")
 check(not (assets / "v39-miniatures").exists(), "No se admiten miniaturas V39")
 check(all(f'MonarchDestination("{name}"' in navigation
@@ -68,7 +68,7 @@ check("android:allowBackup=\"false\"" in manifest,
       "No debe cambiar la protección de datos de la app")
 check("Auditoria Monarca V42 fase 03" in workflow,
       "La auditoría de fase 03 no está integrada en CI")
-out={"fase":"03","ejercicios":len(catalog),"mp4":342,
+out={"fase":"03","ejercicios":len(catalog),"mp4":0,
      "secciones":5,"responsive":True,"estado":"OK" if not issues else "ERROR",
      "errores":issues}
 print(json.dumps(out,ensure_ascii=False,indent=2))

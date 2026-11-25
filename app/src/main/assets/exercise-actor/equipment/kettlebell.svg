@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="100" height="64" viewBox="0 0 100 64">
+  <g id="kettlebell" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M31 33L27 16Q28 6 50 6T73 16L69 33" fill="none" stroke="#B5D3D7" stroke-width="8"/><path d="M35 26Q12 34 18 49T50 60Q78 61 83 49T65 26Z" fill="#38576D" stroke="#B5D3D7" stroke-width="3"/><path d="M34 31h32" stroke="#E9AC65" stroke-width="4"/>
+  </g>
+</svg>

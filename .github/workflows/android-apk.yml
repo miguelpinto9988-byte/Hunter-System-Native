@@ -1,4 +1,4 @@
-# Hunter System V43.12 · Igris, Rey Hormiga y Baran investigados + SVG 2000
+# Hunter System V43.12 · demostraciones vectoriales nativas
 name: Compilar Hunter System Android APK
 
 on:
@@ -61,15 +61,6 @@ jobs:
           echo "$HUNTER_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/hunter-system-release.p12"
           keytool -list -keystore "$RUNNER_TEMP/hunter-system-release.p12" -storetype PKCS12 -storepass "$HUNTER_STORE_PASSWORD" > /dev/null
 
-      - name: Verificar fondos locales de respaldo (sin descargas externas)
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          for asset in ("ui33/companion-igris.webp", "ui33/companion-beru.webp", "ui33/scene-s-1.webp"):
-              data = (Path("app/src/main/assets") / asset).read_bytes()
-              assert data[:4] == b"RIFF" and data[8:12] == b"WEBP", asset
-          PY
-
       - name: Quitar fondos de sombras y validar fondos planos
         run: python3 tools/check_plain_backgrounds.py
 
@@ -79,93 +70,6 @@ jobs:
       - name: Comprobar ausencia de miniaturas
         run: python3 tools/verificar_sin_miniaturas.py
 
-      - name: Comprobar estado de recursos Hunter 2000
-        run: python3 tools/import_hunter2000_assets.py --check
-
-      - name: Comprobar integridad de 2000 SVG y ausencia de Rive
-        run: python3 tools/check_hunter2000_complete.py
-
-      - name: Crear matriz de inspección SVG (todas las filas pendientes)
-        run: python3 tools/generate_svg_qa_queue.py --output "$RUNNER_TEMP/hunter-svg-2000-qa-pendiente.csv"
-
-      - name: Compilar APK release firmada
-        env:
-          HUNTER_KEYSTORE: ${{ runner.temp }}/hunter-system-release.p12
-          HUNTER_STORE_PASSWORD: ${{ secrets.HUNTER_STORE_PASSWORD }}
-        run: |
-          chmod +x ./gradlew
-          ./gradlew --no-daemon :app:assembleRelease
-
-      - name: Verificar firma APK con Android apksigner
-        shell: bash
-        run: |
-          set -euo pipefail
-          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
-          APK="$(find app/build/outputs/apk/release -name '*.apk' -print -quit)"
-          test -n "$APK"
-          "$SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose "$APK"
-
-      - name: Verificar 2000 SVG en la APK y ausencia de Rive
-        run: |
-          python3 - <<'PY'
-          import zipfile,pathlib,json,hashlib
-          apk=next(pathlib.Path('app/build/outputs/apk/release').glob('*.apk'))
-          source=pathlib.Path('app/src/main/assets')
-          records=json.loads((source/'catalog.json').read_text())+json.loads((source/'catalog-hunter2000-extra.json').read_text())
-          sha=json.loads((source/'hunter2000-qa-status.json').read_text())['SHA256_by_asset']
-          expected={'assets/'+entry['demoPath30'] for entry in records}
-          with zipfile.ZipFile(apk) as z:
-            names=z.namelist()
-            svgs={p for p in names if p.startswith('assets/demos30/') and p.endswith('.svg')}
-            assert len(svgs)==2000 and svgs==expected,(len(svgs),len(expected))
-            assert not [p for p in names if p.endswith('.riv') or 'librive-android.so' in p], 'Persisten archivos Rive'
-            for path in svgs:
-              raw=z.read(path)
-              assert hashlib.sha256(raw).hexdigest()==sha[path.removeprefix('assets/')],path
-            artwork='assets/monarch_splash_background.webp'
-            assert artwork in names,'Falta fondo animado de carga'
-            data=z.read(artwork)
-            assert data[:4]==b'RIFF' and data[8:12]==b'WEBP','WebP splash corrupto'
-            print('Fondo Monarca empaquetado:',len(data),'bytes')
-            for asset in ('ui33/companion-igris.webp','ui33/companion-beru.webp','ui33/scene-s-1.webp'):
-              raw=z.read('assets/'+asset)
-              assert raw[:4]==b'RIFF' and raw[8:12]==b'WEBP',asset
-            assert not any(p.startswith('assets/exercise-3d/') for p in names), 'Visor 3D inesperado'
-            print('Fondos locales verificados; APK sin descargas de arte promocional')
-            assert not any(p.startswith('assets/hunter-png/wallpapers/') for p in names),'Persisten fondos PNG de sombras'
-            assert not any(p.startswith('assets/realm-art/') for p in names),'Persisten fondos SVG antiguos'
-            assert not any(p.startswith('assets/hunter-png/icons/') for p in names),'Persisten iconos PNG antiguos'
-            png_sources=list(pathlib.Path('app/src/main/res/drawable-nodpi').glob('hunter_pixel_*.png'))
-            assert len(png_sources)==49,('Cantidad de iconos PNG',len(png_sources))
-            # AAPT2 renombra los ficheros de recursos; no conservar sus nombres
-            # originales dentro de la APK es comportamiento Android esperado.
-            compiled_pngs=[p for p in names if p.startswith('res/') and p.endswith('.png')]
-            assert len(compiled_pngs)>=49,('Recursos PNG insuficientes en la APK',len(compiled_pngs))
-            assert all(p.stat().st_size>0 for p in png_sources)
-            print('49 fuentes PNG Pixel Art; recursos raster Android presentes en APK:',len(compiled_pngs))
-            extra=json.loads(z.read('assets/catalog-hunter2000-extra.json'))
-            assert len(extra)==800 and all(x.get('approvedForAutoplan') is False and x.get('autoProgressionApproved') is False for x in extra)
-            print('APK verificada: 2000 SVG íntegros, 0 Rive, 800 fichas sin QA ni planificación automática')
-          PY
-
-      - name: Publicar matriz de QA pendiente (no es certificacion)
-        uses: actions/upload-artifact@v4
-        with:
-          name: Hunter-System-V43-SVG-2000-QA-Pendiente
-          path: ${{ runner.temp }}/hunter-svg-2000-qa-pendiente.csv
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Publicar APK instalable firmada (QA funcional pendiente hasta finalizar el flujo)
-        uses: actions/upload-artifact@v4
-        with:
-          name: Hunter-System-V43-12-Monarca-Eclipse-APK
-          path: app/build/outputs/apk/release/*.apk
-          if-no-files-found: error
-          retention-days: 14
-
-      # Mantener todas las auditorías y pruebas; publicar la APK de prueba firmada
-      # tras verificar los recursos, sin confundir disponibilidad con QA completa.
       - name: Auditoria Monarca V42 fase 01
         run: python3 tools/check_v42_phase1.py
 
@@ -205,11 +109,94 @@ jobs:
       - name: Comprobar inicio y guardado de perfil independiente
         run: python3 tools/check_standalone_profile.py
 
+      - name: Comprobar estado de recursos Hunter 2000
+        run: python3 tools/import_hunter2000_assets.py --check
+
+      - name: Comprobar catálogo y ausencia de demostraciones históricas
+        run: python3 tools/check_hunter2000_complete.py
+
+      - name: Crear matriz de revisión de demostraciones
+        run: python3 tools/generate_svg_qa_queue.py --output "$RUNNER_TEMP/hunter-demostraciones-qa-pendiente.csv"
+
       - name: Validar motor de alarmas V43.12
         run: python3 tools/check_hunter_alarms.py
 
-      - name: Verificar perfil V43.12 de tres etapas
+      - name: Verificar el perfil Monarca de cuatro pasos
         run: python3 tools/check_profile_redesign_v43.py
+
+      - name: Compilar APK release firmada
+        env:
+          HUNTER_KEYSTORE: ${{ runner.temp }}/hunter-system-release.p12
+          HUNTER_STORE_PASSWORD: ${{ secrets.HUNTER_STORE_PASSWORD }}
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon :app:assembleRelease
+
+      - name: Verificar firma de la APK
+        shell: bash
+        run: |
+          set -euo pipefail
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          APK="$(find app/build/outputs/apk/release -name '*.apk' -print -quit)"
+          test -n "$APK"
+          "$SDK_ROOT/build-tools/36.0.0/apksigner" verify --verbose "$APK"
+
+      - name: Verificar recursos visuales de la APK
+        run: |
+          python3 - <<'PY'
+          import zipfile,pathlib,json,hashlib
+          apk=next(pathlib.Path('app/build/outputs/apk/release').glob('*.apk'))
+          source=pathlib.Path('app/src/main/assets')
+          with zipfile.ZipFile(apk) as z:
+            names=z.namelist()
+            svgs={p for p in names if p.startswith('assets/demos30/') and p.endswith('.svg')}
+            assert not svgs, f'Persisten {len(svgs)} SVG animados'
+            assert not [p for p in names if p.endswith('.riv') or 'librive-android.so' in p], 'Persisten archivos Rive'
+            artwork='assets/monarch_splash_background.webp'
+            assert artwork in names,'Falta fondo animado de carga'
+            data=z.read(artwork)
+            assert data[:4]==b'RIFF' and data[8:12]==b'WEBP','WebP splash corrupto'
+            print('Fondo Monarca empaquetado:',len(data),'bytes')
+            boss_art=(
+              'profile-monarca/training.webp','monarch-boss/baruka.webp','monarch-boss/kargalgan.webp',
+              'monarch-boss/baran.webp','monarch-boss/beru.webp',
+            )
+            for asset in boss_art:
+              raw=z.read('assets/'+asset)
+              assert raw[:4]==b'RIFF' and raw[8:12]==b'WEBP',f'Arte de Monarca inválido: {asset}'
+            assert not any(p.startswith('assets/hunter-png/wallpapers/') for p in names),'Persisten fondos PNG de sombras'
+            assert not any(p.startswith('assets/realm-art/') for p in names),'Persisten fondos SVG antiguos'
+            assert not any(p.startswith('assets/hunter-png/icons/') for p in names),'Persisten iconos PNG antiguos'
+            png_sources=list(pathlib.Path('app/src/main/res/drawable-nodpi').glob('hunter_pixel_*.png'))
+            assert len(png_sources)==49,('Cantidad de iconos PNG',len(png_sources))
+            # AAPT2 renombra los ficheros de recursos; no conservar sus nombres
+            # originales dentro de la APK es comportamiento Android esperado.
+            compiled_pngs=[p for p in names if p.startswith('res/') and p.endswith('.png')]
+            assert len(compiled_pngs)>=49,('Recursos PNG insuficientes en la APK',len(compiled_pngs))
+            assert all(p.stat().st_size>0 for p in png_sources)
+            print('49 fuentes PNG Pixel Art; recursos raster Android presentes en APK:',len(compiled_pngs))
+            extra=json.loads(z.read('assets/catalog-hunter2000-extra.json'))
+            assert len(extra)==800 and len({x['id'] for x in extra})==800
+          PY
+
+      - name: Verificar catálogo y demostraciones en la APK firmada
+        run: python3 tools/check_hunter2000_complete.py --apk "$(find app/build/outputs/apk/release -name '*.apk' -print -quit)"
+
+      - name: Publicar matriz de QA pendiente (no es certificacion)
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hunter-System-V43-Demostraciones-QA-Pendiente
+          path: ${{ runner.temp }}/hunter-demostraciones-qa-pendiente.csv
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publicar APK instalable
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hunter-System-V43-12-Monarca-Eclipse-APK
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Pruebas Kotlin y Compose
         run: bash gradlew --no-daemon --max-workers=2 :app:testDebugUnitTest
