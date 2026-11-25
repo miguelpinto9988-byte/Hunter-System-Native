@@ -196,6 +196,8 @@ def verify():
 def verify_apk(path):
     with ZipFile(path) as apk:
         files = set(apk.namelist())
+        if any(name.startswith("assets/exercise-3d/") for name in files):
+            raise ValueError("La APK incluye recursos del visor desactivado")
         retired = tuple(f"assets/{folder}/" for folder in RETIRED_DEMOS)
         if any(name.startswith(retired) or name.startswith("assets/demos30/") and name.endswith(".svg")
                for name in files):
