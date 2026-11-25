@@ -99,6 +99,7 @@ fun HunterRoot(ui:NativeUi){
                                                 "plan"->PlanScreen(ui)
                                                 "routines"->RoutinesScreen(ui)
                                                 "book"->ExercisesScreen(ui)
+                                                else->HomeScreen(ui)
                                             }
                                         }
                                     }
