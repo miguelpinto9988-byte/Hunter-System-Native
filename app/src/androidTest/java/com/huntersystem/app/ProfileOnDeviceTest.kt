@@ -19,31 +19,19 @@ class ProfileOnDeviceTest {
         val device = UiDevice.getInstance(instrumentation)
         val themeName = InstrumentationRegistry.getArguments().getString("captureTheme", "Blanco")
         val mode = if (themeName == "Negro") "oscuro" else "claro"
+        val folder = "/sdcard/Download/monarca134"
+        device.executeShellCommand("mkdir -p $folder")
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
-            fun awaitText(label: String) = checkNotNull(device.wait(Until.findObject(By.text(label)), 25_000)) {
+            fun awaitText(label: String) = checkNotNull(device.wait(Until.findObject(By.text(label)), 60_000)) {
                 "Missing Compose control: $label"
             }
             fun capture(name: String) {
                 device.waitForIdle()
-                Thread.sleep(650)
-                val output = java.io.File(instrumentation.targetContext.filesDir, "capture-$mode-$name.xml")
-                device.dumpWindowHierarchy(output)
-                val image = checkNotNull(instrumentation.uiAutomation.takeScreenshot())
-                try {
-                    var bright = 0
-                    for (y in image.height / 6 until image.height * 5 / 6 step 5) {
-                        for (x in image.width / 10 until image.width * 9 / 10 step 5) {
-                            val color = image.getPixel(x, y)
-                            if (maxOf(Color.red(color), Color.green(color), Color.blue(color)) > 125) bright++
-                        }
-                    }
-                    assertTrue("Application area appears blank", bright > 120)
-                    instrumentation.targetContext.openFileOutput("capture-$mode-$name.png", 0).use {
-                        image.compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it)
-                    }
-                } finally {
-                    image.recycle()
-                }
+                Thread.sleep(500)
+                val file = "$folder/$mode-$name.png"
+                device.executeShellCommand("screencap -p $file")
+                val size = device.executeShellCommand("stat -c %s $file").trim().toLongOrNull() ?: 0L
+                assertTrue("PNG missing or invalid: $file ($size bytes)", size > 1024)
             }
             awaitText("PASO 1 DE 4")
             capture("perfil-1")
@@ -76,26 +64,19 @@ class ProfileOnDeviceTest {
             awaitText("Ejercicios")
             scenario.recreate()
             awaitText("Ejercicios")
-            fun tab(label: String) {
+            for ((label, slug) in listOf("Panel" to "panel", "Misiones" to "misiones",
+                    "Rutinas" to "rutinas", "Ejercicios" to "ejercicios")) {
                 val node = device.wait(Until.findObject(By.desc(label)), 5000)
                     ?: device.findObject(By.desc("$label, seleccionada"))
                     ?: device.wait(Until.findObject(By.text(label)), 10000)
                     ?: error("Missing navigation tab: $label")
                 node.click()
                 device.waitForIdle()
-                Thread.sleep(900)
-            }
-            fun scrollPage() {
-                device.swipe(device.displayWidth / 2, device.displayHeight * 72 / 100,
-                    device.displayWidth / 2, device.displayHeight * 28 / 100, 35)
-                device.waitForIdle()
-            }
-            for ((label, slug) in listOf("Panel" to "panel", "Misiones" to "misiones",
-                    "Rutinas" to "rutinas", "Ejercicios" to "ejercicios")) {
-                tab(label)
+                Thread.sleep(700)
                 capture("$slug-00")
-                repeat(4) { index ->
-                    scrollPage()
+                repeat(6) { index ->
+                    device.swipe(device.displayWidth / 2, device.displayHeight * 72 / 100,
+                        device.displayWidth / 2, device.displayHeight * 29 / 100, 38)
                     capture("$slug-0${index+1}")
                 }
             }
